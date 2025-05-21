@@ -1,0 +1,9 @@
+{
+	"platforms": ["apple", "android"],
+	"apple": {
+		"modules": ["SuperwallExpoModule"]
+	},
+	"android": {
+		"modules": ["expo.modules.superwallexpo.SuperwallExpoModule"]
+	}
+}

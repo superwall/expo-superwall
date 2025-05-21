@@ -1,0 +1,26 @@
+{
+	"expo": {
+		"name": "example2",
+		"slug": "example2",
+		"version": "1.0.0",
+		"orientation": "portrait",
+		"scheme": "example2",
+		"userInterfaceStyle": "automatic",
+		"newArchEnabled": true,
+		"ios": {
+			"supportsTablet": true,
+			"bundleIdentifier": "com.anonymous.example2"
+		},
+		"android": {
+			"adaptiveIcon": {
+				"backgroundColor": "#ffffff"
+			},
+			"edgeToEdgeEnabled": true,
+			"package": "com.anonymous.example2"
+		},
+		"plugins": ["expo-router"],
+		"experiments": {
+			"typedRoutes": true
+		}
+	}
+}
