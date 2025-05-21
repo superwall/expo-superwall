@@ -1,12 +1,10 @@
 import ExpoModulesCore
 import SuperwallKit
 
-
 public class SuperwallExpoModule: Module {
   // private lazy var delegateBridge = SuperwallDelegateBridge { [weak self] name, body in
   //   self?.sendEvent(name, body)
   // }
-
 
   private let onSuperwallDidTrack = "onSuperwallDidTrack"
   private let onPaywallWillOpen = "onPaywallWillOpen"
@@ -44,7 +42,23 @@ public class SuperwallExpoModule: Module {
     )
 
     Function("getApiKey") {
-     return Bundle.main.object(forInfoDictionaryKey: "SUPERWALL_API_KEY") as? String
+      return Bundle.main.object(forInfoDictionaryKey: "SUPERWALL_API_KEY") as? String
+    }
+
+    AsyncFunction("registerPlacement") {
+      (
+        placement: String,
+        params: [String: Any]?,
+        handlerId: String?
+      ) -> String in
+      sendEvent(
+        onWillPresentPaywall,
+        [
+          "placement": placement,
+          "params": params ?? [:],
+          "handlerId": handlerId ?? "",
+        ])
+      return placement
     }
   }
 }
