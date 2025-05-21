@@ -14,6 +14,10 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
     usingPurchaseController?: boolean,
     sdkVersion?: string,
   ): Promise<void>
+
+  // User Management
+  identify(userId: string, options?: Map<string, any> | Record<string, any>): void
+  reset(): void
 }
 
 export default requireNativeModule<SuperwallExpoModule>("SuperwallExpo")

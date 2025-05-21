@@ -43,6 +43,22 @@ public class SuperwallExpoModule: Module {
         as? String
     }
 
+    Function("identify") {
+      (userId: String, options: [String: Any]?) in
+      let options = IdentityOptions.fromJson(options)
+      Superwall.shared.identify(userId: userId, options: options)
+    }
+
+    Function("reset") {
+      Superwall.shared.reset()
+    }
+
+    // Function("setDelegate") {
+    //   (isUndefined: Bool) in 
+    //   self.delegate = isUndefined ? nil : SuperwallDelegateBridge()
+    //   Superwall.shared.delegate = self.delegate
+    // }
+
     AsyncFunction("configure") {
       (
         apiKey: String,
