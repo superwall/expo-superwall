@@ -43,10 +43,6 @@ public class SuperwallExpoModule: Module {
       onHandleLog
     )
 
-    Function("getTheme") { () -> String in
-      "system"
-    }
-
     Function("getApiKey") {
      return Bundle.main.object(forInfoDictionaryKey: "SUPERWALL_API_KEY") as? String
     }

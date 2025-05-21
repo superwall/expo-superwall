@@ -1,8 +1,8 @@
-import { NativeModule, requireNativeModule } from "expo";
+import { NativeModule, requireNativeModule } from "expo"
 
 declare class SuperwallExpoModule extends NativeModule {
-	getTheme(): string;
-	getApiKey(): string;
+  getApiKey(): string
+  registerPlacement(placement: string, params?: Map<string, any> | Record<string, any>): void
 }
 
-export default requireNativeModule<SuperwallExpoModule>("SuperwallExpo");
+export default requireNativeModule<SuperwallExpoModule>("SuperwallExpo")

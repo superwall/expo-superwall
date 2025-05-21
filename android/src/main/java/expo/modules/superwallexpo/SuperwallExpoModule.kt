@@ -7,10 +7,6 @@ class SuperwallExpoModule : Module() {
   override fun definition() = ModuleDefinition {
     Name("SuperwallExpo")
 
-    Function("getTheme") {
-      return@Function "system"
-    }
-
     Function("getApiKey") {
       val applicationInfo = appContext?.reactContext?.packageManager?.getApplicationInfo(appContext?.reactContext?.packageName.toString(), PackageManager.GET_META_DATA)
 
