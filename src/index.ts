@@ -12,6 +12,4 @@ export function registerPlacement(
   return SuperwallExpoModule.registerPlacement(placement, params, handlerId)
 }
 
-export function addPaywallListener(listener: (event: string) => void): any {
-  return SuperwallExpoModule.addListener("onWillPresentPaywall", listener)
-}
+export default SuperwallExpoModule

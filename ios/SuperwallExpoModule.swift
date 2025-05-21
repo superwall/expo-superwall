@@ -2,43 +2,20 @@ import ExpoModulesCore
 import SuperwallKit
 
 public class SuperwallExpoModule: Module {
-  // private lazy var delegateBridge = SuperwallDelegateBridge { [weak self] name, body in
-  //   self?.sendEvent(name, body)
-  // }
 
-  private let onSuperwallDidTrack = "onSuperwallDidTrack"
-  private let onPaywallWillOpen = "onPaywallWillOpen"
-  private let onPaywallDidOpen = "onPaywallDidOpen"
-  private let onPaywallWillClose = "onPaywallWillClose"
-  private let onPaywallDidClose = "onPaywallDidClose"
-  private let onPaywallWillFailToOpen = "onPaywallWillFailToOpen"
-  private let onPaywallDidFailToOpen = "onPaywallDidFailToOpen"
-  private let onHandleCustomPaywallAction = "onHandleCustomPaywallAction"
-  private let onWillPresentPaywall = "onWillPresentPaywall"
-  private let onDidPresentPaywall = "onDidPresentPaywall"
-  private let onWillDismissPaywall = "onWillDismissPaywall"
-  private let onDidDismissPaywall = "onDidDismissPaywall"
-  private let onHandleRestoration = "onHandleRestoration"
-  private let onHandleLog = "onHandleLog"
+  private let onPaywallPresent = "onPaywallPresent"
+  private let onPaywallDismiss = "onPaywallDismiss"
+  private let onPaywallError = "onPaywallError"
+  private let onPaywallSkip = "onPaywallSkip"
 
   public func definition() -> ModuleDefinition {
     Name("SuperwallExpo")
 
     Events(
-      onSuperwallDidTrack,
-      onPaywallWillOpen,
-      onPaywallDidOpen,
-      onPaywallWillClose,
-      onPaywallDidClose,
-      onPaywallWillFailToOpen,
-      onPaywallDidFailToOpen,
-      onHandleCustomPaywallAction,
-      onWillPresentPaywall,
-      onDidPresentPaywall,
-      onWillDismissPaywall,
-      onDidDismissPaywall,
-      onHandleRestoration,
-      onHandleLog
+      onPaywallPresent,
+      onPaywallDismiss,
+      onPaywallError,
+      onPaywallSkip
     )
 
     Function("getApiKey") {
@@ -49,16 +26,63 @@ public class SuperwallExpoModule: Module {
       (
         placement: String,
         params: [String: Any]?,
-        handlerId: String?
-      ) -> String in
-      sendEvent(
-        onWillPresentPaywall,
-        [
-          "placement": placement,
-          "params": params ?? [:],
-          "handlerId": handlerId ?? "",
-        ])
-      return placement
+        handlerId: String?,
+        promise: Promise
+      ) in
+      var handler: PaywallPresentationHandler?
+
+      if let handlerId = handlerId {
+        handler = PaywallPresentationHandler()
+
+        handler?.onPresent { [weak self] paywallInfo in
+          guard let self = self else { return }
+          let data =
+            [
+              "paywallInfoJson": paywallInfo.toJson(),
+              "handlerId": handlerId,
+            ] as [String: Any]
+          self.sendEvent(self.onPaywallPresent, data)
+        }
+
+        handler?.onDismiss { [weak self] paywallInfo, result in
+          guard let self = self else { return }
+          let data =
+            [
+              "paywallInfoJson": paywallInfo.toJson(),
+              "result": result.toJson(),
+              "handlerId": handlerId,
+            ] as [String: Any]
+          self.sendEvent(self.onPaywallDismiss, data)
+        }
+
+        handler?.onError { [weak self] error in
+          guard let self = self else { return }
+          let data =
+            [
+              "errorString": error.localizedDescription,
+              "handlerId": handlerId,
+            ] as [String: Any]
+          self.sendEvent(self.onPaywallError, data)
+        }
+
+        handler?.onSkip { [weak self] reason in
+          guard let self = self else { return }
+          let data =
+            [
+              "skippedReason": reason.toJson(),
+              "handlerId": handlerId,
+            ] as [String: Any]
+          self.sendEvent(self.onPaywallSkip, data)
+        }
+      }
+
+      Superwall.shared.register(
+        placement: placement,
+        params: params,
+        handler: handler
+      ) {
+        promise.resolve(nil)
+      }
     }
   }
 }

@@ -1,3 +1,6 @@
 export type SuperwallExpoModuleEvents = {
-  onWillPresentPaywall: (params: string) => void
+  onPaywallPresent: (params: string) => void
+  onPaywallDismiss: (params: string) => void
+  onPaywallError: (params: string) => void
+  onPaywallSkip: (params: string) => void
 }
