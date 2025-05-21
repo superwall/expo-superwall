@@ -8,6 +8,12 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
     params?: Map<string, any> | Record<string, any>,
     handlerId?: string,
   ): Promise<void>
+  configure(
+    apiKey: string,
+    options?: Map<string, any> | Record<string, any>,
+    usingPurchaseController?: boolean,
+    sdkVersion?: string,
+  ): Promise<void>
 }
 
 export default requireNativeModule<SuperwallExpoModule>("SuperwallExpo")

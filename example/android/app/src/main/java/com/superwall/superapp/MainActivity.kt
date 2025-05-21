@@ -1,4 +1,4 @@
-package com.anonymous.example2
+package com.superwall.superapp
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

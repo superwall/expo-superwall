@@ -1,4 +1,4 @@
-package com.anonymous.example2
+package com.superwall.superapp
 
 import android.app.Application
 import android.content.res.Configuration

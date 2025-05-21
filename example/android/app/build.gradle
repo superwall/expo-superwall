@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.anonymous.example2'
+    namespace 'com.superwall.superapp'
     defaultConfig {
-        applicationId 'com.anonymous.example2'
+        applicationId 'com.superwall.superapp'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

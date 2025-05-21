@@ -2,11 +2,29 @@ import ExpoModulesCore
 import SuperwallKit
 
 public class SuperwallExpoModule: Module {
+  public static var shared: SuperwallExpoModule?
 
+  private let purchaseController = PurchaseControllerBridge.shared
+
+  // Paywall Events
   private let onPaywallPresent = "onPaywallPresent"
   private let onPaywallDismiss = "onPaywallDismiss"
   private let onPaywallError = "onPaywallError"
   private let onPaywallSkip = "onPaywallSkip"
+
+  // Purchase Events
+  private let onPurchase = "onPurchase"
+  private let onPurchaseRestore = "onPurchaseRestore"
+
+  // Corrected initializer
+  public required init(appContext: AppContext) {
+    super.init(appContext: appContext)
+    SuperwallExpoModule.shared = self
+  }
+
+  public static func emitEvent(_ name: String, _ data: [String: Any]?) {
+    SuperwallExpoModule.shared?.sendEvent(name, data ?? [:])
+  }
 
   public func definition() -> ModuleDefinition {
     Name("SuperwallExpo")
@@ -15,11 +33,40 @@ public class SuperwallExpoModule: Module {
       onPaywallPresent,
       onPaywallDismiss,
       onPaywallError,
-      onPaywallSkip
+      onPaywallSkip,
+      onPurchase,  
+      onPurchaseRestore 
     )
 
     Function("getApiKey") {
-      return Bundle.main.object(forInfoDictionaryKey: "SUPERWALL_API_KEY") as? String
+      return Bundle.main.object(forInfoDictionaryKey: "SUPERWALL_API_KEY")
+        as? String
+    }
+
+    AsyncFunction("configure") {
+      (
+        apiKey: String,
+        options: [String: Any]?,
+        usingPurchaseController: Bool,
+        sdkVersion: String,
+        promise: Promise
+      ) in
+
+      var superwallOptions: SuperwallOptions?
+
+      if let options = options {
+        superwallOptions = SuperwallOptions.fromJson(options)
+      }
+
+      Superwall.configure(
+        apiKey: apiKey,
+        purchaseController: usingPurchaseController ? purchaseController : nil,
+        options: superwallOptions
+      ) {
+        promise.resolve(nil)
+      }
+
+      Superwall.shared.setPlatformWrapper("React Native", version: sdkVersion)
     }
 
     AsyncFunction("registerPlacement") {

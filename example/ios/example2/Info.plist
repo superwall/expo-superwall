@@ -28,7 +28,7 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>example2</string>
-          <string>com.anonymous.example2</string>
+          <string>com.superwall.Advanced</string>
         </array>
       </dict>
     </array>
