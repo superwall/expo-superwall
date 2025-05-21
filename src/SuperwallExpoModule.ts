@@ -1,9 +1,8 @@
 import { NativeModule, requireNativeModule } from "expo";
 
 declare class SuperwallExpoModule extends NativeModule {
-	PI: number;
-	hello(): string;
-	setValueAsync(value: string): Promise<void>;
+	getTheme(): string;
+	getApiKey(): string;
 }
 
 export default requireNativeModule<SuperwallExpoModule>("SuperwallExpo");

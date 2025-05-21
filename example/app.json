@@ -18,7 +18,10 @@
 			"edgeToEdgeEnabled": true,
 			"package": "com.anonymous.example2"
 		},
-		"plugins": ["expo-router"],
+		"plugins": [
+			"expo-router",
+			["../app.plugin.js", { "apiKey": "custom_secret_api" }]
+		],
 		"experiments": {
 			"typedRoutes": true
 		}
