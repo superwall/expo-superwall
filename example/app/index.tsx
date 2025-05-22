@@ -29,7 +29,7 @@ export default function App() {
       <Button
         title="Register"
         onPress={async () => {
-          const test = await Superwall.registerPlacement("test")
+          const test = await Superwall.registerPlacement("fishing")
           console.log(test)
         }}
       />
