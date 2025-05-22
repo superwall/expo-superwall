@@ -426,14 +426,18 @@ export default class Superwall {
     }
 
     if (params.feature) {
-      return await SuperwallExpoModule.register(params.placement, paramsObject, handlerId).then(
-        () => {
-          params.feature!()
-        },
-      )
+      return await SuperwallExpoModule.registerPlacement(
+        params.placement,
+        paramsObject,
+        handlerId,
+      ).then(() => {
+        params.feature!()
+      })
     }
 
-    return SuperwallExpoModule.register(params.placement, paramsObject, handlerId)
+    console.log("Registering placement:", params.placement, paramsObject, handlerId)
+
+    return SuperwallExpoModule.registerPlacement(params.placement, paramsObject, handlerId)
   }
 
   /**

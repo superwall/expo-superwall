@@ -8,7 +8,7 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
   registerPlacement(
     placement: string,
     params?: Map<string, any> | Record<string, any>,
-    handlerId?: string,
+    handlerId?: string | null,
   ): Promise<void>
 
   configure(

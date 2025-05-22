@@ -3,6 +3,8 @@ import { Button, Linking, Platform, Text, View } from "react-native"
 import Superwall from "superwall-expo/compat"
 import { MySuperwallDelegate } from "../lib/compat/SuperwallDelegate"
 
+import { Link } from "expo-router"
+
 const delegate = new MySuperwallDelegate()
 
 export default function Compat() {
@@ -39,11 +41,19 @@ export default function Compat() {
 
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+      <Link href="/">Home</Link>
       <Text>Superwall Expo Compat</Text>
 
       <Button
         title="Open Paywall"
-        onPress={() => Superwall.shared.register({ placement: "fishing" })}
+        onPress={() =>
+          Superwall.shared.register({
+            placement: "fishing",
+            feature() {
+              console.log("Feature called")
+            },
+          })
+        }
       />
     </View>
   )
