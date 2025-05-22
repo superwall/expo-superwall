@@ -1,9 +1,20 @@
 {
   "name": "superwall-expo",
-  "version": "0.1.0",
+  "version": "0.0.1",
   "description": "Offical Expo Integration for Superwall",
   "main": "build/index.js",
   "types": "build/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./build/index.js",
+      "types": "./build/index.d.ts"
+    },
+    "./compat": {
+      "import": "./build/compat/index.js",
+      "require": "./build/compat/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
   "scripts": {
     "build": "expo-module build",
     "clean": "expo-module clean",
@@ -15,12 +26,7 @@
     "open:ios": "xed example/ios",
     "open:android": "open -a \"Android Studio\" example/android"
   },
-  "keywords": [
-    "react-native",
-    "expo",
-    "superwall-expo",
-    "SuperwallExpo"
-  ],
+  "keywords": ["react-native", "expo", "superwall-expo", "SuperwallExpo"],
   "repository": "https://github.com/superwall/superwall-expo",
   "bugs": {
     "url": "https://github.com/superwall/superwall-expo/issues"

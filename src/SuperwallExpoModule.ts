@@ -20,7 +20,7 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
 
   getConfigurationStatus(): Promise<string>
 
-  identify(userId: string, options?: Map<string, any> | Record<string, any>): void
+  identify(userId: string, options?: Map<string, any> | Record<string, any> | null): void
   reset(): void
 
   getAssignments(): Promise<any[]>
