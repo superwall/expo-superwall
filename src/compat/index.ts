@@ -1,4 +1,3 @@
-import { NativeEventEmitter } from "react-native"
 import { Assignment } from "./lib/Assigments"
 import { ConfigurationStatus } from "./lib/ConfigurationStatus"
 import { EntitlementsInfo } from "./lib/EntitlementsInfo"
@@ -44,7 +43,6 @@ export {
 export { RestorationResult } from "./lib/RestorationResult"
 export { InterfaceStyle } from "./lib/InterfaceStyle"
 export { ConfigurationStatus } from "./lib/ConfigurationStatus"
-//export { Superwall } from './Superwall';
 export { SuperwallDelegate } from "./lib/SuperwallDelegate"
 export { SuperwallEventInfo, EventType } from "./lib/SuperwallEventInfo"
 export { SuperwallOptions } from "./lib/SuperwallOptions"
@@ -64,6 +62,8 @@ export {
   PaywallSkippedReasonUserIsSubscribed,
 } from "./lib/PaywallSkippedReason"
 export { RestoreType } from "./lib/RestoreType"
+export { EntitlementsInfo } from "./lib/EntitlementsInfo"
+export * from "./lib/RedemptionResults"
 
 interface UserAttributes {
   [key: string]: any
@@ -74,7 +74,6 @@ export default class Superwall {
   private static delegate?: SuperwallDelegate
   private static _superwall = new Superwall()
 
-  private eventEmitter = new NativeEventEmitter(SuperwallReactNative)
   private static configEmitter = new EventEmitter<{
     configured: (isConfigured: boolean) => void
   }>()
@@ -105,29 +104,32 @@ export default class Superwall {
   }
 
   private constructor() {
-    this.eventEmitter.addListener("purchaseFromAppStore", async (data) => {
-      const purchaseResult = await Superwall.purchaseController?.purchaseFromAppStore(
-        data.productId,
-      )
-      if (purchaseResult == null) {
+    SuperwallExpoModule.addListener("onPurchase", async (data) => {
+      if (data.platform === "ios") {
+        const purchaseResult = await Superwall.purchaseController?.purchaseFromAppStore(
+          data.productId,
+        )
+        if (purchaseResult == null) {
+          return
+        }
+        await SuperwallExpoModule.didPurchase(purchaseResult.toJSON())
         return
       }
-      await SuperwallExpoModule.didPurchase(purchaseResult.toJSON())
-    })
 
-    this.eventEmitter.addListener("purchaseFromGooglePlay", async (productData) => {
-      const purchaseResult = await Superwall.purchaseController?.purchaseFromGooglePlay(
-        productData.productId,
-        productData.basePlanId,
-        productData.offerId,
-      )
-      if (purchaseResult == null) {
-        return
+      if (data.platform === "android") {
+        const purchaseResult = await Superwall.purchaseController?.purchaseFromGooglePlay(
+          data.productId,
+          data.basePlanId,
+          data.offerId,
+        )
+        if (purchaseResult == null) {
+          return
+        }
+        await SuperwallExpoModule.didPurchase(purchaseResult.toJSON())
       }
-      await SuperwallExpoModule.didPurchase(purchaseResult.toJSON())
     })
 
-    this.eventEmitter.addListener("restore", async () => {
+    SuperwallExpoModule.addListener("onPurchaseRestore", async () => {
       const restorationResult = await Superwall.purchaseController?.restorePurchases()
       if (restorationResult == null) {
         return
@@ -135,7 +137,7 @@ export default class Superwall {
       await SuperwallExpoModule.didRestore(restorationResult.toJson())
     })
 
-    this.eventEmitter.addListener("paywallPresentationHandler", (data) => {
+    SuperwallExpoModule.addListener("onPaywallPresent", (data) => {
       const handler = this.presentationHandlers.get(data.handlerId)
       if (!handler) {
         return
@@ -169,73 +171,74 @@ export default class Superwall {
     })
 
     // MARK: - SuperwallDelegate Listeners
-    this.eventEmitter.addListener("subscriptionStatusDidChange", async (data) => {
+    SuperwallExpoModule.addListener("subscriptionStatusDidChange", async (data) => {
       const from = SubscriptionStatus.fromString(data.from, data.entitlements)
       const to = SubscriptionStatus.fromString(data.to, data.entitlements)
       Superwall.delegate?.subscriptionStatusDidChange(from, to)
     })
 
-    this.eventEmitter.addListener("handleSuperwallEvent", async (data) => {
+    SuperwallExpoModule.addListener("handleSuperwallEvent", async (data) => {
       const eventInfo = SuperwallEventInfo.fromJson(data.eventInfo)
       Superwall.delegate?.handleSuperwallEvent(eventInfo)
     })
 
-    this.eventEmitter.addListener("handleCustomPaywallAction", async (data) => {
+    SuperwallExpoModule.addListener("handleCustomPaywallAction", async (data) => {
       const name = data.name
       Superwall.delegate?.handleCustomPaywallAction(name)
     })
 
-    this.eventEmitter.addListener("willDismissPaywall", async (data) => {
+    SuperwallExpoModule.addListener("willDismissPaywall", async (data) => {
       const info = PaywallInfo.fromJson(data.info)
       Superwall.delegate?.willDismissPaywall(info)
     })
 
-    this.eventEmitter.addListener("willPresentPaywall", async (data) => {
+    SuperwallExpoModule.addListener("willPresentPaywall", async (data) => {
       const info = PaywallInfo.fromJson(data.info)
       Superwall.delegate?.willPresentPaywall(info)
     })
 
-    this.eventEmitter.addListener("didDismissPaywall", async (data) => {
+    SuperwallExpoModule.addListener("didDismissPaywall", async (data) => {
       const info = PaywallInfo.fromJson(data.info)
       Superwall.delegate?.didDismissPaywall(info)
     })
 
-    this.eventEmitter.addListener("didPresentPaywall", async (data) => {
+    SuperwallExpoModule.addListener("didPresentPaywall", async (data) => {
       const info = PaywallInfo.fromJson(data.info)
       Superwall.delegate?.didPresentPaywall(info)
     })
 
-    this.eventEmitter.addListener("handleLog", async (data) => {
+    SuperwallExpoModule.addListener("handleLog", async (data) => {
       Superwall.delegate?.handleLog(data.level, data.scope, data.message, data.info, data.error)
     })
 
-    this.eventEmitter.addListener("paywallWillOpenDeepLink", async (data) => {
+    SuperwallExpoModule.addListener("paywallWillOpenDeepLink", async (data) => {
       const url = new URL(data.url)
       Superwall.delegate?.paywallWillOpenDeepLink(url)
     })
 
-    this.eventEmitter.addListener("paywallWillOpenURL", async (data) => {
+    SuperwallExpoModule.addListener("paywallWillOpenURL", async (data) => {
       const url = new URL(data.url)
       Superwall.delegate?.paywallWillOpenURL(url)
     })
 
-    this.eventEmitter.addListener("willRedeemLink", async () => {
+    SuperwallExpoModule.addListener("willRedeemLink", async () => {
       Superwall.delegate?.willRedeemLink()
     })
 
-    this.eventEmitter.addListener("didRedeemLink", async (data) => {
+    SuperwallExpoModule.addListener("didRedeemLink", async (data) => {
       const result = RedemptionResults.fromJson(data)
       Superwall.delegate?.didRedeemLink(result)
     })
   }
 
-  private async observeSubscriptionStatus() {
-    await SuperwallReactNative.observeSubscriptionStatus()
-    this.eventEmitter.addListener("observeSubscriptionStatus", async (data) => {
-      const status = SubscriptionStatus.fromJson(data)
-      this.subscriptionStatusEmitter.emit("change", status)
-    })
-  }
+  // TODO: Not sure if this is needed
+  //   private async observeSubscriptionStatus() {
+  //     await SuperwallReactNative.observeSubscriptionStatus()
+  //     SuperwallExpoModule.addListener("observeSubscriptionStatus", async (data) => {
+  //       const status = SubscriptionStatus.fromJson(data)
+  //       this.subscriptionStatusEmitter.emit("change", status)
+  //     })
+  //   }
   /**
    * Returns the configured shared instance of `Superwall`.
    *
@@ -287,7 +290,8 @@ export default class Superwall {
       `${version}compat`,
     ).then(() => {
       if (completion) completion()
-      Superwall.shared.observeSubscriptionStatus()
+      // TODO: Not sure if this is needed
+      //   Superwall.shared.observeSubscriptionStatus()
     })
 
     Superwall.setDidConfigure(true)

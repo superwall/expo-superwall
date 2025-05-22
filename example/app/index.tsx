@@ -2,6 +2,8 @@ import { useEffect } from "react"
 import { Button, Text, View } from "react-native"
 import * as Superwall from "superwall-expo"
 
+import { Link } from "expo-router"
+
 export default function App() {
   useEffect(() => {}, [])
 
@@ -33,6 +35,7 @@ export default function App() {
           console.log(test)
         }}
       />
+      <Link href="/compat">Compat</Link>
     </View>
   )
 }

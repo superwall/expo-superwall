@@ -5,6 +5,7 @@ public class SuperwallExpoModule: Module {
   public static var shared: SuperwallExpoModule?
 
   private let purchaseController = PurchaseControllerBridge.shared
+  private var delegate: SuperwallDelegateBridge?
 
   // Paywall Events
   private let onPaywallPresent = "onPaywallPresent"
@@ -202,6 +203,11 @@ public class SuperwallExpoModule: Module {
       }
 
       Superwall.shared.subscriptionStatus = subscriptionStatus
+    }
+
+    Function("setDelegate") { (isUndefined: Bool) in
+      self.delegate = isUndefined ? nil : SuperwallDelegateBridge()
+      Superwall.shared.delegate = self.delegate
     }
 
     Function("setInterfaceStyle") { (style: String?) in

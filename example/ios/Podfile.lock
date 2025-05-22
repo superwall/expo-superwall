@@ -2067,7 +2067,7 @@ PODS:
     - SDWebImage/Core (~> 5.17)
   - SocketRocket (0.7.1)
   - Superscript (0.2.4)
-  - SuperwallExpo (0.1.0):
+  - SuperwallExpo (0.0.1):
     - ExpoModulesCore
     - SuperwallKit (= 4.4.0)
   - SuperwallKit (4.4.0):
@@ -2470,7 +2470,7 @@ SPEC CHECKSUMS:
   SDWebImageWebPCoder: e38c0a70396191361d60c092933e22c20d5b1380
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Superscript: ede1cf73124c02ba1e120fbe5e15d3c4b12020a0
-  SuperwallExpo: 9dcc4311d0a805747dfad4f97c626f1564c4bead
+  SuperwallExpo: 3d19d1ed2be48a1cf21dd73ed32d44b2ed097d3c
   SuperwallKit: 62249b6918e5442624d641acda0af574f2a7dbee
   Yoga: c758bfb934100bb4bf9cbaccb52557cee35e8bdf
 

@@ -12,7 +12,7 @@ final class PurchaseControllerBridge: PurchaseController {
     func purchase(product: StoreProduct) async -> PurchaseResult {
         SuperwallExpoModule.emitEvent(
             "onPurchase",
-            ["productId": product.productIdentifier]
+            ["productId": product.productIdentifier, "platform": "ios"]
         )
         return await withCheckedContinuation { continuation in
             self.purchaseCompletion = { [weak self] result in
