@@ -8,12 +8,15 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
     params?: Map<string, any> | Record<string, any>,
     handlerId?: string,
   ): Promise<void>
+
   configure(
     apiKey: string,
     options?: Map<string, any> | Record<string, any>,
     usingPurchaseController?: boolean,
     sdkVersion?: string,
   ): Promise<void>
+
+  getConfigurationStatus(): Promise<string>
 
   // User Management
   identify(userId: string, options?: Map<string, any> | Record<string, any>): void

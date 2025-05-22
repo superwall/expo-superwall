@@ -21,4 +21,8 @@ export const configure = (
   return SuperwallExpoModule.configure(apiKey, options, usingPurchaseController, sdkVersion)
 }
 
+export const getConfigurationStatus = (): Promise<string> => {
+  return SuperwallExpoModule.getConfigurationStatus()
+}
+
 export default SuperwallExpoModule

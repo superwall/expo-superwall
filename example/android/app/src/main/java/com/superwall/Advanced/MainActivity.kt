@@ -1,4 +1,4 @@
-package com.superwall.superapp
+package com.superwall.Advanced
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

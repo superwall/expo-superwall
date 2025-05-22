@@ -34,8 +34,8 @@ public class SuperwallExpoModule: Module {
       onPaywallDismiss,
       onPaywallError,
       onPaywallSkip,
-      onPurchase,  
-      onPurchaseRestore 
+      onPurchase,
+      onPurchaseRestore
     )
 
     Function("getApiKey") {
@@ -54,7 +54,7 @@ public class SuperwallExpoModule: Module {
     }
 
     // Function("setDelegate") {
-    //   (isUndefined: Bool) in 
+    //   (isUndefined: Bool) in
     //   self.delegate = isUndefined ? nil : SuperwallDelegateBridge()
     //   Superwall.shared.delegate = self.delegate
     // }
@@ -74,6 +74,9 @@ public class SuperwallExpoModule: Module {
         superwallOptions = SuperwallOptions.fromJson(options)
       }
 
+      print("SuperwallExpoModule.configure()")
+      print("apiKey: \(apiKey)")
+
       Superwall.configure(
         apiKey: apiKey,
         purchaseController: usingPurchaseController ? purchaseController : nil,
@@ -83,6 +86,15 @@ public class SuperwallExpoModule: Module {
       }
 
       Superwall.shared.setPlatformWrapper("React Native", version: sdkVersion)
+    }
+
+    AsyncFunction("getConfigurationStatus") { (promise: Promise) in
+      do {
+        let configurationStatus = try Superwall.shared.configurationStatus.toString()
+        promise.resolve(configurationStatus)
+      } catch {
+        promise.reject(error)
+      }
     }
 
     AsyncFunction("registerPlacement") {
@@ -146,6 +158,63 @@ public class SuperwallExpoModule: Module {
       ) {
         promise.resolve(nil)
       }
+    }
+
+    AsyncFunction("getAssignments") {
+      (promise: Promise) in
+      do {
+        let assignments = try Superwall.shared.getAssignments()
+        promise.resolve(assignments.map { $0.toJson() })
+      } catch {
+        promise.reject(error)
+      }
+    }
+
+    AsyncFunction("getEntitlements") {
+      (promise: Promise) in
+      do {
+        let entitlements = try Superwall.shared.entitlements.toJson()
+        promise.resolve(entitlements)
+      } catch {
+        promise.reject(error)
+      }
+    }
+
+    AsyncFunction("getSubscriptionStatus") {
+      (promise: Promise) in
+      let subscriptionStatus = Superwall.shared.subscriptionStatus
+      promise.resolve(subscriptionStatus)
+    }
+
+    Function("setSubscriptionStatus") {
+      (status: [String: Any]) in
+      let statusString = (status["status"] as? String)?.uppercased() ?? "UNKNOWN"
+      let subscriptionStatus: SubscriptionStatus
+
+      switch statusString {
+      case "UNKNOWN":
+        subscriptionStatus = .unknown
+      case "INACTIVE":
+        subscriptionStatus = .inactive
+      case "ACTIVE":
+        if let entitlementsArray = status["entitlements"] as? [[String: Any]] {
+          let entitlementsSet: Set<Entitlement> = Set(
+            entitlementsArray.compactMap { item in
+              if let id = item["id"] as? String {
+                return Entitlement(id: id)
+              }
+              return nil
+            }
+          )
+          subscriptionStatus = .active(entitlementsSet)
+        } else {
+          subscriptionStatus = .inactive
+        }
+      default:
+        subscriptionStatus = .unknown
+      }
+
+      Superwall.shared.subscriptionStatus = subscriptionStatus
     }
   }
 }

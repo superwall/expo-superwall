@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "example2",
-    "slug": "example2",
+    "name": "Superwall Expo Example",
+    "slug": "superwall-expo-example",
     "version": "1.0.0",
     "orientation": "portrait",
-    "scheme": "example2",
+    "scheme": "superwall-expo-example",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {

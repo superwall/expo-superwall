@@ -18,6 +18,14 @@ export default function App() {
           console.log("Superwall configured")
         }}
       />
+
+      <Button
+        title="Get Configuration Status"
+        onPress={async () => {
+          console.log(await Superwall.getConfigurationStatus())
+        }}
+      />
+
       <Button
         title="Register"
         onPress={async () => {
