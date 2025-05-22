@@ -16,7 +16,6 @@ public class SuperwallExpoModule: Module {
   private let onPurchase = "onPurchase"
   private let onPurchaseRestore = "onPurchaseRestore"
 
-  // Corrected initializer
   public required init(appContext: AppContext) {
     super.init(appContext: appContext)
     SuperwallExpoModule.shared = self
@@ -39,12 +38,10 @@ public class SuperwallExpoModule: Module {
     )
 
     Function("getApiKey") {
-      return Bundle.main.object(forInfoDictionaryKey: "SUPERWALL_API_KEY")
-        as? String
+      return Bundle.main.object(forInfoDictionaryKey: "SUPERWALL_API_KEY") as? String
     }
 
-    Function("identify") {
-      (userId: String, options: [String: Any]?) in
+    Function("identify") { (userId: String, options: [String: Any]?) in
       let options = IdentityOptions.fromJson(options)
       Superwall.shared.identify(userId: userId, options: options)
     }
@@ -52,12 +49,6 @@ public class SuperwallExpoModule: Module {
     Function("reset") {
       Superwall.shared.reset()
     }
-
-    // Function("setDelegate") {
-    //   (isUndefined: Bool) in
-    //   self.delegate = isUndefined ? nil : SuperwallDelegateBridge()
-    //   Superwall.shared.delegate = self.delegate
-    // }
 
     AsyncFunction("configure") {
       (
@@ -73,9 +64,6 @@ public class SuperwallExpoModule: Module {
       if let options = options {
         superwallOptions = SuperwallOptions.fromJson(options)
       }
-
-      print("SuperwallExpoModule.configure()")
-      print("apiKey: \(apiKey)")
 
       Superwall.configure(
         apiKey: apiKey,
@@ -160,8 +148,7 @@ public class SuperwallExpoModule: Module {
       }
     }
 
-    AsyncFunction("getAssignments") {
-      (promise: Promise) in
+    AsyncFunction("getAssignments") { (promise: Promise) in
       do {
         let assignments = try Superwall.shared.getAssignments()
         promise.resolve(assignments.map { $0.toJson() })
@@ -170,8 +157,7 @@ public class SuperwallExpoModule: Module {
       }
     }
 
-    AsyncFunction("getEntitlements") {
-      (promise: Promise) in
+    AsyncFunction("getEntitlements") { (promise: Promise) in
       do {
         let entitlements = try Superwall.shared.entitlements.toJson()
         promise.resolve(entitlements)
@@ -180,14 +166,12 @@ public class SuperwallExpoModule: Module {
       }
     }
 
-    AsyncFunction("getSubscriptionStatus") {
-      (promise: Promise) in
+    AsyncFunction("getSubscriptionStatus") { (promise: Promise) in
       let subscriptionStatus = Superwall.shared.subscriptionStatus
       promise.resolve(subscriptionStatus)
     }
 
-    Function("setSubscriptionStatus") {
-      (status: [String: Any]) in
+    Function("setSubscriptionStatus") { (status: [String: Any]) in
       let statusString = (status["status"] as? String)?.uppercased() ?? "UNKNOWN"
       let subscriptionStatus: SubscriptionStatus
 
@@ -215,6 +199,80 @@ public class SuperwallExpoModule: Module {
       }
 
       Superwall.shared.subscriptionStatus = subscriptionStatus
+    }
+
+    Function("setInterfaceStyle") { (style: String?) in
+      var interfaceStyle: InterfaceStyle?
+      if let style = style {
+        interfaceStyle = InterfaceStyle.fromString(style: style)
+      }
+      Superwall.shared.setInterfaceStyle(to: interfaceStyle)
+    }
+
+    AsyncFunction("getUserAttributes") { (promise: Promise) in
+      let attributes = Superwall.shared.userAttributes
+      promise.resolve(attributes)
+    }
+
+    Function("setUserAttributes") { (userAttributes: [String: Any]) in
+      Superwall.shared.setUserAttributes(userAttributes)
+    }
+
+    AsyncFunction("handleDeepLink") { (url: String, promise: Promise) in
+      guard let url = URL(string: url) else {
+        promise.resolve(false)
+        return
+      }
+      let result = Superwall.shared.handleDeepLink(url)
+      promise.resolve(result)
+    }
+
+    Function("didPurchase") { (result: [String: Any]) in
+      guard let purchaseResult = PurchaseResult.fromJson(result) else {
+        return
+      }
+      purchaseController.purchaseCompletion?(purchaseResult)
+    }
+
+    Function("didRestore") { (result: [String: Any]) in
+      guard let restorationResult = RestorationResult.fromJson(result) else {
+        return
+      }
+      purchaseController.restoreCompletion?(restorationResult)
+    }
+
+    AsyncFunction("dismiss") { (promise: Promise) in
+      Superwall.shared.dismiss {
+        promise.resolve(nil)
+      }
+    }
+
+    AsyncFunction("confirmAllAssignments") { (promise: Promise) in
+      Superwall.shared.confirmAllAssignments { assignments in
+        promise.resolve(assignments.map { $0.toJson() })
+      }
+    }
+
+    AsyncFunction("getPresentationResult") {
+      (placement: String, params: [String: Any]?, promise: Promise) in
+      Superwall.shared.getPresentationResult(forPlacement: placement, params: params) { result in
+        promise.resolve(result.toJson())
+      }
+    }
+
+    Function("preloadPaywalls") { (placementNames: [String]) in
+      Superwall.shared.preloadPaywalls(forPlacements: Set(placementNames))
+    }
+
+    Function("preloadAllPaywalls") {
+      Superwall.shared.preloadAllPaywalls()
+    }
+
+    Function("setLogLevel") { (level: String) in
+      let logLevel = LogLevel.fromJson(level)
+      if let logLevel = logLevel {
+        Superwall.shared.logLevel = logLevel
+      }
     }
   }
 }
