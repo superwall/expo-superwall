@@ -1,4 +1,4 @@
 <resources>
-  <string name="app_name">example2</string>
+  <string name="app_name">Superwall Expo Example</string>
   <string name="expo_system_ui_user_interface_style" translatable="false">automatic</string>
 </resources>

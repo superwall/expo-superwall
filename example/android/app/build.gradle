@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.superwall.Advanced'
+    namespace 'com.superwall.superapp'
     defaultConfig {
-        applicationId 'com.superwall.Advanced'
+        applicationId 'com.superwall.superapp'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

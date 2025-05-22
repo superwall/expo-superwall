@@ -1,4 +1,4 @@
-package com.superwall.Advanced
+package com.superwall.superapp
 
 import android.app.Application
 import android.content.res.Configuration
