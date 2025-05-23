@@ -26,12 +26,7 @@
     "open:ios": "xed example/ios",
     "open:android": "open -a \"Android Studio\" example/android"
   },
-  "keywords": [
-    "react-native",
-    "expo",
-    "superwall-expo",
-    "SuperwallExpo"
-  ],
+  "keywords": ["react-native", "expo", "superwall-expo", "SuperwallExpo"],
   "repository": "https://github.com/superwall/superwall-expo",
   "bugs": {
     "url": "https://github.com/superwall/superwall-expo/issues"
@@ -49,5 +44,6 @@
     "expo": "*",
     "react": "*",
     "react-native": "*"
-  }
+  },
+  "packageManager": "yarn@4.7.0"
 }
