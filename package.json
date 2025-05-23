@@ -52,7 +52,7 @@
     "CHANGELOG.md",
     "ios",
     "android",
-    "expo-module.config.js",
+    "expo-module.config.json",
     "plugin",
     "app.plugin.js"
   ],
