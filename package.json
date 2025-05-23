@@ -7,11 +7,11 @@
   "exports": {
     ".": {
       "import": "./build/src/index.js",
-      "types": "./build/stc/index.d.ts"
+      "types": "./build/src/index.d.ts"
     },
     "./compat": {
       "import": "./build/src/compat/index.js",
-      "types": "./build/compat/index.d.ts"
+      "types": "./build/src/compat/index.d.ts"
     },
     "./package.json": "./build/package.json"
   },
