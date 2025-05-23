@@ -6,12 +6,12 @@
   "types": "build/index.d.ts",
   "exports": {
     ".": {
-      "import": "./build/index.js",
-      "types": "./build/index.d.ts"
+      "import": "./build/src/index.js",
+      "types": "./build/stc/index.d.ts"
     },
     "./compat": {
-      "import": "./build/compat/index.js",
-      "require": "./build/compat/index.cjs"
+      "import": "./build/src/compat/index.js",
+      "types": "./build/compat/index.d.ts"
     },
     "./package.json": "./build/package.json"
   },
