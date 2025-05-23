@@ -1,0 +1,37 @@
+name: Base CI
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build
+        run: yarn build
+
+      - run: yarn dlx pkg-pr-new publish
+  bundle-analysis:
+    name: 📈 Bundle Size Comparison
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          
+      - name: Install dependencies
+        run: yarn install

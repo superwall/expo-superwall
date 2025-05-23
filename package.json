@@ -45,5 +45,16 @@
     "react": "*",
     "react-native": "*"
   },
+  "files": [
+    "build",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "ios",
+    "android",
+    "expo-module.config.js",
+    "plugin",
+    "app.plugin.js"
+  ],
   "packageManager": "yarn@4.7.0"
 }
