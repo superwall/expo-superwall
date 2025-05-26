@@ -139,42 +139,60 @@ export default class Superwall {
 
     SuperwallExpoModule.addListener("onPaywallPresent", (data) => {
       const handler = this.presentationHandlers.get(data.handlerId)
-      if (!handler) {
+      if (!handler || !handler.onPresentHandler) {
         return
       }
-      switch (data.method) {
-        case "onPresent":
-          if (handler.onPresentHandler) {
-            const paywallInfo = PaywallInfo.fromJson(data.paywallInfoJson)
-            handler.onPresentHandler(paywallInfo)
-          }
-          break
-        case "onDismiss":
-          if (handler.onDismissHandler) {
-            const paywallInfo = PaywallInfo.fromJson(data.paywallInfoJson)
-            const result = paywallResultFromJson(data.result)
-            handler.onDismissHandler(paywallInfo, result)
-          }
-          break
-        case "onError":
-          if (handler.onErrorHandler) {
-            handler.onErrorHandler(data.errorString)
-          }
-          break
-        case "onSkip":
-          if (handler.onSkipHandler) {
-            const skippedReason = PaywallSkippedReason.fromJson(data.skippedReason)
-            handler.onSkipHandler(skippedReason)
-          }
-          break
+
+      const paywallInfo = PaywallInfo.fromJson(data.paywallInfoJson)
+      handler.onPresentHandler(paywallInfo)
+    })
+    SuperwallExpoModule.addListener("onPaywallDismiss", (data) => {
+      const handler = this.presentationHandlers.get(data.handlerId)
+
+      if (!handler || !handler.onDismissHandler) {
+        return
       }
+
+      const info = PaywallInfo.fromJson(data.paywallInfoJson)
+      const result = paywallResultFromJson(data.result)
+      handler.onDismissHandler(info, result)
+    })
+
+    SuperwallExpoModule.addListener("onPaywallError", (data) => {
+      const handler = this.presentationHandlers.get(data.handlerId)
+
+      if (!handler || !handler.onErrorHandler) {
+        return
+      }
+
+      handler.onErrorHandler(data.errorString)
+    })
+
+    SuperwallExpoModule.addListener("onPaywallSkip", (data) => {
+      const handler = this.presentationHandlers.get(data.handlerId)
+
+      if (!handler || !handler.onSkipHandler) {
+        return
+      }
+
+      const skippedReason = PaywallSkippedReason.fromJson(data.skippedReason)
+      handler.onSkipHandler(skippedReason)
+    })
+
+    SuperwallExpoModule.addListener("onPaywallPresent", (data) => {
+      const handler = this.presentationHandlers.get(data.handlerId)
+
+      if (!handler || !handler.onPresentHandler) {
+        return
+      }
+
+      const info = PaywallInfo.fromJson(data.paywallInfoJson)
+      handler.onPresentHandler(info)
     })
 
     // MARK: - SuperwallDelegate Listeners
     SuperwallExpoModule.addListener("subscriptionStatusDidChange", async (data) => {
-      const from = SubscriptionStatus.fromString(data.from, data.entitlements)
-      const to = SubscriptionStatus.fromString(data.to, data.entitlements)
-      Superwall.delegate?.subscriptionStatusDidChange(from, to)
+      Superwall.delegate?.subscriptionStatusDidChange(data.from, data.to)
     })
 
     SuperwallExpoModule.addListener("handleSuperwallEvent", async (data) => {
@@ -208,7 +226,13 @@ export default class Superwall {
     })
 
     SuperwallExpoModule.addListener("handleLog", async (data) => {
-      Superwall.delegate?.handleLog(data.level, data.scope, data.message, data.info, data.error)
+      Superwall.delegate?.handleLog(
+        data.level,
+        data.scope,
+        data.message || undefined,
+        data.info,
+        data.error,
+      )
     })
 
     SuperwallExpoModule.addListener("paywallWillOpenDeepLink", async (data) => {

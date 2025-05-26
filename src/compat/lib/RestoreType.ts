@@ -1,37 +1,35 @@
-import { StoreTransaction } from "./StoreTransaction";
+import { StoreTransaction } from "./StoreTransaction"
 
 // Enum for RestoreType cases
 export enum RestoreTypeCase {
-  viaPurchase,
-  viaRestore,
+  viaPurchase = 0,
+  viaRestore = 1,
 }
 
 export class RestoreType {
   private constructor(
     public type: RestoreTypeCase,
-    public storeTransaction?: StoreTransaction
+    public storeTransaction?: StoreTransaction,
   ) {}
 
   // Static methods to create instances of RestoreType
   static viaPurchase(storeTransaction?: StoreTransaction) {
-    return new RestoreType(RestoreTypeCase.viaPurchase, storeTransaction);
+    return new RestoreType(RestoreTypeCase.viaPurchase, storeTransaction)
   }
 
-  static viaRestore = new RestoreType(RestoreTypeCase.viaRestore);
+  static viaRestore = new RestoreType(RestoreTypeCase.viaRestore)
 
   // Static factory method to deserialize from JSON
   static fromJson(json: any): RestoreType {
     switch (json.type) {
-      case 'viaPurchase':
+      case "viaPurchase":
         return RestoreType.viaPurchase(
-          json.storeTransaction
-            ? StoreTransaction.fromJson(json.storeTransaction)
-            : undefined
-        );
-      case 'viaRestore':
-        return RestoreType.viaRestore;
+          json.storeTransaction ? StoreTransaction.fromJson(json.storeTransaction) : undefined,
+        )
+      case "viaRestore":
+        return RestoreType.viaRestore
       default:
-        throw new Error('Invalid RestoreType type');
+        throw new Error("Invalid RestoreType type")
     }
   }
 }

@@ -24,7 +24,8 @@
     "prepublishOnly": "expo-module prepublishOnly",
     "expo-module": "expo-module",
     "open:ios": "xed example/ios",
-    "open:android": "open -a \"Android Studio\" example/android"
+    "open:android": "open -a \"Android Studio\" example/android",
+    "format": "biome format --write ."
   },
   "keywords": ["react-native", "expo", "superwall-expo", "SuperwallExpo"],
   "repository": "https://github.com/superwall/superwall-expo",
@@ -56,5 +57,8 @@
     "plugin",
     "app.plugin.js"
   ],
-  "packageManager": "yarn@4.7.0"
+  "packageManager": "yarn@4.7.0",
+  "dependencies": {
+    "@biomejs/biome": "^1.9.4"
+  }
 }

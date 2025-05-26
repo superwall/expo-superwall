@@ -1,5 +1,5 @@
-import { PurchaseResult } from './PurchaseResult';
-import { RestorationResult } from './RestorationResult';
+import type { PurchaseResult } from "./PurchaseResult"
+import type { RestorationResult } from "./RestorationResult"
 
 // Abstract class that defines the contract for a purchase controller
 export abstract class PurchaseController {
@@ -8,7 +8,7 @@ export abstract class PurchaseController {
    * @param productId The product id of the product the user would like to purchase.
    * @returns A promise that resolves with the result of the purchase logic.
    */
-  abstract purchaseFromAppStore(productId: string): Promise<PurchaseResult>;
+  abstract purchaseFromAppStore(productId: string): Promise<PurchaseResult>
 
   /**
    * Purchase a product from Google Play.
@@ -20,12 +20,12 @@ export abstract class PurchaseController {
   abstract purchaseFromGooglePlay(
     productId: string,
     basePlanId?: string,
-    offerId?: string
-  ): Promise<PurchaseResult>;
+    offerId?: string,
+  ): Promise<PurchaseResult>
 
   /**
    * Restore purchases.
    * @returns A promise that resolves with the restoration result.
    */
-  abstract restorePurchases(): Promise<RestorationResult>;
+  abstract restorePurchases(): Promise<RestorationResult>
 }
