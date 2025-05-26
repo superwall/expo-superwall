@@ -1,20 +1,20 @@
 export class Entitlement {
   // The entitlement's identifier.
-  id: string;
+  id: string
   // The entitlement's type.
-  type: string;
+  type: string
 
   /**
    * Creates an instance of Entitlement.
    * @param id - The entitlement's identifier.
    */
   constructor(id: string) {
-    this.id = id;
-    this.type = 'SERVICE_LEVEL';
+    this.id = id
+    this.type = "SERVICE_LEVEL"
   }
 
   static fromJson(json: any): Entitlement {
-    return Entitlement.create(json.id, json.type);
+    return Entitlement.create(json.id, json.type)
   }
 
   /**
@@ -24,8 +24,8 @@ export class Entitlement {
    * @returns A new Entitlement instance.
    */
   static create(id: string, type: string): Entitlement {
-    let e = new Entitlement(id);
-    e.type = type;
-    return e;
+    const e = new Entitlement(id)
+    e.type = type
+    return e
   }
 }

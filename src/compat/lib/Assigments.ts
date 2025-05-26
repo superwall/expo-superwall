@@ -1,23 +1,23 @@
-import { Variant } from './Experiment';
+import { Variant } from "./Experiment"
 
 export class Assignment {
-  experimentId: String;
-  variant: Variant;
-  isSentToServer: Boolean;
+  experimentId: string
+  variant: Variant
+  isSentToServer: boolean
 
-  constructor(experimentId: String, variant: Variant, isSentToServer: Boolean) {
-    this.experimentId = experimentId;
-    this.variant = variant;
-    this.isSentToServer = isSentToServer;
+  constructor(experimentId: string, variant: Variant, isSentToServer: boolean) {
+    this.experimentId = experimentId
+    this.variant = variant
+    this.isSentToServer = isSentToServer
   }
 
   static fromJson(json: any): Assignment {
     return new Assignment(
       json.experimentId,
       Variant.fromJson(json.variant),
-      json.isSentToServer ?? false
-    );
+      json.isSentToServer ?? false,
+    )
   }
 }
 
-export type ConfirmedAssignment = Assignment;
+export type ConfirmedAssignment = Assignment

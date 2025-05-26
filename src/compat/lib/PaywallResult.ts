@@ -1,27 +1,27 @@
 export type PaywallResult =
   | {
-      type: 'purchased';
-      productId: string;
+      type: "purchased"
+      productId: string
     }
   | {
-      type: 'declined';
+      type: "declined"
     }
   | {
-      type: 'restored';
-    };
+      type: "restored"
+    }
 
 export function fromJson(json: any): PaywallResult {
   switch (json.type) {
-    case 'purchased':
+    case "purchased":
       return {
-        type: 'purchased',
-        productId: json.productId || json.product?.id || '',
-      };
-    case 'declined':
-      return { type: 'declined' };
-    case 'restored':
-      return { type: 'restored' };
+        type: "purchased",
+        productId: json.productId || json.product?.id || "",
+      }
+    case "declined":
+      return { type: "declined" }
+    case "restored":
+      return { type: "restored" }
     default:
-      throw new Error(`Unknown PaywallResult type: ${json.type}`);
+      throw new Error(`Unknown PaywallResult type: ${json.type}`)
   }
 }

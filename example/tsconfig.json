@@ -3,18 +3,9 @@
   "compilerOptions": {
     "strict": true,
     "paths": {
-      "superwall-expo": [
-        "../src/index"
-      ],
-      "superwall-expo/*": [
-        "../src/*"
-      ]
+      "superwall-expo": ["../src/index"],
+      "superwall-expo/*": ["../src/*"]
     }
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    ".expo/types/**/*.ts",
-    "expo-env.d.ts"
-  ]
+  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]
 }

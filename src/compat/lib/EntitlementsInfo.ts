@@ -1,11 +1,11 @@
-import type { Entitlement } from './Entitlement';
-import { SubscriptionStatus } from './SubscriptionStatus';
+import type { Entitlement } from "./Entitlement"
+import { SubscriptionStatus } from "./SubscriptionStatus"
 
 export interface EntitlementsInfo {
-  status: SubscriptionStatus;
-  active: Entitlement[];
-  all: Entitlement[];
-  inactive: Entitlement[];
+  status: SubscriptionStatus
+  active: Entitlement[]
+  all: Entitlement[]
+  inactive: Entitlement[]
 }
 
 // Utility functions for EntitlementsInfo
@@ -16,6 +16,6 @@ export namespace EntitlementsInfo {
       active: obj.active,
       all: obj.all,
       inactive: obj.inactive,
-    };
+    }
   }
 }

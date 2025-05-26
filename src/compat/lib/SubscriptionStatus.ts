@@ -1,23 +1,23 @@
-import { Entitlement } from './Entitlement';
+import { Entitlement } from "./Entitlement"
 
 export type SubscriptionStatus =
   | SubscriptionStatus.Active
   | SubscriptionStatus.Inactive
-  | SubscriptionStatus.Unknown;
+  | SubscriptionStatus.Unknown
 
 export namespace SubscriptionStatus {
   export type Active = {
-    status: `ACTIVE`;
-    entitlements: Entitlement[];
-  };
+    status: `ACTIVE`
+    entitlements: Entitlement[]
+  }
 
   export type Inactive = {
-    status: `INACTIVE`;
-  };
+    status: `INACTIVE`
+  }
 
   export type Unknown = {
-    status: `UNKNOWN`;
-  };
+    status: `UNKNOWN`
+  }
 
   export function Active(input: Entitlement[] | string[]): Active {
     return {
@@ -25,57 +25,54 @@ export namespace SubscriptionStatus {
       entitlements:
         input.length === 0
           ? []
-          : typeof input[0] === 'string'
-          ? (input as string[]).map((id) => new Entitlement(id))
-          : (input as Entitlement[]),
-    };
+          : typeof input[0] === "string"
+            ? (input as string[]).map((id) => new Entitlement(id))
+            : (input as Entitlement[]),
+    }
   }
 
   export function Inactive(): Inactive {
     return {
-      status: 'INACTIVE',
-    };
+      status: "INACTIVE",
+    }
   }
 
   export function Unknown(): Unknown {
     return {
-      status: 'UNKNOWN',
-    };
+      status: "UNKNOWN",
+    }
   }
 
-  export function fromString(
-    value: string,
-    entitlements: Entitlement[]
-  ): SubscriptionStatus {
+  export function fromString(value: string, entitlements: Entitlement[]): SubscriptionStatus {
     switch (value) {
-      case 'ACTIVE':
-        return Active(entitlements);
-      case 'INACTIVE':
-        return Inactive();
-      case 'UNKNOWN':
+      case "ACTIVE":
+        return Active(entitlements)
+      case "INACTIVE":
+        return Inactive()
+      case "UNKNOWN":
       default:
-        return Unknown();
+        return Unknown()
     }
   }
 
   export function fromJson(json: any): SubscriptionStatus {
     switch (json.status) {
-      case 'ACTIVE':
+      case "ACTIVE":
         return {
-          status: 'ACTIVE',
+          status: "ACTIVE",
           entitlements: json.entitlements.map((entitlement: any) =>
-            Entitlement.fromJson(entitlement)
+            Entitlement.fromJson(entitlement),
           ),
-        };
-      case 'INACTIVE':
+        }
+      case "INACTIVE":
         return {
-          status: 'INACTIVE',
-        };
-      case 'UNKNOWN':
+          status: "INACTIVE",
+        }
+      case "UNKNOWN":
       default:
         return {
-          status: 'UNKNOWN',
-        };
+          status: "UNKNOWN",
+        }
     }
   }
 }

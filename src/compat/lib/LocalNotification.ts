@@ -1,33 +1,33 @@
 export enum LocalNotificationType {
-  TrialStarted = 'trialStarted',
+  TrialStarted = "trialStarted",
 }
 
 export class LocalNotificationTypeUtils {
   static fromJson(value: string): LocalNotificationType {
     switch (value) {
-      case 'trialStarted':
-        return LocalNotificationType.TrialStarted;
+      case "trialStarted":
+        return LocalNotificationType.TrialStarted
       default:
-        throw new Error(`Invalid LocalNotificationType value: ${value}`);
+        throw new Error(`Invalid LocalNotificationType value: ${value}`)
     }
   }
 
   static toJson(type: LocalNotificationType): string {
     switch (type) {
       case LocalNotificationType.TrialStarted:
-        return 'trialStarted';
+        return "trialStarted"
       default:
-        throw new Error(`Invalid LocalNotificationType value`);
+        throw new Error(`Invalid LocalNotificationType value`)
     }
   }
 }
 
 export class LocalNotification {
-  type: LocalNotificationType;
-  title: string;
-  subtitle?: string;
-  body: string;
-  delay: number;
+  type: LocalNotificationType
+  title: string
+  subtitle?: string
+  body: string
+  delay: number
 
   constructor({
     type,
@@ -36,17 +36,17 @@ export class LocalNotification {
     body,
     delay,
   }: {
-    type: LocalNotificationType;
-    title: string;
-    subtitle?: string;
-    body: string;
-    delay: number;
+    type: LocalNotificationType
+    title: string
+    subtitle?: string
+    body: string
+    delay: number
   }) {
-    this.type = type;
-    this.title = title;
-    this.subtitle = subtitle;
-    this.body = body;
-    this.delay = delay;
+    this.type = type
+    this.title = title
+    this.subtitle = subtitle
+    this.body = body
+    this.delay = delay
   }
 
   static fromJson(json: { [key: string]: any }): LocalNotification {
@@ -56,7 +56,7 @@ export class LocalNotification {
       subtitle: json.subtitle,
       body: json.body,
       delay: json.delay,
-    });
+    })
   }
 
   toJson(): { [key: string]: any } {
@@ -66,6 +66,6 @@ export class LocalNotification {
       subtitle: this.subtitle,
       body: this.body,
       delay: this.delay,
-    };
+    }
   }
 }

@@ -8,23 +8,23 @@ export enum PaywallCloseReason {
 
 export namespace PaywallCloseReason {
   export function toJson(reason: PaywallCloseReason): string {
-    return reason;
+    return reason
   }
 
   export function fromJson(json: string): PaywallCloseReason {
     switch (json) {
       case "systemLogic":
-        return PaywallCloseReason.SystemLogic;
+        return PaywallCloseReason.SystemLogic
       case "forNextPaywall":
-        return PaywallCloseReason.ForNextPaywall;
+        return PaywallCloseReason.ForNextPaywall
       case "webViewFailedToLoad":
-        return PaywallCloseReason.WebViewFailedToLoad;
+        return PaywallCloseReason.WebViewFailedToLoad
       case "manualClose":
-        return PaywallCloseReason.ManualClose;
+        return PaywallCloseReason.ManualClose
       case "none":
-        return PaywallCloseReason.None;
+        return PaywallCloseReason.None
       default:
-        throw new Error(`Invalid PaywallCloseReason value: ${json}`);
+        throw new Error(`Invalid PaywallCloseReason value: ${json}`)
     }
   }
 }

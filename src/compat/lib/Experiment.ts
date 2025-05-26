@@ -1,20 +1,16 @@
 export class Experiment {
-  id: string;
-  groupId: string;
-  variant: Variant;
+  id: string
+  groupId: string
+  variant: Variant
 
   constructor(id: string, groupId: string, variant: Variant) {
-    this.id = id;
-    this.groupId = groupId;
-    this.variant = variant;
+    this.id = id
+    this.groupId = groupId
+    this.variant = variant
   }
 
   static fromJson(json: any): Experiment {
-    return new Experiment(
-      json.id,
-      json.groupId,
-      Variant.fromJson(json.variant)
-    );
+    return new Experiment(json.id, json.groupId, Variant.fromJson(json.variant))
   }
 
   toJson(): any {
@@ -22,27 +18,27 @@ export class Experiment {
       id: this.id,
       groupId: this.groupId,
       variant: this.variant.toJson(),
-    };
+    }
   }
 }
 
 export class Variant {
-  id: string;
-  type: VariantType;
-  paywallId: string | null;
+  id: string
+  type: VariantType
+  paywallId: string | null
 
   constructor(id: string, type: VariantType, paywallId: string | null) {
-    this.id = id;
-    this.type = type;
-    this.paywallId = paywallId;
+    this.id = id
+    this.type = type
+    this.paywallId = paywallId
   }
 
   static fromJson(json: any): Variant {
     return new Variant(
       json.id,
       VariantType[json.type as keyof typeof VariantType],
-      json.paywallId ?? null
-    );
+      json.paywallId ?? null,
+    )
   }
 
   toJson(): any {
@@ -50,11 +46,11 @@ export class Variant {
       id: this.id,
       type: this.type,
       paywallId: this.paywallId,
-    };
+    }
   }
 }
 
 export enum VariantType {
-  TREATMENT = 'TREATMENT',
-  HOLDOUT = 'HOLDOUT',
+  TREATMENT = "TREATMENT",
+  HOLDOUT = "HOLDOUT",
 }
