@@ -36,6 +36,7 @@
   "license": "MIT",
   "homepage": "https://github.com/superwall/superwall-expo#readme",
   "devDependencies": {
+    "@biomejs/biome": "^1.9.4",
     "@types/react": "~19.1.5",
     "expo": "53.0.9",
     "expo-module-scripts": "^4.1.7",
@@ -57,8 +58,5 @@
     "plugin",
     "app.plugin.js"
   ],
-  "packageManager": "yarn@4.7.0",
-  "dependencies": {
-    "@biomejs/biome": "^1.9.4"
-  }
+  "packageManager": "yarn@4.7.0"
 }
