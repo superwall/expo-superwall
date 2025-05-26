@@ -35,7 +35,21 @@ public class SuperwallExpoModule: Module {
       onPaywallError,
       onPaywallSkip,
       onPurchase,
-      onPurchaseRestore
+      onPurchaseRestore,
+
+      // Legacy events
+      subscriptionStatusDidChange,
+      handleSuperwallEvent,
+      handleCustomPaywallAction,
+      willDismissPaywall,
+      willPresentPaywall,
+      didDismissPaywall,
+      didPresentPaywall,
+      paywallWillOpenURL,
+      paywallWillOpenDeepLink,
+      handleLog,
+      willRedeemLink,
+      didRedeemLink
     )
 
     Function("getApiKey") {
