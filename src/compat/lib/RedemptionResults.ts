@@ -109,7 +109,7 @@ export class RedemptionResults {
         return {
           status,
           code,
-          redemptionInfo: this.parseRedemptionInfo(json.redemptionInfo),
+          redemptionInfo: RedemptionResults.parseRedemptionInfo(json.redemptionInfo),
         }
 
       case "ERROR":
@@ -141,7 +141,7 @@ export class RedemptionResults {
         return {
           status,
           code,
-          redemptionInfo: this.parseRedemptionInfo(json.redemptionInfo),
+          redemptionInfo: RedemptionResults.parseRedemptionInfo(json.redemptionInfo),
         }
 
       default:
@@ -151,8 +151,8 @@ export class RedemptionResults {
 
   private static parseRedemptionInfo(json: any): RedemptionInfo {
     const result: RedemptionInfo = {
-      ownership: this.parseOwnership(json.ownership),
-      purchaserInfo: this.parsePurchaserInfo(json.purchaserInfo),
+      ownership: RedemptionResults.parseOwnership(json.ownership),
+      purchaserInfo: RedemptionResults.parsePurchaserInfo(json.purchaserInfo),
       entitlements: Array.isArray(json.entitlements)
         ? json.entitlements.map((e: any) => Entitlement.fromJson(e))
         : [],
@@ -192,7 +192,7 @@ export class RedemptionResults {
   private static parsePurchaserInfo(json: any): PurchaserInfo {
     const result: PurchaserInfo = {
       appUserId: json.appUserId,
-      storeIdentifiers: this.parseStoreIdentifiers(json.storeIdentifiers),
+      storeIdentifiers: RedemptionResults.parseStoreIdentifiers(json.storeIdentifiers),
     }
 
     if (json.email) {

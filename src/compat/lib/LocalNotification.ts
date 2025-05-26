@@ -17,7 +17,7 @@ export class LocalNotificationTypeUtils {
       case LocalNotificationType.TrialStarted:
         return "trialStarted"
       default:
-        throw new Error(`Invalid LocalNotificationType value`)
+        throw new Error("Invalid LocalNotificationType value")
     }
   }
 }

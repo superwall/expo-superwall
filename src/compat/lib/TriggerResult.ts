@@ -1,11 +1,11 @@
 import { Experiment } from "./Experiment"
 
 export enum TriggerResultType {
-  placementNotFound,
-  noAudienceMatch,
-  paywall,
-  holdout,
-  error,
+  placementNotFound = 0,
+  noAudienceMatch = 1,
+  paywall = 2,
+  holdout = 3,
+  error = 4,
 }
 
 // TypeScript class for TriggerResult

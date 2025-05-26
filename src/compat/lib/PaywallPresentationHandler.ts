@@ -1,6 +1,6 @@
-import { PaywallInfo } from "./PaywallInfo"
-import { PaywallSkippedReason } from "./PaywallSkippedReason"
+import type { PaywallInfo } from "./PaywallInfo"
 import type { PaywallResult } from "./PaywallResult"
+import type { PaywallSkippedReason } from "./PaywallSkippedReason"
 
 export class PaywallPresentationHandler {
   // Handlers for various events

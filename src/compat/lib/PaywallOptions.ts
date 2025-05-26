@@ -6,9 +6,9 @@ export enum TransactionBackgroundView {
 
 // Defines the messaging of the alert presented to the user when restoring a transaction fails.
 export class RestoreFailed {
-  title: string = "No Subscription Found"
-  message: string = "We couldn't find an active subscription for your account."
-  closeButtonTitle: string = "Okay"
+  title = "No Subscription Found"
+  message = "We couldn't find an active subscription for your account."
+  closeButtonTitle = "Okay"
 
   toJson(): object {
     return {
@@ -21,11 +21,11 @@ export class RestoreFailed {
 
 // Options for configuring the appearance and behavior of paywalls.
 export class PaywallOptions {
-  isHapticFeedbackEnabled: boolean = true
+  isHapticFeedbackEnabled = true
   restoreFailed: RestoreFailed = new RestoreFailed()
-  shouldShowPurchaseFailureAlert: boolean = true
-  shouldPreload: boolean = false
-  automaticallyDismiss: boolean = true
+  shouldShowPurchaseFailureAlert = true
+  shouldPreload = false
+  automaticallyDismiss = true
   transactionBackgroundView: TransactionBackgroundView = TransactionBackgroundView.spinner
 
   toJson(): object {

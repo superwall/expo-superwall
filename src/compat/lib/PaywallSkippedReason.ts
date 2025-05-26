@@ -8,9 +8,10 @@ export abstract class PaywallSkippedReason extends Error {
 
   static fromJson(json: any): PaywallSkippedReason {
     switch (json.type) {
-      case "Holdout":
+      case "Holdout": {
         const experiment = Experiment.fromJson(json.experiment)
         return new PaywallSkippedReasonHoldout(experiment)
+      }
       case "NoAudienceMatch":
         return new PaywallSkippedReasonNoAudienceMatch()
       case "PlacementNotFound":

@@ -1,4 +1,5 @@
 export abstract class RestorationResult {
+  // biome-ignore lint/complexity/noBannedTypes: <explanation>
   abstract toJson(): Object
 
   static restored() {

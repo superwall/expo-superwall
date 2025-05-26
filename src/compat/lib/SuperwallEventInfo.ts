@@ -1,5 +1,4 @@
 import type { Entitlement } from "./Entitlement"
-import { SubscriptionStatus } from "./SubscriptionStatus"
 import { PaywallInfo } from "./PaywallInfo"
 import {
   PaywallPresentationRequestStatus,
@@ -8,6 +7,7 @@ import {
 import { RestoreType } from "./RestoreType"
 import { StoreProduct } from "./StoreProduct"
 import { StoreTransaction } from "./StoreTransaction"
+import type { SubscriptionStatus } from "./SubscriptionStatus"
 import { Survey, SurveyOption } from "./Survey"
 import { TriggerResult } from "./TriggerResult"
 export class SuperwallEventInfo {
@@ -140,7 +140,7 @@ export class SuperwallEvent {
   }
 
   static fromJson(json: any): SuperwallEvent {
-    let eventType = EventType[json.event as keyof typeof EventType]
+    const eventType = EventType[json.event as keyof typeof EventType]
 
     // Example for one case, replicate logic for other cases as needed
     switch (eventType) {

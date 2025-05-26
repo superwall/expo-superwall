@@ -21,7 +21,7 @@ export namespace SubscriptionStatus {
 
   export function Active(input: Entitlement[] | string[]): Active {
     return {
-      status: `ACTIVE`,
+      status: "ACTIVE",
       entitlements:
         input.length === 0
           ? []
@@ -49,7 +49,6 @@ export namespace SubscriptionStatus {
         return Active(entitlements)
       case "INACTIVE":
         return Inactive()
-      case "UNKNOWN":
       default:
         return Unknown()
     }
@@ -68,7 +67,6 @@ export namespace SubscriptionStatus {
         return {
           status: "INACTIVE",
         }
-      case "UNKNOWN":
       default:
         return {
           status: "UNKNOWN",

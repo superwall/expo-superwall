@@ -30,6 +30,7 @@
       },
       "complexity": {
         "useArrowFunction": "error",
+        "noStaticOnlyClass": "warn",
         "noForEach": "off"
       },
       "a11y": {
@@ -47,7 +48,7 @@
       "suspicious": {
         "noExplicitAny": "off",
         "noArrayIndexKey": "off",
-        "noConsoleLog": "warn"
+        "noConsoleLog": "off"
       },
       "security": {
         "noDangerouslySetInnerHtml": "off"
