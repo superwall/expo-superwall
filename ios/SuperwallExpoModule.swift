@@ -17,6 +17,20 @@ public class SuperwallExpoModule: Module {
   private let onPurchase = "onPurchase"
   private let onPurchaseRestore = "onPurchaseRestore"
 
+  // Legacy Events
+  private let subscriptionStatusDidChange = "subscriptionStatusDidChange"
+  private let handleSuperwallEvent = "handleSuperwallEvent"
+  private let handleCustomPaywallAction = "handleCustomPaywallAction"
+  private let willDismissPaywall = "willDismissPaywall"
+  private let willPresentPaywall = "willPresentPaywall"
+  private let didDismissPaywall = "didDismissPaywall"
+  private let didPresentPaywall = "didPresentPaywall"
+  private let paywallWillOpenURL = "paywallWillOpenURL"
+  private let paywallWillOpenDeepLink = "paywallWillOpenDeepLink"
+  private let handleLog = "handleLog"
+  private let willRedeemLink = "willRedeemLink"
+  private let didRedeemLink = "didRedeemLink"
+
   public required init(appContext: AppContext) {
     super.init(appContext: appContext)
     SuperwallExpoModule.shared = self
