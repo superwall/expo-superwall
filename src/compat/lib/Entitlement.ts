@@ -1,31 +1,16 @@
-export class Entitlement {
-  // The entitlement's identifier.
-  id: string;
-  // The entitlement's type.
-  type: string;
+// src/compat/lib/Entitlement.ts
 
-  /**
-   * Creates an instance of Entitlement.
-   * @param id - The entitlement's identifier.
-   */
-  constructor(id: string) {
-    this.id = id;
-    this.type = 'SERVICE_LEVEL';
-  }
+/**
+ * Represents a user entitlement and its type.
+ * These are now re-exported from the main SuperwallExpoModule types.
+ */
+export type {
+  Entitlement,
+  EntitlementType,
+} from '../../SuperwallExpoModule.types';
 
-  static fromJson(json: any): Entitlement {
-    return Entitlement.create(json.id, json.type);
-  }
-
-  /**
-   * Creates an Entitlement instance from id and type strings.
-   * @param id - The entitlement's identifier.
-   * @param type - The entitlement's type.
-   * @returns A new Entitlement instance.
-   */
-  static create(id: string, type: string): Entitlement {
-    let e = new Entitlement(id);
-    e.type = type;
-    return e;
-  }
-}
+// Note: The local Entitlement class and its associated fromJson/toJson/create methods
+// have been removed to align with the main types. Consumers will now directly use
+// the types from SuperwallExpoModule.types. If fromJson/toJson or helper
+// creation utilities are still needed, they would need to be implemented
+// separately or by the consumer.

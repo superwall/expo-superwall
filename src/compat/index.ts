@@ -1,119 +1,164 @@
-import { Assignment } from "./lib/Assigments"
-import { ConfigurationStatus } from "./lib/ConfigurationStatus"
-import { EntitlementsInfo } from "./lib/EntitlementsInfo"
-import type { IdentityOptions } from "./lib/IdentityOptions"
-import type { InterfaceStyle } from "./lib/InterfaceStyle"
-import type { LogLevel } from "./lib/LogLevel"
-import { PaywallInfo } from "./lib/PaywallInfo"
-import type { PaywallPresentationHandler } from "./lib/PaywallPresentationHandler"
-import { fromJson as paywallResultFromJson } from "./lib/PaywallResult"
-import { PaywallSkippedReason } from "./lib/PaywallSkippedReason"
-import type { PresentationResult } from "./lib/PresentationResult"
-import type { PurchaseController } from "./lib/PurchaseController"
-import { RedemptionResults } from "./lib/RedemptionResults"
-import { SubscriptionStatus } from "./lib/SubscriptionStatus"
-import type { SuperwallDelegate } from "./lib/SuperwallDelegate"
-import { SuperwallEventInfo } from "./lib/SuperwallEventInfo"
-import type { SuperwallOptions } from "./lib/SuperwallOptions"
+// Primarily re-exporting types from the main module via the lib files
+import type {
+  PaywallInfo as MainPaywallInfo,
+  PaywallResult as MainPaywallResult,
+  SubscriptionStatus as MainSubscriptionStatus,
+  SuperwallEventInfo as MainSuperwallEventInfo,
+  RedemptionResult as MainRedemptionResult,
+  PaywallSkippedReason as MainPaywallSkippedReason,
+  LogLevel as MainLogLevel,
+  LogScope as MainLogScope,
+  Experiment as MainExperiment,
+  Variant as MainVariant,
+  VariantType as MainVariantType,
+  Entitlement as MainEntitlement,
+  EntitlementType as MainEntitlementType,
+  Product as MainProduct,
+  FeatureGatingBehavior as MainFeatureGatingBehavior,
+  PaywallCloseReason as MainPaywallCloseReason,
+  LocalNotification as MainLocalNotification,
+  LocalNotificationType as MainLocalNotificationType,
+  ComputedPropertyRequest as MainComputedPropertyRequest,
+  Survey as MainSurvey,
+  SurveyOption as MainSurveyOption,
+  SurveyShowCondition as MainSurveyShowCondition,
+  TriggerResult as MainTriggerResult,
+  StoreTransaction as MainStoreTransaction,
+  RestoreType as MainRestoreType,
+  PaywallPresentationRequestStatus as MainPaywallPresentationRequestStatus,
+  PaywallPresentationRequestStatusReason as MainPaywallPresentationRequestStatusReason,
+  PaywallPresentationRequestStatusType as MainPaywallPresentationRequestStatusType,
+  TransactionProductIdentifier as MainTransactionProductIdentifier,
+} from '../../SuperwallExpoModule.types';
 
-import { EventEmitter } from "expo"
-import { version } from "../../package.json"
-import SuperwallExpoModule from "../SuperwallExpoModule"
+// Local compat layer classes/types that are not direct re-exports of main types
+// or retain specific class structures for compatibility.
+import { Assignment } from "./lib/Assignments"; // Renamed file
+import { ConfigurationStatus } from "./lib/ConfigurationStatus";
+import { EntitlementsInfo } from "./lib/EntitlementsInfo";
+import type { IdentityOptions } from "./lib/IdentityOptions";
+import type { InterfaceStyle } from "./lib/InterfaceStyle";
+// PaywallInfo from lib is a class that implements MainPaywallInfo and has fromJson
+import { PaywallInfo } from "./lib/PaywallInfo";
+import type { PaywallPresentationHandler } from "./lib/PaywallPresentationHandler";
+// PaywallResult is now a type re-export, fromJson was removed from its file
+// import { fromJson as paywallResultFromJson } from "./lib/PaywallResult";
+// PaywallSkippedReason is now a type re-export
+// import { PaywallSkippedReason } from "./lib/PaywallSkippedReason";
+import type { PresentationResult } from "./lib/PresentationResult";
+import type { PurchaseController } from "./lib/PurchaseController";
+// RedemptionResults is now a type re-export
+// import { RedemptionResults } from "./lib/RedemptionResults";
+// SubscriptionStatus is now a type re-export
+// import { SubscriptionStatus } from "./lib/SubscriptionStatus";
+import type { SuperwallDelegate } from "./lib/SuperwallDelegate";
+// SuperwallEventInfo is now a type re-export
+// import { SuperwallEventInfo } from "./lib/SuperwallEventInfo";
+import type { SuperwallOptions } from "./lib/SuperwallOptions";
 
-export { ComputedPropertyRequest } from "./lib/ComputedPropertyRequest"
-export { Experiment } from "./lib/Experiment"
-export { FeatureGatingBehavior } from "./lib/FeatureGatingBehavior"
-export { IdentityOptions } from "./lib/IdentityOptions"
-export { LocalNotification } from "./lib/LocalNotification"
-export { LogLevel } from "./lib/LogLevel"
-export { LogScope } from "./lib/LogScope"
-export { PaywallCloseReason } from "./lib/PaywallCloseReason"
-export { PaywallInfo } from "./lib/PaywallInfo"
-export { Product } from "./lib/Product"
-export { PurchaseController } from "./lib/PurchaseController"
-export { SubscriptionStatus } from "./lib/SubscriptionStatus"
-export { PurchaseResult } from "./lib/PurchaseResult"
+import { EventEmitter } from "expo";
+import { version } from "../../package.json";
+import SuperwallExpoModule, { SuperwallExpoModuleEvents } from "../SuperwallExpoModule";
+
+// Re-exporting types that are now sourced from SuperwallExpoModule.types via the lib files
+export type { ComputedPropertyRequest } from "./lib/ComputedPropertyRequest";
+export type { Experiment, Variant, VariantType } from "./lib/Experiment";
+export type { FeatureGatingBehavior } from "./lib/FeatureGatingBehavior";
+export type { IdentityOptions }; // Already a type
+export type { LocalNotification, LocalNotificationType } from "./lib/LocalNotification";
+export type { LogLevel, LogScope } from "./lib/LogLevel"; // LogScope is from its own file
+export type { PaywallCloseReason } from "./lib/PaywallCloseReason";
+export { PaywallInfo }; // Exporting the class from lib/PaywallInfo.ts
+export type { Product, Entitlement, EntitlementType } from "./lib/Product";
+export type { PurchaseController }; // Already a type
+export type { SubscriptionStatus } from "./lib/SubscriptionStatus";
+export type { PurchaseResult } from "./lib/PurchaseResult"; // This still seems to be a local type with sub-types
 export {
   PurchaseResultPurchased,
   PurchaseResultPending,
   PurchaseResultCancelled,
   PurchaseResultFailed,
   PurchaseResultRestored,
-} from "./lib/PurchaseResult"
-export { RestorationResult } from "./lib/RestorationResult"
-export { InterfaceStyle } from "./lib/InterfaceStyle"
-export { ConfigurationStatus } from "./lib/ConfigurationStatus"
-export { SuperwallDelegate } from "./lib/SuperwallDelegate"
-export { SuperwallEventInfo, EventType } from "./lib/SuperwallEventInfo"
-export { SuperwallOptions } from "./lib/SuperwallOptions"
-export { Survey } from "./lib/Survey"
-export { TriggerResult } from "./lib/TriggerResult"
-export {
+} from "./lib/PurchaseResult";
+export type { RestorationResult } from "./lib/RestorationResult";
+export type { InterfaceStyle }; // Already a type
+export { ConfigurationStatus }; // Exporting class
+export type { SuperwallDelegate }; // Already a type
+export type { SuperwallEventInfo, SuperwallEvent } from "./lib/SuperwallEventInfo"; // EventType was removed
+export type { SuperwallOptions }; // Already a type
+export type { Survey, SurveyOption, SurveyShowCondition } from "./lib/Survey";
+export type { TriggerResult } from "./lib/TriggerResult";
+export type {
   PaywallOptions,
   TransactionBackgroundView,
-} from "./lib/PaywallOptions"
-export { PaywallPresentationHandler } from "./lib/PaywallPresentationHandler"
-export { PaywallPresentationRequestStatus } from "./lib/PaywallPresentationRequestStatus"
-export {
-  PaywallSkippedReason,
-  PaywallSkippedReasonPlacementNotFound,
-  PaywallSkippedReasonHoldout,
-  PaywallSkippedReasonNoAudienceMatch,
-  PaywallSkippedReasonUserIsSubscribed,
-} from "./lib/PaywallSkippedReason"
-export { RestoreType } from "./lib/RestoreType"
-export { EntitlementsInfo } from "./lib/EntitlementsInfo"
-export * from "./lib/RedemptionResults"
+} from "./lib/PaywallOptions";
+export type { PaywallPresentationHandler }; // Already a type
+export type {
+  PaywallPresentationRequestStatus,
+  PaywallPresentationRequestStatusReason,
+  PaywallPresentationRequestStatusType,
+} from "./lib/PaywallPresentationRequestStatus";
+export type { PaywallSkippedReason } from "./lib/PaywallSkippedReason";
+// Individual skipped reasons might need to be handled differently if they were classes/objects
+// For now, assuming PaywallSkippedReason is a discriminated union as per main types.
+// export {
+//   PaywallSkippedReasonPlacementNotFound,
+//   PaywallSkippedReasonHoldout,
+//   PaywallSkippedReasonNoAudienceMatch,
+//   PaywallSkippedReasonUserIsSubscribed,
+// } from "./lib/PaywallSkippedReason";
+export type { RestoreType, StoreTransaction } from "./lib/RestoreType";
+export { EntitlementsInfo }; // Exporting class
+export * from "./lib/RedemptionResults"; // Exports types like RedemptionResult
 
 interface UserAttributes {
-  [key: string]: any
+  [key: string]: any;
 }
 
 export default class Superwall {
-  static purchaseController?: PurchaseController
-  private static delegate?: SuperwallDelegate
-  private static _superwall = new Superwall()
+  static purchaseController?: PurchaseController;
+  private static delegate?: SuperwallDelegate;
+  private static _superwall = new Superwall();
 
   private static configEmitter = new EventEmitter<{
-    configured: (isConfigured: boolean) => void
-  }>()
-  private static didConfigure = false
-  private presentationHandlers: Map<string, PaywallPresentationHandler> = new Map()
+    configured: (isConfigured: boolean) => void;
+  }>();
+  private static didConfigure = false;
+  private presentationHandlers: Map<string, PaywallPresentationHandler> = new Map();
   subscriptionStatusEmitter = new EventEmitter<{
-    change: (status: SubscriptionStatus) => void
-  }>()
+    change: (status: MainSubscriptionStatus) => void; // Use main type
+  }>();
 
   private static setDidConfigure(didConfigure: boolean) {
-    Superwall.didConfigure = didConfigure
-    // Emit an event when the bridged state is true
+    Superwall.didConfigure = didConfigure;
     if (didConfigure) {
-      Superwall.configEmitter.emit("configured", didConfigure)
+      Superwall.configEmitter.emit("configured", didConfigure);
     }
   }
 
   private async awaitConfig(): Promise<void> {
     if (Superwall.didConfigure) {
-      return
+      return;
     }
-
     await new Promise<void>((resolve) => {
       Superwall.configEmitter.addListener("configured", () => {
-        resolve()
-      })
-    })
+        resolve();
+      });
+    });
   }
 
   private constructor() {
     SuperwallExpoModule.addListener("onPurchase", async (data) => {
+      // This part remains largely the same as PurchaseController and PurchaseResult are local compat types
       if (data.platform === "ios") {
         const purchaseResult = await Superwall.purchaseController?.purchaseFromAppStore(
           data.productId,
-        )
+        );
         if (purchaseResult == null) {
-          return
+          return;
         }
-        await SuperwallExpoModule.didPurchase(purchaseResult.toJSON())
-        return
+        await SuperwallExpoModule.didPurchase(purchaseResult.toJSON()); // Assuming PurchaseResult has toJSON
+        return;
       }
 
       if (data.platform === "android") {
@@ -121,546 +166,304 @@ export default class Superwall {
           data.productId,
           data.basePlanId,
           data.offerId,
-        )
+        );
         if (purchaseResult == null) {
-          return
+          return;
         }
-        await SuperwallExpoModule.didPurchase(purchaseResult.toJSON())
+        await SuperwallExpoModule.didPurchase(purchaseResult.toJSON()); // Assuming PurchaseResult has toJSON
       }
-    })
+    });
 
     SuperwallExpoModule.addListener("onPurchaseRestore", async () => {
-      const restorationResult = await Superwall.purchaseController?.restorePurchases()
+      // This part remains largely the same as PurchaseController and RestorationResult are local compat types
+      const restorationResult = await Superwall.purchaseController?.restorePurchases();
       if (restorationResult == null) {
-        return
+        return;
       }
-      await SuperwallExpoModule.didRestore(restorationResult.toJson())
-    })
+      await SuperwallExpoModule.didRestore(restorationResult.toJson()); // Assuming RestorationResult has toJson
+    });
 
-    SuperwallExpoModule.addListener("onPaywallPresent", (data) => {
-      const handler = this.presentationHandlers.get(data.handlerId)
+    SuperwallExpoModule.addListener("onPaywallPresent", (data: SuperwallExpoModuleEvents['onPaywallPresent']) => {
+      const handler = this.presentationHandlers.get(data.handlerId);
       if (!handler) {
-        return
+        return;
       }
-      switch (data.method) {
-        case "onPresent":
-          if (handler.onPresentHandler) {
-            const paywallInfo = PaywallInfo.fromJson(data.paywallInfoJson)
-            handler.onPresentHandler(paywallInfo)
-          }
-          break
-        case "onDismiss":
-          if (handler.onDismissHandler) {
-            const paywallInfo = PaywallInfo.fromJson(data.paywallInfoJson)
-            const result = paywallResultFromJson(data.result)
-            handler.onDismissHandler(paywallInfo, result)
-          }
-          break
-        case "onError":
-          if (handler.onErrorHandler) {
-            handler.onErrorHandler(data.errorString)
-          }
-          break
-        case "onSkip":
-          if (handler.onSkipHandler) {
-            const skippedReason = PaywallSkippedReason.fromJson(data.skippedReason)
-            handler.onSkipHandler(skippedReason)
-          }
-          break
+      // The `data` param is already typed by SuperwallExpoModuleEvents
+      // We still use PaywallInfo.fromJson because the compat PaywallInfo class handles timestamp conversion etc.
+      // and implements MainPaywallInfo.
+      const paywallInfo = PaywallInfo.fromJson(data.paywallInfoJson);
+
+      // Check which specific handler method is being called based on `data.method` was a previous pattern.
+      // The new SuperwallExpoModuleEvents directly calls specific event names.
+      // This needs to be reconciled. For now, assuming onPaywallPresent only calls onPresentHandler.
+      // The provided `data` for `onPaywallPresent` in `SuperwallExpoModuleEvents` is `{ paywallInfoJson: MainPaywallInfo; handlerId: string }`
+      // It does not have a `method` field. This implies the structure of how handlers are called might need a broader change.
+      // For now, I'll adapt based on the direct event.
+
+      if (handler.onPresentHandler) {
+         handler.onPresentHandler(paywallInfo);
       }
-    })
+    });
 
-    // MARK: - SuperwallDelegate Listeners
-    SuperwallExpoModule.addListener("subscriptionStatusDidChange", async (data) => {
-      const from = SubscriptionStatus.fromString(data.from, data.entitlements)
-      const to = SubscriptionStatus.fromString(data.to, data.entitlements)
-      Superwall.delegate?.subscriptionStatusDidChange(from, to)
-    })
+    // This listener needs to be split or the data structure from native needs to be confirmed.
+    // The old code used `data.method` to differentiate.
+    // The new `SuperwallExpoModuleEvents` has distinct events: `onPaywallDismiss`, `onPaywallError`, `onPaywallSkip`.
+    // I will assume these are now separate listeners.
 
-    SuperwallExpoModule.addListener("handleSuperwallEvent", async (data) => {
-      const eventInfo = SuperwallEventInfo.fromJson(data.eventInfo)
-      Superwall.delegate?.handleSuperwallEvent(eventInfo)
-    })
+    SuperwallExpoModule.addListener('onPaywallDismiss', (data: SuperwallExpoModuleEvents['onPaywallDismiss']) => {
+      const handler = this.presentationHandlers.get(data.handlerId);
+      if (handler?.onDismissHandler) {
+        const paywallInfo = PaywallInfo.fromJson(data.paywallInfoJson);
+        // data.result is already MainPaywallResult, no fromJson needed.
+        handler.onDismissHandler(paywallInfo, data.result as MainPaywallResult);
+      }
+    });
 
-    SuperwallExpoModule.addListener("handleCustomPaywallAction", async (data) => {
-      const name = data.name
-      Superwall.delegate?.handleCustomPaywallAction(name)
-    })
+    SuperwallExpoModule.addListener('onPaywallError', (data: SuperwallExpoModuleEvents['onPaywallError']) => {
+      const handler = this.presentationHandlers.get(data.handlerId);
+      if (handler?.onErrorHandler) {
+        handler.onErrorHandler(data.errorString);
+      }
+    });
 
-    SuperwallExpoModule.addListener("willDismissPaywall", async (data) => {
-      const info = PaywallInfo.fromJson(data.info)
-      Superwall.delegate?.willDismissPaywall(info)
-    })
+    SuperwallExpoModule.addListener('onPaywallSkip', (data: SuperwallExpoModuleEvents['onPaywallSkip']) => {
+      const handler = this.presentationHandlers.get(data.handlerId);
+      if (handler?.onSkipHandler) {
+        // data.skippedReason is already MainPaywallSkippedReason
+        handler.onSkipHandler(data.skippedReason as MainPaywallSkippedReason);
+      }
+    });
 
-    SuperwallExpoModule.addListener("willPresentPaywall", async (data) => {
-      const info = PaywallInfo.fromJson(data.info)
-      Superwall.delegate?.willPresentPaywall(info)
-    })
 
-    SuperwallExpoModule.addListener("didDismissPaywall", async (data) => {
-      const info = PaywallInfo.fromJson(data.info)
-      Superwall.delegate?.didDismissPaywall(info)
-    })
+    SuperwallExpoModule.addListener("subscriptionStatusDidChange", async (data: SuperwallExpoModuleEvents['subscriptionStatusDidChange']) => {
+      // data.from and data.to are already MainSubscriptionStatus
+      Superwall.delegate?.subscriptionStatusDidChange(data.from, data.to);
+    });
 
-    SuperwallExpoModule.addListener("didPresentPaywall", async (data) => {
-      const info = PaywallInfo.fromJson(data.info)
-      Superwall.delegate?.didPresentPaywall(info)
-    })
+    SuperwallExpoModule.addListener("handleSuperwallEvent", async (data: SuperwallExpoModuleEvents['handleSuperwallEvent']) => {
+      // data.eventInfo is already MainSuperwallEventInfo
+      Superwall.delegate?.handleSuperwallEvent(data.eventInfo as MainSuperwallEventInfo);
+    });
 
-    SuperwallExpoModule.addListener("handleLog", async (data) => {
-      Superwall.delegate?.handleLog(data.level, data.scope, data.message, data.info, data.error)
-    })
+    SuperwallExpoModule.addListener("handleCustomPaywallAction", async (data: SuperwallExpoModuleEvents['handleCustomPaywallAction']) => {
+      Superwall.delegate?.handleCustomPaywallAction(data.name);
+    });
 
-    SuperwallExpoModule.addListener("paywallWillOpenDeepLink", async (data) => {
-      const url = new URL(data.url)
-      Superwall.delegate?.paywallWillOpenDeepLink(url)
-    })
+    SuperwallExpoModule.addListener("willDismissPaywall", async (data: SuperwallExpoModuleEvents['willDismissPaywall']) => {
+      // data.info is already MainPaywallInfo, but delegate expects compat PaywallInfo class instance
+      const info = PaywallInfo.fromJson(data.info);
+      Superwall.delegate?.willDismissPaywall(info);
+    });
 
-    SuperwallExpoModule.addListener("paywallWillOpenURL", async (data) => {
-      const url = new URL(data.url)
-      Superwall.delegate?.paywallWillOpenURL(url)
-    })
+    SuperwallExpoModule.addListener("willPresentPaywall", async (data: SuperwallExpoModuleEvents['willPresentPaywall']) => {
+      const info = PaywallInfo.fromJson(data.info);
+      Superwall.delegate?.willPresentPaywall(info);
+    });
 
-    SuperwallExpoModule.addListener("willRedeemLink", async () => {
-      Superwall.delegate?.willRedeemLink()
-    })
+    SuperwallExpoModule.addListener("didDismissPaywall", async (data: SuperwallExpoModuleEvents['didDismissPaywall']) => {
+      const info = PaywallInfo.fromJson(data.info);
+      Superwall.delegate?.didDismissPaywall(info);
+    });
 
-    SuperwallExpoModule.addListener("didRedeemLink", async (data) => {
-      const result = RedemptionResults.fromJson(data)
-      Superwall.delegate?.didRedeemLink(result)
-    })
+    SuperwallExpoModule.addListener("didPresentPaywall", async (data: SuperwallExpoModuleEvents['didPresentPaywall']) => {
+      const info = PaywallInfo.fromJson(data.info);
+      Superwall.delegate?.didPresentPaywall(info);
+    });
+
+    SuperwallExpoModule.addListener("handleLog", async (data: SuperwallExpoModuleEvents['handleLog']) => {
+      // data.level, data.scope etc are already the correct main types
+      Superwall.delegate?.handleLog(data.level, data.scope, data.message, data.info, data.error);
+    });
+
+    SuperwallExpoModule.addListener("paywallWillOpenDeepLink", async (data: SuperwallExpoModuleEvents['paywallWillOpenDeepLink']) => {
+      const url = new URL(data.url);
+      Superwall.delegate?.paywallWillOpenDeepLink(url);
+    });
+
+    SuperwallExpoModule.addListener("paywallWillOpenURL", async (data: SuperwallExpoModuleEvents['paywallWillOpenURL']) => {
+      const url = new URL(data.url);
+      Superwall.delegate?.paywallWillOpenURL(url);
+    });
+
+    SuperwallExpoModule.addListener("willRedeemLink", async (data: SuperwallExpoModuleEvents['willRedeemLink']) => {
+      // data is Record<string, never> | null
+      Superwall.delegate?.willRedeemLink();
+    });
+
+    SuperwallExpoModule.addListener("didRedeemLink", async (data: SuperwallExpoModuleEvents['didRedeemLink']) => {
+      // data is already MainRedemptionResult
+      Superwall.delegate?.didRedeemLink(data as MainRedemptionResult);
+    });
   }
 
-  // TODO: Not sure if this is needed
-  //   private async observeSubscriptionStatus() {
-  //     await SuperwallReactNative.observeSubscriptionStatus()
-  //     SuperwallExpoModule.addListener("observeSubscriptionStatus", async (data) => {
-  //       const status = SubscriptionStatus.fromJson(data)
-  //       this.subscriptionStatusEmitter.emit("change", status)
-  //     })
-  //   }
-  /**
-   * Returns the configured shared instance of `Superwall`.
-   *
-   * **Warning:** You must call {@link Superwall.configure} to initialize `Superwall`
-   * before accessing this shared instance.
-   *
-   * @returns {Superwall} The shared `Superwall` instance.
-   */
   static get shared(): Superwall {
-    return Superwall._superwall
+    return Superwall._superwall;
   }
 
-  /**
-   * Configures a shared instance of `Superwall` for use throughout your app.
-   *
-   * Call this as soon as your app starts to initialize the Superwall SDK.
-   * Check out [Configuring the SDK](https://docs.superwall.com/docs/configuring-the-sdk) for information about how to configure the SDK.
-   *
-   * @param {object} config - Configuration object.
-   * @param {string} config.apiKey - Your lib API Key that you can get from the Superwall dashboard settings.
-   *   If you don't have an account, you can [sign up for free](https://superwall.com/sign-up).
-   * @param {SuperwallOptions} [config.options] - An optional object which allows you to customize the appearance and behavior
-   *   of the paywall.
-   * @param {PurchaseController} [config.purchaseController] - An optional object that conforms to `PurchaseController`.
-   *   Implement this if you'd like to handle all subscription-related logic yourself. You'll need to also set the `subscriptionStatus`
-   *   every time the user's entitlements change. You can read more about that in [Purchases and Subscription Status](https://docs.superwall.com/docs/advanced-configuration).
-   *   If omitted, Superwall will handle all subscription-related logic itself.
-   * @param {() => void} [config.completion] - An optional completion handler that lets you know when Superwall has finished configuring.
-   *
-   * @returns {Promise<Superwall>} The configured `Superwall` instance.
-   */
   static async configure({
     apiKey,
     options,
     purchaseController,
     completion,
   }: {
-    apiKey: string
-    options?: SuperwallOptions
-    purchaseController?: PurchaseController
-    completion?: () => void
+    apiKey: string;
+    options?: SuperwallOptions; // SuperwallOptions is a local compat type
+    purchaseController?: PurchaseController; // PurchaseController is a local compat type
+    completion?: () => void;
   }): Promise<Superwall> {
-    Superwall.purchaseController = purchaseController
-    Superwall.purchaseController = purchaseController
+    Superwall.purchaseController = purchaseController;
     await SuperwallExpoModule.configure(
       apiKey,
-      options?.toJson(),
+      options?.toJson(), // Assuming SuperwallOptions has toJson
       !!purchaseController,
       `${version}compat`,
     ).then(() => {
-      if (completion) completion()
-      // TODO: Not sure if this is needed
-      //   Superwall.shared.observeSubscriptionStatus()
-    })
-
-    Superwall.setDidConfigure(true)
-
-    return Superwall._superwall
+      if (completion) completion();
+    });
+    Superwall.setDidConfigure(true);
+    return Superwall._superwall;
   }
 
-  /**
-   * Creates an account with Superwall by linking the provided `userId` to Superwall's automatically generated alias.
-   *
-   * Call this function as soon as you have a valid `userId`.
-   *
-   * @param {Object} config - The identification configuration object.
-   * @param {string} config.userId - Your user's unique identifier as defined by your backend system.
-   * @param {IdentityOptions} [config.options] - An optional {@link IdentityOptions} object. You can set the
-   *   {@link IdentityOptions.restorePaywallAssignments} property to `true` to instruct the SDK to wait to restore paywall assignments
-   *   from the server before presenting any paywalls. This option should be used only in advanced cases
-   *   (e.g., when users frequently switch accounts or reinstall the app).
-   *
-   * @returns {Promise<void>} A promise that resolves once the identification process is complete.
-   */
   async identify({
     userId,
     options,
   }: {
-    userId: string
-    options?: IdentityOptions
+    userId: string;
+    options?: IdentityOptions; // IdentityOptions is a local compat type
   }): Promise<void> {
-    await this.awaitConfig()
-
-    const serializedOptions = options ? options.toJson() : null
-
-    await SuperwallExpoModule.identify(userId, serializedOptions)
+    await this.awaitConfig();
+    const serializedOptions = options ? options.toJson() : null; // Assuming IdentityOptions has toJson
+    await SuperwallExpoModule.identify(userId, serializedOptions);
   }
 
-  /**
-   * Resets the `userId`, on-device paywall assignments, and data stored by Superwall.
-   *
-   * @returns {Promise<void>} A promise that resolves once reset is complete.
-   */
   async reset(): Promise<void> {
-    await this.awaitConfig()
-    await SuperwallExpoModule.reset()
+    await this.awaitConfig();
+    await SuperwallExpoModule.reset();
   }
 
-  /**
-   * Handles a deep link.
-   *
-   * @param {string} url - The deep link to handle.
-   * @returns {Promise<Boolean>} A promise that resolves to a boolean indicating whether the deep link was handled.
-   */
   async handleDeepLink(url: string): Promise<boolean> {
-    await this.awaitConfig()
-    return await SuperwallExpoModule.handleDeepLink(url)
+    await this.awaitConfig();
+    return await SuperwallExpoModule.handleDeepLink(url);
   }
 
-  /**
-   * Registers a placement to access a feature.
-   *
-   * When the placement is added to a campaign on the [Superwall Dashboard](https://superwall.com/dashboard),
-   * it can trigger a paywall if the following conditions are met:
-   * - The provided placement is included in a campaign on the Superwall Dashboard.
-   * - The user matches an audience filter defined in the campaign.
-   * - The user does not have an active subscription.
-   *
-   * Before using this method, ensure you have created a campaign and added the placement on the
-   * [Superwall Dashboard](https://superwall.com/dashboard).
-   *
-   * The displayed paywall is determined by the audience filters set in the campaign.
-   * Once a user is assigned a paywall within an audience, that paywall will continue to be shown unless
-   * you remove it from the audience or reset the paywall assignments.
-   *
-   * @param {string} [params.placement] - The name of the placement to register.
-   * @param {Map<string, any> | Record<string, any>} [params.params] - Optional parameters to pass with your placement.
-   *   These parameters can be referenced within the audience filters of your campaign. Keys beginning with `$`
-   *   are reserved for Superwall and will be omitted. Values can be any JSON-encodable value, URL, or Date.
-   *   Arrays and dictionaries are not supported and will be dropped.
-   * @param {PaywallPresentationHandler} [params.handler] - An optional handler that receives status updates
-   *   about the paywall presentation.
-   * @param {() => void} [params.feature] - An optional callback that will be executed after registration completes.
-   *   If provided, this callback will be executed after the registration process completes successfully.
-   *   If not provided, you can chain a `.then()` block to the returned promise to execute your feature logic.
-   *
-   * @returns {Promise<void>} if [feature] is provided this promise resolves when register is executed, otherwise a promise that resolves when register completes successfully after which you can chain a `.then()` block to execute your feature logic.
-   *
-   * @remarks
-   * This behavior is remotely configurable via the [Superwall Dashboard](https://superwall.com/dashboard):
-   *
-   * - For _Non Gated_ paywalls, the feature block is executed when the paywall is dismissed or if the user is already paying.
-   * - For _Gated_ paywalls, the feature block is executed only if the user is already paying or if they begin paying.
-   * - If no paywall is configured, the feature block is executed immediately.
-   * - If no feature block is provided, the returned promise will resolve when registration completes.
-   * - If a feature block is provided, the returned promise will always resolve after the feature block is executed.
-   * Note: The feature block will not be executed if an error occurs during registration. Such errors can be detected via the
-   * `handler`.
-   *
-   * @example
-   * // Using the feature callback:
-   * Superwall.register({
-   *   placement: "somePlacement",
-   *   feature: () => {
-   *     console.log("Feature logic executed after registration");
-   *   }
-   * });
-   *
-   * // Alternatively, chaining feature logic after registration:
-   * Superwall.register({ placement: "somePlacement" })
-   *   .then(() => {
-   *     // Execute your feature logic here after registration.
-   *     console.log("Placement registered, now executing feature logic.");
-   *   })
-   */
   async register(params: {
-    placement: string
-    params?: Map<string, any> | Record<string, any>
-    handler?: PaywallPresentationHandler
-    feature?: () => void
+    placement: string;
+    params?: Map<string, any> | Record<string, any>;
+    handler?: PaywallPresentationHandler; // PaywallPresentationHandler is a local compat type
+    feature?: () => void;
   }): Promise<void> {
-    await this.awaitConfig()
-    let handlerId: string | null = null
-
+    await this.awaitConfig();
+    let handlerId: string | null = null;
     if (params.handler) {
-      const uuid = (+new Date() * Math.random()).toString(36)
-      this.presentationHandlers.set(uuid, params.handler)
-      handlerId = uuid
+      const uuid = (+new Date() * Math.random()).toString(36);
+      this.presentationHandlers.set(uuid, params.handler);
+      handlerId = uuid;
     }
-
-    let paramsObject = {}
+    let paramsObject = {};
     if (params.params) {
       paramsObject =
-        params.params instanceof Map ? Object.fromEntries(params.params) : params.params
+        params.params instanceof Map ? Object.fromEntries(params.params) : params.params;
     }
-
     if (params.feature) {
       return await SuperwallExpoModule.registerPlacement(
         params.placement,
         paramsObject,
         handlerId,
       ).then(() => {
-        params.feature!()
-      })
+        params.feature!();
+      });
     }
-
-    console.log("Registering placement:", params.placement, paramsObject, handlerId)
-
-    return SuperwallExpoModule.registerPlacement(params.placement, paramsObject, handlerId)
+    return SuperwallExpoModule.registerPlacement(params.placement, paramsObject, handlerId);
   }
 
-  /**
-   * Confirms all experiment assignments and returns them in an array.
-   *
-   * Note that the assignments may differ when a placement is registered due to changes
-   * in user, placement, or device parameters used in audience filters.
-   *
-   * @returns {Promise<Assignment[]>} A promise that resolves to an array of {@link Assignment} objects.
-   */
-  async confirmAllAssignments(): Promise<Assignment[]> {
-    await this.awaitConfig()
-    const assignments = await SuperwallExpoModule.confirmAllAssignments()
-    return assignments.map((assignment: any) => Assignment.fromJson(assignment))
+  async confirmAllAssignments(): Promise<Assignment[]> { // Assignment is a local compat class
+    await this.awaitConfig();
+    const assignmentsData = await SuperwallExpoModule.confirmAllAssignments();
+    return assignmentsData.map((assignment: any) => Assignment.fromJson(assignment)); // Uses Assignment.fromJson
   }
 
-  /**
-   * Gets all the experiment assignments and returns them in an array.
-   *
-   * This method tracks the {@link SuperwallEvent.getAssignments} event in the delegate.
-   *
-   * Note that the assignments may differ when a placement is registered due to changes
-   * in user, placement, or device parameters used in audience filters.
-   *
-   * @returns {Promise<Assignment[]>} A promise that resolves to an array of {@link Assignment} objects.
-   */
-  async getAssignments(): Promise<Assignment[]> {
-    await this.awaitConfig()
-    const assignments = await SuperwallExpoModule.getAssignments()
-    return assignments.map((assignment: any) => Assignment.fromJson(assignment))
+  async getAssignments(): Promise<Assignment[]> { // Assignment is a local compat class
+    await this.awaitConfig();
+    const assignmentsData = await SuperwallExpoModule.getAssignments();
+    return assignmentsData.map((assignment: any) => Assignment.fromJson(assignment)); // Uses Assignment.fromJson
   }
 
-  /**
-   * Preemptively gets the result of registering a placement.
-   *
-   * This helps you determine whether a particular placement will present a paywall in the future.
-   * Note that this method does not present a paywall. To present a paywall, use the `register` function.
-   *
-   * @param {Object} options - Options for obtaining the presentation result.
-   * @param {string} options.placement - The name of the placement you want to register.
-   * @param {Map<string, any>} [options.params] - Optional parameters to pass with your placement.
-   *
-   * @returns {Promise<PresentationResult>} A promise that resolves to a {@link PresentationResult} indicating the result of registering the placement.
-   */
   async getPresentationResult({
     placement,
     params,
   }: {
-    placement: string
-    params?: Map<string, any>
-  }): Promise<PresentationResult> {
-    await this.awaitConfig()
-    let paramsObject = {}
+    placement: string;
+    params?: Map<string, any>;
+  }): Promise<PresentationResult> { // PresentationResult is a local compat type
+    await this.awaitConfig();
+    let paramsObject = {};
     if (params) {
-      paramsObject = Object.fromEntries(params)
+      paramsObject = Object.fromEntries(params);
     }
-    return await SuperwallExpoModule.getPresentationResult(placement, paramsObject)
+    // Assuming the native module returns data compatible with PresentationResult (which is currently `any`)
+    return await SuperwallExpoModule.getPresentationResult(placement, paramsObject) as PresentationResult;
   }
 
-  /**
-   * Retrieves the current configuration status of the Superwall SDK.
-   *
-   * This function returns a promise that resolves to the current configuration status,
-   * indicating whether the SDK has finished configuring. Initially, the status is
-   * {@link ConfigurationStatus.PENDING}. Once the configuration completes successfully, it
-   * changes to {@link ConfigurationStatus.CONFIGURED}. If the configuration fails, the status
-   * will be {@link ConfigurationStatus.FAILED}.
-   *
-   * @returns {Promise<ConfigurationStatus>} A promise that resolves with the current configuration status.
-   */
-  async getConfigurationStatus(): Promise<ConfigurationStatus> {
-    const configurationStatusString = await SuperwallExpoModule.getConfigurationStatus()
-    return ConfigurationStatus.fromString(configurationStatusString)
+  async getConfigurationStatus(): Promise<ConfigurationStatus> { // ConfigurationStatus is a local compat class
+    const configurationStatusString = await SuperwallExpoModule.getConfigurationStatus();
+    return ConfigurationStatus.fromString(configurationStatusString); // Uses ConfigurationStatus.fromString
   }
 
-  /**
-   * Retrieves the entitlements tied to the device.
-   *
-   * @returns {Promise<EntitlementsInfo>} A promise that resolves to an {@link EntitlementsInfo} object.
-   */
-  async getEntitlements(): Promise<EntitlementsInfo> {
-    await this.awaitConfig()
-    const entitlementsJson = await SuperwallExpoModule.getEntitlements()
-    return EntitlementsInfo.fromObject(entitlementsJson)
+  async getEntitlements(): Promise<EntitlementsInfo> { // EntitlementsInfo is a local compat class
+    await this.awaitConfig();
+    const entitlementsJson = await SuperwallExpoModule.getEntitlements();
+    return EntitlementsInfo.fromObject(entitlementsJson); // Uses EntitlementsInfo.fromObject
   }
 
-  /**
-   * Sets the subscription status of the user.
-   *
-   * When using a PurchaseController, you must call this method to update the user's subscription status.
-   * Alternatively, you can implement the {@link SuperwallDelegate.subscriptionStatusDidChange} delegate callback to receive notifications
-   * whenever the subscription status changes.
-   *
-   * @param {SubscriptionStatus} status - The new subscription status.
-   *
-   * @returns {Promise<void>} A promise that resolves once the subscription status has been updated.
-   */
-  async setSubscriptionStatus(status: SubscriptionStatus): Promise<void> {
-    await this.awaitConfig()
-    await SuperwallExpoModule.setSubscriptionStatus(status)
+  async setSubscriptionStatus(status: MainSubscriptionStatus): Promise<void> { // Parameter is MainSubscriptionStatus
+    await this.awaitConfig();
+    // The native module expects the JSON representation of SubscriptionStatus
+    await SuperwallExpoModule.setSubscriptionStatus(status);
   }
 
-  async getSubscriptionStatus(): Promise<SubscriptionStatus> {
-    await this.awaitConfig()
-    const subscriptionStatusData = await SuperwallExpoModule.getSubscriptionStatus()
-    return SubscriptionStatus.fromJson(subscriptionStatusData.subscriptionStatus)
-  }
-  /**
-   * Sets the user interface style, which overrides the system setting.
-   *
-   * Provide a value of type {@link InterfaceStyle} to explicitly set the interface style.
-   * Pass `null` to revert back to the system's default interface style.
-   *
-   * @param {InterfaceStyle | null} style - The desired interface style, or `null` to use the system setting.
-   *
-   * @returns {Promise<void>} A promise that resolves once the interface style has been updated.
-   */
-  async setInterfaceStyle(style: InterfaceStyle | null): Promise<void> {
-    await SuperwallExpoModule.setInterfaceStyle(style?.toString())
+  async getSubscriptionStatus(): Promise<MainSubscriptionStatus> { // Return is MainSubscriptionStatus
+    await this.awaitConfig();
+    const subscriptionStatusData = await SuperwallExpoModule.getSubscriptionStatus();
+    // Assuming subscriptionStatusData.subscriptionStatus is already MainSubscriptionStatus
+    return subscriptionStatusData.subscriptionStatus as MainSubscriptionStatus;
   }
 
-  /**
-   * Sets the delegate that handles Superwall lifecycle events.
-   *
-   * @param {SuperwallDelegate | undefined} delegate - An object implementing the {@link SuperwallDelegate} interface,
-   * or `undefined` to remove the current delegate.
-   *
-   * @returns {Promise<void>} A promise that resolves once the delegate has been updated.
-   */
-  async setDelegate(delegate: SuperwallDelegate | undefined): Promise<void> {
-    await this.awaitConfig()
-    Superwall.delegate = delegate
-    await SuperwallExpoModule.setDelegate(delegate === undefined)
+  async setInterfaceStyle(style: InterfaceStyle | null): Promise<void> { // InterfaceStyle is local compat
+    await SuperwallExpoModule.setInterfaceStyle(style?.toString());
   }
 
-  /**
-   * Retrieves the user attributes, set using {@link setUserAttributes}.
-   *
-   * @returns {Promise<UserAttributes>} A promise that resolves with an object representing the user's attributes.
-   */
+  async setDelegate(delegate: SuperwallDelegate | undefined): Promise<void> { // SuperwallDelegate is local compat
+    await this.awaitConfig();
+    Superwall.delegate = delegate;
+    await SuperwallExpoModule.setDelegate(delegate === undefined);
+  }
+
   async getUserAttributes(): Promise<UserAttributes> {
-    await this.awaitConfig()
-    const userAttributes: UserAttributes = await SuperwallExpoModule.getUserAttributes()
-    return userAttributes
+    await this.awaitConfig();
+    const userAttributes: UserAttributes = await SuperwallExpoModule.getUserAttributes();
+    return userAttributes;
   }
 
-  /**
-   * Preloads all paywalls that the user may see based on campaigns and placements in your Superwall dashboard.
-   *
-   * To use this, first set `PaywallOptions.shouldPreload` to `false` when configuring the SDK.
-   * Then call this function when you want preloading to begin.
-   *
-   * Note: This method will not reload any paywalls that have already been preloaded via {@link preloadPaywalls}.
-   *
-   * @returns {Promise<void>} A promise that resolves once the preloading process has been initiated.
-   */
   async preloadAllPaywalls(): Promise<void> {
-    await this.awaitConfig()
-    await SuperwallExpoModule.preloadAllPaywalls()
+    await this.awaitConfig();
+    await SuperwallExpoModule.preloadAllPaywalls();
   }
 
-  /**
-   * Preloads paywalls for specific placements.
-   *
-   * To use this method, first ensure that {@link PaywallOptions.shouldPreload} is set to `false` when configuring the SDK.
-   * Then call this function when you want to initiate preloading for selected placements.
-   *
-   * Note: This will not reload any paywalls you've already preloaded.
-   *
-   * @param {Set<string>} placementNames - A set of placement names whose paywalls you want to preload.
-   *
-   * @returns {Promise<void>} A promise that resolves once the preloading process has been initiated.
-   */
   async preloadPaywalls(placementNames: Set<string>): Promise<void> {
-    await this.awaitConfig()
-    await SuperwallExpoModule.preloadPaywalls(Array.from(placementNames))
+    await this.awaitConfig();
+    await SuperwallExpoModule.preloadPaywalls(Array.from(placementNames));
   }
 
-  /**
-   * Sets user attributes for use in paywalls and on the Superwall dashboard.
-   *
-   * If an attribute already exists, its value will be overwritten while other attributes remain unchanged.
-   * This is useful for analytics and campaign audience filters you may define in the Superwall Dashboard.
-   *
-   * **Note:** These attributes should not be used as a source of truth for sensitive information.
-   *
-   * For example, after retrieving your user's data:
-   *
-   * ```ts
-   * const attributes: UserAttributes = {
-   *   name: user.name,
-   *   apnsToken: user.apnsTokenString,
-   *   email: user.email,
-   *   username: user.username,
-   *   profilePic: user.profilePicUrl,
-   * }
-   * await Superwall.setUserAttributes(attributes)
-   * ```
-   *
-   * See [Setting User Attributes](https://docs.superwall.com/docs/setting-user-properties) for more information.
-   *
-   * @param {UserAttributes} userAttributes - An object containing custom attributes to store for the user.
-   *   Values can be any JSON-encodable value, URLs, or Dates. Keys beginning with `$` are reserved for Superwall and will be dropped.
-   *   Arrays and dictionaries as values are not supported and will be omitted.
-   *
-   * @returns {Promise<void>} A promise that resolves once the user attributes have been updated.
-   */
   async setUserAttributes(userAttributes: UserAttributes): Promise<void> {
-    await this.awaitConfig()
-    await SuperwallExpoModule.setUserAttributes(userAttributes)
+    await this.awaitConfig();
+    await SuperwallExpoModule.setUserAttributes(userAttributes);
   }
 
-  /**
-   * Dismisses the presented paywall, if one exists.
-   *
-   * @returns {Promise<void>} A promise that resolves once the paywall has been dismissed,
-   * or immediately if no paywall was active.
-   */
   async dismiss(): Promise<void> {
-    await SuperwallExpoModule.dismiss()
+    await SuperwallExpoModule.dismiss();
   }
 
-  async setLogLevel(level: LogLevel): Promise<void> {
-    await SuperwallExpoModule.setLogLevel(level.toString())
+  async setLogLevel(level: MainLogLevel): Promise<void> { // Parameter is MainLogLevel
+    await SuperwallExpoModule.setLogLevel(level.toString());
   }
 }

@@ -1,21 +1,13 @@
-export enum FeatureGatingBehavior {
-  gated = "gated",
-  nonGated = "nonGated",
-}
+// src/compat/lib/FeatureGatingBehavior.ts
 
-// Standalone functions for conversion
-export function featureGatingBehaviorToJson(
-  behavior: FeatureGatingBehavior
-): string {
-  return behavior;
-}
+/**
+ * Defines the behavior for feature gating.
+ * This is now re-exported from the main SuperwallExpoModule types.
+ */
+export type { FeatureGatingBehavior } from '../../SuperwallExpoModule.types';
 
-export function featureGatingBehaviorFromJson(
-  json: string
-): FeatureGatingBehavior {
-  const behavior = Object.values(FeatureGatingBehavior).find(b => b === json);
-  if (!behavior) {
-    throw new Error(`Invalid FeatureGatingBehavior value: ${json}`);
-  }
-  return behavior;
-}
+// Note: The local FeatureGatingBehavior enum and its associated fromJson/toJson
+// helper functions have been removed to align with the main types.
+// Consumers will now directly use the type from SuperwallExpoModule.types.
+// If fromJson/toJson utilities are still needed, they would need to be
+// implemented separately or by the consumer.

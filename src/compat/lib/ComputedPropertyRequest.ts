@@ -1,47 +1,15 @@
-// TypeScript class for the request to compute a device property
-export class ComputedPropertyRequest {
-  type: ComputedPropertyRequestType;
-  placementName: string;
+// src/compat/lib/ComputedPropertyRequest.ts
 
-  constructor(type: ComputedPropertyRequestType, placementName: string) {
-    this.type = type;
-    this.placementName = placementName;
-  }
+/**
+ * Represents a request for a computed property.
+ * This is now re-exported from the main SuperwallExpoModule types.
+ */
+export type { ComputedPropertyRequest } from '../../SuperwallExpoModule.types';
 
-  // Static method to create an instance from a JSON object
-  static fromJson(json: {
-    type: string;
-    placementName: string;
-  }): ComputedPropertyRequest {
-    const type = ComputedPropertyRequestType.fromJson(json.type);
-    return new ComputedPropertyRequest(type, json.placementName);
-  }
-}
-
-// TypeScript enum for the types of computed properties
-export enum ComputedPropertyRequestType {
-  minutesSince = 'minutesSince',
-  hoursSince = 'hoursSince',
-  daysSince = 'daysSince',
-  monthsSince = 'monthsSince',
-  yearsSince = 'yearsSince',
-}
-
-// Utilizing a namespace to extend the enum with serialization and deserialization functions
-export namespace ComputedPropertyRequestType {
-  // Converts the enum to a JSON-valid string
-  export function toJson(type: ComputedPropertyRequestType): string {
-    return type;
-  }
-
-  // Parses a JSON string to get the corresponding ComputedPropertyRequestType enum value
-  export function fromJson(json: string): ComputedPropertyRequestType {
-    const matchingType = Object.values(ComputedPropertyRequestType).find(
-      (value) => value === json
-    );
-    if (!matchingType) {
-      throw new Error(`Invalid ComputedPropertyRequestType value: ${json}`);
-    }
-    return matchingType as ComputedPropertyRequestType;
-  }
-}
+// Note: The local ComputedPropertyRequest class, ComputedPropertyRequestType enum,
+// and their associated fromJson/toJson utility methods have been removed to align
+// with the main types. Consumers will now directly use the ComputedPropertyRequest
+// type from SuperwallExpoModule.types. The 'type' property within this interface
+// is a string, so a separate ComputedPropertyRequestType enum/type is not
+// re-exported from the main types. If fromJson/toJson utilities are still needed,
+// they would need to be implemented separately or by the consumer.

@@ -1,37 +1,18 @@
-import { StoreTransaction } from "./StoreTransaction";
+// src/compat/lib/RestoreType.ts
 
-// Enum for RestoreType cases
-export enum RestoreTypeCase {
-  viaPurchase,
-  viaRestore,
-}
+/**
+ * Represents the type of restoration and the associated store transaction.
+ * These are now re-exported from the main SuperwallExpoModule types.
+ */
+export type {
+  RestoreType,
+  StoreTransaction, // Re-exporting StoreTransaction as it's part of the RestoreType type
+} from '../../SuperwallExpoModule.types';
 
-export class RestoreType {
-  private constructor(
-    public type: RestoreTypeCase,
-    public storeTransaction?: StoreTransaction
-  ) {}
-
-  // Static methods to create instances of RestoreType
-  static viaPurchase(storeTransaction?: StoreTransaction) {
-    return new RestoreType(RestoreTypeCase.viaPurchase, storeTransaction);
-  }
-
-  static viaRestore = new RestoreType(RestoreTypeCase.viaRestore);
-
-  // Static factory method to deserialize from JSON
-  static fromJson(json: any): RestoreType {
-    switch (json.type) {
-      case 'viaPurchase':
-        return RestoreType.viaPurchase(
-          json.storeTransaction
-            ? StoreTransaction.fromJson(json.storeTransaction)
-            : undefined
-        );
-      case 'viaRestore':
-        return RestoreType.viaRestore;
-      default:
-        throw new Error('Invalid RestoreType type');
-    }
-  }
-}
+// Note: The local StoreTransaction import from './StoreTransaction' is implicitly
+// handled by the re-export above if the intention is to use the main StoreTransaction type.
+// The local RestoreType class, RestoreTypeCase enum, and its fromJson method
+// have been removed to align with main types.
+// Consumers will now directly use the RestoreType type from SuperwallExpoModule.types.
+// If a fromJson utility is still needed for RestoreType, it would need to be
+// implemented separately or by the consumer.

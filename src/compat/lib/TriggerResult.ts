@@ -1,63 +1,18 @@
-import { Experiment } from './Experiment';
+// src/compat/lib/TriggerResult.ts
 
-export enum TriggerResultType {
-  placementNotFound,
-  noAudienceMatch,
-  paywall,
-  holdout,
-  error,
-}
+/**
+ * Represents the result of a trigger evaluation.
+ * This is now re-exported from the main SuperwallExpoModule types.
+ */
+export type {
+  TriggerResult,
+  Experiment, // Re-exporting Experiment as it's part of the TriggerResult type
+} from '../../SuperwallExpoModule.types';
 
-// TypeScript class for TriggerResult
-export class TriggerResult {
-  type: TriggerResultType;
-  experiment?: Experiment;
-  error?: string;
-
-  private constructor(
-    type: TriggerResultType,
-    experiment?: Experiment,
-    error?: string
-  ) {
-    this.type = type;
-    this.experiment = experiment;
-    this.error = error;
-  }
-
-  static placementNotFound(): TriggerResult {
-    return new TriggerResult(TriggerResultType.placementNotFound);
-  }
-
-  static noAudienceMatch(): TriggerResult {
-    return new TriggerResult(TriggerResultType.noAudienceMatch);
-  }
-
-  static paywall(experiment: Experiment): TriggerResult {
-    return new TriggerResult(TriggerResultType.paywall, experiment);
-  }
-
-  static holdout(experiment: Experiment): TriggerResult {
-    return new TriggerResult(TriggerResultType.holdout, experiment);
-  }
-
-  static error(error: string): TriggerResult {
-    return new TriggerResult(TriggerResultType.error, undefined, error);
-  }
-
-  static fromJson(json: any): TriggerResult {
-    switch (json.result) {
-      case 'placementNotFound':
-        return TriggerResult.placementNotFound();
-      case 'noAudienceMatch':
-        return TriggerResult.noAudienceMatch();
-      case 'paywall':
-        return TriggerResult.paywall(Experiment.fromJson(json.experiment));
-      case 'holdout':
-        return TriggerResult.holdout(Experiment.fromJson(json.experiment));
-      case 'error':
-        return TriggerResult.error(json.error);
-      default:
-        throw new Error('Invalid TriggerResult type');
-    }
-  }
-}
+// Note: The local `Experiment` import from './Experiment' is still implicitly
+// handled by the re-export above if the intention is to use the main Experiment type.
+// The local `TriggerResult` class, `TriggerResultType` enum, and its `fromJson` method
+// have been removed to align with main types.
+// Consumers will now directly use the `TriggerResult` type from SuperwallExpoModule.types.
+// If a `fromJson` utility is still needed for TriggerResult, it would need to be
+// implemented separately or by the consumer.

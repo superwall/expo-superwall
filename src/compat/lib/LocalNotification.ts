@@ -1,71 +1,16 @@
-export enum LocalNotificationType {
-  TrialStarted = 'trialStarted',
-}
+// src/compat/lib/LocalNotification.ts
 
-export class LocalNotificationTypeUtils {
-  static fromJson(value: string): LocalNotificationType {
-    switch (value) {
-      case 'trialStarted':
-        return LocalNotificationType.TrialStarted;
-      default:
-        throw new Error(`Invalid LocalNotificationType value: ${value}`);
-    }
-  }
+/**
+ * Represents a local notification and its type.
+ * These are now re-exported from the main SuperwallExpoModule types.
+ */
+export type {
+  LocalNotification,
+  LocalNotificationType,
+} from '../../SuperwallExpoModule.types';
 
-  static toJson(type: LocalNotificationType): string {
-    switch (type) {
-      case LocalNotificationType.TrialStarted:
-        return 'trialStarted';
-      default:
-        throw new Error(`Invalid LocalNotificationType value`);
-    }
-  }
-}
-
-export class LocalNotification {
-  type: LocalNotificationType;
-  title: string;
-  subtitle?: string;
-  body: string;
-  delay: number;
-
-  constructor({
-    type,
-    title,
-    subtitle,
-    body,
-    delay,
-  }: {
-    type: LocalNotificationType;
-    title: string;
-    subtitle?: string;
-    body: string;
-    delay: number;
-  }) {
-    this.type = type;
-    this.title = title;
-    this.subtitle = subtitle;
-    this.body = body;
-    this.delay = delay;
-  }
-
-  static fromJson(json: { [key: string]: any }): LocalNotification {
-    return new LocalNotification({
-      type: LocalNotificationTypeUtils.fromJson(json.type),
-      title: json.title,
-      subtitle: json.subtitle,
-      body: json.body,
-      delay: json.delay,
-    });
-  }
-
-  toJson(): { [key: string]: any } {
-    return {
-      type: LocalNotificationTypeUtils.toJson(this.type),
-      title: this.title,
-      subtitle: this.subtitle,
-      body: this.body,
-      delay: this.delay,
-    };
-  }
-}
+// Note: The local LocalNotification class, LocalNotificationType enum,
+// and their associated fromJson/toJson utility methods (within LocalNotificationTypeUtils)
+// have been removed to align with the main types. Consumers will now directly use
+// the types from SuperwallExpoModule.types. If fromJson/toJson utilities
+// are still needed, they would need to be implemented separately or by the consumer.

@@ -1,34 +1,17 @@
-import { Entitlement } from './Entitlement';
+// src/compat/lib/Product.ts
 
-export class Product {
-  name?: string;
-  id: string;
-  entitlements: Set<Entitlement>;
+/**
+ * Represents a product available for purchase on a paywall and its associated entitlements.
+ * These are now re-exported from the main SuperwallExpoModule types.
+ */
+export type {
+  Product,
+  Entitlement, // Re-exporting Entitlement as it's part of the Product type
+} from '../../SuperwallExpoModule.types';
 
-  constructor({
-    id,
-    name,
-    entitlements,
-  }: {
-    id: string;
-    name?: string;
-    entitlements: Set<Entitlement>;
-  }) {
-    this.id = id;
-    this.name = name;
-    this.entitlements = entitlements;
-  }
-
-  // Factory method to create a Product instance from a JSON object
-  static fromJson(json: { [key: string]: any }): Product {
-    return new Product({
-      id: json.id,
-      name: json.name,
-      entitlements: new Set<Entitlement>(
-        Array.isArray(json.entitlements)
-          ? json.entitlements.map((item: any) => Entitlement.fromJson(item))
-          : []
-      ),
-    });
-  }
-}
+// Note: The local Product class and its fromJson method have been removed
+// to align with the main types. The import for the local Entitlement
+// class is also no longer needed as we re-export the main Entitlement type.
+// Consumers will now directly use the types from SuperwallExpoModule.types.
+// If fromJson/toJson utilities are still needed, they would need to be
+// implemented separately or by the consumer.

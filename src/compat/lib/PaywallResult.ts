@@ -1,27 +1,7 @@
-export type PaywallResult =
-  | {
-      type: 'purchased';
-      productId: string;
-    }
-  | {
-      type: 'declined';
-    }
-  | {
-      type: 'restored';
-    };
+// src/compat/lib/PaywallResult.ts
 
-export function fromJson(json: any): PaywallResult {
-  switch (json.type) {
-    case 'purchased':
-      return {
-        type: 'purchased',
-        productId: json.productId || json.product?.id || '',
-      };
-    case 'declined':
-      return { type: 'declined' };
-    case 'restored':
-      return { type: 'restored' };
-    default:
-      throw new Error(`Unknown PaywallResult type: ${json.type}`);
-  }
-}
+/**
+ * Represents the result of a paywall presentation.
+ * This is now re-exported from the main SuperwallExpoModule types.
+ */
+export type { PaywallResult } from '../../SuperwallExpoModule.types';

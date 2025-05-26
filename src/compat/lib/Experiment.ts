@@ -1,60 +1,17 @@
-export class Experiment {
-  id: string;
-  groupId: string;
-  variant: Variant;
+// src/compat/lib/Experiment.ts
 
-  constructor(id: string, groupId: string, variant: Variant) {
-    this.id = id;
-    this.groupId = groupId;
-    this.variant = variant;
-  }
+/**
+ * Represents a Superwall experiment, its variant, and variant type.
+ * These are now re-exported from the main SuperwallExpoModule types.
+ */
+export type {
+  Experiment,
+  Variant,
+  VariantType,
+} from '../../SuperwallExpoModule.types';
 
-  static fromJson(json: any): Experiment {
-    return new Experiment(
-      json.id,
-      json.groupId,
-      Variant.fromJson(json.variant)
-    );
-  }
-
-  toJson(): any {
-    return {
-      id: this.id,
-      groupId: this.groupId,
-      variant: this.variant.toJson(),
-    };
-  }
-}
-
-export class Variant {
-  id: string;
-  type: VariantType;
-  paywallId: string | null;
-
-  constructor(id: string, type: VariantType, paywallId: string | null) {
-    this.id = id;
-    this.type = type;
-    this.paywallId = paywallId;
-  }
-
-  static fromJson(json: any): Variant {
-    return new Variant(
-      json.id,
-      VariantType[json.type as keyof typeof VariantType],
-      json.paywallId ?? null
-    );
-  }
-
-  toJson(): any {
-    return {
-      id: this.id,
-      type: this.type,
-      paywallId: this.paywallId,
-    };
-  }
-}
-
-export enum VariantType {
-  TREATMENT = 'TREATMENT',
-  HOLDOUT = 'HOLDOUT',
-}
+// Note: The local Experiment class, Variant class, VariantType enum,
+// and their associated fromJson/toJson methods have been removed to align
+// with the main types. Consumers will now directly use the types from
+// SuperwallExpoModule.types. If fromJson/toJson utilities are still needed,
+// they would need to be implemented separately or by the consumer.

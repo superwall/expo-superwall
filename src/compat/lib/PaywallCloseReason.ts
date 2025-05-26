@@ -1,30 +1,13 @@
-export enum PaywallCloseReason {
-  SystemLogic = "systemLogic",
-  ForNextPaywall = "forNextPaywall",
-  WebViewFailedToLoad = "webViewFailedToLoad",
-  ManualClose = "manualClose",
-  None = "none",
-}
+// src/compat/lib/PaywallCloseReason.ts
 
-export namespace PaywallCloseReason {
-  export function toJson(reason: PaywallCloseReason): string {
-    return reason;
-  }
+/**
+ * The reason why a paywall was closed.
+ * This is now re-exported from the main SuperwallExpoModule types.
+ */
+export type { PaywallCloseReason } from '../../SuperwallExpoModule.types';
 
-  export function fromJson(json: string): PaywallCloseReason {
-    switch (json) {
-      case "systemLogic":
-        return PaywallCloseReason.SystemLogic;
-      case "forNextPaywall":
-        return PaywallCloseReason.ForNextPaywall;
-      case "webViewFailedToLoad":
-        return PaywallCloseReason.WebViewFailedToLoad;
-      case "manualClose":
-        return PaywallCloseReason.ManualClose;
-      case "none":
-        return PaywallCloseReason.None;
-      default:
-        throw new Error(`Invalid PaywallCloseReason value: ${json}`);
-    }
-  }
-}
+// Note: The local PaywallCloseReason enum and its associated fromJson/toJson
+// methods (within the namespace) have been removed to align with the main types.
+// Consumers will now directly use the type from SuperwallExpoModule.types.
+// If fromJson/toJson utilities are still needed, they would need to be
+// implemented separately or by the consumer.

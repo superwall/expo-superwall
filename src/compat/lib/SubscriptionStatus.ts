@@ -1,81 +1,14 @@
-import { Entitlement } from './Entitlement';
+// src/compat/lib/SubscriptionStatus.ts
 
-export type SubscriptionStatus =
-  | SubscriptionStatus.Active
-  | SubscriptionStatus.Inactive
-  | SubscriptionStatus.Unknown;
+/**
+ * Represents the subscription status of the user.
+ * This is now re-exported from the main SuperwallExpoModule types.
+ */
+export type { SubscriptionStatus } from '../../SuperwallExpoModule.types';
 
-export namespace SubscriptionStatus {
-  export type Active = {
-    status: `ACTIVE`;
-    entitlements: Entitlement[];
-  };
-
-  export type Inactive = {
-    status: `INACTIVE`;
-  };
-
-  export type Unknown = {
-    status: `UNKNOWN`;
-  };
-
-  export function Active(input: Entitlement[] | string[]): Active {
-    return {
-      status: `ACTIVE`,
-      entitlements:
-        input.length === 0
-          ? []
-          : typeof input[0] === 'string'
-          ? (input as string[]).map((id) => new Entitlement(id))
-          : (input as Entitlement[]),
-    };
-  }
-
-  export function Inactive(): Inactive {
-    return {
-      status: 'INACTIVE',
-    };
-  }
-
-  export function Unknown(): Unknown {
-    return {
-      status: 'UNKNOWN',
-    };
-  }
-
-  export function fromString(
-    value: string,
-    entitlements: Entitlement[]
-  ): SubscriptionStatus {
-    switch (value) {
-      case 'ACTIVE':
-        return Active(entitlements);
-      case 'INACTIVE':
-        return Inactive();
-      case 'UNKNOWN':
-      default:
-        return Unknown();
-    }
-  }
-
-  export function fromJson(json: any): SubscriptionStatus {
-    switch (json.status) {
-      case 'ACTIVE':
-        return {
-          status: 'ACTIVE',
-          entitlements: json.entitlements.map((entitlement: any) =>
-            Entitlement.fromJson(entitlement)
-          ),
-        };
-      case 'INACTIVE':
-        return {
-          status: 'INACTIVE',
-        };
-      case 'UNKNOWN':
-      default:
-        return {
-          status: 'UNKNOWN',
-        };
-    }
-  }
-}
+// Note: The local `Entitlement` import is still present but will be addressed
+// in a subsequent step. The local `SubscriptionStatus` type and namespace,
+// including its `fromJson` method, have been removed to align with main types.
+// Consumers will now directly use the `SubscriptionStatus` type from SuperwallExpoModule.types.
+// If a `fromJson` utility is still needed for SubscriptionStatus, it would need to be
+// implemented separately or by the consumer.
