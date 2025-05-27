@@ -27,7 +27,12 @@
     "open:android": "open -a \"Android Studio\" example/android",
     "format": "biome check --write ."
   },
-  "keywords": ["react-native", "expo", "superwall-expo", "SuperwallExpo"],
+  "keywords": [
+    "react-native",
+    "expo",
+    "superwall-expo",
+    "SuperwallExpo"
+  ],
   "repository": "https://github.com/superwall/superwall-expo",
   "bugs": {
     "url": "https://github.com/superwall/superwall-expo/issues"
