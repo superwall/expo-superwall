@@ -315,7 +315,7 @@ export default class Superwall {
     ).then(() => {
       if (completion) completion()
       // TODO: Not sure if this is needed
-      //   Superwall.shared.observeSubscriptionStatus()
+      // Superwall.shared.observeSubscriptionStatus()
     })
 
     Superwall.setDidConfigure(true)
