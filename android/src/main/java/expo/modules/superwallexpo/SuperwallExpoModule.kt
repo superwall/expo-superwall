@@ -175,8 +175,9 @@ class SuperwallExpoModule : Module() {
         placement = placement,
         params = params,
         handler = handler
-      ) 
-      promise.resolve(null)
+      ) {
+        promise.resolve(null)
+      }
     }
     
 
