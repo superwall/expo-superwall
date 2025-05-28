@@ -32,6 +32,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
+import android.util.Log
+
 class SuperwallExpoModule : Module() {
 
   companion object {
@@ -131,9 +133,12 @@ class SuperwallExpoModule : Module() {
       handlerId: String?,
       promise: Promise ->
 
+
+
       var handler: PaywallPresentationHandler? = handlerId?.let {
         PaywallPresentationHandler()
       }
+
 
 
         handler?.onPresent { paywallInfo ->
@@ -143,6 +148,8 @@ class SuperwallExpoModule : Module() {
           "handlerId" to handlerId)
           sendEvent(onPaywallPresent, data)
         }
+
+
 
         handler?.onDismiss { paywallInfo, result ->
           val data =

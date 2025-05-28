@@ -456,7 +456,7 @@ export default class Superwall {
         handlerId,
       ).then(() => {
         params.feature!() //TODO: This is wrong, the feature should be executed only if the native SDK calls the feature block
-                        // not after awaiting the promise
+        // not after awaiting the promise
       })
     }
 
