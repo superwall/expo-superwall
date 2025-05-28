@@ -34,13 +34,17 @@ export default function Compat() {
         apiKey: apiKey,
       })
 
+      console.log("Configured")
       await Superwall.shared.identify({ userId })
+      console.log("Identified")
       await Superwall.shared.setDelegate(delegate)
+      console.log("Set delegate")
       await Superwall.shared.setUserAttributes({
         test: "abc",
         platform: Platform.OS,
         timestamp: new Date().toISOString(),
       })
+      console.log("Set user attributes")
 
       setIsConfigured(true)
 

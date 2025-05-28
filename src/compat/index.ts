@@ -348,7 +348,7 @@ export default class Superwall {
 
     const serializedOptions = options ? options.toJson() : null
 
-    await SuperwallExpoModule.identify(userId, serializedOptions)
+    SuperwallExpoModule.identify(userId, serializedOptions)
   }
 
   /**
