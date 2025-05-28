@@ -26,7 +26,7 @@ export default function Compat() {
     const apiKey =
       Platform.OS === "ios"
         ? "pk_25605698906751f5383385f9976e21f840d44aa11cd4639c"
-        : "MY_ANDROID_API_KEY"
+        : "pk_6d16c4c892b1e792490ab8bfe831f1ad96e7c18aee7a5257"
 
     Superwall.configure({
       apiKey: apiKey,
