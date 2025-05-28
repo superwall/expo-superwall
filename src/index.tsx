@@ -1,0 +1,58 @@
+import { type ReactNode, createContext, useEffect, useState } from "react"
+import { Platform } from "react-native"
+import SuperwallExpoModule from "./SuperwallExpoModule"
+
+import pkg from "../package.json"
+
+export const SuperwallContext = createContext<null>(null)
+
+class SuperwallClient {
+  static isConfigured = false
+
+  async configure(apiKey: string, options: Record<string, any> = {}) {
+    SuperwallExpoModule.configure(apiKey, options, true, pkg.version)
+  }
+  async identify(
+    userId: string,
+    options: {
+      restorePaywallAssignments?: boolean
+    },
+  ) {
+    SuperwallExpoModule.identify(userId, options)
+  }
+}
+
+export interface SuperwallProviderProps {
+  children: ReactNode
+  config: {
+    ios?: {
+      apiKey: string
+    }
+    android?: {
+      apiKey: string
+    }
+  }
+}
+
+export const SuperwallProvider = ({ children, config }: SuperwallProviderProps) => {
+  useEffect(() => {
+    const apiKey = config[Platform.OS as "ios"]?.apiKey
+
+    if (!apiKey) {
+      throw new Error(`Please provide an Superwall apiKey for ${Platform.OS}`)
+    }
+
+    console.info("Configuring Superwall")
+    SuperwallExpoModule.configure(apiKey, {}, true, pkg.version)
+
+    console.info("Superwall configured")
+  }, [config])
+
+  return <SuperwallContext.Provider value={null}>{children}</SuperwallContext.Provider>
+}
+
+export const useUser = () => {
+  const [isIdentified, setIsIdentified] = useState(false)
+}
+
+export const useSuperwall = () => {}
