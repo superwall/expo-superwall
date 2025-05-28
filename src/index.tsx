@@ -6,22 +6,6 @@ import pkg from "../package.json"
 
 export const SuperwallContext = createContext<null>(null)
 
-class SuperwallClient {
-  static isConfigured = false
-
-  async configure(apiKey: string, options: Record<string, any> = {}) {
-    SuperwallExpoModule.configure(apiKey, options, true, pkg.version)
-  }
-  async identify(
-    userId: string,
-    options: {
-      restorePaywallAssignments?: boolean
-    },
-  ) {
-    SuperwallExpoModule.identify(userId, options)
-  }
-}
-
 export interface SuperwallProviderProps {
   children: ReactNode
   config: {
@@ -43,6 +27,10 @@ export const SuperwallProvider = ({ children, config }: SuperwallProviderProps) 
     }
 
     console.info("Configuring Superwall")
+
+    const xd = SuperwallExpoModule.addListener("onPaywallPresent", () => {
+      console.info("Paywall presented")
+    })
     SuperwallExpoModule.configure(apiKey, {}, true, pkg.version)
 
     console.info("Superwall configured")
