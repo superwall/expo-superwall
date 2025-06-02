@@ -88,6 +88,7 @@ export enum EventType {
   enrichmentComplete = "enrichmentComplete",
   enrichmentFail = "enrichmentFail",
   networkDecodingFail = "networkDecodingFail",
+  handleLog = "handleLog",
 }
 
 export class SuperwallEvent {
@@ -305,6 +306,8 @@ export class SuperwallEvent {
       case EventType.redemptionFail:
         return new SuperwallEvent({ type: eventType })
       case EventType.enrichmentStart:
+        return new SuperwallEvent({ type: eventType })
+      case EventType.handleLog:
         return new SuperwallEvent({ type: eventType })
       case EventType.enrichmentComplete:
         return new SuperwallEvent({

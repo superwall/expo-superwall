@@ -32,8 +32,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-import android.util.Log
-
 class SuperwallExpoModule : Module() {
 
   companion object {
@@ -85,8 +83,12 @@ class SuperwallExpoModule : Module() {
     }
 
     Function("identify") { userId: String, options: Map<String, Any> ->
-      val options = identityOptionsFromJson(options)
-      Superwall.instance.identify(userId = userId, options = options)
+      try {
+        val options = identityOptionsFromJson(options)
+        Superwall.instance.identify(userId = userId, options = options)
+      } catch (error: Exception) {
+        error.printStackTrace()
+      }
     }
 
     Function("reset") {
@@ -107,15 +109,15 @@ class SuperwallExpoModule : Module() {
 
       Superwall.configure(
         apiKey = apiKey,
-        applicationContext = appContext?.reactContext?.applicationContext as Application,
+        applicationContext = appContext.reactContext?.applicationContext as Application,
         purchaseController = if (usingPurchaseController == true) purchaseController else null,
+        activityProvider = ExpoActivityProvider(appContext),
         options = superwallOptions,
         completion = {
-          promise.resolve(null)
-        }
-      )
-
-      Superwall.instance.setPlatformWrapper("React Native", version = "sdkVersion" ?: "0.0.0")
+          Superwall.instance.setPlatformWrapper("React Native", version = "sdkVersion" ?: "0.0.0")
+          promise.resolve(true)
+         }
+       )
     }
 
     AsyncFunction("getConfigurationStatus") { promise: Promise ->
