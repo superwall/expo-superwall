@@ -7970,6 +7970,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react@npm:19.0.0":
+  version: 19.0.0
+  resolution: "react@npm:19.0.0"
+  checksum: 10c0/9cad8f103e8e3a16d15cb18a0d8115d8bd9f9e1ce3420310aea381eb42aa0a4f812cf047bb5441349257a05fba8a291515691e3cb51267279b2d2c3253f38471
+  languageName: node
+  linkType: hard
+
 "readdirp@npm:~3.6.0":
   version: 3.6.0
   resolution: "readdirp@npm:3.6.0"
@@ -8962,6 +8969,7 @@ __metadata:
     "@types/react": "npm:~19.1.5"
     expo: "npm:53.0.9"
     expo-module-scripts: "npm:^4.1.7"
+    react: "npm:19.0.0"
     react-native: "npm:0.79.2"
   peerDependencies:
     expo: "*"
