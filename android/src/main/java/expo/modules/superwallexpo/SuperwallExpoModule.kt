@@ -77,6 +77,29 @@ class SuperwallExpoModule : Module() {
 
     Name("SuperwallExpo")
 
+    Events(
+      onPaywallPresent,
+      onPaywallDismiss,
+      onPaywallError,
+      onPaywallSkip,
+      onPurchase,
+      onPurchaseRestore,
+
+      // Legacy events
+      subscriptionStatusDidChange,
+      handleSuperwallEvent,
+      handleCustomPaywallAction,
+      willDismissPaywall,
+      willPresentPaywall,
+      didDismissPaywall,
+      didPresentPaywall,
+      paywallWillOpenURL,
+      paywallWillOpenDeepLink,
+      handleLog,
+      willRedeemLink,
+      didRedeemLink
+    )
+
     Function("getApiKey") {
       val applicationInfo = appContext?.reactContext?.packageManager?.getApplicationInfo(appContext?.reactContext?.packageName.toString(), PackageManager.GET_META_DATA)
       return@Function applicationInfo?.metaData?.getString("SUPERWALL_API_KEY")
