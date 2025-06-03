@@ -28,7 +28,13 @@
         <key>CFBundleURLSchemes</key>
         <array>
           <string>superwall-expo-example</string>
-          <string>com.superwall.Advanced</string>
+          <string>superwall.expo.example</string>
+        </array>
+      </dict>
+      <dict>
+        <key>CFBundleURLSchemes</key>
+        <array>
+          <string>exp+superwall-example</string>
         </array>
       </dict>
     </array>

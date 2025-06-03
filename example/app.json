@@ -9,7 +9,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.superwall.Advanced"
+      "bundleIdentifier": "superwall.expo.example"
     },
     "android": {
       "adaptiveIcon": {

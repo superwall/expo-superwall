@@ -26,7 +26,7 @@ export default function Compat() {
     let eventListener: any
     const apiKey =
       Platform.OS === "ios"
-        ? "pk_25605698906751f5383385f9976e21f840d44aa11cd4639c"
+        ? "pk_b814c1d9597097e7a8dee971d0eec730b67a9b59423e14d0"
         : "pk_6d16c4c892b1e792490ab8bfe831f1ad96e7c18aee7a5257"
 
     const configurePlatform = async () => {
