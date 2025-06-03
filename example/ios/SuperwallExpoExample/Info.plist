@@ -27,7 +27,7 @@
       <dict>
         <key>CFBundleURLSchemes</key>
         <array>
-          <string>superwall-expo-example</string>
+          <string>expo-superwall-example</string>
           <string>superwall.expo.example</string>
         </array>
       </dict>

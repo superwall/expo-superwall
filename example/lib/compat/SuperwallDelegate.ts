@@ -5,7 +5,7 @@ import {
   type SubscriptionStatus,
   SuperwallDelegate,
   type SuperwallEventInfo,
-} from "superwall-expo/compat"
+} from "expo-superwall/compat"
 
 export class MySuperwallDelegate extends SuperwallDelegate {
   subscriptionStatusDidChange(from: SubscriptionStatus, to: SubscriptionStatus): void {

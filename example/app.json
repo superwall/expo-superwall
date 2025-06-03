@@ -4,7 +4,7 @@
     "slug": "superwall-example",
     "version": "1.0.0",
     "orientation": "portrait",
-    "scheme": "superwall-expo-example",
+    "scheme": "expo-superwall-example",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {

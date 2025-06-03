@@ -1,5 +1,5 @@
 {
-  "name": "superwall-expo",
+  "name": "expo-superwall",
   "version": "0.0.1-beta.0",
   "description": "Offical Expo Integration for Superwall",
   "main": "build/index.js",
@@ -29,14 +29,14 @@
     "android": "expo run:android",
     "ios": "expo run:ios"
   },
-  "keywords": ["react-native", "expo", "superwall-expo", "SuperwallExpo"],
-  "repository": "https://github.com/superwall/superwall-expo",
+  "keywords": ["react-native", "expo", "expo-superwall", "SuperwallExpo"],
+  "repository": "https://github.com/superwall/expo-superwall",
   "bugs": {
-    "url": "https://github.com/superwall/superwall-expo/issues"
+    "url": "https://github.com/superwall/expo-superwall/issues"
   },
   "author": "Makisuo <david@superwall.com> (https://github.com/makisuo)",
   "license": "MIT",
-  "homepage": "https://github.com/superwall/superwall-expo#readme",
+  "homepage": "https://github.com/superwall/expo-superwall#readme",
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@types/react": "~19.1.5",

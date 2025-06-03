@@ -1,5 +1,5 @@
 {
-  "name": "superwall-expo-example",
+  "name": "expo-superwall-example",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {

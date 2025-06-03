@@ -1,6 +1,6 @@
+import * as Superwall from "expo-superwall"
 import { useEffect } from "react"
 import { Button, Text, View } from "react-native"
-import * as Superwall from "superwall-expo"
 
 import { Link } from "expo-router"
 

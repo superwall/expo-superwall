@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons"
 import { LinearGradient } from "expo-linear-gradient"
 import { Link } from "expo-router"
+import Superwall from "expo-superwall/compat"
 import { useEffect, useState } from "react"
 import {
   Alert,
@@ -12,7 +13,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native"
-import Superwall from "superwall-expo/compat"
 import { MySuperwallDelegate } from "../lib/compat/SuperwallDelegate"
 
 const delegate = new MySuperwallDelegate()
