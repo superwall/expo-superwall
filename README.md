@@ -1,6 +1,6 @@
 <p align="center">
   <br />
-  <img src="https://sdmntprpolandcentral.oaiusercontent.com/files/00000000-2d34-620a-9ff1-08fd49c7d10c/raw?se=2025-06-04T09:55:26Z&sp=r&sv=2024-08-04&sr=b&scid=d726d727-00ef-592a-a050-441e2a1bb43c&skoid=b928fb90-500a-412f-a661-1ece57a7c318&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2025-06-04T05:39:10Z&ske=2025-06-05T05:39:10Z&sks=b&skv=2024-08-04&sig=XEiCPtCJd/tW+wYghFuJHCuB9ZkuetUmfEcvnfGZY9g%3D" alt="logo" height="100px" />
+  <img src="https://sdmntprpolandcentral.oaiusercontent.com/files/00000000-2d34-620a-9ff1-08fd49c7d10c/raw?se=2025-06-04T09%3A55%3A26Z&sp=r&sv=2024-08-04&sr=b&scid=d726d727-00ef-592a-a050-441e2a1bb43c&skoid=b928fb90-500a-412f-a661-1ece57a7c318&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2025-06-04T05%3A39%3A10Z&ske=2025-06-05T05%3A39%3A10Z&sks=b&skv=2024-08-04&sig=XEiCPtCJd/tW%2BwYghFuJHCuB9ZkuetUmfEcvnfGZY9g%3D" alt="logo" height="100px" />
   <h3 style="font-size:26" align="center">In-App Paywalls Made Easy 💸</h3>
   <br />
 </p>
