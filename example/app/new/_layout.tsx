@@ -1,5 +1,5 @@
 import { Stack } from "expo-router"
-import { SuperwallProvider } from "superwall-expo"
+import { SuperwallProvider } from "expo-superwall"
 
 export default function StackLayout() {
   return (
