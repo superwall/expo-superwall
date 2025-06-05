@@ -1,0 +1,13 @@
+appId: com.superwall.superapp
+---
+- runFlow:
+    when:
+      platform: iOS
+      visible: Back
+    commands:
+      - tapOn: Back
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back

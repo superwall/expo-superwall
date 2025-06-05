@@ -1,0 +1,146 @@
+{
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyText" : "",
+        "policyURL" : ""
+      }
+    ]
+  },
+  "identifier" : "AD417988",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_compatibilityTimeRate" : {
+      "3" : 6
+    },
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Load Products"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Purchase"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Verification"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Store Sync"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Subscription Status"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Transaction"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Manage Subscriptions Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Refund Request Sheet"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Offer Code Redeem Sheet"
+      }
+    ],
+    "_timeRate" : 1003
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "4F31BE19",
+      "localizations" : [
+
+      ],
+      "name" : "Example Subscription Group",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "89.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "3106A8B0",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Access to diamond features",
+              "displayName" : "Diamond Subscription",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "superwall_diamond_8999",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Diamond",
+          "subscriptionGroupID" : "4F31BE19",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "39.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "297B0DB9",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Access to pro features",
+              "displayName" : "Pro Subscription",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "superwall_pro_3999",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Pro",
+          "subscriptionGroupID" : "4F31BE19",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}
