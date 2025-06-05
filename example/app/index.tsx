@@ -1,7 +1,6 @@
+import { Link } from "expo-router"
 import { useEffect } from "react"
 import { Text, View } from "react-native"
-
-import { Link } from "expo-router"
 
 export default function App() {
   useEffect(() => {}, [])

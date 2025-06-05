@@ -4916,6 +4916,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"expo-superwall@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "expo-superwall@workspace:."
+  dependencies:
+    "@biomejs/biome": "npm:^1.9.4"
+    "@types/react": "npm:~19.1.5"
+    expo: "npm:53.0.9"
+    expo-module-scripts: "npm:^4.1.7"
+    react-native: "npm:0.79.2"
+  peerDependencies:
+    expo: "*"
+    react: "*"
+    react-native: "*"
+  languageName: unknown
+  linkType: soft
+
 "expo@npm:53.0.9":
   version: 53.0.9
   resolution: "expo@npm:53.0.9"
@@ -8953,22 +8969,6 @@ __metadata:
   checksum: 10c0/ac85f3359d2c2ecbf5febca6a24ae9bf96c931f05fde533c22a94f59c6a74895e5d5f0e871878dfd59c2697a75ebb04e4b2224ef0bfc24ca1210735c2ec191ef
   languageName: node
   linkType: hard
-
-"superwall-expo@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "superwall-expo@workspace:."
-  dependencies:
-    "@biomejs/biome": "npm:^1.9.4"
-    "@types/react": "npm:~19.1.5"
-    expo: "npm:53.0.9"
-    expo-module-scripts: "npm:^4.1.7"
-    react-native: "npm:0.79.2"
-  peerDependencies:
-    expo: "*"
-    react: "*"
-    react-native: "*"
-  languageName: unknown
-  linkType: soft
 
 "supports-color@npm:^5.3.0":
   version: 5.5.0

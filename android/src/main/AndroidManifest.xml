@@ -1,2 +1,15 @@
-<manifest>
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.INTERNET" />
+    <application>
+        <activity
+            android:name="com.superwall.sdk.paywall.view.SuperwallPaywallActivity"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
+        <activity android:name="com.superwall.sdk.debug.DebugViewActivity" />
+        <activity android:name="com.superwall.sdk.debug.localizations.SWLocalizationActivity" />
+        <activity android:name="com.superwall.sdk.debug.SWConsoleActivity" />
+    </application>
 </manifest>

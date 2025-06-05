@@ -1,15 +1,15 @@
 {
   "expo": {
     "name": "Superwall Expo Example",
-    "slug": "superwall-expo-example",
+    "slug": "superwall-example",
     "version": "1.0.0",
     "orientation": "portrait",
-    "scheme": "superwall-expo-example",
+    "scheme": "expo-superwall-example",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.superwall.Advanced"
+      "bundleIdentifier": "superwall.expo.example"
     },
     "android": {
       "adaptiveIcon": {
@@ -18,9 +18,24 @@
       "edgeToEdgeEnabled": true,
       "package": "com.superwall.superapp"
     },
-    "plugins": ["expo-router", ["../app.plugin.js", { "apiKey": "custom_secret_api" }]],
+    "plugins": [
+      "expo-router",
+      [
+        "../app.plugin.js",
+        {
+          "apiKey": "custom_secret_api"
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b0575f82-3760-4dd2-8f0a-21b0739987cc"
+      }
+    },
+    "owner": "makisuo"
   }
 }

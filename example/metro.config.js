@@ -19,7 +19,7 @@ config.resolver.nodeModulesPaths = [
 ];
 
 config.resolver.extraNodeModules = {
-	"superwall-expo": "..",
+	"expo-superwall": "..",
 };
 
 config.watchFolders = [path.resolve(__dirname, "..")];

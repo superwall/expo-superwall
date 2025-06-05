@@ -41,3 +41,10 @@ android {
     abortOnError false
   }
 }
+
+dependencies {
+  implementation "com.superwall.sdk:superwall-android:2.1.2"
+  implementation 'com.android.billingclient:billing:6.1.0'
+  implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.2'
+}
+

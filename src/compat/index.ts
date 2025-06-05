@@ -1,7 +1,7 @@
 import { Assignment } from "./lib/Assigments"
 import { ConfigurationStatus } from "./lib/ConfigurationStatus"
 import { EntitlementsInfo } from "./lib/EntitlementsInfo"
-import type { IdentityOptions } from "./lib/IdentityOptions"
+import { IdentityOptions } from "./lib/IdentityOptions"
 import type { InterfaceStyle } from "./lib/InterfaceStyle"
 import type { LogLevel } from "./lib/LogLevel"
 import { PaywallInfo } from "./lib/PaywallInfo"
@@ -315,7 +315,7 @@ export default class Superwall {
     ).then(() => {
       if (completion) completion()
       // TODO: Not sure if this is needed
-      //   Superwall.shared.observeSubscriptionStatus()
+      // Superwall.shared.observeSubscriptionStatus()
     })
 
     Superwall.setDidConfigure(true)
@@ -345,10 +345,8 @@ export default class Superwall {
     options?: IdentityOptions
   }): Promise<void> {
     await this.awaitConfig()
-
-    const serializedOptions = options ? options.toJson() : null
-
-    await SuperwallExpoModule.identify(userId, serializedOptions)
+    const serializedOptions = options ? options.toJson() : new IdentityOptions().toJson()
+    SuperwallExpoModule.identify(userId, serializedOptions)
   }
 
   /**
@@ -455,11 +453,10 @@ export default class Superwall {
         paramsObject,
         handlerId,
       ).then(() => {
-        params.feature!()
+        params.feature!() //TODO: This is wrong, the feature should be executed only if the native SDK calls the feature block
+        // not after awaiting the promise
       })
     }
-
-    console.log("Registering placement:", params.placement, paramsObject, handlerId)
 
     return SuperwallExpoModule.registerPlacement(params.placement, paramsObject, handlerId)
   }

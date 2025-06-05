@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons"
 import { LinearGradient } from "expo-linear-gradient"
 import { Link } from "expo-router"
+import Superwall from "expo-superwall/compat"
 import { useEffect, useState } from "react"
 import {
   Alert,
@@ -12,50 +13,58 @@ import {
   TouchableOpacity,
   View,
 } from "react-native"
-import Superwall from "superwall-expo/compat"
 import { MySuperwallDelegate } from "../lib/compat/SuperwallDelegate"
 
 const delegate = new MySuperwallDelegate()
 
 export default function Compat() {
   const [isConfigured, setIsConfigured] = useState(false)
-  const [userId, setUserId] = useState("abc")
+  const [userId, setUserId] = useState("some_user_id")
   const [lastEvent, setLastEvent] = useState<string | null>(null)
 
   useEffect(() => {
+    let eventListener: any
     const apiKey =
       Platform.OS === "ios"
-        ? "pk_25605698906751f5383385f9976e21f840d44aa11cd4639c"
-        : "MY_ANDROID_API_KEY"
+        ? "pk_b814c1d9597097e7a8dee971d0eec730b67a9b59423e14d0"
+        : "pk_6d16c4c892b1e792490ab8bfe831f1ad96e7c18aee7a5257"
 
-    Superwall.configure({
-      apiKey: apiKey,
-    })
+    const configurePlatform = async () => {
+      await Superwall.configure({
+        apiKey: apiKey,
+      })
 
-    Superwall.shared.identify({ userId })
-    Superwall.shared.setDelegate(delegate)
-    Superwall.shared.setUserAttributes({
-      test: "abc",
-      platform: Platform.OS,
-      timestamp: new Date().toISOString(),
-    })
+      console.log("Configured")
+      await Superwall.shared.identify({ userId })
+      console.log("Identified")
+      await Superwall.shared.setDelegate(delegate)
+      console.log("Set delegate")
+      await Superwall.shared.setUserAttributes({
+        test: "abc",
+        platform: Platform.OS,
+        timestamp: new Date().toISOString(),
+      })
+      console.log("Set user attributes")
 
-    setIsConfigured(true)
+      setIsConfigured(true)
 
-    Linking.getInitialURL().then((url) => {
-      if (url) {
-        Superwall.shared.handleDeepLink(url)
-        setLastEvent(`Deep link handled: ${url}`)
-      }
-    })
+      await Linking.getInitialURL().then((url) => {
+        if (url) {
+          Superwall.shared.handleDeepLink(url)
+          setLastEvent(`Deep link handled: ${url}`)
+        }
+      })
 
-    const linkingListener = Linking.addEventListener("url", (event) => {
-      Superwall.shared.handleDeepLink(event.url)
-      setLastEvent(`Deep link handled: ${event.url}`)
-    })
+      eventListener = Linking.addEventListener("url", (event) => {
+        Superwall.shared.handleDeepLink(event.url)
+        setLastEvent(`Deep link handled: ${event.url}`)
+      })
+    }
+
+    configurePlatform()
 
     return () => {
-      linkingListener.remove()
+      eventListener?.remove()
     }
   }, [userId])
 
@@ -128,7 +137,9 @@ export default function Compat() {
           <View style={styles.actionButtons}>
             <TouchableOpacity
               style={[styles.actionButton, styles.primaryButton]}
-              onPress={() => {
+              onPress={async () => {
+                console.log(await Superwall.shared.getUserAttributes())
+
                 Superwall.shared.identify({ userId: `user_${Date.now()}` })
                 setUserId(`user_${Date.now()}`)
                 setLastEvent("User re-identified")
@@ -140,7 +151,8 @@ export default function Compat() {
 
             <TouchableOpacity
               style={[styles.actionButton, styles.secondaryButton]}
-              onPress={() => {
+              onPress={async () => {
+                await Superwall.shared.reset()
                 Superwall.shared.setUserAttributes({
                   premium: true,
                   lastAction: new Date().toISOString(),
