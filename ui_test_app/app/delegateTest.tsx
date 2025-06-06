@@ -2,7 +2,6 @@ import * as Superwall from "expo-superwall"
 import React, { useState, useRef } from "react"
 import { 
   Alert, 
-  Button, 
   FlatList, 
   Modal, 
   ScrollView, 
@@ -13,6 +12,7 @@ import {
 } from "react-native"
 import { useRouter } from "expo-router"
 import { TestDelegate } from "./TestDelegate"
+import { TestButton } from "./TestButton"
 import { 
   TestDelegateEvent,
   DidDismissPaywallEvent,
@@ -180,62 +180,62 @@ export default function DelegateTest() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Button title="← Back" onPress={() => router.back()} />
+        <TestButton title="← Back" onPress={() => router.back()} />
         <Text style={styles.title}>Delegate Test</Text>
       </View>
       
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.buttonContainer}>
-          <Button
+          <TestButton
             title="Set Test Delegate"
             onPress={setTestDelegate}
           />
         </View>
 
         <View style={styles.buttonContainer}>
-          <Button
+          <TestButton
             title="Show Paywall"
             onPress={showPaywall}
           />
         </View>
 
         <View style={styles.buttonContainer}>
-          <Button
+          <TestButton
             title="Change Subscription Status"
             onPress={changeSubscriptionStatus}
           />
         </View>
 
         <View style={styles.buttonContainer}>
-          <Button
+          <TestButton
             title="Clear Delegate and Change Status"
             onPress={clearDelegateAndChangeStatus}
           />
         </View>
 
         <View style={styles.buttonContainer}>
-          <Button
+          <TestButton
             title="Clear Delegate Events"
             onPress={clearDelegateEvents}
           />
         </View>
 
         <View style={styles.buttonContainer}>
-          <Button
+          <TestButton
             title="Show Delegate Events without log"
             onPress={showDelegateEventsWithoutLog}
           />
         </View>
 
         <View style={styles.buttonContainer}>
-          <Button
+          <TestButton
             title="Show Delegate Events with log"
             onPress={showDelegateEventsWithLog}
           />
         </View>
 
         <View style={styles.buttonContainer}>
-          <Button
+          <TestButton
             title="Events without log and presentation"
             onPress={showEventsWithoutLogAndPresentation}
           />

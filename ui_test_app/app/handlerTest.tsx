@@ -2,7 +2,6 @@ import * as Superwall from "expo-superwall"
 import React, { useState, useRef } from "react"
 import { 
   Alert, 
-  Button, 
   FlatList, 
   Modal, 
   ScrollView, 
@@ -13,6 +12,7 @@ import {
 } from "react-native"
 import { useRouter } from "expo-router"
 import { TestHandler, HandlerEvent } from "./TestHandler"
+import { TestButton } from "./TestButton"
 
 export default function HandlerTest() {
   const router = useRouter()
@@ -111,55 +111,55 @@ export default function HandlerTest() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Button title="← Back" onPress={() => router.back()} />
+        <TestButton title="← Back" onPress={() => router.back()} />
         <Text style={styles.title}>Handler Test</Text>
       </View>
       
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.buttonContainer}>
-          <Button
+          <TestButton
             title="Test Non-Gated Paywall"
             onPress={testNonGatedPaywall}
           />
         </View>
 
         <View style={styles.buttonContainer}>
-          <Button
+          <TestButton
             title="Test Gated Paywall"
             onPress={testGatedPaywall}
           />
         </View>
 
         <View style={styles.buttonContainer}>
-          <Button
+          <TestButton
             title="Test Skip Audience"
             onPress={testSkipAudience}
           />
         </View>
 
         <View style={styles.buttonContainer}>
-          <Button
+          <TestButton
             title="Test Error Placement"
             onPress={testErrorPlacement}
           />
         </View>
 
         <View style={styles.buttonContainer}>
-          <Button
+          <TestButton
             title="Dismiss Paywall"
             onPress={dismissPaywall}
           />
         </View>
 
         <View style={styles.buttonContainer}>
-          <Button
+          <TestButton
             title="Clear Handler Events"
             onPress={clearHandlerEvents}
           />
         </View>
 
         <View style={styles.buttonContainer}>
-          <Button
+          <TestButton
             title="Show Handler Events"
             onPress={showHandlerEventsDialog}
           />

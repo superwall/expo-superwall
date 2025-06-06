@@ -1,9 +1,10 @@
 import * as Superwall from "expo-superwall"
 import React from "react"
-import { Alert, Button, Platform, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Alert, Platform, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useRouter } from "expo-router"
 import { TestingPurchaseController } from "./TestingPurchaseController"
 import { RCPurchaseController } from "./RCPurchaseController"
+import { TestButton } from "./TestButton"
 
 export default function ConfigureTest() {
   const router = useRouter()
@@ -38,6 +39,7 @@ export default function ConfigureTest() {
       await Superwall.configure(apiKey, {
         options: options,
         completion: () => {
+          console.log('Configuration completed with dialog shown and PC')
           showConfigurationCompletedDialog()
         }
       })
@@ -52,9 +54,10 @@ export default function ConfigureTest() {
       const options = {}
       
       await Superwall.configure(apiKey, {
-        options: options,
-        completion: () => {
-          showConfigurationCompletedDialog()
+          options: options,
+          completion: () => {
+              console.log('Configuration completed with dialog shown and no PC')
+              showConfigurationCompletedDialog()
         }
       })
     } catch (error) {
@@ -73,6 +76,7 @@ export default function ConfigureTest() {
         purchaseController: purchaseController,
         options: options,
         completion: () => {
+          console.log('Configuration completed with dialog shown and RC')
           showConfigurationCompletedDialog()
         }
       })
@@ -101,34 +105,34 @@ export default function ConfigureTest() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Button title="← Back" onPress={() => router.back()} />
+        <TestButton title="← Back" onPress={() => router.back()} />
         <Text style={styles.title}>ConfigureTest</Text>
       </View>
       
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.buttonContainer}>
-          <Button
+          <TestButton
             title="Configure with dialog shown + PC"
             onPress={configureWithDialogAndPC}
           />
         </View>
 
         <View style={styles.buttonContainer}>
-          <Button
+          <TestButton
             title="Configure with dialog shown + no PC"
             onPress={configureWithDialogNoPc}
           />
         </View>
 
         <View style={styles.buttonContainer}>
-          <Button
+          <TestButton
             title="Configure with dialog shown and RC"
             onPress={configureWithDialogAndRC}
           />
         </View>
 
         <View style={styles.buttonContainer}>
-          <Button
+          <TestButton
             title="Just configure"
             onPress={justConfigure}
           />

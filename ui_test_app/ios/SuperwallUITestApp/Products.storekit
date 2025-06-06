@@ -130,7 +130,7 @@
           "productID" : "superwall_pro_3999",
           "recurringSubscriptionPeriod" : "P1Y",
           "referenceName" : "Pro",
-          "subscriptionGroupID" : "4F31BE19",
+          "subscriptionGroupID" : "4F31BE19", 
           "type" : "RecurringSubscription",
           "winbackOffers" : [
 

@@ -1,7 +1,8 @@
 import * as Superwall from "expo-superwall"
 import React from "react"
-import { Alert, Button, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Alert, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useRouter } from "expo-router"
+import { TestButton } from "./TestButton"
 
 // Type definitions for subscription status (these would ideally come from the expo-superwall package)
 interface Entitlement {
@@ -113,27 +114,27 @@ export default function SubscriptionStatusTest() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Button title="← Back" onPress={() => router.back()} />
+        <TestButton title="← Back" onPress={() => router.back()} />
         <Text style={styles.title}>Subscription Status Test</Text>
       </View>
       
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.buttonContainer}>
-          <Button
+          <TestButton
             title="Set Subscription Status Active"
             onPress={setSubscriptionStatusActive}
           />
         </View>
 
         <View style={styles.buttonContainer}>
-          <Button
+          <TestButton
             title="Set Subscription Status Inactive"
             onPress={setSubscriptionStatusInactive}
           />
         </View>
 
         <View style={styles.buttonContainer}>
-          <Button
+          <TestButton
             title="Set Subscription Status Unknown"
             onPress={setSubscriptionStatusUnknown}
           />

@@ -31,6 +31,7 @@ import com.superwall.sdk.paywall.presentation.get_presentation_result.getPresent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import android.util.Log
 
 class SuperwallExpoModule : Module() {
 
@@ -125,6 +126,7 @@ class SuperwallExpoModule : Module() {
       sdkVersion: String?,
       promise: Promise ->
       //TODO SDK version in arguments?
+      try{
       val superwallOptions: SuperwallOptions = options?.let {
         superwallOptionsFromJson(options)
       }?:SuperwallOptions()
@@ -137,10 +139,17 @@ class SuperwallExpoModule : Module() {
         activityProvider = ExpoActivityProvider(appContext),
         options = superwallOptions,
         completion = {
-          Superwall.instance.setPlatformWrapper("React Native", version = "sdkVersion" ?: "0.0.0")
-          promise.resolve(true)
+          Log.e("SuperwallExpoModule", "Configuration completed")
+          Superwall.instance.setPlatformWrapper("React Native", version = sdkVersion ?: "0.0.0")
+          Log.e("SuperwallExpoModule", "Configuration completed promise resolved")
+          promise.resolve(null)
+          Log.e("SuperwallExpoModule", "Configuration resolved")
          }
        )
+      } catch (error: Throwable) {
+        error.printStackTrace()
+        promise.reject(CodedException(error))
+      }
     }
 
     AsyncFunction("getConfigurationStatus") { promise: Promise ->

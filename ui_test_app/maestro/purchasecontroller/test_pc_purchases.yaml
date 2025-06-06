@@ -2,6 +2,8 @@ appId: com.superwall.superapp
 ---
 # Launch app and navigate to Purchase Controller Test
 - launchApp: ${PLATFORM_ID}
+- tapOn: "Continue"
+    optional: true
 - tapOn: "Purchase Controller Test"
 - tapOn: "Mock PC Test"
 

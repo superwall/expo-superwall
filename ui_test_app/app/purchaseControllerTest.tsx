@@ -1,8 +1,9 @@
 import * as Superwall from "expo-superwall"
 import React, { useState, useEffect } from "react"
-import { Alert, Button, Platform, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Alert, Platform, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useRouter } from "expo-router"
 import { TestingPurchaseController } from "./TestingPurchaseController"
+import { TestButton } from "./TestButton"
 
 interface SubscriptionStatusInactive {
   type: 'inactive'
@@ -126,20 +127,20 @@ export default function PurchaseControllerTest() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Button title="← Back" onPress={() => router.back()} />
+        <TestButton title="← Back" onPress={() => router.back()} />
         <Text style={styles.title}>Mock PC Test</Text>
       </View>
       
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.buttonContainer}>
-          <Button
+          <TestButton
             title="Configure with PC"
             onPress={configureWithPC}
           />
         </View>
 
         <View style={styles.buttonContainer}>
-          <Button
+          <TestButton
             title="Configure without PC"
             onPress={configureWithoutPC}
           />
@@ -148,28 +149,28 @@ export default function PurchaseControllerTest() {
         {isConfigured && (
           <>
             <View style={styles.buttonContainer}>
-              <Button
+              <TestButton
                 title="Trigger Paywall"
                 onPress={triggerPaywall}
               />
             </View>
 
             <View style={styles.buttonContainer}>
-              <Button
+              <TestButton
                 title={purchaseController?.rejectPurchase ? 'Enable purchases' : 'Disable purchases'}
                 onPress={togglePurchases}
               />
             </View>
 
             <View style={styles.buttonContainer}>
-              <Button
+              <TestButton
                 title={purchaseController?.restorePurchase ? 'Disable restore' : 'Enable restore'}
                 onPress={toggleRestore}
               />
             </View>
 
             <View style={styles.buttonContainer}>
-              <Button
+              <TestButton
                 title="Reset status"
                 onPress={resetStatus}
               />

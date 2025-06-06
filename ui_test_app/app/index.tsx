@@ -1,7 +1,9 @@
 import * as Superwall from "expo-superwall"
 import React, { useEffect } from "react"
-import { Button, Text, View } from "react-native"
+import { Text, View } from "react-native"
 import { Link, useRouter } from "expo-router"
+import { TestButton } from "./TestButton"
+
 
 export default function App() {
   const router = useRouter()
@@ -12,35 +14,35 @@ export default function App() {
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
       <Text style={{ fontSize: 24, marginBottom: 20 }}>Superwall Tests</Text>
       
-      <Button
+      <TestButton
         title="Configuration Test"
         onPress={() => {
           router.push("/configureTest")
         }}
       />
 
-      <Button
+      <TestButton
         title="Subscription Status Test" 
         onPress={() => {
           router.push("/subscriptionStatusTest")
         }}
       />
 
-      <Button
+      <TestButton
         title="Purchase Controller Test"
         onPress={() => {
           router.push("/purchaseControllerTest")
         }}
       />
 
-      <Button
+      <TestButton
         title="Delegate Test"
         onPress={() => {
           router.push("/delegateTest")
         }}
       />
 
-      <Button
+      <TestButton
         title="Handler Test"
         onPress={() => {
           router.push("/handlerTest")
