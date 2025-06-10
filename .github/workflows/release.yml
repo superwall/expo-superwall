@@ -21,7 +21,7 @@ jobs:
           node-version: 24
 
       - name: Install Dependencies
-        run: yarn
+        run: yarn install
 
       - name: Create Release Pull Request
         uses: changesets/action@v1
