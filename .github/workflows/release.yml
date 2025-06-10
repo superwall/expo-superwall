@@ -20,6 +20,9 @@ jobs:
         with:
           node-version: 24
 
+      - name: Install Yarn 4.x (Berry)
+        run: corepack enable && corepack prepare yarn@4.7.0 --activate
+
       - name: Install Dependencies
         run: yarn install
 
