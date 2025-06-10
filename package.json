@@ -27,14 +27,10 @@
     "open:android": "open -a \"Android Studio\" example/android",
     "format": "biome check --write .",
     "android": "expo run:android",
-    "ios": "expo run:ios"
+    "ios": "expo run:ios",
+    "release": "yarn build && yarn build plugin"
   },
-  "keywords": [
-    "react-native",
-    "expo",
-    "expo-superwall",
-    "SuperwallExpo"
-  ],
+  "keywords": ["react-native", "expo", "expo-superwall", "SuperwallExpo"],
   "repository": "https://github.com/superwall/expo-superwall",
   "bugs": {
     "url": "https://github.com/superwall/expo-superwall/issues"
