@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons"
 import { LinearGradient } from "expo-linear-gradient"
 import { Link } from "expo-router"
-import Superwall from "expo-superwall/compat"
+import Superwall, { SuperwallOptions } from "expo-superwall/compat"
 import { useEffect, useState } from "react"
 import {
   Alert,
@@ -29,8 +29,13 @@ export default function Compat() {
         ? "pk_b814c1d9597097e7a8dee971d0eec730b67a9b59423e14d0"
         : "pk_6d16c4c892b1e792490ab8bfe831f1ad96e7c18aee7a5257"
 
+    const newSuperwallOptions = new SuperwallOptions({
+      enableExperimentalDeviceVariables: true,
+    })
+
     const configurePlatform = async () => {
       await Superwall.configure({
+        options: newSuperwallOptions,
         apiKey: apiKey,
       })
 

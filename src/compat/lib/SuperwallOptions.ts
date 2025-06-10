@@ -29,6 +29,7 @@ export class SuperwallOptions {
   logging: LoggingOptions = new LoggingOptions()
   collectAdServicesAttribution = false
   passIdentifiersToPlayStore = false
+  enableExperimentalDeviceVariables = false
   storeKitVersion?: "STOREKIT1" | "STOREKIT2"
 
   constructor(init?: Partial<SuperwallOptions>) {
@@ -54,6 +55,7 @@ export class SuperwallOptions {
       collectAdServicesAttribution: this.collectAdServicesAttribution,
       passIdentifiersToPlayStore: this.passIdentifiersToPlayStore,
       storeKitVersion: this.storeKitVersion,
+      enableExperimentalDeviceVariables: this.enableExperimentalDeviceVariables,
     }
   }
 }
