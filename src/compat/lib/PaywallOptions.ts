@@ -28,6 +28,26 @@ export class PaywallOptions {
   automaticallyDismiss = true
   transactionBackgroundView: TransactionBackgroundView = TransactionBackgroundView.spinner
 
+  constructor(init?: Partial<PaywallOptions>) {
+    if (init) {
+      if (init.isHapticFeedbackEnabled) {
+        this.isHapticFeedbackEnabled = init.isHapticFeedbackEnabled
+      }
+      if (init.shouldShowPurchaseFailureAlert) {
+        this.shouldShowPurchaseFailureAlert = init.shouldShowPurchaseFailureAlert
+      }
+      if (init.shouldPreload) {
+        this.shouldPreload = init.shouldPreload
+      }
+      if (init.automaticallyDismiss) {
+        this.automaticallyDismiss = init.automaticallyDismiss
+      }
+      if (init.transactionBackgroundView) {
+        this.transactionBackgroundView = init.transactionBackgroundView
+      }
+    }
+  }
+
   toJson(): object {
     return {
       isHapticFeedbackEnabled: this.isHapticFeedbackEnabled,

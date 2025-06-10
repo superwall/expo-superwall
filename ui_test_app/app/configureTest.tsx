@@ -1,101 +1,95 @@
-import * as Superwall from "expo-superwall"
-import React from "react"
-import { Alert, Platform, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useRouter } from "expo-router"
-import { TestingPurchaseController } from "./TestingPurchaseController"
+import Superwall, { PaywallOptions, SuperwallOptions } from "expo-superwall/compat"
+import { Alert, Platform, ScrollView, StyleSheet, Text, View } from "react-native"
 import { TestButton } from "./TestButton"
+import { TestingPurchaseController } from "./TestingPurchaseController"
 
 export default function ConfigureTest() {
   const router = useRouter()
-  
-  const apiKey = Platform.OS === 'ios'
-    ? 'pk_25605698906751f5383385f9976e21f840d44aa11cd4639c'
-    : 'pk_6d16c4c892b1e792490ab8bfe831f1ad96e7c18aee7a5257'
+
+  const apiKey =
+    Platform.OS === "ios"
+      ? "pk_25605698906751f5383385f9976e21f840d44aa11cd4639c"
+      : "pk_6d16c4c892b1e792490ab8bfe831f1ad96e7c18aee7a5257"
 
   const showConfigurationCompletedDialog = () => {
-    Alert.alert(
-      'Success',
-      'Configuration completed',
-      [
-        {
-          text: 'OK',
-          onPress: () => console.log('Configuration dialog dismissed')
-        }
-      ]
-    )
+    Alert.alert("Success", "Configuration completed", [
+      {
+        text: "OK",
+        onPress: () => console.log("Configuration dialog dismissed"),
+      },
+    ])
   }
 
   const configureWithDialogAndPC = async () => {
     try {
-      const options = {
-        paywalls: {
-          shouldPreload: false
-        }
-      }
       const purchaseController = new TestingPurchaseController()
 
-      await Superwall.configure(apiKey, {
+      const options = new SuperwallOptions({
+        paywalls: new PaywallOptions({
+          shouldPreload: false,
+        }),
+      })
+
+      await Superwall.configure({
+        apiKey: apiKey,
         purchaseController: purchaseController,
         options: options,
         completion: () => {
-          console.log('Configuration completed with dialog shown and PC')
+          console.log("Configuration completed with dialog shown and PC")
           showConfigurationCompletedDialog()
-        }
+        },
       })
     } catch (error) {
-      console.error('Configuration failed:', error)
-      Alert.alert('Error', 'Configuration failed')
+      console.error("Configuration failed:", error)
+      Alert.alert("Error", "Configuration failed")
     }
   }
 
   const configureWithDialogNoPc = async () => {
     try {
-      const options = {}
-      
-      await Superwall.configure(apiKey, {
-          options: options,
-          completion: () => {
-              console.log('Configuration completed with dialog shown and no PC')
-              showConfigurationCompletedDialog()
-        }
+      await Superwall.configure({
+        apiKey,
+        completion: () => {
+          console.log("Configuration completed with dialog shown and no PC")
+          showConfigurationCompletedDialog()
+        },
       })
     } catch (error) {
-      console.error('Configuration failed:', error)
-      Alert.alert('Error', 'Configuration failed')
+      console.error("Configuration failed:", error)
+      Alert.alert("Error", "Configuration failed")
     }
   }
 
   const configureWithDialogAndRC = async () => {
     try {
-      const options = {}
-      
-      
-      await Superwall.configure(apiKey, {
-        options: options,
+      await Superwall.configure({
+        apiKey,
         completion: () => {
-          console.log('Configuration completed with dialog shown and RC')
+          console.log("CALLED COMPLETION")
+          console.log("Configuration completed with dialog shown and RC")
           showConfigurationCompletedDialog()
-        }
+        },
       })
+
+      console.log("Configuration completed with dialog shown and RC")
     } catch (error) {
-      console.error('Configuration failed:', error)
-      Alert.alert('Error', 'Configuration failed')
+      console.error("Configuration failed:", error)
+      Alert.alert("Error", "Configuration failed")
     }
   }
 
   const justConfigure = async () => {
     try {
-      const options = {}
-      
-      await Superwall.configure(apiKey, {
-        options: options,
+      await Superwall.configure({
+        apiKey,
         completion: () => {
-          console.log('Configuration completed without dialog')
-        }
+          console.log("Configuration completed without dialog")
+        },
       })
     } catch (error) {
-      console.error('Configuration failed:', error)
-      Alert.alert('Error', 'Configuration failed')
+      console.error("Configuration failed:", error)
+      Alert.alert("Error", "Configuration failed")
     }
   }
 
@@ -105,13 +99,10 @@ export default function ConfigureTest() {
         <Text onPress={() => router.back()}>← Back</Text>
         <Text style={styles.title}>ConfigureTest</Text>
       </View>
-      
+
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.buttonContainer}>
-          <TestButton
-            title="Configure with dialog shown + PC"
-            onPress={configureWithDialogAndPC}
-          />
+          <TestButton title="Configure with dialog shown + PC" onPress={configureWithDialogAndPC} />
         </View>
 
         <View style={styles.buttonContainer}>
@@ -129,10 +120,7 @@ export default function ConfigureTest() {
         </View>
 
         <View style={styles.buttonContainer}>
-          <TestButton
-            title="Just configure"
-            onPress={justConfigure}
-          />
+          <TestButton title="Just configure" onPress={justConfigure} />
         </View>
       </ScrollView>
     </View>
@@ -142,28 +130,28 @@ export default function ConfigureTest() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingTop: 50,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: "#e0e0e0",
   },
   title: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginLeft: 16,
   },
   content: {
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     paddingHorizontal: 16,
   },
   buttonContainer: {
     marginVertical: 8,
-  }
-}) 
+  },
+})
