@@ -1,6 +1,6 @@
 {
   "name": "expo-superwall",
-  "version": "0.0.1-beta.0",
+  "version": "0.0.1",
   "description": "Offical Expo Integration for Superwall",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -30,7 +30,12 @@
     "ios": "expo run:ios",
     "release": "yarn build && yarn build plugin"
   },
-  "keywords": ["react-native", "expo", "expo-superwall", "SuperwallExpo"],
+  "keywords": [
+    "react-native",
+    "expo",
+    "expo-superwall",
+    "SuperwallExpo"
+  ],
   "repository": "https://github.com/superwall/expo-superwall",
   "bugs": {
     "url": "https://github.com/superwall/expo-superwall/issues"
