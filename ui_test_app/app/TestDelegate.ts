@@ -1,6 +1,12 @@
 import * as Superwall from "expo-superwall"
 import {
   TestDelegateEvent,
+  SuperwallDelegate,
+  PaywallInfo,
+  PaywallResult,
+  PaywallSkippedReason,
+  SubscriptionStatus,
+  SuperwallEventInfo,
   DidDismissPaywallEvent,
   DidPresentPaywallEvent,
   HandleCustomPaywallActionEvent,
@@ -11,63 +17,7 @@ import {
   SubscriptionStatusDidChangeEvent,
   WillDismissPaywallEvent,
   WillPresentPaywallEvent
-} from "./TestDelegateEvent"
-
-// Type definitions for Superwall delegate (these would ideally come from the expo-superwall package)
-interface PaywallInfo {
-  identifier?: string
-  experiment?: any
-  triggerSessionId?: string
-  products?: any[]
-  productIds?: string[]
-  name?: string
-  url?: string
-  presentedByEventWithName?: string
-  presentedByEventWithId?: string
-  presentedByEventAt?: string
-  presentedBy?: string
-  presentationSourceType?: string
-  responseLoadStartTime?: string
-  responseLoadCompleteTime?: string
-  responseLoadFailTime?: string
-  webViewLoadStartTime?: string
-  webViewLoadCompleteTime?: string
-  webViewLoadFailTime?: string
-  productsLoadStartTime?: string
-  productsLoadCompleteTime?: string
-  productsLoadFailTime?: string
-  paywalljsVersion?: string
-  isFreeTrialAvailable?: boolean
-  featureGating?: any
-  closeReason?: any
-  localNotifications?: any[]
-  computedPropertyRequests?: any[]
-  surveys?: any[]
-}
-
-interface SuperwallEventInfo {
-  event?: any
-  params?: { [key: string]: any }
-}
-
-interface SubscriptionStatus {
-  type: 'active' | 'inactive' | 'unknown'
-  entitlements?: Array<{ id: string }>
-}
-
-// SuperwallDelegate interface - mock implementation based on Flutter version
-interface SuperwallDelegate {
-  didDismissPaywall?(paywallInfo: PaywallInfo): void
-  didPresentPaywall?(paywallInfo: PaywallInfo): void
-  handleCustomPaywallAction?(name: string): void
-  handleLog?(level: string, scope: string, message?: string, info?: { [key: string]: any }, error?: string): void
-  handleSuperwallEvent?(eventInfo: SuperwallEventInfo): void
-  paywallWillOpenDeepLink?(url: URL): void
-  paywallWillOpenURL?(url: URL): void
-  subscriptionStatusDidChange?(newValue: SubscriptionStatus): void
-  willDismissPaywall?(paywallInfo: PaywallInfo): void
-  willPresentPaywall?(paywallInfo: PaywallInfo): void
-}
+}  from "expo-superwall"
 
 export class TestDelegate implements SuperwallDelegate {
   private _events: TestDelegateEvent[] = []
@@ -128,7 +78,6 @@ export class TestDelegate implements SuperwallDelegate {
     this._events.push(new WillPresentPaywallEvent(paywallInfo))
   }
 
-  // Additional utility methods
   clearEvents(): void {
     this._events = []
   }

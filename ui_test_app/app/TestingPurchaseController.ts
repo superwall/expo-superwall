@@ -1,41 +1,6 @@
 import * as Superwall from "expo-superwall"
 import { Alert } from "react-native"
-
-// Type definitions for purchase results (these would ideally come from the expo-superwall package)
-interface PurchaseResultPurchased {
-  type: 'purchased'
-}
-
-interface PurchaseResultFailed {
-  type: 'failed'
-  error: string
-}
-
-type PurchaseResult = PurchaseResultPurchased | PurchaseResultFailed
-
-interface RestorationResultRestored {
-  type: 'restored'
-}
-
-interface RestorationResultFailed {
-  type: 'failed'
-  error: string
-}
-
-type RestorationResult = RestorationResultRestored | RestorationResultFailed
-
-interface Entitlement {
-  id: string
-}
-
-interface SubscriptionStatusActive {
-  type: 'active'
-  entitlements: Entitlement[]
-}
-
-interface SubscriptionStatusInactive {
-  type: 'inactive'
-}
+import { PurchaseResult, RestorationResult, SubscriptionStatusActive, SubscriptionStatusInactive } from "expo-superwall"
 
 export class TestingPurchaseController {
   rejectPurchase: boolean = true
@@ -43,7 +8,6 @@ export class TestingPurchaseController {
   shouldShowDialog: boolean = false
 
   constructor() {
-    // Initialize with default values
   }
 
   async configureAndSyncSubscriptionStatus(): Promise<void> {
@@ -51,7 +15,6 @@ export class TestingPurchaseController {
     await Superwall.setSubscriptionStatus(inactiveStatus)
   }
 
-  // Toggle methods
   toggleRejectPurchase(): void {
     this.rejectPurchase = !this.rejectPurchase
   }

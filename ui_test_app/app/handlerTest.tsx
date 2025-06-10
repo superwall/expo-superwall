@@ -111,8 +111,8 @@ export default function HandlerTest() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TestButton title="← Back" onPress={() => router.back()} />
-        <Text style={styles.title}>Handler Test</Text>
+      <Text onPress={() => router.back()}>← Back</Text>
+      <Text style={styles.title}>Handler Test</Text>
       </View>
       
       <ScrollView contentContainerStyle={styles.content}>

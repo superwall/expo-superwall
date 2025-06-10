@@ -3,26 +3,7 @@ import React from "react"
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useRouter } from "expo-router"
 import { TestButton } from "./TestButton"
-
-// Type definitions for subscription status (these would ideally come from the expo-superwall package)
-interface Entitlement {
-  id: string
-}
-
-interface SubscriptionStatusActive {
-  type: 'active'
-  entitlements: Entitlement[]
-}
-
-interface SubscriptionStatusInactive {
-  type: 'inactive'
-}
-
-interface SubscriptionStatusUnknown {
-  type: 'unknown'
-}
-
-type SubscriptionStatus = SubscriptionStatusActive | SubscriptionStatusInactive | SubscriptionStatusUnknown
+import { SubscriptionStatus, SubscriptionStatusActive, SubscriptionStatusInactive, SubscriptionStatusUnknown } from "expo-superwall"
 
 export default function SubscriptionStatusTest() {
   const router = useRouter()
@@ -114,8 +95,8 @@ export default function SubscriptionStatusTest() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TestButton title="← Back" onPress={() => router.back()} />
-        <Text style={styles.title}>Subscription Status Test</Text>
+      <Text onPress={() => router.back()}>← Back</Text>
+      <Text style={styles.title}>Subscription Status Test</Text>
       </View>
       
       <ScrollView contentContainerStyle={styles.content}>

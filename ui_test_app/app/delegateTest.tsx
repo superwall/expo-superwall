@@ -13,7 +13,7 @@ import {
 import { useRouter } from "expo-router"
 import { TestDelegate } from "./TestDelegate"
 import { TestButton } from "./TestButton"
-import { 
+import { SubscriptionStatusActive, SubscriptionStatusInactive, 
   TestDelegateEvent,
   DidDismissPaywallEvent,
   DidPresentPaywallEvent,
@@ -25,16 +25,9 @@ import {
   SubscriptionStatusDidChangeEvent,
   WillDismissPaywallEvent,
   WillPresentPaywallEvent
-} from "./TestDelegateEvent"
+} from "expo-superwall"
 
-interface SubscriptionStatusActive {
-  type: 'active'
-  entitlements: Array<{ id: string }>
-}
 
-interface SubscriptionStatusInactive {
-  type: 'inactive'
-}
 
 export default function DelegateTest() {
   const router = useRouter()
@@ -180,8 +173,8 @@ export default function DelegateTest() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TestButton title="← Back" onPress={() => router.back()} />
-        <Text style={styles.title}>Delegate Test</Text>
+      <Text onPress={() => router.back()}>← Back</Text>
+      <Text style={styles.title}>Delegate Test</Text>
       </View>
       
       <ScrollView contentContainerStyle={styles.content}>

@@ -1,56 +1,6 @@
 import * as Superwall from "expo-superwall"
+import { PaywallInfo, PaywallResult, PaywallSkippedReason, PaywallPresentationHandler } from "expo-superwall"
 
-// Type definitions for Superwall events (these would ideally come from the expo-superwall package)
-interface PaywallInfo {
-  identifier?: string
-  experiment?: any
-  triggerSessionId?: string
-  products?: any[]
-  productIds?: string[]
-  name?: string
-  url?: string
-  presentedByEventWithName?: string
-  presentedByEventWithId?: string
-  presentedByEventAt?: string
-  presentedBy?: string
-  presentationSourceType?: string
-  responseLoadStartTime?: string
-  responseLoadCompleteTime?: string
-  responseLoadFailTime?: string
-  webViewLoadStartTime?: string
-  webViewLoadCompleteTime?: string
-  webViewLoadFailTime?: string
-  productsLoadStartTime?: string
-  productsLoadCompleteTime?: string
-  productsLoadFailTime?: string
-  paywalljsVersion?: string
-  isFreeTrialAvailable?: boolean
-  featureGating?: any
-  closeReason?: any
-  localNotifications?: any[]
-  computedPropertyRequests?: any[]
-  surveys?: any[]
-}
-
-interface PaywallResult {
-  type: 'purchased' | 'declined' | 'restored' | 'closed'
-}
-
-enum PaywallSkippedReason {
-  holdout = 'holdout',
-  noRuleMatch = 'noRuleMatch',
-  eventNotFound = 'eventNotFound',
-  userIsSubscribed = 'userIsSubscribed'
-}
-
-interface PaywallPresentationHandler {
-  onPresentHandler?: (info: PaywallInfo) => void
-  onDismissHandler?: (info: PaywallInfo, result: PaywallResult) => void
-  onErrorHandler?: (error: string) => void
-  onSkipHandler?: (reason: PaywallSkippedReason) => void
-}
-
-// Event classes
 export abstract class HandlerEvent {
   abstract type: string
 }

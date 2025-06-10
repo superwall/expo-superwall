@@ -3,7 +3,6 @@ import React from "react"
 import { Alert, Platform, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useRouter } from "expo-router"
 import { TestingPurchaseController } from "./TestingPurchaseController"
-import { RCPurchaseController } from "./RCPurchaseController"
 import { TestButton } from "./TestButton"
 
 export default function ConfigureTest() {
@@ -33,10 +32,10 @@ export default function ConfigureTest() {
           shouldPreload: false
         }
       }
+      const purchaseController = new TestingPurchaseController()
 
-      // Note: TestingPurchaseController would need to be implemented
-      // For now, we'll configure without a purchase controller
       await Superwall.configure(apiKey, {
+        purchaseController: purchaseController,
         options: options,
         completion: () => {
           console.log('Configuration completed with dialog shown and PC')
@@ -70,10 +69,8 @@ export default function ConfigureTest() {
     try {
       const options = {}
       
-      const purchaseController = new RCPurchaseController()
       
       await Superwall.configure(apiKey, {
-        purchaseController: purchaseController,
         options: options,
         completion: () => {
           console.log('Configuration completed with dialog shown and RC')
@@ -105,7 +102,7 @@ export default function ConfigureTest() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TestButton title="← Back" onPress={() => router.back()} />
+        <Text onPress={() => router.back()}>← Back</Text>
         <Text style={styles.title}>ConfigureTest</Text>
       </View>
       

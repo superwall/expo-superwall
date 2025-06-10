@@ -4,10 +4,7 @@ import { Alert, Platform, ScrollView, StyleSheet, Text, View } from "react-nativ
 import { useRouter } from "expo-router"
 import { TestingPurchaseController } from "./TestingPurchaseController"
 import { TestButton } from "./TestButton"
-
-interface SubscriptionStatusInactive {
-  type: 'inactive'
-}
+import { SubscriptionStatusInactive } from "expo-superwall"
 
 export default function PurchaseControllerTest() {
   const router = useRouter()
@@ -127,8 +124,8 @@ export default function PurchaseControllerTest() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TestButton title="← Back" onPress={() => router.back()} />
-        <Text style={styles.title}>Mock PC Test</Text>
+      <Text onPress={() => router.back()}>← Back</Text>
+      <Text style={styles.title}>Mock PC Test</Text>
       </View>
       
       <ScrollView contentContainerStyle={styles.content}>
