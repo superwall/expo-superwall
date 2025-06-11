@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import { type ReactNode, useEffect } from "react"
 import { SuperwallContext, useSuperwallStore } from "./useSuperwall"
 
 interface SuperwallProviderProps {
@@ -34,37 +34,30 @@ export function SuperwallProvider({
   fallback = null,
   children,
 }: SuperwallProviderProps) {
-  const { configured, loading, configure, lastError } = useSuperwallStore((state) => ({
-    configured: state.configured,
-    loading: state.loading,
-    configure: state.configure,
-    lastError: state.lastError,
-  }))
+  const { configured, loading, configure, lastError } = useSuperwallStore()
 
-  // // Configure the SDK once on mount
-  // useEffect(() => {
-  //   if (!configured && !loading) {
-  //     console.log("Configuring Superwall SDK")
-  //     configure(apiKey, options, usingPurchaseController, sdkVersion).catch((err) => {
-  //       console.error("Superwall configure failed", err)
-  //     })
-  //   }
-  // }, [configured, loading, apiKey, options, usingPurchaseController, sdkVersion, configure])
+  // Configure the SDK once on mount
+  useEffect(() => {
+    if (!configured && !loading) {
+      configure(apiKey, options, usingPurchaseController, sdkVersion).catch((err) => {
+        console.error("Superwall configure failed", err)
+      })
+    }
+  }, [configured, loading, apiKey, options, usingPurchaseController, sdkVersion, configure])
 
-  // // Setup native event listeners once
-  // useEffect(() => {
-  //   const cleanup = useSuperwallStore.getState()._initListeners()
-  //   return cleanup
-  // }, [])
+  // Setup native event listeners once
+  useEffect(() => {
+    const cleanup = useSuperwallStore.getState()._initListeners()
+    return cleanup
+  }, [])
 
-  // if (lastError) {
-  //   console.error("Superwall Error: ", lastError)
-  // }
+  if (lastError) {
+    console.error("Superwall Error: ", lastError)
+  }
 
   return (
     <SuperwallContext.Provider value={true}>
-      {children}
-      {/* {configured ? children : fallback} */}
+      {configured ? children : fallback}
     </SuperwallContext.Provider>
   )
 }
