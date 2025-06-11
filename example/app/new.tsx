@@ -17,7 +17,7 @@ function ScreenContent() {
     lastPaywallResult: state.lastPaywallResult,
   }))
 
-  const { identify, user, signOut, refresh } = useUser()
+  const { identify, user, signOut, update, refresh } = useUser()
   const { registerPlacement, error, state } = usePaywall({
     onError: (err) => console.error(err),
     onPresent: (info) => console.log("Paywall presented", info),
@@ -37,12 +37,22 @@ function ScreenContent() {
     })
   }
 
+  const updateUser = async () => {
+    await update((old) => ({ ...old, counter: (old.counter || 0) + 1 }))
+  }
+
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 12 }}>
       <Text style={{ fontSize: 18, fontWeight: "600" }}>Superwall SDK ready!</Text>
       <Text>Subscription status: {subscriptionStatus?.status ?? "unknown"}</Text>
       {user && <Text>User: {user.appUserId}</Text>}
+      {user && <Text>User attributes: {JSON.stringify(user, null, 2)}</Text>}
       {lastPaywallResult && <Text>Last paywall result: {JSON.stringify(lastPaywallResult)}</Text>}
+
+      <Button
+        title={`Update user attributes with counter: ${user?.counter || 0}`}
+        onPress={updateUser}
+      />
 
       <Button title="Refresh" onPress={refresh} />
       <Button
