@@ -138,6 +138,7 @@ class SuperwallExpoModule : Module() {
         options = superwallOptions,
         completion = {
           Superwall.instance.setPlatformWrapper("React Native", version = "sdkVersion" ?: "0.0.0")
+          Superwall.instance.delegate = SuperwallDelegateBridge()
           promise.resolve(true)
          }
        )
@@ -273,11 +274,7 @@ class SuperwallExpoModule : Module() {
 
       Superwall.instance.setSubscriptionStatus(subscriptionStatus)
     }
-
-    Function("setDelegate") { isUndefined: Boolean ->
-      Superwall.instance.delegate = if (isUndefined) null else SuperwallDelegateBridge()
-    }
-
+    
     Function("setInterfaceStyle") { style: String? ->
       var interfaceStyle: InterfaceStyle? = style?.let { interfaceStyleFromString(it) }
       Superwall.instance.setInterfaceStyle(interfaceStyle)

@@ -2,39 +2,39 @@ import {
   SuperwallLoaded,
   SuperwallLoading,
   SuperwallProvider,
+  usePaywall,
   useSuperwall,
   useUser,
 } from "expo-superwall"
-import { useEffect, useState } from "react"
-import { ActivityIndicator, Button, Text, View } from "react-native"
+import { useEffect } from "react"
+import { ActivityIndicator, Alert, Button, Text, View } from "react-native"
 
 const API_KEY = "pk_25605698906751f5383385f9976e21f840d44aa11cd4639c"
 
 function ScreenContent() {
-  const { registerPlacement, subscriptionStatus, lastPaywallResult, reset } = useSuperwall(
-    (state) => ({
-      registerPlacement: state.registerPlacement,
-      subscriptionStatus: state.subscriptionStatus,
-      lastPaywallResult: state.lastPaywallResult,
-      reset: state.reset,
-    }),
-  )
+  const { subscriptionStatus, lastPaywallResult } = useSuperwall((state) => ({
+    subscriptionStatus: state.subscriptionStatus,
+    lastPaywallResult: state.lastPaywallResult,
+  }))
 
-  const { identify, user, signOut } = useUser()
+  const { identify, user, signOut, refresh } = useUser()
+  const { registerPlacement, error, state } = usePaywall({
+    onError: (err) => console.error(err),
+    onPresent: (info) => console.log("Paywall presented", info),
+  })
 
   useEffect(() => {
-    console.log("user", user)
-  }, [user])
-
-  const [placementLoading, setPlacementLoading] = useState(false)
+    console.log(error, state)
+  }, [error, state])
 
   const triggerPlacement = async () => {
-    setPlacementLoading(true)
-    try {
-      await registerPlacement("fishing")
-    } finally {
-      setPlacementLoading(false)
-    }
+    await registerPlacement({
+      placement: "fishing",
+      feature() {
+        console.log("Feature called")
+        Alert.alert("Feature Unlocked! 🎉", "Successfully accessed fishing feature")
+      },
+    })
   }
 
   return (
@@ -44,6 +44,7 @@ function ScreenContent() {
       {user && <Text>User: {user.appUserId}</Text>}
       {lastPaywallResult && <Text>Last paywall result: {JSON.stringify(lastPaywallResult)}</Text>}
 
+      <Button title="Refresh" onPress={refresh} />
       <Button
         title="Sign out"
         onPress={async () => {
@@ -57,11 +58,7 @@ function ScreenContent() {
         }}
       />
 
-      <Button
-        title="Open paywall placement"
-        disabled={placementLoading}
-        onPress={triggerPlacement}
-      />
+      <Button title="Open paywall placement" onPress={triggerPlacement} />
     </View>
   )
 }

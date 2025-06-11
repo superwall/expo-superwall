@@ -90,8 +90,6 @@ public class SuperwallExpoModule: Module {
 
       var superwallOptions: SuperwallOptions?
 
-      print("Superwall API Key: \(apiKey)")
-
       if let options = options {
         superwallOptions = SuperwallOptions.fromJson(options)
       }
@@ -104,6 +102,9 @@ public class SuperwallExpoModule: Module {
           promise.resolve(nil)
         }
       )
+
+      self.delegate = SuperwallDelegateBridge()
+      Superwall.shared.delegate = self.delegate
 
       Superwall.shared.setPlatformWrapper("React Native", version: sdkVersion ?? "0.0.0")
     }
@@ -231,11 +232,6 @@ public class SuperwallExpoModule: Module {
       }
 
       Superwall.shared.subscriptionStatus = subscriptionStatus
-    }
-
-    Function("setDelegate") { (isUndefined: Bool) in
-      self.delegate = isUndefined ? nil : SuperwallDelegateBridge()
-      Superwall.shared.delegate = self.delegate
     }
 
     Function("setInterfaceStyle") { (style: String?) in

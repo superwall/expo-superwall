@@ -99,8 +99,10 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     SuperwallExpoModule.identify(userId, options)
 
     // TODO: Instead of setting users after identify, we should set this based on an event
-    const currentUser = (await SuperwallExpoModule.getUserAttributes()) as UserAttributes
-    set({ user: currentUser })
+    setTimeout(async () => {
+      const currentUser = (await SuperwallExpoModule.getUserAttributes()) as UserAttributes
+      set({ user: currentUser })
+    }, 0)
   },
   reset: () => {
     SuperwallExpoModule.reset()
@@ -129,7 +131,9 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     set({ user: currentUser })
   },
   getUserAttributes: async () => {
-    return SuperwallExpoModule.getUserAttributes()
+    const attributes = await SuperwallExpoModule.getUserAttributes()
+    set({ user: attributes as UserAttributes })
+    return attributes
   },
   setLogLevel: async (level) => {
     SuperwallExpoModule.setLogLevel(level)
@@ -156,6 +160,7 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
       SuperwallExpoModule.addListener(
         "onPaywallPresent",
         ({ paywallInfoJson }: { paywallInfoJson: PaywallInfo }) => {
+          console.log("onPaywallPresent", paywallInfoJson)
           set({ activePaywallInfo: paywallInfoJson })
         },
       ),
@@ -166,6 +171,7 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
       SuperwallExpoModule.addListener(
         "onPaywallDismiss",
         ({ paywallInfoJson, result }: { paywallInfoJson: PaywallInfo; result: PaywallResult }) => {
+          console.log("onPaywallDismiss", paywallInfoJson, result)
           set({ activePaywallInfo: undefined, lastPaywallResult: result })
         },
       ),
@@ -176,6 +182,7 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
       SuperwallExpoModule.addListener(
         "onPaywallSkip",
         ({ skippedReason }: { skippedReason: PaywallSkippedReason }) => {
+          console.log("onPaywallSkip", skippedReason)
           set({ lastSkippedReason: skippedReason })
         },
       ),
@@ -186,6 +193,7 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
       SuperwallExpoModule.addListener(
         "onPaywallError",
         ({ errorString }: { errorString: string }) => {
+          console.log("onPaywallError", errorString)
           set({ lastError: errorString })
         },
       ),

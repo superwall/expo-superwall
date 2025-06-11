@@ -591,7 +591,6 @@ export default class Superwall {
   async setDelegate(delegate: SuperwallDelegate | undefined): Promise<void> {
     await this.awaitConfig()
     Superwall.delegate = delegate
-    await SuperwallExpoModule.setDelegate(delegate === undefined)
   }
 
   /**
@@ -668,7 +667,7 @@ export default class Superwall {
    */
   async setUserAttributes(userAttributes: UserAttributes): Promise<void> {
     await this.awaitConfig()
-    await SuperwallExpoModule.setUserAttributes(userAttributes)
+    SuperwallExpoModule.setUserAttributes(userAttributes)
   }
 
   /**
