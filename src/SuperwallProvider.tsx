@@ -1,6 +1,5 @@
 import { type ReactNode, useEffect } from "react"
 import { useShallow } from "zustand/shallow"
-import SuperwallExpoModule from "./SuperwallExpoModule"
 import { SuperwallContext, useSuperwallStore } from "./useSuperwall"
 
 interface SuperwallProviderProps {
@@ -47,9 +46,7 @@ export function SuperwallProvider({
 
   useEffect(() => {
     const cleanup = useSuperwallStore.getState()._initListeners()
-    SuperwallExpoModule.addListener("onPaywallPresent", async (data) => {
-      console.log("onPaywallPresent", data)
-    })
+
     return cleanup
   }, [])
 
