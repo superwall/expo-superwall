@@ -67,5 +67,8 @@
     "plugin",
     "app.plugin.js"
   ],
-  "packageManager": "yarn@4.7.0"
+  "packageManager": "yarn@4.7.0",
+  "dependencies": {
+    "zustand": "^5.0.5"
+  }
 }
