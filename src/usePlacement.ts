@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react"
+import { useCallback, useEffect, useId, useMemo, useRef } from "react"
 
 import type { PaywallInfo, PaywallResult, PaywallSkippedReason } from "./SuperwallExpoModule.types"
 import { useSuperwall } from "./useSuperwall"
@@ -53,6 +53,8 @@ export interface RegisterPlacementArgs {
  * ```
  */
 export function usePlacement(callbacks: usePlacementCallbacks = {}) {
+  const id = useId()
+
   const {
     registerPlacement: storeRegisterPlacement,
     activePaywallInfo,
@@ -128,13 +130,11 @@ export function usePlacement(callbacks: usePlacementCallbacks = {}) {
   /* -------------------- Helpers -------------------- */
   const registerPlacement = useCallback(
     async ({ placement, params, feature }: RegisterPlacementArgs) => {
-      await storeRegisterPlacement(placement, params)
+      await storeRegisterPlacement(placement, params, id)
       // Execute feature if provided (called when the user is allowed access)
-      if (feature) {
-        feature()
-      }
+      feature?.()
     },
-    [storeRegisterPlacement],
+    [storeRegisterPlacement, id],
   )
 
   return {

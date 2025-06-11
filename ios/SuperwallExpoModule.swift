@@ -98,14 +98,14 @@ public class SuperwallExpoModule: Module {
         purchaseController: purchaseController,
         options: superwallOptions,
         completion: {
+          self.delegate = SuperwallDelegateBridge()
+          Superwall.shared.delegate = self.delegate
+
+          Superwall.shared.setPlatformWrapper("React Native", version: sdkVersion ?? "0.0.0")
+
           promise.resolve(nil)
         }
       )
-
-      self.delegate = SuperwallDelegateBridge()
-      Superwall.shared.delegate = self.delegate
-
-      Superwall.shared.setPlatformWrapper("React Native", version: sdkVersion ?? "0.0.0")
     }
 
     AsyncFunction("getConfigurationStatus") { (promise: Promise) in

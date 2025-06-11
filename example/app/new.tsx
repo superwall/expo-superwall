@@ -6,7 +6,6 @@ import {
   useSuperwall,
   useUser,
 } from "expo-superwall"
-import { useEffect } from "react"
 import { ActivityIndicator, Alert, Button, Text, View } from "react-native"
 
 const API_KEY = "pk_25605698906751f5383385f9976e21f840d44aa11cd4639c"
@@ -21,11 +20,8 @@ function ScreenContent() {
   const { registerPlacement, error, state } = usePlacement({
     onError: (err) => console.error(err),
     onPresent: (info) => console.log("Paywall presented", info),
+    onDismiss: (info, result) => console.log("Paywall dismissed", info, result),
   })
-
-  useEffect(() => {
-    console.log(error, state)
-  }, [error, state])
 
   const triggerPlacement = async () => {
     await registerPlacement({

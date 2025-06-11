@@ -108,7 +108,7 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
 
     set({ user: null })
   },
-  registerPlacement: async (placement, params, handlerId) => {
+  registerPlacement: async (placement, params, handlerId = "default") => {
     await SuperwallExpoModule.registerPlacement(placement, params, handlerId)
   },
   getPresentationResult: async (placement, params) => {
@@ -161,7 +161,6 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
       SuperwallExpoModule.addListener(
         "onPaywallPresent",
         ({ paywallInfoJson }: { paywallInfoJson: PaywallInfo }) => {
-          console.log("onPaywallPresent", paywallInfoJson)
           set({ activePaywallInfo: paywallInfoJson })
         },
       ),
@@ -176,7 +175,6 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
           paywallInfoJson: PaywallInfo
           result: PaywallResult
         }) => {
-          console.log("onPaywallDismiss", paywallInfoJson, result)
           set({ activePaywallInfo: undefined, lastPaywallResult: result })
         },
       ),
@@ -185,7 +183,6 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
       SuperwallExpoModule.addListener(
         "onPaywallSkip",
         ({ skippedReason }: { skippedReason: PaywallSkippedReason }) => {
-          console.log("onPaywallSkip", skippedReason)
           set({ lastSkippedReason: skippedReason })
         },
       ),
@@ -194,7 +191,6 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
       SuperwallExpoModule.addListener(
         "onPaywallError",
         ({ errorString }: { errorString: string }) => {
-          console.log("onPaywallError", errorString)
           set({ lastError: errorString })
         },
       ),
