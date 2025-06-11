@@ -1,5 +1,6 @@
 import { createContext, useContext } from "react"
 import { create } from "zustand"
+import { useShallow } from "zustand/shallow"
 import SuperwallExpoModule from "./SuperwallExpoModule"
 import type {
   PaywallInfo,
@@ -8,11 +9,26 @@ import type {
   SubscriptionStatus,
 } from "./SuperwallExpoModule.types"
 
+export interface UserAttributes {
+  aliasId: string
+  appUserId: string
+  applicationInstalledAt: string
+  seed: number
+  [key: string]: any
+}
+
+export interface IdentifyOptions {
+  restorePaywallAssignments?: boolean
+}
+
 // Minimal shape of the store representing the key pieces of state and actions
-interface SuperwallStore {
+export interface SuperwallStore {
   /* -------------------- State -------------------- */
-  configured: boolean
-  loading: boolean
+  isConfigured: boolean
+  isLoading: boolean
+
+  user?: UserAttributes | null
+
   subscriptionStatus?: SubscriptionStatus
   activePaywallInfo?: PaywallInfo
   lastPaywallResult?: PaywallResult
@@ -31,8 +47,8 @@ interface SuperwallStore {
     usingPurchaseController?: boolean,
     sdkVersion?: string,
   ) => Promise<void>
-  identify: (userId: string, options?: Record<string, any> | null) => Promise<void>
-  reset: () => Promise<void>
+  identify: (userId: string, options?: IdentifyOptions) => Promise<void>
+  reset: () => void
 
   // Paywall / placements
   registerPlacement: (
@@ -60,8 +76,10 @@ interface SuperwallStore {
 
 export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   /* -------------------- State -------------------- */
-  configured: false,
-  loading: false,
+  isConfigured: false,
+  isLoading: false,
+
+  user: null,
   subscriptionStatus: undefined,
   activePaywallInfo: undefined,
   lastPaywallResult: undefined,
@@ -70,15 +88,24 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
 
   /* -------------------- Actions -------------------- */
   configure: async (apiKey, options, usingPurchaseController, sdkVersion) => {
-    set({ loading: true })
+    set({ isLoading: true })
     await SuperwallExpoModule.configure(apiKey, options, usingPurchaseController, sdkVersion)
-    set({ configured: true, loading: false })
+    set({ isConfigured: true, isLoading: false })
+
+    const currentUser = (await SuperwallExpoModule.getUserAttributes()) as UserAttributes
+    set({ user: currentUser })
   },
   identify: async (userId, options) => {
-    await SuperwallExpoModule.identify(userId, options)
+    SuperwallExpoModule.identify(userId, options)
+
+    // TODO: Instead of setting users after identify, we should set this based on an event
+    const currentUser = (await SuperwallExpoModule.getUserAttributes()) as UserAttributes
+    set({ user: currentUser })
   },
-  reset: async () => {
-    await SuperwallExpoModule.reset()
+  reset: () => {
+    SuperwallExpoModule.reset()
+
+    set({ user: null })
   },
   registerPlacement: async (placement, params, handlerId) => {
     await SuperwallExpoModule.registerPlacement(placement, params, handlerId)
@@ -90,19 +117,22 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     await SuperwallExpoModule.dismiss()
   },
   preloadAllPaywalls: async () => {
-    await SuperwallExpoModule.preloadAllPaywalls()
+    SuperwallExpoModule.preloadAllPaywalls()
   },
   preloadPaywalls: async (placements) => {
-    await SuperwallExpoModule.preloadPaywalls(placements)
+    SuperwallExpoModule.preloadPaywalls(placements)
   },
   setUserAttributes: async (attrs) => {
-    await SuperwallExpoModule.setUserAttributes(attrs)
+    SuperwallExpoModule.setUserAttributes(attrs)
+
+    const currentUser = (await SuperwallExpoModule.getUserAttributes()) as UserAttributes
+    set({ user: currentUser })
   },
   getUserAttributes: async () => {
     return SuperwallExpoModule.getUserAttributes()
   },
   setLogLevel: async (level) => {
-    await SuperwallExpoModule.setLogLevel(level)
+    SuperwallExpoModule.setLogLevel(level)
   },
 
   /* -------------------- Listener helpers -------------------- */
@@ -195,7 +225,6 @@ export function useSuperwall<T = SuperwallStore>(selector?: (state: SuperwallSto
   }
 
   const identity = (state: SuperwallStore) => state as unknown as T
-  return useSuperwallStore(selector ?? identity)
+  // biome-ignore lint/correctness/useHookAtTopLevel: <explanation>
+  return useSuperwallStore(selector ? useShallow(selector) : identity)
 }
-
-export type { SuperwallStore }

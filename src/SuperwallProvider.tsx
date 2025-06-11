@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect } from "react"
+import { useShallow } from "zustand/shallow"
 import { SuperwallContext, useSuperwallStore } from "./useSuperwall"
 
 interface SuperwallProviderProps {
@@ -31,21 +32,25 @@ export function SuperwallProvider({
   options,
   usingPurchaseController,
   sdkVersion,
-  fallback = null,
   children,
 }: SuperwallProviderProps) {
-  const { configured, loading, configure, lastError } = useSuperwallStore()
+  const { isConfigured, isLoading, configure, lastError } = useSuperwallStore(
+    useShallow((state) => ({
+      isConfigured: state.isConfigured,
+      isLoading: state.isLoading,
+      configure: state.configure,
+      lastError: state.lastError,
+    })),
+  )
 
-  // Configure the SDK once on mount
   useEffect(() => {
-    if (!configured && !loading) {
+    if (!isConfigured && !isLoading) {
       configure(apiKey, options, usingPurchaseController, sdkVersion).catch((err) => {
         console.error("Superwall configure failed", err)
       })
     }
-  }, [configured, loading, apiKey, options, usingPurchaseController, sdkVersion, configure])
+  }, [isConfigured, isLoading, apiKey, options, usingPurchaseController, sdkVersion, configure])
 
-  // Setup native event listeners once
   useEffect(() => {
     const cleanup = useSuperwallStore.getState()._initListeners()
     return cleanup
@@ -55,9 +60,5 @@ export function SuperwallProvider({
     console.error("Superwall Error: ", lastError)
   }
 
-  return (
-    <SuperwallContext.Provider value={true}>
-      {configured ? children : fallback}
-    </SuperwallContext.Provider>
-  )
+  return <SuperwallContext.Provider value={true}>{children}</SuperwallContext.Provider>
 }
