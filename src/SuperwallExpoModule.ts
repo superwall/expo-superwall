@@ -14,7 +14,6 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
   configure(
     apiKey: string,
     options?: Map<string, any> | Record<string, any>,
-    usingPurchaseController?: boolean,
     sdkVersion?: string,
   ): Promise<void>
 

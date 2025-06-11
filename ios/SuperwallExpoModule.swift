@@ -83,7 +83,6 @@ public class SuperwallExpoModule: Module {
       (
         apiKey: String,
         options: [String: Any]?,
-        usingPurchaseController: Bool?,
         sdkVersion: String?,
         promise: Promise
       ) in
@@ -96,7 +95,7 @@ public class SuperwallExpoModule: Module {
 
       Superwall.configure(
         apiKey: apiKey,
-        purchaseController: usingPurchaseController ?? false ? purchaseController : nil,
+        purchaseController: purchaseController,
         options: superwallOptions,
         completion: {
           promise.resolve(nil)

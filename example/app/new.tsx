@@ -2,7 +2,7 @@ import {
   SuperwallLoaded,
   SuperwallLoading,
   SuperwallProvider,
-  usePaywall,
+  usePlacement,
   useSuperwall,
   useUser,
 } from "expo-superwall"
@@ -18,7 +18,7 @@ function ScreenContent() {
   }))
 
   const { identify, user, signOut, update, refresh } = useUser()
-  const { registerPlacement, error, state } = usePaywall({
+  const { registerPlacement, error, state } = usePlacement({
     onError: (err) => console.error(err),
     onPresent: (info) => console.log("Paywall presented", info),
   })
@@ -54,7 +54,7 @@ function ScreenContent() {
         onPress={updateUser}
       />
 
-      <Button title="Refresh" onPress={refresh} />
+      <Button title="Refresh User Attributes" onPress={refresh} />
       <Button
         title="Sign out"
         onPress={async () => {

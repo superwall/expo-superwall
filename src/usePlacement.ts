@@ -5,7 +5,7 @@ import { useSuperwall } from "./useSuperwall"
 
 // -------------------- Types --------------------
 /**
- * Possible states returned by `usePaywall`.
+ * Possible states returned by `usePlacement`.
  */
 export type PaywallState =
   | { status: "idle" }
@@ -14,7 +14,7 @@ export type PaywallState =
   | { status: "skipped"; reason: PaywallSkippedReason }
   | { status: "error"; error: string }
 
-export interface UsePaywallCallbacks {
+export interface usePlacementCallbacks {
   /** Called when a paywall is presented. */
   onPresent?: (paywallInfo: PaywallInfo) => void
   /** Called when a paywall is dismissed. */
@@ -43,7 +43,7 @@ export interface RegisterPlacementArgs {
  * `registerPlacement` helper.
  *
  * ```tsx
- * const { registerPlacement, state, error } = usePaywall({
+ * const { registerPlacement, state, error } = usePlacement({
  *   onPresent: (info) => console.log("Paywall presented", info),
  *   onError: (err) => console.warn(err),
  * })
@@ -52,7 +52,7 @@ export interface RegisterPlacementArgs {
  * await registerPlacement({ placement: "StartWorkout", feature: navigation.startWorkout })
  * ```
  */
-export function usePaywall(callbacks: UsePaywallCallbacks = {}) {
+export function usePlacement(callbacks: usePlacementCallbacks = {}) {
   const {
     registerPlacement: storeRegisterPlacement,
     activePaywallInfo,

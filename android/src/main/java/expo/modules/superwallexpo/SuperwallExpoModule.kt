@@ -121,7 +121,6 @@ class SuperwallExpoModule : Module() {
     AsyncFunction("configure") {
       apiKey: String,
       options: Map<String, Any>?,
-      usingPurchaseController: Boolean?,
       sdkVersion: String?,
       promise: Promise ->
       //TODO SDK version in arguments?
@@ -133,7 +132,7 @@ class SuperwallExpoModule : Module() {
       Superwall.configure(
         apiKey = apiKey,
         applicationContext = appContext.reactContext?.applicationContext as Application,
-        purchaseController = if (usingPurchaseController == true) purchaseController else null,
+        purchaseController = purchaseController,
         activityProvider = ExpoActivityProvider(appContext),
         options = superwallOptions,
         completion = {

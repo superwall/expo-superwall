@@ -307,12 +307,7 @@ export default class Superwall {
   }): Promise<Superwall> {
     Superwall.purchaseController = purchaseController
     Superwall.purchaseController = purchaseController
-    await SuperwallExpoModule.configure(
-      apiKey,
-      options?.toJson(),
-      !!purchaseController,
-      `${version}compat`,
-    ).then(() => {
+    await SuperwallExpoModule.configure(apiKey, options?.toJson(), `${version}compat`).then(() => {
       if (completion) completion()
       // TODO: Not sure if this is needed
       // Superwall.shared.observeSubscriptionStatus()

@@ -9,6 +9,8 @@ import type {
   SubscriptionStatus,
 } from "./SuperwallExpoModule.types"
 
+import pkg from "../package.json"
+
 export interface UserAttributes {
   aliasId: string
   appUserId: string
@@ -26,6 +28,7 @@ export interface SuperwallStore {
   /* -------------------- State -------------------- */
   isConfigured: boolean
   isLoading: boolean
+  listenersInitialized: boolean
 
   user?: UserAttributes | null
 
@@ -41,12 +44,7 @@ export interface SuperwallStore {
 
   /* -------------------- Actions -------------------- */
   // Initialisation & identity
-  configure: (
-    apiKey: string,
-    options?: Record<string, any>,
-    usingPurchaseController?: boolean,
-    sdkVersion?: string,
-  ) => Promise<void>
+  configure: (apiKey: string, options?: Record<string, any>) => Promise<void>
   identify: (userId: string, options?: IdentifyOptions) => Promise<void>
   reset: () => void
 
@@ -71,13 +69,14 @@ export interface SuperwallStore {
   setLogLevel: (level: string) => Promise<void>
 
   /* -------------------- Listener helpers -------------------- */
-  _initListeners: () => (() => void) | undefined
+  _initListeners: () => () => void
 }
 
 export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   /* -------------------- State -------------------- */
   isConfigured: false,
   isLoading: false,
+  listenersInitialized: false,
 
   user: null,
   subscriptionStatus: undefined,
@@ -87,9 +86,9 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   lastError: null,
 
   /* -------------------- Actions -------------------- */
-  configure: async (apiKey, options, usingPurchaseController, sdkVersion) => {
+  configure: async (apiKey, options) => {
     set({ isLoading: true })
-    await SuperwallExpoModule.configure(apiKey, options, usingPurchaseController, sdkVersion)
+    await SuperwallExpoModule.configure(apiKey, options, pkg.version)
     set({ isConfigured: true, isLoading: false })
 
     const currentUser = (await SuperwallExpoModule.getUserAttributes()) as UserAttributes
@@ -140,12 +139,15 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   },
 
   /* -------------------- Listener helpers -------------------- */
-  _initListeners: (): (() => void) | undefined => {
-    if (listenersInitialised) return storedCleanup
+  _initListeners: (): (() => void) => {
+    // Use get() to read the state from within the store
+    if (get().listenersInitialized) {
+      console.warn("Listeners already initialized. Skipping.")
+      return () => {} // Return no-op cleanup
+    }
 
     const subscriptions: { remove: () => void }[] = []
 
-    // Subscription Status updates
     subscriptions.push(
       SuperwallExpoModule.addListener(
         "subscriptionStatusDidChange",
@@ -155,7 +157,6 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
       ),
     )
 
-    // Paywall presented
     subscriptions.push(
       SuperwallExpoModule.addListener(
         "onPaywallPresent",
@@ -165,19 +166,21 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
         },
       ),
     )
-
-    // Paywall dismissed
     subscriptions.push(
       SuperwallExpoModule.addListener(
         "onPaywallDismiss",
-        ({ paywallInfoJson, result }: { paywallInfoJson: PaywallInfo; result: PaywallResult }) => {
+        ({
+          paywallInfoJson,
+          result,
+        }: {
+          paywallInfoJson: PaywallInfo
+          result: PaywallResult
+        }) => {
           console.log("onPaywallDismiss", paywallInfoJson, result)
           set({ activePaywallInfo: undefined, lastPaywallResult: result })
         },
       ),
     )
-
-    // Paywall skipped
     subscriptions.push(
       SuperwallExpoModule.addListener(
         "onPaywallSkip",
@@ -187,8 +190,6 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
         },
       ),
     )
-
-    // Paywall error
     subscriptions.push(
       SuperwallExpoModule.addListener(
         "onPaywallError",
@@ -199,24 +200,19 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
       ),
     )
 
-    listenersInitialised = true
-    storedSubscriptions = subscriptions
+    // Use set() to update the store state
+    set({ listenersInitialized: true })
+    console.log("Initialized listeners", subscriptions.length)
 
-    // Define cleanup
-    storedCleanup = (): void => {
-      storedSubscriptions.forEach((s) => s.remove())
-      listenersInitialised = false
-      storedSubscriptions = []
+    // Return the cleanup function
+    return (): void => {
+      console.log("Cleaning up listeners", subscriptions.length)
+      subscriptions.forEach((s) => s.remove())
+      // Reset the state on cleanup
+      set({ listenersInitialized: false })
     }
-
-    return storedCleanup
   },
 }))
-
-// Module-level variables to track listener state without triggering store updates
-let listenersInitialised = false
-let storedSubscriptions: { remove: () => void }[] = []
-let storedCleanup: (() => void) | undefined
 
 // Context to ensure components are wrapped in <SuperwallProvider />
 export const SuperwallContext = createContext<boolean>(false)

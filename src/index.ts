@@ -5,4 +5,4 @@ export * from "./components"
 
 export * from "./useUser"
 
-export * from "./usePaywall"
+export * from "./usePlacement"
