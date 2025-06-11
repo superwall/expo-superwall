@@ -1,4 +1,4 @@
-import * as Superwall from "expo-superwall"
+import * as Superwall from "expo-superwall/compat"
 import {
   TestDelegateEvent,
   SuperwallDelegate,

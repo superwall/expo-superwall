@@ -1,6 +1,6 @@
-import * as Superwall from "expo-superwall"
+import * as Superwall from "expo-superwall/compat"
 import { Alert } from "react-native"
-import { PurchaseResult, RestorationResult, SubscriptionStatusActive, SubscriptionStatusInactive } from "expo-superwall"
+import { PurchaseResult, RestorationResult, SubscriptionStatusActive, SubscriptionStatusInactive } from "expo-superwall/compat"
 
 export class TestingPurchaseController {
   rejectPurchase: boolean = true

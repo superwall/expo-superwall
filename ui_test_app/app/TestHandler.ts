@@ -1,5 +1,5 @@
-import * as Superwall from "expo-superwall"
-import { PaywallInfo, PaywallResult, PaywallSkippedReason, PaywallPresentationHandler } from "expo-superwall"
+import * as Superwall from "expo-superwall/compat"
+import { PaywallInfo, PaywallResult, PaywallSkippedReason, PaywallPresentationHandler } from "expo-superwall/compat"
 
 export abstract class HandlerEvent {
   abstract type: string
