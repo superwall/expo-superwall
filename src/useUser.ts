@@ -1,6 +1,4 @@
 import { useSuperwall } from "./useSuperwall"
-import type { UserAttributes, IdentifyOptions } from "./useSuperwall"
-import type { SubscriptionStatus } from "./SuperwallExpoModule.types"
 
 /**
  * React hook for managing user-specific aspects of the Superwall SDK.
