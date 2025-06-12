@@ -16,11 +16,20 @@ interface SuperwallProviderProps {
 }
 
 /**
- * Wrap your application in `SuperwallProvider` to initialise the Superwall SDK.
+ * Main provider component for the Superwall SDK.
+ *
+ * This component initializes the Superwall SDK with your API key and configuration options.
+ * It should wrap the root of your application or the part of your app that requires Superwall functionality.
+ * It also sets up necessary event listeners for the SDK.
+ *
+ * @param props - The properties for the SuperwallProvider.
+ * @param props.apiKeys - An object containing your Superwall API keys for Android and iOS.
+ * @param props.options - Optional configuration options to pass to the native Superwall SDK.
+ * @param props.children - The child components of your application that will have access to Superwall features.
  *
  * Example:
  * ```tsx
- * <SuperwallProvider apiKey="YOUR_API_KEY">
+ * <SuperwallProvider apiKeys={{ ios: "YOUR_IOS_API_KEY", android: "YOUR_ANDROID_API_KEY" }}>
  *   <App />
  * </SuperwallProvider>
  * ```
