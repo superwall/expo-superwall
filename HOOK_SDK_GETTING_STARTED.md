@@ -7,9 +7,9 @@ This guide will help you integrate the Expo Superwall Hooks SDK into your React 
 First, you need to install the `expo-superwall` package. You can do this using npm or yarn:
 
 ```bash
-npm install expo-superwall
+npx expo install expo-superwall
 # or
-yarn add expo-superwall
+bunx expo install expo-superwall
 ```
 
 ## Setup
@@ -20,11 +20,9 @@ To use the Superwall SDK, you need to wrap your application (or the relevant par
 import { SuperwallProvider } from "expo-superwall";
 
 // Replace with your actual Superwall API key
-const API_KEY = "YOUR_SUPERWALL_API_KEY";
-
 export default function App() {
   return (
-    <SuperwallProvider apiKeys={{ ios: API_KEY /* android: API_KEY */ }}>
+    <SuperwallProvider apiKeys={{ ios: "YOUR_SUPERWALL_API_KEY" /* android: API_KEY */ }}>
       {/* Your app content goes here */}
     </SuperwallProvider>
   );
@@ -84,7 +82,7 @@ import { useUser } from "expo-superwall";
 import { Button, Text, View } from "react-native";
 
 function UserManagementScreen() {
-  const { identify, user, signOut, update, refresh, subscriptionStatus } = useUser();
+  const { identify, user, signOut, update, subscriptionStatus } = useUser();
 
   const handleLogin = async () => {
     // Identify the user with a unique ID
@@ -113,7 +111,6 @@ function UserManagementScreen() {
       <Button title="Login" onPress={handleLogin} />
       <Button title="Sign Out" onPress={handleSignOut} />
       <Button title="Update Attributes" onPress={handleUpdateUserAttributes} />
-      <Button title="Refresh User Info" onPress={refresh} />
     </View>
   );
 }
@@ -123,7 +120,6 @@ Key functions from `useUser`:
 - `identify(userId)`: Identifies the current user with Superwall. This is typically called when a user logs in.
 - `signOut()`: Signs the current user out. Call this when a user logs out.
 - `update(attributesUpdater)`: Updates the user's attributes. You can provide a function that receives the old attributes and returns the new ones.
-- `refresh()`: Refreshes the user's information and subscription status from the server.
 - `user`: An object containing the user's `appUserId` and other attributes.
 - `subscriptionStatus`: An object indicating the user's subscription status (e.g., `active`, `inactive`).
 
@@ -235,7 +231,6 @@ function MyAdvancedComponent() {
   const { isConfigured, configure, setUserAttributes } = useSuperwall();
 
   if (!isConfigured) {
-    // configure('YOUR_API_KEY'); // Typically done in SuperwallProvider
     return <Text>SDK not configured yet.</Text>;
   }
 
@@ -347,22 +342,20 @@ This hook does not return any values (`void`). Its purpose is to set up and tear
 
 ```tsx
 import { useSuperwallEvents } from 'expo-superwall';
-import type { PaywallInfo, SuperwallEventInfo, SubscriptionStatus } from 'expo-superwall'; // Import types
 
 function EventLogger() {
   useSuperwallEvents({
-    onSuperwallEvent: (eventInfo: SuperwallEventInfo) => {
+    onSuperwallEvent: (eventInfo) => {
       console.log('Superwall Event:', eventInfo.event.event, eventInfo.params);
     },
-    onSubscriptionStatusChange: (newStatus: SubscriptionStatus) => {
+    onSubscriptionStatusChange: (newStatus) => {
       console.log('Subscription Status Changed:', newStatus.status);
     },
-    onPaywallPresent: (info: PaywallInfo) => {
+    onPaywallPresent: (info) => {
       console.log('Paywall Presented (via useSuperwallEvents):', info.name);
     }
   });
 
-  return null; // This component just logs events
 }
 ```
 
