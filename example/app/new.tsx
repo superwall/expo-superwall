@@ -3,7 +3,6 @@ import {
   SuperwallLoading,
   SuperwallProvider,
   usePlacement,
-  useSuperwall,
   useUser,
 } from "expo-superwall"
 import { ActivityIndicator, Alert, Button, Text, View } from "react-native"
@@ -11,11 +10,7 @@ import { ActivityIndicator, Alert, Button, Text, View } from "react-native"
 const API_KEY = "pk_25605698906751f5383385f9976e21f840d44aa11cd4639c"
 
 function ScreenContent() {
-  const { subscriptionStatus } = useSuperwall((state) => ({
-    subscriptionStatus: state.subscriptionStatus,
-  }))
-
-  const { identify, user, signOut, update, refresh } = useUser()
+  const { identify, user, signOut, update, refresh, subscriptionStatus } = useUser()
   const { registerPlacement, state } = usePlacement({
     onError: (err) => console.error(err),
     onPresent: (info) => console.log("Paywall presented", info),
@@ -70,7 +65,7 @@ function ScreenContent() {
 
 export default function NewPage() {
   return (
-    <SuperwallProvider apiKey={API_KEY}>
+    <SuperwallProvider apiKeys={{ ios: API_KEY }}>
       <SuperwallLoading>
         <ActivityIndicator style={{ flex: 1 }} />
       </SuperwallLoading>

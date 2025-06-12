@@ -1,10 +1,14 @@
 import { type ReactNode, useEffect } from "react"
+import { Platform } from "react-native"
 import { useShallow } from "zustand/shallow"
 import { SuperwallContext, useSuperwallStore } from "./useSuperwall"
 
 interface SuperwallProviderProps {
   /** Your Superwall API key */
-  apiKey: string
+  apiKeys: {
+    android?: string
+    ios?: string
+  }
   /** Optional configuration options passed to the native SDK */
   options?: Record<string, any>
   /** App content to render once configured */
@@ -22,7 +26,7 @@ interface SuperwallProviderProps {
  * ```
  */
 export function SuperwallProvider({
-  apiKey,
+  apiKeys,
   options,
 
   children,
@@ -37,11 +41,16 @@ export function SuperwallProvider({
 
   useEffect(() => {
     if (!isConfigured && !isLoading) {
+      const apiKey = apiKeys[Platform.OS as keyof typeof apiKeys]
+      if (!apiKey) {
+        throw new Error(`No API key provided for platform ${Platform.OS}`)
+      }
+
       configure(apiKey, options).catch((err) => {
         console.error("Superwall configure failed", err)
       })
     }
-  }, [isConfigured, isLoading, apiKey, options, configure])
+  }, [isConfigured, isLoading, apiKeys, options, configure])
 
   useEffect(() => {
     const cleanup = useSuperwallStore.getState()._initListeners()
