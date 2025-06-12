@@ -1,176 +1,153 @@
-import Superwall from "expo-superwall/compat"
-import React, { useState, useEffect } from "react"
-import { Alert, Platform, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useRouter } from "expo-router"
-import { TestingPurchaseController } from "./TestingPurchaseController"
+import Superwall from "expo-superwall/compat"
+import type { SubscriptionStatus } from "expo-superwall/compat"
+import { useEffect, useState } from "react"
+import { Alert, Platform, ScrollView, StyleSheet, Text, View } from "react-native"
 import { TestButton } from "./TestButton"
-import { SubscriptionStatus } from "expo-superwall/compat"
+import { TestingPurchaseController } from "./TestingPurchaseController"
 
 export default function PurchaseControllerTest() {
   const router = useRouter()
   const [isConfigured, setIsConfigured] = useState(false)
-  const [purchaseController, setPurchaseController] = useState<TestingPurchaseController | null>(null)
+  const [purchaseController, setPurchaseController] = useState<TestingPurchaseController | null>(
+    null,
+  )
   const [forceUpdate, setForceUpdate] = useState(0) // To trigger re-renders when controller state changes
 
-  const apiKey = Platform.OS === 'ios'
-    ? 'pk_25605698906751f5383385f9976e21f840d44aa11cd4639c'
-    : 'pk_6d16c4c892b1e792490ab8bfe831f1ad96e7c18aee7a5257'
+  const apiKey =
+    Platform.OS === "ios"
+      ? "pk_25605698906751f5383385f9976e21f840d44aa11cd4639c"
+      : "pk_6d16c4c892b1e792490ab8bfe831f1ad96e7c18aee7a5257"
 
   useEffect(() => {
     if (!purchaseController) {
       setPurchaseController(new TestingPurchaseController())
     }
-  }, [])
+  }, [purchaseController])
 
   const showFeatureDialog = () => {
-    Alert.alert(
-      'Feature',
-      'Feature triggered',
-      [
-        {
-          text: 'OK',
-          onPress: () => console.log('Feature dialog dismissed')
-        }
-      ]
-    )
+    Alert.alert("Feature", "Feature triggered", [
+      {
+        text: "OK",
+        onPress: () => console.log("Feature dialog dismissed"),
+      },
+    ])
   }
 
   const configureWithPC = async () => {
     try {
       if (!purchaseController) return
 
-      const options = {
-        paywalls: {
-          shouldPreload: false
-        }
-      }
-
-      await Superwall.configure(apiKey, {
-        purchaseController: purchaseController,
-        options: options,
+      await Superwall.configure({
+        apiKey: apiKey,
         completion: async () => {
-          const inactiveStatus: SubscriptionStatus = { status: 'INACTIVE' }
+          const inactiveStatus: SubscriptionStatus = { status: "INACTIVE" }
           await Superwall.shared.setSubscriptionStatus(inactiveStatus)
           setIsConfigured(true)
-        }
+        },
       })
     } catch (error) {
-      console.error('Configuration with PC failed:', error)
-      Alert.alert('Error', 'Configuration failed')
+      console.error("Configuration with PC failed:", error)
+      Alert.alert("Error", "Configuration failed")
     }
   }
 
   const configureWithoutPC = async () => {
     try {
-      const options = {
-        paywalls: {
-          shouldPreload: false
-        }
-      }
-
-      await Superwall.shared.configure(apiKey, {
-        options: options,
+      await Superwall.configure({
+        apiKey,
         completion: async () => {
-          const inactiveStatus: SubscriptionStatus = { status: 'INACTIVE' }
+          const inactiveStatus: SubscriptionStatus = { status: "INACTIVE" }
           await Superwall.shared.setSubscriptionStatus(inactiveStatus)
           setIsConfigured(true)
-        }
+        },
       })
     } catch (error) {
-      console.error('Configuration without PC failed:', error)
-      Alert.alert('Error', 'Configuration failed')
+      console.error("Configuration without PC failed:", error)
+      Alert.alert("Error", "Configuration failed")
     }
   }
 
   const triggerPaywall = async () => {
     try {
-      await Superwall.shared.registerPlacement('campaign_trigger', {
+      await Superwall.shared.register({
+        placement: "campaign_trigger",
         feature: () => {
           console.log("feature triggered")
           showFeatureDialog()
-        }
+        },
       })
     } catch (error) {
-      console.error('Failed to trigger paywall:', error)
-      Alert.alert('Error', 'Failed to trigger paywall')
+      console.error("Failed to trigger paywall:", error)
+      Alert.alert("Error", "Failed to trigger paywall")
     }
   }
 
   const togglePurchases = () => {
     if (purchaseController) {
       purchaseController.toggleRejectPurchase()
-      setForceUpdate(prev => prev + 1) // Force re-render
+      setForceUpdate((prev) => prev + 1) // Force re-render
     }
   }
 
   const toggleRestore = () => {
     if (purchaseController) {
       purchaseController.toggleRestorePurchase()
-      setForceUpdate(prev => prev + 1) // Force re-render
+      setForceUpdate((prev) => prev + 1) // Force re-render
     }
   }
 
   const resetStatus = async () => {
     try {
-      const inactiveStatus: SubscriptionStatus = { status: 'INACTIVE' }
+      const inactiveStatus: SubscriptionStatus = { status: "INACTIVE" }
       await Superwall.shared.setSubscriptionStatus(inactiveStatus)
-      console.log('Status reset to inactive')
+      console.log("Status reset to inactive")
     } catch (error) {
-      console.error('Failed to reset status:', error)
-      Alert.alert('Error', 'Failed to reset status')
+      console.error("Failed to reset status:", error)
+      Alert.alert("Error", "Failed to reset status")
     }
   }
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-      <Text onPress={() => router.back()}>← Back</Text>
-      <Text style={styles.title}>Mock PC Test</Text>
+        <Text onPress={() => router.back()}>← Back</Text>
+        <Text style={styles.title}>Mock PC Test</Text>
       </View>
-      
+
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.buttonContainer}>
-          <TestButton
-            title="Configure with PC"
-            onPress={configureWithPC}
-          />
+          <TestButton title="Configure with PC" onPress={configureWithPC} />
         </View>
 
         <View style={styles.buttonContainer}>
-          <TestButton
-            title="Configure without PC"
-            onPress={configureWithoutPC}
-          />
+          <TestButton title="Configure without PC" onPress={configureWithoutPC} />
         </View>
 
         {isConfigured && (
           <>
             <View style={styles.buttonContainer}>
-              <TestButton
-                title="Trigger Paywall"
-                onPress={triggerPaywall}
-              />
+              <TestButton title="Trigger Paywall" onPress={triggerPaywall} />
             </View>
 
             <View style={styles.buttonContainer}>
               <TestButton
-                title={purchaseController?.rejectPurchase ? 'Enable purchases' : 'Disable purchases'}
+                title={
+                  purchaseController?.rejectPurchase ? "Enable purchases" : "Disable purchases"
+                }
                 onPress={togglePurchases}
               />
             </View>
 
             <View style={styles.buttonContainer}>
               <TestButton
-                title={purchaseController?.restorePurchase ? 'Disable restore' : 'Enable restore'}
+                title={purchaseController?.restorePurchase ? "Disable restore" : "Enable restore"}
                 onPress={toggleRestore}
               />
             </View>
 
             <View style={styles.buttonContainer}>
-              <TestButton
-                title="Reset status"
-                onPress={resetStatus}
-              />
+              <TestButton title="Reset status" onPress={resetStatus} />
             </View>
           </>
         )}
@@ -182,28 +159,28 @@ export default function PurchaseControllerTest() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingTop: 50,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: "#e0e0e0",
   },
   title: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginLeft: 16,
   },
   content: {
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     paddingHorizontal: 16,
   },
   buttonContainer: {
     marginVertical: 8,
-  }
-}) 
+  },
+})

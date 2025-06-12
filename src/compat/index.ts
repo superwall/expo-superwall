@@ -16,6 +16,8 @@ import type { SuperwallDelegate } from "./lib/SuperwallDelegate"
 import { SuperwallEventInfo } from "./lib/SuperwallEventInfo"
 import type { SuperwallOptions } from "./lib/SuperwallOptions"
 
+export { PaywallResult } from "./lib/PaywallResult"
+
 import { EventEmitter } from "expo"
 import { version } from "../../package.json"
 import SuperwallExpoModule from "../SuperwallExpoModule"

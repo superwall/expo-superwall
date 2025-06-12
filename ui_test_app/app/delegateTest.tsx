@@ -1,60 +1,55 @@
-import Superwall from "expo-superwall/compat"
-import React, { useState, useRef } from "react"
-import { 
-  Alert, 
-  FlatList, 
-  Modal, 
-  ScrollView, 
-  StyleSheet, 
-  Text, 
-  View,
-  TouchableOpacity
-} from "react-native"
 import { useRouter } from "expo-router"
-import { TestDelegate } from "./TestDelegate"
-import { TestButton } from "./TestButton"
-import { SubscriptionStatus } from "expo-superwall/compat"
-import {
-  TestDelegateEvent,
-} from "./TestDelegateEvent"
+import Superwall from "expo-superwall/compat"
+import type { SubscriptionStatus } from "expo-superwall/compat"
 import { Entitlement } from "expo-superwall/compat/lib/Entitlement"
-
-
+import { useState, useRef } from "react"
+import {
+  Alert,
+  FlatList,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native"
+import { TestButton } from "./TestButton"
+import { TestDelegate } from "./TestDelegate"
+import type { TestDelegateEvent } from "./TestDelegateEvent"
 
 export default function DelegateTest() {
   const router = useRouter()
   const [showEventsModal, setShowEventsModal] = useState(false)
   const [currentEventsList, setCurrentEventsList] = useState<TestDelegateEvent[]>([])
-  const [modalTitle, setModalTitle] = useState('')
+  const [modalTitle, setModalTitle] = useState("")
   const [forceUpdate, setForceUpdate] = useState(0)
-  
+
   const testDelegateRef = useRef(new TestDelegate())
-  
 
   const getEventName = (event: TestDelegateEvent): string => {
     switch (event.type) {
-      case 'didDismissPaywall':
-        return 'DidDismissPaywall'
-      case 'didPresentPaywall':
-        return 'DidPresentPaywall'
-      case 'handleCustomPaywallAction':
-        return 'HandleCustomPaywallAction'
-      case 'handleLog':
-        return 'HandleLog'
-      case 'handleSuperwallEvent':
-        return 'HandleSuperwallEvent'
-      case 'paywallWillOpenDeepLink':
-        return 'PaywallWillOpenDeepLink'
-      case 'paywallWillOpenURL':
-        return 'PaywallWillOpenURL'
-      case 'subscriptionStatusDidChange':
-        return 'SubscriptionStatusDidChange'
-      case 'willDismissPaywall':
-        return 'WillDismissPaywall'
-      case 'willPresentPaywall':
-        return 'WillPresentPaywall'
+      case "didDismissPaywall":
+        return "DidDismissPaywall"
+      case "didPresentPaywall":
+        return "DidPresentPaywall"
+      case "handleCustomPaywallAction":
+        return "HandleCustomPaywallAction"
+      case "handleLog":
+        return "HandleLog"
+      case "handleSuperwallEvent":
+        return "HandleSuperwallEvent"
+      case "paywallWillOpenDeepLink":
+        return "PaywallWillOpenDeepLink"
+      case "paywallWillOpenURL":
+        return "PaywallWillOpenURL"
+      case "subscriptionStatusDidChange":
+        return "SubscriptionStatusDidChange"
+      case "willDismissPaywall":
+        return "WillDismissPaywall"
+      case "willPresentPaywall":
+        return "WillPresentPaywall"
       default:
-        return 'Unknown'
+        return "Unknown"
     }
   }
 
@@ -68,38 +63,35 @@ export default function DelegateTest() {
     try {
       await Superwall.shared.setDelegate(testDelegateRef.current)
     } catch (error) {
-      console.error('Failed to set delegate:', error)
-      Alert.alert('Error', 'Failed to set delegate')
+      console.error("Failed to set delegate:", error)
+      Alert.alert("Error", "Failed to set delegate")
     }
   }
 
   const showPaywall = async () => {
     try {
       Superwall.shared.register({
-        placement: 'campaign_trigger',
+        placement: "campaign_trigger",
         feature() {
-          console.log('Feature called!')
-        }
+          console.log("Feature called!")
+        },
       })
     } catch (error) {
-      console.error('Failed to show paywall:', error)
-      Alert.alert('Error', 'Failed to show paywall')
+      console.error("Failed to show paywall:", error)
+      Alert.alert("Error", "Failed to show paywall")
     }
   }
 
   const changeSubscriptionStatus = async () => {
     try {
       const activeStatus: SubscriptionStatus = {
-        status: 'ACTIVE',
-        entitlements: [
-          new Entitlement('pro'),
-          new Entitlement('test_entitlement')
-        ]
+        status: "ACTIVE",
+        entitlements: [new Entitlement("pro"), new Entitlement("test_entitlement")],
       }
       await Superwall.shared.setSubscriptionStatus(activeStatus)
     } catch (error) {
-      console.error('Failed to change subscription status:', error)
-      Alert.alert('Error', 'Failed to change subscription status')
+      console.error("Failed to change subscription status:", error)
+      Alert.alert("Error", "Failed to change subscription status")
     }
   }
 
@@ -107,56 +99,53 @@ export default function DelegateTest() {
     try {
       testDelegateRef.current.clearEvents()
       await Superwall.shared.setDelegate(undefined)
-      
-      const inactiveStatus: SubscriptionStatus = { status: 'INACTIVE' }
+
+      const inactiveStatus: SubscriptionStatus = { status: "INACTIVE" }
       await Superwall.shared.setSubscriptionStatus(inactiveStatus)
-      
-      setForceUpdate(prev => prev + 1)
+
+      setForceUpdate((prev) => prev + 1)
     } catch (error) {
-      console.error('Failed to clear delegate:', error)
-      Alert.alert('Error', 'Failed to clear delegate')
+      console.error("Failed to clear delegate:", error)
+      Alert.alert("Error", "Failed to clear delegate")
     }
   }
 
   const clearDelegateEvents = () => {
     testDelegateRef.current.clearEvents()
-    setForceUpdate(prev => prev + 1)
+    setForceUpdate((prev) => prev + 1)
   }
 
   const showDelegateEventsWithoutLog = () => {
     showDelegateEventsListDialog(
       testDelegateRef.current.eventsWithoutLog,
-      'Delegate Events (without log)'
+      "Delegate Events (without log)",
     )
   }
 
   const showDelegateEventsWithLog = () => {
-    const logEvents = testDelegateRef.current.events.filter(
-      event => event.type === 'handleLog'
-    )
-    showDelegateEventsListDialog(logEvents, 'Delegate Events (log only)')
+    const logEvents = testDelegateRef.current.events.filter((event) => event.type === "handleLog")
+    showDelegateEventsListDialog(logEvents, "Delegate Events (log only)")
   }
 
   const showEventsWithoutLogAndPresentation = () => {
     const filteredEvents = testDelegateRef.current.eventsWithoutLog.filter(
-      event => 
-        event.type !== 'willPresentPaywall' &&
-        event.type !== 'didPresentPaywall' &&
-        event.type !== 'willDismissPaywall' &&
-        event.type !== 'didDismissPaywall' &&
-        event.type !== 'handleSuperwallEvent'
+      (event) =>
+        event.type !== "willPresentPaywall" &&
+        event.type !== "didPresentPaywall" &&
+        event.type !== "willDismissPaywall" &&
+        event.type !== "didDismissPaywall" &&
+        event.type !== "handleSuperwallEvent",
     )
-    showDelegateEventsListDialog(
-      filteredEvents, 
-      'Events (no log/presentation)'
-    )
+    showDelegateEventsListDialog(filteredEvents, "Events (no log/presentation)")
   }
 
   const renderEventItem = ({ item, index }: { item: TestDelegateEvent; index: number }) => {
     const eventName = getEventName(item)
     return (
       <View style={styles.eventItem}>
-        <Text style={styles.eventText}>Event {index + 1}: {eventName}</Text>
+        <Text style={styles.eventText}>
+          Event {index + 1}: {eventName}
+        </Text>
       </View>
     )
   }
@@ -164,30 +153,21 @@ export default function DelegateTest() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-      <Text onPress={() => router.back()}>← Back</Text>
-      <Text style={styles.title}>Delegate Test</Text>
+        <Text onPress={() => router.back()}>← Back</Text>
+        <Text style={styles.title}>Delegate Test</Text>
       </View>
-      
+
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.buttonContainer}>
-          <TestButton
-            title="Set Test Delegate"
-            onPress={setTestDelegate}
-          />
+          <TestButton title="Set Test Delegate" onPress={setTestDelegate} />
         </View>
 
         <View style={styles.buttonContainer}>
-          <TestButton
-            title="Show Paywall"
-            onPress={showPaywall}
-          />
+          <TestButton title="Show Paywall" onPress={showPaywall} />
         </View>
 
         <View style={styles.buttonContainer}>
-          <TestButton
-            title="Change Subscription Status"
-            onPress={changeSubscriptionStatus}
-          />
+          <TestButton title="Change Subscription Status" onPress={changeSubscriptionStatus} />
         </View>
 
         <View style={styles.buttonContainer}>
@@ -198,10 +178,7 @@ export default function DelegateTest() {
         </View>
 
         <View style={styles.buttonContainer}>
-          <TestButton
-            title="Clear Delegate Events"
-            onPress={clearDelegateEvents}
-          />
+          <TestButton title="Clear Delegate Events" onPress={clearDelegateEvents} />
         </View>
 
         <View style={styles.buttonContainer}>
@@ -212,10 +189,7 @@ export default function DelegateTest() {
         </View>
 
         <View style={styles.buttonContainer}>
-          <TestButton
-            title="Show Delegate Events with log"
-            onPress={showDelegateEventsWithLog}
-          />
+          <TestButton title="Show Delegate Events with log" onPress={showDelegateEventsWithLog} />
         </View>
 
         <View style={styles.buttonContainer}>
@@ -247,14 +221,11 @@ export default function DelegateTest() {
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{modalTitle}</Text>
-            <TouchableOpacity 
-              style={styles.closeButton}
-              onPress={() => setShowEventsModal(false)}
-            >
+            <TouchableOpacity style={styles.closeButton} onPress={() => setShowEventsModal(false)}>
               <Text style={styles.closeButtonText}>OK</Text>
             </TouchableOpacity>
           </View>
-          
+
           <FlatList
             data={currentEventsList}
             renderItem={renderEventItem}
@@ -275,20 +246,20 @@ export default function DelegateTest() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingTop: 50,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: "#e0e0e0",
   },
   title: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginLeft: 16,
   },
   content: {
@@ -303,15 +274,15 @@ const styles = StyleSheet.create({
     marginTop: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 8,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: "#f9f9f9",
   },
   statsTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 10,
-    textAlign: 'center',
+    textAlign: "center",
   },
   statText: {
     fontSize: 14,
@@ -319,27 +290,27 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingTop: 50,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: "#e0e0e0",
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   closeButton: {
     padding: 8,
   },
   closeButtonText: {
-    color: '#007AFF',
+    color: "#007AFF",
     fontSize: 16,
   },
   eventsList: {
@@ -350,20 +321,20 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: "#e0e0e0",
   },
   eventText: {
     fontSize: 16,
   },
   emptyContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingTop: 100,
   },
   emptyText: {
     fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
+    color: "#666",
+    textAlign: "center",
   },
-}) 
+})

@@ -1,18 +1,22 @@
-import * as Superwall from "expo-superwall/compat"
-import { Alert } from "react-native"
-import { PurchaseResult, PurchaseResultFailed, PurchaseResultPurchased, PurchaseResultRestored, RestorationResult, SubscriptionStatus } from "expo-superwall/compat"
+import Superwall from "expo-superwall/compat"
+import {
+  type PurchaseResult,
+  PurchaseResultFailed,
+  PurchaseResultPurchased,
+  PurchaseResultRestored,
+  type RestorationResult,
+  type SubscriptionStatus,
+} from "expo-superwall/compat"
 import { Entitlement } from "expo-superwall/compat/lib/Entitlement"
+import { Alert } from "react-native"
 
 export class TestingPurchaseController {
-  rejectPurchase: boolean = true
-  restorePurchase: boolean = true
-  shouldShowDialog: boolean = false
-
-  constructor() {
-  }
+  rejectPurchase = true
+  restorePurchase = true
+  shouldShowDialog = false
 
   async configureAndSyncSubscriptionStatus(): Promise<void> {
-    const inactiveStatus: SubscriptionStatus = { status: 'INACTIVE' }
+    const inactiveStatus: SubscriptionStatus = { status: "INACTIVE" }
     await Superwall.shared.setSubscriptionStatus(inactiveStatus)
   }
 
@@ -30,46 +34,38 @@ export class TestingPurchaseController {
 
   private showResultDialog(title: string, message: string): Promise<void> {
     return new Promise((resolve) => {
-      Alert.alert(
-        title,
-        message,
-        [
-          {
-            text: 'OK',
-            onPress: () => resolve()
-          }
-        ]
-      )
+      Alert.alert(title, message, [
+        {
+          text: "OK",
+          onPress: () => resolve(),
+        },
+      ])
     })
   }
 
   async purchaseFromAppStore(productId: string): Promise<PurchaseResult> {
     if (this.rejectPurchase) {
-      return new PurchaseResultFailed('Purchase was rejected in TestingPurchaseController')
-    } else {
-      return new PurchaseResultPurchased()
+      return new PurchaseResultFailed("Purchase was rejected in TestingPurchaseController")
     }
+    return new PurchaseResultPurchased()
   }
 
   async purchaseFromGooglePlay(
-    productId: string, 
-    basePlanId?: string, 
-    offerId?: string
+    productId: string,
+    basePlanId?: string,
+    offerId?: string,
   ): Promise<PurchaseResult> {
     if (this.rejectPurchase) {
-      return new PurchaseResultFailed('Purchase was rejected in TestingPurchaseController')
-    } else {
-      const activeStatus: SubscriptionStatus = {
-        status: 'ACTIVE',
-        entitlements: [
-          new Entitlement('test_entitlement')
-        ]
-      }
-      
-      await Superwall.shared.setSubscriptionStatus(activeStatus)
-
-      return new PurchaseResultPurchased()
+      return new PurchaseResultFailed("Purchase was rejected in TestingPurchaseController")
     }
+    const activeStatus: SubscriptionStatus = {
+      status: "ACTIVE",
+      entitlements: [new Entitlement("test_entitlement")],
+    }
+
+    await Superwall.shared.setSubscriptionStatus(activeStatus)
+
+    return new PurchaseResultPurchased()
   }
 
   async restorePurchases(): Promise<RestorationResult> {
@@ -78,23 +74,21 @@ export class TestingPurchaseController {
         this.restorePurchase ? "Restore Success" : "Restore Failed",
         this.restorePurchase
           ? "Purchases were restored successfully."
-          : "Failed to restore purchases."
+          : "Failed to restore purchases.",
       )
     }
 
     if (this.restorePurchase) {
       const activeStatus: SubscriptionStatus = {
-        status: 'ACTIVE',
-        entitlements: [
-          new Entitlement('test_entitlement')
-        ]
+        status: "ACTIVE",
+        entitlements: [new Entitlement("test_entitlement")],
       }
-      
+
       await Superwall.shared.setSubscriptionStatus(activeStatus)
-      
+
       return new PurchaseResultRestored()
-    } else {
-      return new PurchaseResultFailed('Restore failed in TestingPurchaseController')
     }
+
+    return new PurchaseResultFailed("Restore failed in TestingPurchaseController")
   }
-} 
+}
