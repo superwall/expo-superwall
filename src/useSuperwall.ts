@@ -2,12 +2,7 @@ import { createContext, useContext } from "react"
 import { create } from "zustand"
 import { useShallow } from "zustand/shallow"
 import SuperwallExpoModule from "./SuperwallExpoModule"
-import type {
-  PaywallInfo,
-  PaywallResult,
-  PaywallSkippedReason,
-  SubscriptionStatus,
-} from "./SuperwallExpoModule.types"
+import type { SubscriptionStatus } from "./SuperwallExpoModule.types"
 
 import pkg from "../package.json"
 
@@ -33,10 +28,6 @@ export interface SuperwallStore {
   user?: UserAttributes | null
 
   subscriptionStatus?: SubscriptionStatus
-  activePaywallInfo?: PaywallInfo
-  lastPaywallResult?: PaywallResult
-  lastSkippedReason?: PaywallSkippedReason
-  lastError?: string | null
 
   /* -------------------- Internal -------------------- */
   // Internal listener references for cleanup handled inside Provider effect.
@@ -80,10 +71,6 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
 
   user: null,
   subscriptionStatus: undefined,
-  activePaywallInfo: undefined,
-  lastPaywallResult: undefined,
-  lastSkippedReason: undefined,
-  lastError: null,
 
   /* -------------------- Actions -------------------- */
   configure: async (apiKey, options) => {
@@ -153,45 +140,6 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
         "subscriptionStatusDidChange",
         ({ to }: { to: SubscriptionStatus }) => {
           set({ subscriptionStatus: to })
-        },
-      ),
-    )
-
-    subscriptions.push(
-      SuperwallExpoModule.addListener(
-        "onPaywallPresent",
-        ({ paywallInfoJson }: { paywallInfoJson: PaywallInfo }) => {
-          set({ activePaywallInfo: paywallInfoJson })
-        },
-      ),
-    )
-    subscriptions.push(
-      SuperwallExpoModule.addListener(
-        "onPaywallDismiss",
-        ({
-          paywallInfoJson,
-          result,
-        }: {
-          paywallInfoJson: PaywallInfo
-          result: PaywallResult
-        }) => {
-          set({ activePaywallInfo: undefined, lastPaywallResult: result })
-        },
-      ),
-    )
-    subscriptions.push(
-      SuperwallExpoModule.addListener(
-        "onPaywallSkip",
-        ({ skippedReason }: { skippedReason: PaywallSkippedReason }) => {
-          set({ lastSkippedReason: skippedReason })
-        },
-      ),
-    )
-    subscriptions.push(
-      SuperwallExpoModule.addListener(
-        "onPaywallError",
-        ({ errorString }: { errorString: string }) => {
-          set({ lastError: errorString })
         },
       ),
     )

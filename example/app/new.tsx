@@ -11,13 +11,12 @@ import { ActivityIndicator, Alert, Button, Text, View } from "react-native"
 const API_KEY = "pk_25605698906751f5383385f9976e21f840d44aa11cd4639c"
 
 function ScreenContent() {
-  const { subscriptionStatus, lastPaywallResult } = useSuperwall((state) => ({
+  const { subscriptionStatus } = useSuperwall((state) => ({
     subscriptionStatus: state.subscriptionStatus,
-    lastPaywallResult: state.lastPaywallResult,
   }))
 
   const { identify, user, signOut, update, refresh } = useUser()
-  const { registerPlacement, error, state } = usePlacement({
+  const { registerPlacement, state } = usePlacement({
     onError: (err) => console.error(err),
     onPresent: (info) => console.log("Paywall presented", info),
     onDismiss: (info, result) => console.log("Paywall dismissed", info, result),
@@ -43,7 +42,7 @@ function ScreenContent() {
       <Text>Subscription status: {subscriptionStatus?.status ?? "unknown"}</Text>
       {user && <Text>User: {user.appUserId}</Text>}
       {user && <Text>User attributes: {JSON.stringify(user, null, 2)}</Text>}
-      {lastPaywallResult && <Text>Last paywall result: {JSON.stringify(lastPaywallResult)}</Text>}
+      {state && <Text>Last paywall result: {JSON.stringify(state)}</Text>}
 
       <Button
         title={`Update user attributes with counter: ${user?.counter || 0}`}

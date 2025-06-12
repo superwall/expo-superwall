@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useId, useMemo, useRef } from "react"
+import { useCallback, useId, useState } from "react"
 
 import type { PaywallInfo, PaywallResult, PaywallSkippedReason } from "./SuperwallExpoModule.types"
 import { useSuperwall } from "./useSuperwall"
+import { useSuperwallEvents } from "./useSuperwallEvents"
 
 // -------------------- Types --------------------
 /**
@@ -55,77 +56,32 @@ export interface RegisterPlacementArgs {
 export function usePlacement(callbacks: usePlacementCallbacks = {}) {
   const id = useId()
 
-  const {
-    registerPlacement: storeRegisterPlacement,
-    activePaywallInfo,
-    lastPaywallResult,
-    lastSkippedReason,
-    lastError,
-  } = useSuperwall((state) => ({
+  const [state, setState] = useState<PaywallState>({ status: "idle" })
+
+  useSuperwallEvents({
+    handlerId: id,
+    onPaywallDismiss(info, result) {
+      setState({ status: "dismissed", result })
+
+      callbacks.onDismiss?.(info, result)
+    },
+    onPaywallSkip(reason) {
+      setState({ status: "skipped", reason })
+      callbacks.onSkip?.(reason)
+    },
+    onPaywallError(error) {
+      setState({ status: "error", error })
+      callbacks.onError?.(error)
+    },
+    onPaywallPresent(info) {
+      setState({ status: "presented", paywallInfo: info })
+      callbacks.onPresent?.(info)
+    },
+  })
+
+  const { registerPlacement: storeRegisterPlacement } = useSuperwall((state) => ({
     registerPlacement: state.registerPlacement,
-    activePaywallInfo: state.activePaywallInfo,
-    lastPaywallResult: state.lastPaywallResult,
-    lastSkippedReason: state.lastSkippedReason,
-    lastError: state.lastError,
   }))
-
-  /* -------------------- Callback handling -------------------- */
-  const prevPaywallInfoRef = useRef<PaywallInfo | undefined>(undefined)
-  const prevResultRef = useRef<PaywallResult | undefined>(undefined)
-  const prevSkipRef = useRef<PaywallSkippedReason | undefined>(undefined)
-  const prevErrorRef = useRef<string | null>(null)
-
-  // Paywall present
-  useEffect(() => {
-    if (activePaywallInfo && activePaywallInfo !== prevPaywallInfoRef.current) {
-      callbacks.onPresent?.(activePaywallInfo)
-      prevPaywallInfoRef.current = activePaywallInfo
-    }
-  }, [activePaywallInfo, callbacks])
-
-  // Paywall dismissed
-  useEffect(() => {
-    if (lastPaywallResult && lastPaywallResult !== prevResultRef.current) {
-      // The SDK does not resend the PaywallInfo on dismiss, so use the last known one.
-      if (prevPaywallInfoRef.current) {
-        callbacks.onDismiss?.(prevPaywallInfoRef.current, lastPaywallResult)
-      }
-      prevResultRef.current = lastPaywallResult
-    }
-  }, [lastPaywallResult, callbacks])
-
-  // Paywall skipped
-  useEffect(() => {
-    if (lastSkippedReason && lastSkippedReason !== prevSkipRef.current) {
-      callbacks.onSkip?.(lastSkippedReason)
-      prevSkipRef.current = lastSkippedReason
-    }
-  }, [lastSkippedReason, callbacks])
-
-  // Error
-  useEffect(() => {
-    if (lastError && lastError !== prevErrorRef.current) {
-      callbacks.onError?.(lastError)
-      prevErrorRef.current = lastError
-    }
-  }, [lastError, callbacks])
-
-  /* -------------------- Derived state -------------------- */
-  const state: PaywallState = useMemo(() => {
-    if (activePaywallInfo) {
-      return { status: "presented", paywallInfo: activePaywallInfo }
-    }
-    if (lastPaywallResult) {
-      return { status: "dismissed", result: lastPaywallResult }
-    }
-    if (lastSkippedReason) {
-      return { status: "skipped", reason: lastSkippedReason }
-    }
-    if (lastError) {
-      return { status: "error", error: lastError }
-    }
-    return { status: "idle" }
-  }, [activePaywallInfo, lastPaywallResult, lastSkippedReason, lastError])
 
   /* -------------------- Helpers -------------------- */
   const registerPlacement = useCallback(
@@ -140,6 +96,5 @@ export function usePlacement(callbacks: usePlacementCallbacks = {}) {
   return {
     registerPlacement,
     state,
-    error: lastError,
   } as const
 }

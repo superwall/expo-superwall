@@ -27,12 +27,11 @@ export function SuperwallProvider({
 
   children,
 }: SuperwallProviderProps) {
-  const { isConfigured, isLoading, configure, lastError } = useSuperwallStore(
+  const { isConfigured, isLoading, configure } = useSuperwallStore(
     useShallow((state) => ({
       isConfigured: state.isConfigured,
       isLoading: state.isLoading,
       configure: state.configure,
-      lastError: state.lastError,
     })),
   )
 
@@ -49,10 +48,6 @@ export function SuperwallProvider({
 
     return cleanup
   }, [])
-
-  if (lastError) {
-    console.error("Superwall Error: ", lastError)
-  }
 
   return <SuperwallContext.Provider value={true}>{children}</SuperwallContext.Provider>
 }
