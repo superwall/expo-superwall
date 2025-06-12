@@ -2,7 +2,7 @@ import { useRouter } from "expo-router"
 import Superwall from "expo-superwall/compat"
 import type { SubscriptionStatus } from "expo-superwall/compat"
 import { Entitlement } from "expo-superwall/compat/lib/Entitlement"
-import { useState, useRef } from "react"
+import { useRef, useState } from "react"
 import {
   Alert,
   FlatList,
@@ -153,7 +153,9 @@ export default function DelegateTest() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text onPress={() => router.back()}>← Back</Text>
+        <TouchableOpacity onPress={() => router.back()} testID="navigation-back-button">
+          <Text>Back</Text>
+        </TouchableOpacity>
         <Text style={styles.title}>Delegate Test</Text>
       </View>
 

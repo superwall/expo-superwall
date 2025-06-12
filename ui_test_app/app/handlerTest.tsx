@@ -1,85 +1,85 @@
-import Superwall from "expo-superwall/compat"
-import React, { useState, useRef } from "react"
-import { 
-  Alert, 
-  FlatList, 
-  Modal, 
-  ScrollView, 
-  StyleSheet, 
-  Text, 
-  View,
-  TouchableOpacity
-} from "react-native"
 import { useRouter } from "expo-router"
-import { TestHandler, HandlerEvent } from "./TestHandler"
+import Superwall from "expo-superwall/compat"
+import { useRef, useState } from "react"
+import {
+  Alert,
+  FlatList,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native"
 import { TestButton } from "./TestButton"
+import { type HandlerEvent, TestHandler } from "./TestHandler"
 
 export default function HandlerTest() {
   const router = useRouter()
   const [featureBlockExecuted, setFeatureBlockExecuted] = useState(false)
   const [showEventsModal, setShowEventsModal] = useState(false)
   const [forceUpdate, setForceUpdate] = useState(0)
-  
+
   const testHandlerRef = useRef(new TestHandler())
-  
+
   const showSnackBar = (message: string) => {
-    Alert.alert('Info', message)
+    Alert.alert("Info", message)
   }
 
   const featureBlock = () => {
     setFeatureBlockExecuted(true)
-    showSnackBar('Feature block executed!')
+    showSnackBar("Feature block executed!")
   }
 
   const testNonGatedPaywall = async () => {
     try {
       await Superwall.shared.register({
-        placement: 'non_gated_paywall',
+        placement: "non_gated_paywall",
         handler: testHandlerRef.current.getHandler(),
-        feature: featureBlock
+        feature: featureBlock,
       })
     } catch (error) {
-      console.error('Failed to register non-gated paywall:', error)
-      Alert.alert('Error', 'Failed to register non-gated paywall')
+      console.error("Failed to register non-gated paywall:", error)
+      Alert.alert("Error", "Failed to register non-gated paywall")
     }
   }
 
   const testGatedPaywall = async () => {
     try {
       await Superwall.shared.register({
-        placement: 'gated_paywall',
+        placement: "gated_paywall",
         handler: testHandlerRef.current.getHandler(),
-        feature: featureBlock
+        feature: featureBlock,
       })
     } catch (error) {
-      console.error('Failed to register gated paywall:', error)
-      Alert.alert('Error', 'Failed to register gated paywall')
+      console.error("Failed to register gated paywall:", error)
+      Alert.alert("Error", "Failed to register gated paywall")
     }
   }
 
   const testSkipAudience = async () => {
     try {
       await Superwall.shared.register({
-        placement: 'skip_audience',
+        placement: "skip_audience",
         handler: testHandlerRef.current.getHandler(),
-        feature: featureBlock
+        feature: featureBlock,
       })
     } catch (error) {
-      console.error('Failed to register skip audience:', error)
-      Alert.alert('Error', 'Failed to register skip audience')
+      console.error("Failed to register skip audience:", error)
+      Alert.alert("Error", "Failed to register skip audience")
     }
   }
 
   const testErrorPlacement = async () => {
     try {
       await Superwall.shared.register({
-        placement: 'error_placement',
+        placement: "error_placement",
         handler: testHandlerRef.current.getHandler(),
-        feature: featureBlock
+        feature: featureBlock,
       })
     } catch (error) {
-      console.error('Failed to register error placement:', error)
-      Alert.alert('Error', 'Failed to register error placement')
+      console.error("Failed to register error placement:", error)
+      Alert.alert("Error", "Failed to register error placement")
     }
   }
 
@@ -87,16 +87,16 @@ export default function HandlerTest() {
     try {
       await Superwall.shared.dismiss()
     } catch (error) {
-      console.error('Failed to dismiss paywall:', error)
-      Alert.alert('Error', 'Failed to dismiss paywall')
+      console.error("Failed to dismiss paywall:", error)
+      Alert.alert("Error", "Failed to dismiss paywall")
     }
   }
 
   const clearHandlerEvents = () => {
     testHandlerRef.current.clearEvents()
     setFeatureBlockExecuted(false)
-    setForceUpdate(prev => prev + 1) // Force re-render
-    showSnackBar('Handler events cleared')
+    setForceUpdate((prev) => prev + 1) // Force re-render
+    showSnackBar("Handler events cleared")
   }
 
   const showHandlerEventsDialog = () => {
@@ -107,7 +107,9 @@ export default function HandlerTest() {
     const eventName = testHandlerRef.current.getEventName(item)
     return (
       <View style={styles.eventItem}>
-        <Text style={styles.eventText}>Event {index + 1}: {eventName}</Text>
+        <Text style={styles.eventText}>
+          Event {index + 1}: {eventName}
+        </Text>
       </View>
     )
   }
@@ -115,58 +117,39 @@ export default function HandlerTest() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-      <Text onPress={() => router.back()}>← Back</Text>
-      <Text style={styles.title}>Handler Test</Text>
+        <TouchableOpacity onPress={() => router.back()} testID="navigation-back-button">
+          <Text>Back</Text>
+        </TouchableOpacity>
+        <Text style={styles.title}>Handler Test</Text>
       </View>
-      
+
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.buttonContainer}>
-          <TestButton
-            title="Test Non-Gated Paywall"
-            onPress={testNonGatedPaywall}
-          />
+          <TestButton title="Test Non-Gated Paywall" onPress={testNonGatedPaywall} />
         </View>
 
         <View style={styles.buttonContainer}>
-          <TestButton
-            title="Test Gated Paywall"
-            onPress={testGatedPaywall}
-          />
+          <TestButton title="Test Gated Paywall" onPress={testGatedPaywall} />
         </View>
 
         <View style={styles.buttonContainer}>
-          <TestButton
-            title="Test Skip Audience"
-            onPress={testSkipAudience}
-          />
+          <TestButton title="Test Skip Audience" onPress={testSkipAudience} />
         </View>
 
         <View style={styles.buttonContainer}>
-          <TestButton
-            title="Test Error Placement"
-            onPress={testErrorPlacement}
-          />
+          <TestButton title="Test Error Placement" onPress={testErrorPlacement} />
         </View>
 
         <View style={styles.buttonContainer}>
-          <TestButton
-            title="Dismiss Paywall"
-            onPress={dismissPaywall}
-          />
+          <TestButton title="Dismiss Paywall" onPress={dismissPaywall} />
         </View>
 
         <View style={styles.buttonContainer}>
-          <TestButton
-            title="Clear Handler Events"
-            onPress={clearHandlerEvents}
-          />
+          <TestButton title="Clear Handler Events" onPress={clearHandlerEvents} />
         </View>
 
         <View style={styles.buttonContainer}>
-          <TestButton
-            title="Show Handler Events"
-            onPress={showHandlerEventsDialog}
-          />
+          <TestButton title="Show Handler Events" onPress={showHandlerEventsDialog} />
         </View>
 
         <View style={styles.resultsContainer}>
@@ -190,14 +173,11 @@ export default function HandlerTest() {
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Handler Events</Text>
-            <TouchableOpacity 
-              style={styles.closeButton}
-              onPress={() => setShowEventsModal(false)}
-            >
+            <TouchableOpacity style={styles.closeButton} onPress={() => setShowEventsModal(false)}>
               <Text style={styles.closeButtonText}>Close</Text>
             </TouchableOpacity>
           </View>
-          
+
           <FlatList
             data={testHandlerRef.current.events}
             renderItem={renderEventItem}
@@ -218,20 +198,20 @@ export default function HandlerTest() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingTop: 50,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: "#e0e0e0",
   },
   title: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginLeft: 16,
   },
   content: {
@@ -246,15 +226,15 @@ const styles = StyleSheet.create({
     marginTop: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: "#ccc",
     borderRadius: 8,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: "#f9f9f9",
   },
   resultsTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 10,
-    textAlign: 'center',
+    textAlign: "center",
   },
   resultText: {
     fontSize: 14,
@@ -262,27 +242,27 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     paddingHorizontal: 16,
     paddingTop: 50,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: "#e0e0e0",
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   closeButton: {
     padding: 8,
   },
   closeButtonText: {
-    color: '#007AFF',
+    color: "#007AFF",
     fontSize: 16,
   },
   eventsList: {
@@ -293,20 +273,20 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: "#e0e0e0",
   },
   eventText: {
     fontSize: 16,
   },
   emptyContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingTop: 100,
   },
   emptyText: {
     fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
+    color: "#666",
+    textAlign: "center",
   },
-}) 
+})

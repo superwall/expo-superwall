@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router"
 import Superwall, { PaywallOptions, SuperwallOptions } from "expo-superwall/compat"
-import { Alert, Platform, ScrollView, StyleSheet, Text, View } from "react-native"
+import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import { TestButton } from "./TestButton"
 import { TestingPurchaseController } from "./TestingPurchaseController"
 
@@ -96,7 +96,9 @@ export default function ConfigureTest() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text onPress={() => router.back()}>← Back</Text>
+        <TouchableOpacity onPress={() => router.back()} testID="navigation-back-button">
+          <Text>Back</Text>
+        </TouchableOpacity>
         <Text style={styles.title}>ConfigureTest</Text>
       </View>
 

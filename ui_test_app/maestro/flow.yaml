@@ -15,7 +15,6 @@ appId: com.superwall.superapp
 - tapOn: "OK"
 - runFlow: "util/back.yaml"
 
-
 # Navigate to Subscription Status Test screen
 - tapOn: "Subscription Status Test"
 
