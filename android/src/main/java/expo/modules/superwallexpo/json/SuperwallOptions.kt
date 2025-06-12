@@ -10,11 +10,11 @@ import java.util.EnumSet
 fun superwallOptionsFromJson(json: Map<String, Any?>): SuperwallOptions {
   val options = SuperwallOptions()
   options.localeIdentifier = json["localeIdentifier"] as String?
-  options.isExternalDataCollectionEnabled = json["isExternalDataCollectionEnabled"] as Boolean
-  options.isGameControllerEnabled = json["isGameControllerEnabled"] as Boolean
-      options.passIdentifiersToPlayStore = json["passIdentifiersToPlayStore"] as Boolean
+  options.isExternalDataCollectionEnabled = (json["isExternalDataCollectionEnabled"] as Boolean?)?:true
+  options.isGameControllerEnabled = (json["isGameControllerEnabled"] as Boolean?)?:false
+    options.passIdentifiersToPlayStore = (json["passIdentifiersToPlayStore"] as Boolean?)?:false
 
-      val networkEnvironment = when (json["networkEnvironment"] as String) {
+      val networkEnvironment = when (json["networkEnvironment"] as String?) {
         "release" -> SuperwallOptions.NetworkEnvironment.Release()
         "releaseCandidate" -> SuperwallOptions.NetworkEnvironment.ReleaseCandidate()
         "developer" -> SuperwallOptions.NetworkEnvironment.Developer()
@@ -38,7 +38,9 @@ fun superwallOptionsFromJson(json: Map<String, Any?>): SuperwallOptions {
         ?: LogLevel.warn
 
       val logging = SuperwallOptions.Logging()
-      logging.scopes = EnumSet.copyOf(scopes)
+      if(scopes.isNotEmpty()) {
+        logging.scopes = EnumSet.copyOf(scopes)
+      }
       logging.level = level
       options.logging = logging
 
