@@ -83,14 +83,11 @@ public class SuperwallExpoModule: Module {
       (
         apiKey: String,
         options: [String: Any]?,
-        usingPurchaseController: Bool?,
         sdkVersion: String?,
         promise: Promise
       ) in
 
       var superwallOptions: SuperwallOptions?
-
-      print("Superwall API Key: \(apiKey)")
 
       if let options = options {
         superwallOptions = SuperwallOptions.fromJson(options)
@@ -98,14 +95,17 @@ public class SuperwallExpoModule: Module {
 
       Superwall.configure(
         apiKey: apiKey,
-        purchaseController: usingPurchaseController ?? false ? purchaseController : nil,
+        purchaseController: purchaseController,
         options: superwallOptions,
         completion: {
+          self.delegate = SuperwallDelegateBridge()
+          Superwall.shared.delegate = self.delegate
+
+          Superwall.shared.setPlatformWrapper("React Native", version: sdkVersion ?? "0.0.0")
+
           promise.resolve(nil)
         }
       )
-
-      Superwall.shared.setPlatformWrapper("React Native", version: sdkVersion ?? "0.0.0")
     }
 
     AsyncFunction("getConfigurationStatus") { (promise: Promise) in
@@ -231,11 +231,6 @@ public class SuperwallExpoModule: Module {
       }
 
       Superwall.shared.subscriptionStatus = subscriptionStatus
-    }
-
-    Function("setDelegate") { (isUndefined: Bool) in
-      self.delegate = isUndefined ? nil : SuperwallDelegateBridge()
-      Superwall.shared.delegate = self.delegate
     }
 
     Function("setInterfaceStyle") { (style: String?) in

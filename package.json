@@ -1,6 +1,6 @@
 {
   "name": "expo-superwall",
-  "version": "0.0.1-beta.0",
+  "version": "0.0.1",
   "description": "Offical Expo Integration for Superwall",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -27,7 +27,8 @@
     "open:android": "open -a \"Android Studio\" example/android",
     "format": "biome check --write .",
     "android": "expo run:android",
-    "ios": "expo run:ios"
+    "ios": "expo run:ios",
+    "release": "yarn build && yarn build plugin"
   },
   "keywords": [
     "react-native",
@@ -44,6 +45,7 @@
   "homepage": "https://github.com/superwall/expo-superwall#readme",
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@changesets/cli": "^2.29.4",
     "@types/react": "~19.1.5",
     "expo": "53.0.9",
     "expo-module-scripts": "^4.1.7",
@@ -65,5 +67,8 @@
     "plugin",
     "app.plugin.js"
   ],
-  "packageManager": "yarn@4.7.0"
+  "packageManager": "yarn@4.7.0",
+  "dependencies": {
+    "zustand": "^5.0.5"
+  }
 }

@@ -122,7 +122,6 @@ class SuperwallExpoModule : Module() {
     AsyncFunction("configure") {
       apiKey: String,
       options: Map<String, Any>?,
-      usingPurchaseController: Boolean?,
       sdkVersion: String?,
       promise: Promise ->
       //TODO SDK version in arguments?
@@ -135,15 +134,13 @@ class SuperwallExpoModule : Module() {
       Superwall.configure(
         apiKey = apiKey,
         applicationContext = appContext.reactContext?.applicationContext as Application,
-        purchaseController = if (usingPurchaseController == true) purchaseController else null,
+        purchaseController = purchaseController,
         activityProvider = ExpoActivityProvider(appContext),
         options = superwallOptions,
         completion = {
-          Log.e("SuperwallExpoModule", "Configuration completed")
-          Superwall.instance.setPlatformWrapper("React Native", version = sdkVersion ?: "0.0.0")
-          Log.e("SuperwallExpoModule", "Configuration completed promise resolved")
-          promise.resolve(null)
-          Log.e("SuperwallExpoModule", "Configuration resolved")
+          Superwall.instance.setPlatformWrapper("Expo", version = "sdkVersion" ?: "0.0.0")
+          Superwall.instance.delegate = SuperwallDelegateBridge()
+          promise.resolve(true)
          }
        )
       } catch (error: Throwable) {
@@ -282,11 +279,7 @@ class SuperwallExpoModule : Module() {
 
       Superwall.instance.setSubscriptionStatus(subscriptionStatus)
     }
-
-    Function("setDelegate") { isUndefined: Boolean ->
-      Superwall.instance.delegate = if (isUndefined) null else SuperwallDelegateBridge()
-    }
-
+    
     Function("setInterfaceStyle") { style: String? ->
       var interfaceStyle: InterfaceStyle? = style?.let { interfaceStyleFromString(it) }
       Superwall.instance.setInterfaceStyle(interfaceStyle)

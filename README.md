@@ -33,9 +33,9 @@
 ## Installation
 
 ```bash
-npx expo install superwall-expo
+npx expo install expo-superwall
 # or
-bunx expo install superwall-expo
+bunx expo install expo-superwall
 ```
 
 ### Basic Setup
