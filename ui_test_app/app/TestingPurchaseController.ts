@@ -1,6 +1,7 @@
 import * as Superwall from "expo-superwall/compat"
 import { Alert } from "react-native"
-import { PurchaseResult, RestorationResult, SubscriptionStatusActive, SubscriptionStatusInactive } from "expo-superwall/compat"
+import { PurchaseResult, PurchaseResultFailed, PurchaseResultPurchased, PurchaseResultRestored, RestorationResult, SubscriptionStatus } from "expo-superwall/compat"
+import { Entitlement } from "expo-superwall/compat/lib/Entitlement"
 
 export class TestingPurchaseController {
   rejectPurchase: boolean = true
@@ -11,7 +12,7 @@ export class TestingPurchaseController {
   }
 
   async configureAndSyncSubscriptionStatus(): Promise<void> {
-    const inactiveStatus: SubscriptionStatusInactive = { type: 'inactive' }
+    const inactiveStatus: SubscriptionStatus = { status: 'INACTIVE' }
     await Superwall.setSubscriptionStatus(inactiveStatus)
   }
 
@@ -44,14 +45,9 @@ export class TestingPurchaseController {
 
   async purchaseFromAppStore(productId: string): Promise<PurchaseResult> {
     if (this.rejectPurchase) {
-      return {
-        type: 'failed',
-        error: 'Purchase was rejected in TestingPurchaseController'
-      }
+      return new PurchaseResultFailed('Purchase was rejected in TestingPurchaseController')
     } else {
-      return {
-        type: 'purchased'
-      }
+      return new PurchaseResultPurchased()
     }
   }
 
@@ -61,23 +57,18 @@ export class TestingPurchaseController {
     offerId?: string
   ): Promise<PurchaseResult> {
     if (this.rejectPurchase) {
-      return {
-        type: 'failed',
-        error: 'Purchase was rejected in TestingPurchaseController'
-      }
+      return new PurchaseResultFailed('Purchase was rejected in TestingPurchaseController')
     } else {
-      const activeStatus: SubscriptionStatusActive = {
-        type: 'active',
+      const activeStatus: SubscriptionStatus = {
+        status: 'ACTIVE',
         entitlements: [
-          { id: 'test_entitlement' }
+          new Entitlement('test_entitlement')
         ]
       }
       
       await Superwall.setSubscriptionStatus(activeStatus)
 
-      return {
-        type: 'purchased'
-      }
+      return new PurchaseResultPurchased()
     }
   }
 
@@ -92,23 +83,18 @@ export class TestingPurchaseController {
     }
 
     if (this.restorePurchase) {
-      const activeStatus: SubscriptionStatusActive = {
-        type: 'active',
+      const activeStatus: SubscriptionStatus = {
+        status: 'ACTIVE',
         entitlements: [
-          { id: 'test_entitlement' }
+          new Entitlement('test_entitlement')
         ]
       }
       
       await Superwall.setSubscriptionStatus(activeStatus)
       
-      return {
-        type: 'restored'
-      }
+      return new PurchaseResultRestored()
     } else {
-      return {
-        type: 'failed',
-        error: 'Restore failed in TestingPurchaseController'
-      }
+      return new PurchaseResultFailed('Restore failed in TestingPurchaseController')
     }
   }
 } 

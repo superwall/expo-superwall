@@ -1,10 +1,10 @@
-import * as Superwall from "expo-superwall"
+import * as Superwall from "expo-superwall/compat"
 import React, { useState, useEffect } from "react"
 import { Alert, Platform, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useRouter } from "expo-router"
 import { TestingPurchaseController } from "./TestingPurchaseController"
 import { TestButton } from "./TestButton"
-import { SubscriptionStatusInactive } from "expo-superwall"
+import { SubscriptionStatus } from "expo-superwall/compat"
 
 export default function PurchaseControllerTest() {
   const router = useRouter()
@@ -49,8 +49,8 @@ export default function PurchaseControllerTest() {
         purchaseController: purchaseController,
         options: options,
         completion: async () => {
-          const inactiveStatus: SubscriptionStatusInactive = { type: 'inactive' }
-          await Superwall.setSubscriptionStatus(inactiveStatus)
+          const inactiveStatus: SubscriptionStatus = { status: 'INACTIVE' }
+          await Superwall.shared.setSubscriptionStatus(inactiveStatus)
           setIsConfigured(true)
         }
       })
@@ -68,11 +68,11 @@ export default function PurchaseControllerTest() {
         }
       }
 
-      await Superwall.configure(apiKey, {
+      await Superwall.shared.configure(apiKey, {
         options: options,
         completion: async () => {
-          const inactiveStatus: SubscriptionStatusInactive = { type: 'inactive' }
-          await Superwall.setSubscriptionStatus(inactiveStatus)
+          const inactiveStatus: SubscriptionStatus = { status: 'INACTIVE' }
+          await Superwall.shared.setSubscriptionStatus(inactiveStatus)
           setIsConfigured(true)
         }
       })
@@ -84,7 +84,7 @@ export default function PurchaseControllerTest() {
 
   const triggerPaywall = async () => {
     try {
-      await Superwall.registerPlacement('campaign_trigger', {
+      await Superwall.shared.registerPlacement('campaign_trigger', {
         feature: () => {
           console.log("feature triggered")
           showFeatureDialog()
@@ -112,8 +112,8 @@ export default function PurchaseControllerTest() {
 
   const resetStatus = async () => {
     try {
-      const inactiveStatus: SubscriptionStatusInactive = { type: 'inactive' }
-      await Superwall.setSubscriptionStatus(inactiveStatus)
+      const inactiveStatus: SubscriptionStatus = { status: 'INACTIVE' }
+      await Superwall.shared.setSubscriptionStatus(inactiveStatus)
       console.log('Status reset to inactive')
     } catch (error) {
       console.error('Failed to reset status:', error)

@@ -1,9 +1,9 @@
-import * as Superwall from "expo-superwall"
 import React from "react"
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useRouter } from "expo-router"
 import { TestButton } from "./TestButton"
-import { SubscriptionStatus, SubscriptionStatusActive, SubscriptionStatusInactive, SubscriptionStatusUnknown } from "expo-superwall"
+import Superwall, { SubscriptionStatus } from "expo-superwall/compat"
+import { Entitlement } from "expo-superwall/compat/lib/Entitlement"
 
 export default function SubscriptionStatusTest() {
   const router = useRouter()
@@ -11,12 +11,12 @@ export default function SubscriptionStatusTest() {
   const showSubscriptionStatusDialog = (status: SubscriptionStatus) => {
     let content = ''
     
-    if (status.type === 'active') {
+    if (status.status === 'ACTIVE') {
       const entitlementIds = status.entitlements.map(e => e.id).join(', ')
       content = `Subscription status: Active - Entitlements: ${entitlementIds}`
-    } else if (status.type === 'inactive') {
+    } else if (status.status === 'INACTIVE') {
       content = 'Subscription status: Inactive'
-    } else if (status.type === 'unknown') {
+    } else if (status.status === 'UNKNOWN') {
       content = 'Subscription status: Unknown'
     } else {
       content = `Subscription status: ${status}`
@@ -37,11 +37,11 @@ export default function SubscriptionStatusTest() {
   const setSubscriptionStatusActive = async () => {
     try {
       // Create active subscription status with pro and test_entitlement
-      const activeStatus: SubscriptionStatusActive = {
-        type: 'active',
+      const activeStatus: SubscriptionStatus.Active = {
+        status: 'ACTIVE',
         entitlements: [
-          { id: 'pro' },
-          { id: 'test_entitlement' }
+          new Entitlement('pro'),
+          new Entitlement('test_entitlement')
         ]
       }
 
@@ -59,8 +59,8 @@ export default function SubscriptionStatusTest() {
   const setSubscriptionStatusInactive = async () => {
     try {
       // Create inactive subscription status
-      const inactiveStatus: SubscriptionStatusInactive = {
-        type: 'inactive'
+      const inactiveStatus: SubscriptionStatus = {
+        status: 'INACTIVE'
       }
 
       // Set the subscription status
@@ -77,8 +77,8 @@ export default function SubscriptionStatusTest() {
   const setSubscriptionStatusUnknown = async () => {
     try {
       // Create unknown subscription status
-      const unknownStatus: SubscriptionStatusUnknown = {
-        type: 'unknown'
+      const unknownStatus: SubscriptionStatus = {
+        status: 'UNKNOWN'
       }
 
       // Set the subscription status

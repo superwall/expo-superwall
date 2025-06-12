@@ -1,4 +1,4 @@
-import * as Superwall from "expo-superwall"
+import Superwall from "expo-superwall/compat"
 import React, { useState, useRef } from "react"
 import { 
   Alert, 
@@ -13,7 +13,8 @@ import {
 import { useRouter } from "expo-router"
 import { TestDelegate } from "./TestDelegate"
 import { TestButton } from "./TestButton"
-import { SubscriptionStatusActive, SubscriptionStatusInactive, 
+import { SubscriptionStatus } from "expo-superwall/compat"
+import {
   TestDelegateEvent,
   DidDismissPaywallEvent,
   DidPresentPaywallEvent,
@@ -24,8 +25,9 @@ import { SubscriptionStatusActive, SubscriptionStatusInactive,
   PaywallWillOpenURLEvent,
   SubscriptionStatusDidChangeEvent,
   WillDismissPaywallEvent,
-  WillPresentPaywallEvent
-} from "expo-superwall"
+  WillPresentPaywallEvent,
+} from "./TestDelegateEvent"
+import { Entitlement } from "expo-superwall/compat/lib/Entitlement"
 
 
 
@@ -38,9 +40,6 @@ export default function DelegateTest() {
   
   const testDelegateRef = useRef(new TestDelegate())
   
-  const showSnackBar = (message: string) => {
-    Alert.alert('Info', message)
-  }
 
   const getEventName = (event: TestDelegateEvent): string => {
     switch (event.type) {
@@ -77,8 +76,7 @@ export default function DelegateTest() {
 
   const setTestDelegate = async () => {
     try {
-      await Superwall.setDelegate(testDelegateRef.current)
-      showSnackBar('Test delegate set')
+      await Superwall.shared.setDelegate(testDelegateRef.current)
     } catch (error) {
       console.error('Failed to set delegate:', error)
       Alert.alert('Error', 'Failed to set delegate')
@@ -87,7 +85,12 @@ export default function DelegateTest() {
 
   const showPaywall = async () => {
     try {
-      await Superwall.registerPlacement('campaign_trigger')
+      Superwall.shared.register({
+        placement: 'campaign_trigger',
+        feature() {
+          console.log('Feature called!')
+        }
+      })
     } catch (error) {
       console.error('Failed to show paywall:', error)
       Alert.alert('Error', 'Failed to show paywall')
@@ -96,14 +99,14 @@ export default function DelegateTest() {
 
   const changeSubscriptionStatus = async () => {
     try {
-      const activeStatus: SubscriptionStatusActive = {
-        type: 'active',
+      const activeStatus: SubscriptionStatus = {
+        status: 'ACTIVE',
         entitlements: [
-          { id: 'pro' },
-          { id: 'test_entitlement' }
+          new Entitlement('pro'),
+          new Entitlement('test_entitlement')
         ]
       }
-      await Superwall.setSubscriptionStatus(activeStatus)
+      await Superwall.shared.setSubscriptionStatus(activeStatus)
     } catch (error) {
       console.error('Failed to change subscription status:', error)
       Alert.alert('Error', 'Failed to change subscription status')
@@ -113,13 +116,12 @@ export default function DelegateTest() {
   const clearDelegateAndChangeStatus = async () => {
     try {
       testDelegateRef.current.clearEvents()
-      await Superwall.setDelegate(null)
+      await Superwall.shared.setDelegate(undefined)
       
-      const inactiveStatus: SubscriptionStatusInactive = { type: 'inactive' }
-      await Superwall.setSubscriptionStatus(inactiveStatus)
+      const inactiveStatus: SubscriptionStatus = { status: 'INACTIVE' }
+      await Superwall.shared.setSubscriptionStatus(inactiveStatus)
       
       setForceUpdate(prev => prev + 1)
-      showSnackBar('Delegate cleared')
     } catch (error) {
       console.error('Failed to clear delegate:', error)
       Alert.alert('Error', 'Failed to clear delegate')
@@ -129,7 +131,6 @@ export default function DelegateTest() {
   const clearDelegateEvents = () => {
     testDelegateRef.current.clearEvents()
     setForceUpdate(prev => prev + 1)
-    showSnackBar('Delegate events cleared')
   }
 
   const showDelegateEventsWithoutLog = () => {
@@ -260,7 +261,7 @@ export default function DelegateTest() {
               style={styles.closeButton}
               onPress={() => setShowEventsModal(false)}
             >
-              <Text style={styles.closeButtonText}>Close</Text>
+              <Text style={styles.closeButtonText}>OK</Text>
             </TouchableOpacity>
           </View>
           

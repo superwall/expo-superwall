@@ -1,12 +1,13 @@
 import * as Superwall from "expo-superwall/compat"
 import {
-  TestDelegateEvent,
   SuperwallDelegate,
   PaywallInfo,
-  PaywallResult,
-  PaywallSkippedReason,
   SubscriptionStatus,
   SuperwallEventInfo,
+  RedemptionResult,
+}  from "expo-superwall/compat"
+import {
+  TestDelegateEvent,
   DidDismissPaywallEvent,
   DidPresentPaywallEvent,
   HandleCustomPaywallActionEvent,
@@ -16,10 +17,10 @@ import {
   PaywallWillOpenURLEvent,
   SubscriptionStatusDidChangeEvent,
   WillDismissPaywallEvent,
-  WillPresentPaywallEvent
-}  from "expo-superwall"
+  WillPresentPaywallEvent,
+} from "./TestDelegateEvent"
 
-export class TestDelegate implements SuperwallDelegate {
+export class TestDelegate extends SuperwallDelegate {
   private _events: TestDelegateEvent[] = []
 
   get events(): TestDelegateEvent[] {
@@ -76,6 +77,14 @@ export class TestDelegate implements SuperwallDelegate {
 
   willPresentPaywall(paywallInfo: PaywallInfo): void {
     this._events.push(new WillPresentPaywallEvent(paywallInfo))
+  }
+
+  willRedeemLink(): void {
+    // Add event tracking if needed in the future
+  }
+
+  didRedeemLink(result: RedemptionResult): void {
+    // Add event tracking if needed in the future
   }
 
   clearEvents(): void {
