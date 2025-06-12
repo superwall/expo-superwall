@@ -40,18 +40,47 @@ export interface RegisterPlacementArgs {
 
 // -------------------- Hook --------------------
 /**
- * React hook that surfaces paywall presentation events and a convenient
- * `registerPlacement` helper.
+ * React hook for managing paywall presentation based on placements.
  *
- * ```tsx
- * const { registerPlacement, state, error } = usePlacement({
- *   onPresent: (info) => console.log("Paywall presented", info),
- *   onError: (err) => console.warn(err),
- * })
+ * This hook provides a way to register placements configured on the Superwall dashboard.
+ * It handles the state of paywall presentation (`PaywallState`) and allows you
+ * to define callbacks for various paywall lifecycle events (`usePlacementCallbacks`).
  *
- * // ...
- * await registerPlacement({ placement: "StartWorkout", feature: navigation.startWorkout })
- * ```
+ * It must be used within a component that is a descendant of `<SuperwallProvider />`.
+ *
+ * @param callbacks - An optional object containing callback functions for paywall events
+ *                    like `onPresent`, `onDismiss`, `onSkip`, and `onError`.
+ * @returns An object containing:
+ *   - `registerPlacement: (args: RegisterPlacementArgs) => Promise<void>`:
+ *     A function to register a placement and potentially trigger a paywall.
+ *     - `args.placement`: The placement name defined on the Superwall dashboard.
+ *     - `args.params`: Optional parameters to pass to the placement.
+ *     - `args.feature`: An optional function to execute if the placement does not result
+ *                       in a paywall presentation (e.g., user is already subscribed or part of a holdout).
+ *   - `state: PaywallState`: The current state of the paywall interaction for this hook instance.
+ *     This includes states like "idle", "presented", "dismissed", "skipped", or "error".
+ *
+ * @example
+ * const { registerPlacement, state } = usePlacement({
+ *   onPresent: (paywallInfo) => console.log("Paywall presented:", paywallInfo.name),
+ *   onDismiss: (paywallInfo, result) => console.log("Paywall dismissed:", result.type),
+ *   onSkip: (reason) => console.log("Paywall skipped:", reason.type),
+ *   onError: (error) => console.error("Paywall error:", error),
+ * });
+ *
+ * const showMyFeaturePaywall = async () => {
+ *   await registerPlacement({
+ *     placement: "MyFeaturePlacement",
+ *     feature: () => {
+ *       // Logic to execute if paywall is not shown (e.g., navigate to feature)
+ *       console.log("Accessing feature directly.");
+ *     }
+ *   });
+ * };
+ *
+ * // In your component:
+ * // <Button title="Unlock Feature" onPress={showMyFeaturePaywall} />
+ * // <Text>Current paywall state: {state.status}</Text>
  */
 export function usePlacement(callbacks: usePlacementCallbacks = {}) {
   const id = useId()

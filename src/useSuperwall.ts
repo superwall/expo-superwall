@@ -6,63 +6,153 @@ import type { SubscriptionStatus } from "./SuperwallExpoModule.types"
 
 import pkg from "../package.json"
 
+/**
+ * Interface representing the attributes of a user.
+ */
 export interface UserAttributes {
-  aliasId: string
-  appUserId: string
-  applicationInstalledAt: string
-  seed: number
-  [key: string]: any
+  /** The user's alias ID, if set. */
+  aliasId: string;
+  /** The user's application-specific user ID. */
+  appUserId: string;
+  /** The ISO 8601 date string representation of when the application was installed on the user's device. */
+  applicationInstalledAt: string;
+  /** A seed value associated with the user, used for consistent variant assignments in experiments. */
+  seed: number;
+  /** Allows for custom attributes to be set for the user. These can be of any type. */
+  [key: string]: any;
 }
 
+/**
+ * Options for the `identify` method.
+ */
 export interface IdentifyOptions {
-  restorePaywallAssignments?: boolean
+  /**
+   * Determines whether to restore paywall assignments from a previous session for the identified user.
+   * If `true`, the SDK attempts to restore the assignments. Defaults to `false`.
+   */
+  restorePaywallAssignments?: boolean;
 }
 
-// Minimal shape of the store representing the key pieces of state and actions
+/**
+ * Defines the structure of the Superwall store, including its state and actions.
+ * This store is managed by Zustand.
+ */
 export interface SuperwallStore {
   /* -------------------- State -------------------- */
-  isConfigured: boolean
-  isLoading: boolean
-  listenersInitialized: boolean
+  /** Indicates whether the Superwall SDK has been successfully configured. */
+  isConfigured: boolean;
+  /** Indicates whether the SDK is currently performing a loading operation (e.g., configuring, fetching data). */
+  isLoading: boolean;
+  /** Indicates whether the native event listeners have been initialized. */
+  listenersInitialized: boolean;
 
-  user?: UserAttributes | null
+  /**
+   * The current user's attributes.
+   * `null` if no user is identified or after `reset` is called.
+   * `undefined` initially before any user data is fetched or set.
+   */
+  user?: UserAttributes | null;
 
-  subscriptionStatus?: SubscriptionStatus
+  /** The current subscription status of the user. */
+  subscriptionStatus?: SubscriptionStatus;
 
   /* -------------------- Internal -------------------- */
   // Internal listener references for cleanup handled inside Provider effect.
   // Not reactive, so we store outside Zustand state to avoid unnecessary rerenders.
 
   /* -------------------- Actions -------------------- */
-  // Initialisation & identity
-  configure: (apiKey: string, options?: Record<string, any>) => Promise<void>
-  identify: (userId: string, options?: IdentifyOptions) => Promise<void>
-  reset: () => void
+  /**
+   * Configures the Superwall SDK with the provided API key and options.
+   * This must be called before most other SDK functions can be used.
+   * @param apiKey - Your Superwall API key.
+   * @param options - Optional configuration settings for the SDK.
+   * @returns A promise that resolves when configuration is complete.
+   */
+  configure: (apiKey: string, options?: Record<string, any>) => Promise<void>;
+  /**
+   * Identifies the current user with a unique ID.
+   * @param userId - The unique identifier for the user.
+   * @param options - Optional parameters for identification.
+   * @returns A promise that resolves when identification is complete.
+   */
+  identify: (userId: string, options?: IdentifyOptions) => Promise<void>;
+  /**
+   * Resets the user's identity and clears all user-specific data, effectively logging them out.
+   */
+  reset: () => void;
 
-  // Paywall / placements
+  /**
+   * Registers a placement to potentially show a paywall.
+   * The decision to show a paywall is determined by campaign rules and user assignments on the Superwall dashboard.
+   * @param placement - The ID of the placement to register.
+   * @param params - Optional parameters to pass with the placement.
+   * @param handlerId - An optional identifier used to associate specific event handlers (e.g., from `usePlacement`). Defaults to "default".
+   * @returns A promise that resolves when the placement registration is complete.
+   */
   registerPlacement: (
     placement: string,
     params?: Record<string, any>,
     handlerId?: string | null,
-  ) => Promise<void>
-  getPresentationResult: (placement: string, params?: Record<string, any>) => Promise<any>
-  dismiss: () => Promise<void>
+  ) => Promise<void>;
+  /**
+   * Retrieves the presentation result for a given placement.
+   * This can be used to understand what would happen if a placement were to be registered, without actually registering it.
+   * @param placement - The ID of the placement.
+   * @param params - Optional parameters for the placement.
+   * @returns A promise that resolves with the presentation result.
+   */
+  getPresentationResult: (placement: string, params?: Record<string, any>) => Promise<any>;
+  /**
+   * Dismisses any currently presented Superwall paywall.
+   * @returns A promise that resolves when the dismissal is complete.
+   */
+  dismiss: () => Promise<void>;
 
-  // Preloading
-  preloadAllPaywalls: () => Promise<void>
-  preloadPaywalls: (placements: string[]) => Promise<void>
+  /**
+   * Preloads all paywalls configured in your Superwall dashboard.
+   * @returns A promise that resolves when preloading is complete.
+   */
+  preloadAllPaywalls: () => Promise<void>;
+  /**
+   * Preloads specific paywalls.
+   * @param placements - An array of placement IDs for which to preload paywalls.
+   * @returns A promise that resolves when preloading is complete.
+   */
+  preloadPaywalls: (placements: string[]) => Promise<void>;
 
-  // Attributes
-  setUserAttributes: (attrs: Record<string, any>) => Promise<void>
-  getUserAttributes: () => Promise<Record<string, any>>
+  /**
+   * Sets custom attributes for the current user.
+   * @param attrs - An object containing the attributes to set.
+   * @returns A promise that resolves when attributes are set.
+   */
+  setUserAttributes: (attrs: Record<string, any>) => Promise<void>;
+  /**
+   * Retrieves the current user's attributes.
+   * @returns A promise that resolves with the user's attributes.
+   */
+  getUserAttributes: () => Promise<Record<string, any>>;
 
-  // Logging & misc
-  setLogLevel: (level: string) => Promise<void>
+  /**
+   * Sets the logging level for the Superwall SDK.
+   * @param level - The desired log level (e.g., "debug", "info", "warn", "error", "none").
+   * @returns A promise that resolves when the log level is set.
+   */
+  setLogLevel: (level: string) => Promise<void>;
 
   /* -------------------- Listener helpers -------------------- */
-  _initListeners: () => () => void
+  /**
+   * Initializes native event listeners for the SDK.
+   * This is typically called internally by the `SuperwallProvider`.
+   * @returns A cleanup function to remove the listeners.
+   * @internal
+   */
+  _initListeners: () => () => void;
 }
 
+/**
+ * Zustand store for Superwall SDK state and actions.
+ * @internal
+ */
 export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   /* -------------------- State -------------------- */
   isConfigured: false,
@@ -164,9 +254,36 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
 export const SuperwallContext = createContext<boolean>(false)
 
 /**
- * React hook that exposes the Superwall store.
- * Automatically ensures native event listeners are set up on first use.
- * If `selector` is omitted, the entire store is returned.
+/**
+ * Core React hook for interacting with the Superwall SDK.
+ *
+ * This hook provides access to the Superwall store, which includes SDK state
+ * (like configuration status, user information, subscription status) and actions
+ * (like `identify`, `reset`, `registerPlacement`).
+ *
+ * It must be used within a component that is a descendant of `<SuperwallProvider />`.
+ *
+ * @template T - Optional type parameter for the selected state. Defaults to the entire `SuperwallStore`.
+ * @param selector - An optional function to select a specific slice of the store's state.
+ *                   This is useful for performance optimization, as components will only re-render
+ *                   if the selected part of the state changes. Uses shallow equality checking
+ *                   via `zustand/shallow`. If omitted, the entire store is returned.
+ * @returns The selected slice of the Superwall store state, or the entire store if no selector is provided.
+ * @throws Error if used outside of a `SuperwallProvider`.
+ *
+ * @example
+ * // Get the entire store
+ * const superwall = useSuperwall();
+ * console.log(superwall.isConfigured);
+ * superwall.identify("user_123");
+ *
+ * @example
+ * // Select specific state properties
+ * const { user, subscriptionStatus } = useSuperwall(state => ({
+ *   user: state.user,
+ *   subscriptionStatus: state.subscriptionStatus,
+ * }));
+ * console.log(user?.appUserId, subscriptionStatus?.status);
  */
 export function useSuperwall<T = SuperwallStore>(selector?: (state: SuperwallStore) => T): T {
   const inProvider = useContext(SuperwallContext)
