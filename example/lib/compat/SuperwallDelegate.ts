@@ -72,7 +72,7 @@ export class MySuperwallDelegate extends SuperwallDelegate {
     info?: Map<string, any>,
     error?: string,
   ): void {
-    console.log(`[${level}] ${scope}: ${message}`, info, error)
+    // console.log(`[${level}] ${scope}: ${message}`, info, error)
   }
 
   willRedeemLink(): void {
