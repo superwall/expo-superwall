@@ -44,16 +44,23 @@ import { useSuperwall } from "./useSuperwall"
  * };
  */
 export const useUser = () => {
-  const { identify, internalUpdate, user, signOut, refresh, subscriptionStatus } = useSuperwall(
-    (state) => ({
-      identify: state.identify,
-      user: state.user,
-      internalUpdate: state.setUserAttributes,
-      signOut: state.reset,
-      refresh: state.getUserAttributes,
-      subscriptionStatus: state.subscriptionStatus,
-    }),
-  )
+  const {
+    identify,
+    internalUpdate,
+    user,
+    signOut,
+    refresh,
+    subscriptionStatus,
+    setSubscriptionStatus,
+  } = useSuperwall((state) => ({
+    identify: state.identify,
+    user: state.user,
+    internalUpdate: state.setUserAttributes,
+    signOut: state.reset,
+    refresh: state.getUserAttributes,
+    subscriptionStatus: state.subscriptionStatus,
+    setSubscriptionStatus: state.setSubscriptionStatus,
+  }))
 
   const update = async (
     attributes: Record<string, any> | ((old: Record<string, any>) => Record<string, any>),
@@ -73,6 +80,7 @@ export const useUser = () => {
     signOut,
     refresh,
     subscriptionStatus,
+    setSubscriptionStatus,
     user,
   } as const
 }

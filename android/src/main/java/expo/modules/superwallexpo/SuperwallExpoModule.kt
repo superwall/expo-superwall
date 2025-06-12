@@ -138,7 +138,7 @@ class SuperwallExpoModule : Module() {
         activityProvider = ExpoActivityProvider(appContext),
         options = superwallOptions,
         completion = {
-          Superwall.instance.setPlatformWrapper("React Native", version = "sdkVersion" ?: "0.0.0")
+          Superwall.instance.setPlatformWrapper("Expo", version = "sdkVersion" ?: "0.0.0")
           Superwall.instance.delegate = SuperwallDelegateBridge()
           promise.resolve(true)
          }

@@ -10,7 +10,9 @@ import { ActivityIndicator, Alert, Button, Text, View } from "react-native"
 const API_KEY = "pk_25605698906751f5383385f9976e21f840d44aa11cd4639c"
 
 function ScreenContent() {
-  const { identify, user, signOut, update, refresh, subscriptionStatus } = useUser()
+  const { identify, user, signOut, update, refresh, subscriptionStatus, setSubscriptionStatus } =
+    useUser()
+
   const { registerPlacement, state } = usePlacement({
     onError: (err) => console.error(err),
     onPresent: (info) => console.log("Paywall presented", info),
@@ -55,6 +57,22 @@ function ScreenContent() {
         title="Login"
         onPress={async () => {
           await identify(`user_${Date.now()}`)
+        }}
+      />
+
+      <Button
+        title="Set Subscription Status Active"
+        onPress={async () => {
+          await setSubscriptionStatus({
+            status: "ACTIVE",
+            entitlements: [
+              {
+                id: "pro",
+                type: "SERVICE_LEVEL",
+              },
+            ],
+          })
+          console.log("Subscription status set to active")
         }}
       />
 

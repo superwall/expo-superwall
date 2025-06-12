@@ -11,15 +11,15 @@ import pkg from "../package.json"
  */
 export interface UserAttributes {
   /** The user's alias ID, if set. */
-  aliasId: string;
+  aliasId: string
   /** The user's application-specific user ID. */
-  appUserId: string;
+  appUserId: string
   /** The ISO 8601 date string representation of when the application was installed on the user's device. */
-  applicationInstalledAt: string;
+  applicationInstalledAt: string
   /** A seed value associated with the user, used for consistent variant assignments in experiments. */
-  seed: number;
+  seed: number
   /** Allows for custom attributes to be set for the user. These can be of any type. */
-  [key: string]: any;
+  [key: string]: any
 }
 
 /**
@@ -30,7 +30,7 @@ export interface IdentifyOptions {
    * Determines whether to restore paywall assignments from a previous session for the identified user.
    * If `true`, the SDK attempts to restore the assignments. Defaults to `false`.
    */
-  restorePaywallAssignments?: boolean;
+  restorePaywallAssignments?: boolean
 }
 
 /**
@@ -40,21 +40,21 @@ export interface IdentifyOptions {
 export interface SuperwallStore {
   /* -------------------- State -------------------- */
   /** Indicates whether the Superwall SDK has been successfully configured. */
-  isConfigured: boolean;
+  isConfigured: boolean
   /** Indicates whether the SDK is currently performing a loading operation (e.g., configuring, fetching data). */
-  isLoading: boolean;
+  isLoading: boolean
   /** Indicates whether the native event listeners have been initialized. */
-  listenersInitialized: boolean;
+  listenersInitialized: boolean
 
   /**
    * The current user's attributes.
    * `null` if no user is identified or after `reset` is called.
    * `undefined` initially before any user data is fetched or set.
    */
-  user?: UserAttributes | null;
+  user?: UserAttributes | null
 
   /** The current subscription status of the user. */
-  subscriptionStatus?: SubscriptionStatus;
+  subscriptionStatus?: SubscriptionStatus
 
   /* -------------------- Internal -------------------- */
   // Internal listener references for cleanup handled inside Provider effect.
@@ -68,18 +68,18 @@ export interface SuperwallStore {
    * @param options - Optional configuration settings for the SDK.
    * @returns A promise that resolves when configuration is complete.
    */
-  configure: (apiKey: string, options?: Record<string, any>) => Promise<void>;
+  configure: (apiKey: string, options?: Record<string, any>) => Promise<void>
   /**
    * Identifies the current user with a unique ID.
    * @param userId - The unique identifier for the user.
    * @param options - Optional parameters for identification.
    * @returns A promise that resolves when identification is complete.
    */
-  identify: (userId: string, options?: IdentifyOptions) => Promise<void>;
+  identify: (userId: string, options?: IdentifyOptions) => Promise<void>
   /**
    * Resets the user's identity and clears all user-specific data, effectively logging them out.
    */
-  reset: () => void;
+  reset: () => void
 
   /**
    * Registers a placement to potentially show a paywall.
@@ -93,7 +93,7 @@ export interface SuperwallStore {
     placement: string,
     params?: Record<string, any>,
     handlerId?: string | null,
-  ) => Promise<void>;
+  ) => Promise<void>
   /**
    * Retrieves the presentation result for a given placement.
    * This can be used to understand what would happen if a placement were to be registered, without actually registering it.
@@ -101,43 +101,43 @@ export interface SuperwallStore {
    * @param params - Optional parameters for the placement.
    * @returns A promise that resolves with the presentation result.
    */
-  getPresentationResult: (placement: string, params?: Record<string, any>) => Promise<any>;
+  getPresentationResult: (placement: string, params?: Record<string, any>) => Promise<any>
   /**
    * Dismisses any currently presented Superwall paywall.
    * @returns A promise that resolves when the dismissal is complete.
    */
-  dismiss: () => Promise<void>;
+  dismiss: () => Promise<void>
 
   /**
    * Preloads all paywalls configured in your Superwall dashboard.
    * @returns A promise that resolves when preloading is complete.
    */
-  preloadAllPaywalls: () => Promise<void>;
+  preloadAllPaywalls: () => Promise<void>
   /**
    * Preloads specific paywalls.
    * @param placements - An array of placement IDs for which to preload paywalls.
    * @returns A promise that resolves when preloading is complete.
    */
-  preloadPaywalls: (placements: string[]) => Promise<void>;
+  preloadPaywalls: (placements: string[]) => Promise<void>
 
   /**
    * Sets custom attributes for the current user.
    * @param attrs - An object containing the attributes to set.
    * @returns A promise that resolves when attributes are set.
    */
-  setUserAttributes: (attrs: Record<string, any>) => Promise<void>;
+  setUserAttributes: (attrs: Record<string, any>) => Promise<void>
   /**
    * Retrieves the current user's attributes.
    * @returns A promise that resolves with the user's attributes.
    */
-  getUserAttributes: () => Promise<Record<string, any>>;
+  getUserAttributes: () => Promise<Record<string, any>>
 
   /**
    * Sets the logging level for the Superwall SDK.
    * @param level - The desired log level (e.g., "debug", "info", "warn", "error", "none").
    * @returns A promise that resolves when the log level is set.
    */
-  setLogLevel: (level: string) => Promise<void>;
+  setLogLevel: (level: string) => Promise<void>
 
   /* -------------------- Listener helpers -------------------- */
   /**
@@ -146,7 +146,9 @@ export interface SuperwallStore {
    * @returns A cleanup function to remove the listeners.
    * @internal
    */
-  _initListeners: () => () => void;
+  _initListeners: () => () => void
+
+  setSubscriptionStatus: (status: SubscriptionStatus) => Promise<void>
 }
 
 /**
@@ -179,13 +181,14 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     // TODO: Instead of setting users after identify, we should set this based on an event
     setTimeout(async () => {
       const currentUser = (await SuperwallExpoModule.getUserAttributes()) as UserAttributes
-      set({ user: currentUser })
+      const subscriptionStatus = await SuperwallExpoModule.getSubscriptionStatus()
+      set({ user: currentUser, subscriptionStatus })
     }, 0)
   },
   reset: () => {
     SuperwallExpoModule.reset()
 
-    set({ user: null })
+    set({ user: null, subscriptionStatus: undefined })
   },
   registerPlacement: async (placement, params, handlerId = "default") => {
     await SuperwallExpoModule.registerPlacement(placement, params, handlerId)
@@ -215,6 +218,10 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   },
   setLogLevel: async (level) => {
     SuperwallExpoModule.setLogLevel(level)
+  },
+
+  setSubscriptionStatus: async (status) => {
+    SuperwallExpoModule.setSubscriptionStatus(status)
   },
 
   /* -------------------- Listener helpers -------------------- */

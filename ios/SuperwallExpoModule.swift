@@ -101,7 +101,7 @@ public class SuperwallExpoModule: Module {
           self.delegate = SuperwallDelegateBridge()
           Superwall.shared.delegate = self.delegate
 
-          Superwall.shared.setPlatformWrapper("React Native", version: sdkVersion ?? "0.0.0")
+          Superwall.shared.setPlatformWrapper("Expo", version: sdkVersion ?? "0.0.0")
 
           promise.resolve(nil)
         }
