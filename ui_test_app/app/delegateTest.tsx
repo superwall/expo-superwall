@@ -16,16 +16,6 @@ import { TestButton } from "./TestButton"
 import { SubscriptionStatus } from "expo-superwall/compat"
 import {
   TestDelegateEvent,
-  DidDismissPaywallEvent,
-  DidPresentPaywallEvent,
-  HandleCustomPaywallActionEvent,
-  HandleLogEvent,
-  HandleSuperwallEventEvent,
-  PaywallWillOpenDeepLinkEvent,
-  PaywallWillOpenURLEvent,
-  SubscriptionStatusDidChangeEvent,
-  WillDismissPaywallEvent,
-  WillPresentPaywallEvent,
 } from "./TestDelegateEvent"
 import { Entitlement } from "expo-superwall/compat/lib/Entitlement"
 

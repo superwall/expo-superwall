@@ -46,7 +46,7 @@ export default function SubscriptionStatusTest() {
       }
 
       // Set the subscription status
-      await Superwall.setSubscriptionStatus(activeStatus)
+      await Superwall.shared.setSubscriptionStatus(activeStatus)
 
       // Show dialog with the status
       showSubscriptionStatusDialog(activeStatus)
@@ -64,7 +64,7 @@ export default function SubscriptionStatusTest() {
       }
 
       // Set the subscription status
-      await Superwall.setSubscriptionStatus(inactiveStatus)
+      await Superwall.shared.setSubscriptionStatus(inactiveStatus)
 
       // Show dialog with the status
       showSubscriptionStatusDialog(inactiveStatus)
@@ -82,7 +82,7 @@ export default function SubscriptionStatusTest() {
       }
 
       // Set the subscription status
-      await Superwall.setSubscriptionStatus(unknownStatus)
+      await Superwall.shared.setSubscriptionStatus(unknownStatus)
 
       // Show dialog with the status
       showSubscriptionStatusDialog(unknownStatus)

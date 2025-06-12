@@ -13,7 +13,7 @@ export class TestingPurchaseController {
 
   async configureAndSyncSubscriptionStatus(): Promise<void> {
     const inactiveStatus: SubscriptionStatus = { status: 'INACTIVE' }
-    await Superwall.setSubscriptionStatus(inactiveStatus)
+    await Superwall.shared.setSubscriptionStatus(inactiveStatus)
   }
 
   toggleRejectPurchase(): void {
@@ -66,7 +66,7 @@ export class TestingPurchaseController {
         ]
       }
       
-      await Superwall.setSubscriptionStatus(activeStatus)
+      await Superwall.shared.setSubscriptionStatus(activeStatus)
 
       return new PurchaseResultPurchased()
     }
@@ -90,7 +90,7 @@ export class TestingPurchaseController {
         ]
       }
       
-      await Superwall.setSubscriptionStatus(activeStatus)
+      await Superwall.shared.setSubscriptionStatus(activeStatus)
       
       return new PurchaseResultRestored()
     } else {

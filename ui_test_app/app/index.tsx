@@ -1,4 +1,3 @@
-import * as Superwall from "expo-superwall/compat"
 import React, { useEffect } from "react"
 import { Text, View } from "react-native"
 import { Link, useRouter } from "expo-router"

@@ -1,4 +1,4 @@
-import * as Superwall from "expo-superwall/compat"
+import Superwall from "expo-superwall/compat"
 import React, { useState, useRef } from "react"
 import { 
   Alert, 
@@ -33,7 +33,8 @@ export default function HandlerTest() {
 
   const testNonGatedPaywall = async () => {
     try {
-      await Superwall.registerPlacement('non_gated_paywall', {
+      await Superwall.shared.register({
+        placement: 'non_gated_paywall',
         handler: testHandlerRef.current.getHandler(),
         feature: featureBlock
       })
@@ -45,7 +46,8 @@ export default function HandlerTest() {
 
   const testGatedPaywall = async () => {
     try {
-      await Superwall.registerPlacement('gated_paywall', {
+      await Superwall.shared.register({
+        placement: 'gated_paywall',
         handler: testHandlerRef.current.getHandler(),
         feature: featureBlock
       })
@@ -57,7 +59,8 @@ export default function HandlerTest() {
 
   const testSkipAudience = async () => {
     try {
-      await Superwall.registerPlacement('skip_audience', {
+      await Superwall.shared.register({
+        placement: 'skip_audience',
         handler: testHandlerRef.current.getHandler(),
         feature: featureBlock
       })
@@ -69,7 +72,8 @@ export default function HandlerTest() {
 
   const testErrorPlacement = async () => {
     try {
-      await Superwall.registerPlacement('error_placement', {
+      await Superwall.shared.register({
+        placement: 'error_placement',
         handler: testHandlerRef.current.getHandler(),
         feature: featureBlock
       })
@@ -81,7 +85,7 @@ export default function HandlerTest() {
 
   const dismissPaywall = async () => {
     try {
-      await Superwall.dismiss()
+      await Superwall.shared.dismiss()
     } catch (error) {
       console.error('Failed to dismiss paywall:', error)
       Alert.alert('Error', 'Failed to dismiss paywall')

@@ -1,4 +1,4 @@
-import * as Superwall from "expo-superwall/compat"
+import Superwall from "expo-superwall/compat"
 import React, { useState, useEffect } from "react"
 import { Alert, Platform, ScrollView, StyleSheet, Text, View } from "react-native"
 import { useRouter } from "expo-router"
