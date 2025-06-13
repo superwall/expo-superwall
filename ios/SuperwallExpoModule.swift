@@ -83,6 +83,7 @@ public class SuperwallExpoModule: Module {
       (
         apiKey: String,
         options: [String: Any]?,
+        usingPurchaseController: Bool,
         sdkVersion: String?,
         promise: Promise
       ) in
@@ -95,7 +96,7 @@ public class SuperwallExpoModule: Module {
 
       Superwall.configure(
         apiKey: apiKey,
-        purchaseController: purchaseController,
+        purchaseController: usingPurchaseController ? purchaseController : nil,
         options: superwallOptions,
         completion: {
           self.delegate = SuperwallDelegateBridge()

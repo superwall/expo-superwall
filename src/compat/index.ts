@@ -308,8 +308,12 @@ export default class Superwall {
     completion?: () => void
   }): Promise<Superwall> {
     Superwall.purchaseController = purchaseController
-    Superwall.purchaseController = purchaseController
-    await SuperwallExpoModule.configure(apiKey, options?.toJson(), `${version}compat`)
+    await SuperwallExpoModule.configure(
+      apiKey,
+      options?.toJson(),
+      !!purchaseController,
+      `${version}compat`,
+    )
 
     completion?.()
 

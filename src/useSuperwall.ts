@@ -68,7 +68,10 @@ export interface SuperwallStore {
    * @param options - Optional configuration settings for the SDK.
    * @returns A promise that resolves when configuration is complete.
    */
-  configure: (apiKey: string, options?: Record<string, any>) => Promise<void>
+  configure: (
+    apiKey: string,
+    options?: { manualPurchaseManagment?: boolean } & Record<string, any>,
+  ) => Promise<void>
   /**
    * Identifies the current user with a unique ID.
    * @param userId - The unique identifier for the user.
@@ -167,7 +170,12 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   /* -------------------- Actions -------------------- */
   configure: async (apiKey, options) => {
     set({ isLoading: true })
-    await SuperwallExpoModule.configure(apiKey, options, pkg.version)
+    await SuperwallExpoModule.configure(
+      apiKey,
+      options,
+      !!options?.manualPurchaseManagment,
+      pkg.version,
+    )
     set({ isConfigured: true, isLoading: false })
 
     const currentUser = (await SuperwallExpoModule.getUserAttributes()) as UserAttributes
