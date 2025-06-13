@@ -167,7 +167,7 @@ export default function Compat() {
                 })
 
                 const subscriptionStatus = await Superwall.shared.getSubscriptionStatus()
-                setSubscriptionStatus(subscriptionStatus.status)
+                setSubscriptionStatus(subscriptionStatus)
               }}
             >
               <Ionicons name="person" size={20} color="#fff" />
