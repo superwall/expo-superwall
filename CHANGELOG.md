@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.3
+
+### Patch Changes
+
+- 72d9879: fix: adding ability to let superwall manage subscriptions
+
 ## 0.0.2
 
 ### Patch Changes
