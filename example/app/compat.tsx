@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons"
 import { LinearGradient } from "expo-linear-gradient"
 import { Link } from "expo-router"
-import Superwall from "expo-superwall/compat"
+import Superwall, { type SubscriptionStatus } from "expo-superwall/compat"
 import { useEffect, useState } from "react"
 import {
   Alert,
@@ -20,6 +20,9 @@ const delegate = new MySuperwallDelegate()
 export default function Compat() {
   const [isConfigured, setIsConfigured] = useState(false)
   const [userId, setUserId] = useState("some_user_id")
+  const [subscriptionStatus, setSubscriptionStatus] = useState<SubscriptionStatus>({
+    status: "UNKNOWN",
+  })
   const [lastEvent, setLastEvent] = useState<string | null>(null)
 
   useEffect(() => {
@@ -112,6 +115,7 @@ export default function Compat() {
             </View>
             <Text style={styles.userIdText}>User ID: {userId}</Text>
             <Text style={styles.platformText}>Platform: {Platform.OS}</Text>
+            <Text style={styles.userIdText}>Subscription Status: {subscriptionStatus.status}</Text>
           </View>
         </View>
 
@@ -147,6 +151,27 @@ export default function Compat() {
             >
               <Ionicons name="person" size={20} color="#fff" />
               <Text style={styles.actionButtonText}>Re-identify User</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={async () => {
+                await Superwall.shared.setSubscriptionStatus({
+                  status: "ACTIVE",
+                  entitlements: [
+                    {
+                      id: "premium",
+                      type: "SERVICE_LEVEL",
+                    },
+                  ],
+                })
+
+                const subscriptionStatus = await Superwall.shared.getSubscriptionStatus()
+                setSubscriptionStatus(subscriptionStatus.status)
+              }}
+            >
+              <Ionicons name="person" size={20} color="#fff" />
+              <Text style={styles.actionButtonText}>Set Subscription Status</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
