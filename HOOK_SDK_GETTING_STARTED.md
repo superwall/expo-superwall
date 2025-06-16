@@ -2,6 +2,8 @@
 
 This guide will help you integrate the Expo Superwall Hooks SDK into your React Native application, allowing you to easily manage users and display paywalls.
 
+**Warning**: This SDK only supports Expo SDK Version >= 53. If you'd like to use older versions, please use our [legacy react-native sdk](https://github.com/superwall/react-native-superwall). 
+
 ## Installation
 
 First, you need to install the `expo-superwall` package. You can do this using npm or yarn:
