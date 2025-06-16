@@ -38,6 +38,8 @@ npx expo install expo-superwall
 bunx expo install expo-superwall
 ```
 
+**Warning**: This SDK only supports Expo SDK Version >= 53. If you'd like to use older versions, please use our [legacy react-native sdk](https://github.com/superwall/react-native-superwall). 
+
 ### Basic Setup
 
 ```tsx
