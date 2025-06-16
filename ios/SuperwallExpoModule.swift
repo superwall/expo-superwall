@@ -200,6 +200,7 @@ public class SuperwallExpoModule: Module {
     }
 
     AsyncFunction("getSubscriptionStatus") { (promise: Promise) in
+      print("Getting subscription status")
       let subscriptionStatus = Superwall.shared.subscriptionStatus
       promise.resolve(subscriptionStatus)
     }
@@ -207,6 +208,8 @@ public class SuperwallExpoModule: Module {
     Function("setSubscriptionStatus") { (status: [String: Any]) in
       let statusString = (status["status"] as? String)?.uppercased() ?? "UNKNOWN"
       let subscriptionStatus: SubscriptionStatus
+
+      print("Setting subscription status to: \(statusString)")
 
       switch statusString {
       case "UNKNOWN":

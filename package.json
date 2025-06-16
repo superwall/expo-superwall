@@ -30,12 +30,7 @@
     "ios": "expo run:ios",
     "release": "yarn build && yarn build plugin"
   },
-  "keywords": [
-    "react-native",
-    "expo",
-    "expo-superwall",
-    "SuperwallExpo"
-  ],
+  "keywords": ["react-native", "expo", "expo-superwall", "SuperwallExpo"],
   "repository": "https://github.com/superwall/expo-superwall",
   "bugs": {
     "url": "https://github.com/superwall/expo-superwall/issues"
