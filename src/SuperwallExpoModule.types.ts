@@ -853,73 +853,807 @@ export type PaywallPresentationRequestStatusReason =
  * These events provide insights into user behavior, SDK operations, and paywall interactions.
  */
 
+// Individual Superwall Event Interfaces/Types
+
 /**
- * A union of all possible string literal values for the `event` property within the {@link SuperwallEvent} type.
- * This type can be used when you need to refer to an event type name itself, rather than the entire event object.
+ * User's first time seeing a Superwall-related element or paywall.
+ */
+export interface FirstSeenEvent {
+  /** User's first time seeing a Superwall-related element or paywall. */
+  event: "firstSeen";
+}
+
+/**
+ * The application was opened.
+ */
+export interface AppOpenEvent {
+  /** The application was opened. */
+  event: "appOpen";
+}
+
+/**
+ * The application was launched.
+ */
+export interface AppLaunchEvent {
+  /** The application was launched. */
+  event: "appLaunch";
+}
+
+/**
+ * An alias was set for the user's identity.
+ */
+export interface IdentityAliasEvent {
+  /** An alias was set for the user's identity. */
+  event: "identityAlias";
+}
+
+/**
+ * The application was installed.
+ */
+export interface AppInstallEvent {
+  /** The application was installed. */
+  event: "appInstall";
+}
+
+/**
+ * A new user session started.
+ */
+export interface SessionStartEvent {
+  /** A new user session started. */
+  event: "sessionStart";
+}
+
+/**
+ * The user's identity was reset (logged out).
+ */
+export interface ResetEvent {
+  /** The user's identity was reset (logged out). */
+  event: "reset";
+}
+
+/**
+ * The Superwall configuration was refreshed.
+ */
+export interface ConfigRefreshEvent {
+  /** The Superwall configuration was refreshed. */
+  event: "configRefresh";
+}
+
+/**
+ * Failed to refresh the Superwall configuration.
+ */
+export interface ConfigFailEvent {
+  /** Failed to refresh the Superwall configuration. */
+  event: "configFail";
+}
+
+/**
+ * Attributes were passed with the Superwall configuration.
+ */
+export interface ConfigAttributesEvent {
+  /** Attributes were passed with the Superwall configuration. */
+  event: "configAttributes";
+}
+
+/**
+ * All pending paywall assignments have been confirmed.
+ */
+export interface ConfirmAllAssignmentsEvent {
+  /** All pending paywall assignments have been confirmed. */
+  event: "confirmAllAssignments";
+}
+
+/**
+ * A touch event began on the screen (generic).
+ */
+export interface TouchesBeganEvent {
+  /** A touch event began on the screen (generic). */
+  event: "touchesBegan";
+}
+
+/**
+ * A survey was closed.
+ */
+export interface SurveyCloseEvent {
+  /** A survey was closed. */
+  event: "surveyClose";
+}
+
+/**
+ * Restoration of purchases started.
+ */
+export interface RestoreStartEvent {
+  /** Restoration of purchases started. */
+  event: "restoreStart";
+}
+
+/**
+ * Restoration of purchases completed successfully.
+ */
+export interface RestoreCompleteEvent {
+  /** Restoration of purchases completed successfully. */
+  event: "restoreComplete";
+}
+
+/**
+ * Restoration of purchases failed.
+ */
+export interface RestoreFailEvent {
+  /** Restoration of purchases failed. */
+  event: "restoreFail";
+  /** The error message. */
+  message: string;
+}
+
+/**
+ * Request for AdServices token started.
+ */
+export interface AdServicesTokenRequestStartEvent {
+  /** Request for AdServices token started. */
+  event: "adServicesTokenRequestStart";
+}
+
+/**
+ * Request for AdServices token failed.
+ */
+export interface AdServicesTokenRequestFailEvent {
+  /** Request for AdServices token failed. */
+  event: "adServicesTokenRequestFail";
+  /** The error message. */
+  error: string;
+}
+
+/**
+ * Request for AdServices token completed.
+ */
+export interface AdServicesTokenRequestCompleteEvent {
+  /** Request for AdServices token completed. */
+  event: "adServicesTokenRequestComplete";
+  /** The AdServices token. */
+  token: string;
+}
+
+/**
+ * Shimmer view (placeholder loading) started.
+ */
+export interface ShimmerViewStartEvent {
+  /** Shimmer view (placeholder loading) started. */
+  event: "shimmerViewStart";
+}
+
+/**
+ * Shimmer view (placeholder loading) completed.
+ */
+export interface ShimmerViewCompleteEvent {
+  /** Shimmer view (placeholder loading) completed. */
+  event: "shimmerViewComplete";
+}
+
+/**
+ * Redemption of a promotional code started.
+ */
+export interface RedemptionStartEvent {
+  /** Redemption of a promotional code started. */
+  event: "redemptionStart";
+}
+
+/**
+ * Redemption of a promotional code completed.
+ */
+export interface RedemptionCompleteEvent {
+  /** Redemption of a promotional code completed. */
+  event: "redemptionComplete";
+}
+
+/**
+ * Redemption of a promotional code failed.
+ */
+export interface RedemptionFailEvent {
+  /** Redemption of a promotional code failed. */
+  event: "redemptionFail";
+}
+
+/**
+ * Data enrichment process started.
+ */
+export interface EnrichmentStartEvent {
+  /** Data enrichment process started. */
+  event: "enrichmentStart";
+}
+
+/**
+ * Data enrichment process completed.
+ */
+export interface EnrichmentCompleteEvent {
+  /** Data enrichment process completed. */
+  event: "enrichmentComplete";
+  /** Enriched user data, if any. */
+  userEnrichment?: Record<string, any>;
+  /** Enriched device data, if any. */
+  deviceEnrichment?: Record<string, any>;
+}
+
+/**
+ * Data enrichment process failed.
+ */
+export interface EnrichmentFailEvent {
+  /** Data enrichment process failed. */
+  event: "enrichmentFail";
+}
+
+/**
+ * An unknown or uncategorized event occurred.
+ */
+export interface UnknownEvent {
+  /** An unknown or uncategorized event occurred. */
+  event: "unknown";
+}
+
+/**
+ * Device attributes were updated.
+ */
+export interface DeviceAttributesEvent {
+  /** Device attributes were updated. */
+  event: "deviceAttributes";
+  /** The updated device attributes. */
+  attributes: Record<string, any>;
+}
+
+/**
+ * The user's subscription status changed.
+ */
+export interface SubscriptionStatusDidChangeEvent {
+  /** The user's subscription status changed. */
+  event: "subscriptionStatusDidChange";
+  /**
+   * The new subscription status.
+   * See {@link SubscriptionStatus}.
+   */
+  subscriptionStatus: SubscriptionStatus;
+}
+
+/**
+ * The application was closed.
+ */
+export interface AppCloseEvent {
+  /** The application was closed. */
+  event: "appClose";
+}
+
+/**
+ * A deep link was opened by the application, potentially via Superwall.
+ */
+export interface DeepLinkEvent {
+  /** A deep link was opened by the application, potentially via Superwall. */
+  event: "deepLink";
+  /** The URL of the deep link. */
+  url: string;
+}
+
+/**
+ * A trigger was fired based on an event or placement.
+ */
+export interface TriggerFireEvent {
+  /** A trigger was fired based on an event or placement. */
+  event: "triggerFire";
+  /** The name of the event or placement that caused the trigger to fire. */
+  placementName: string;
+  /**
+   * The result of the trigger evaluation, determining what action Superwall will take.
+   * See {@link TriggerResult}.
+   */
+  result: TriggerResult;
+}
+
+/**
+ * A paywall was opened.
+ */
+export interface PaywallOpenEvent {
+  /** A paywall was opened. */
+  event: "paywallOpen";
+  /**
+   * Information about the paywall that was opened.
+   * See {@link PaywallInfo}.
+   */
+  paywallInfo: PaywallInfo;
+}
+
+/**
+ * A paywall was closed.
+ */
+export interface PaywallCloseEvent {
+  /** A paywall was closed. */
+  event: "paywallClose";
+  /**
+   * Information about the paywall that was closed.
+   * See {@link PaywallInfo}.
+   */
+  paywallInfo: PaywallInfo;
+}
+
+/**
+ * The user explicitly declined a paywall.
+ */
+export interface PaywallDeclineEvent {
+  /** The user explicitly declined a paywall. */
+  event: "paywallDecline";
+  /**
+   * Information about the paywall that was declined.
+   * See {@link PaywallInfo}.
+   */
+  paywallInfo: PaywallInfo;
+}
+
+/**
+ * A transaction (purchase, restore) was initiated.
+ */
+export interface TransactionStartEvent {
+  /** A transaction (purchase, restore) was initiated. */
+  event: "transactionStart";
+  /**
+   * Identifier of the product involved in the transaction.
+   * See {@link TransactionProductIdentifier}.
+   */
+  product: TransactionProductIdentifier;
+  /**
+   * Information about the paywall from which the transaction was initiated.
+   * See {@link PaywallInfo}.
+   */
+  paywallInfo: PaywallInfo;
+}
+
+/**
+ * A transaction failed.
+ */
+export interface TransactionFailEvent {
+  /** A transaction failed. */
+  event: "transactionFail";
+  /** The error message from the transaction failure. */
+  error: string;
+  /**
+   * Information about the paywall associated with the failed transaction.
+   * See {@link PaywallInfo}.
+   */
+  paywallInfo: PaywallInfo;
+}
+
+/**
+ * A transaction was abandoned by the user.
+ */
+export interface TransactionAbandonEvent {
+  /** A transaction was abandoned by the user. */
+  event: "transactionAbandon";
+  /**
+   * Identifier of the product involved in the abandoned transaction.
+   * See {@link TransactionProductIdentifier}.
+   */
+  product: TransactionProductIdentifier;
+  /**
+   * Information about the paywall associated with the abandoned transaction.
+   * See {@link PaywallInfo}.
+   */
+  paywallInfo: PaywallInfo;
+}
+
+/**
+ * A transaction was successfully completed.
+ */
+export interface TransactionCompleteEvent {
+  /** A transaction was successfully completed. */
+  event: "transactionComplete";
+  /**
+   * Detailed information about the store transaction, if available.
+   * See {@link StoreTransaction}.
+   */
+  transaction?: StoreTransaction;
+  /**
+   * Identifier of the product involved in the completed transaction.
+   * See {@link TransactionProductIdentifier}.
+   */
+  product: TransactionProductIdentifier;
+  /** The type of the transaction (e.g., "purchase", "restore"). */
+  type: string;
+  /**
+   * Information about the paywall associated with the completed transaction.
+   * See {@link PaywallInfo}.
+   */
+  paywallInfo: PaywallInfo;
+}
+
+/**
+ * A new subscription was started.
+ */
+export interface SubscriptionStartEvent {
+  /** A new subscription was started. */
+  event: "subscriptionStart";
+  /**
+   * Identifier of the product for which the subscription started.
+   * See {@link TransactionProductIdentifier}.
+   */
+  product: TransactionProductIdentifier;
+  /**
+   * Information about the paywall associated with the subscription start.
+   * See {@link PaywallInfo}.
+   */
+  paywallInfo: PaywallInfo;
+}
+
+/**
+ * A free trial was started.
+ */
+export interface FreeTrialStartEvent {
+  /** A free trial was started. */
+  event: "freeTrialStart";
+  /**
+   * Identifier of the product for which the free trial started.
+   * See {@link TransactionProductIdentifier}.
+   */
+  product: TransactionProductIdentifier;
+  /**
+   * Information about the paywall associated with the free trial start.
+   * See {@link PaywallInfo}.
+   */
+  paywallInfo: PaywallInfo;
+}
+
+/**
+ * A transaction was restored.
+ */
+export interface TransactionRestoreEvent {
+  /** A transaction was restored. */
+  event: "transactionRestore";
+  /**
+   * The type of restoration process.
+   * See {@link RestoreType}.
+   */
+  restoreType: RestoreType;
+  /**
+   * Information about the paywall associated with the restoration.
+   * See {@link PaywallInfo}.
+   */
+  paywallInfo: PaywallInfo;
+}
+
+/**
+ * A transaction timed out.
+ */
+export interface TransactionTimeoutEvent {
+  /** A transaction timed out. */
+  event: "transactionTimeout";
+  /**
+   * Information about the paywall associated with the timed-out transaction.
+   * See {@link PaywallInfo}.
+   */
+  paywallInfo: PaywallInfo;
+}
+
+/**
+ * User attributes were updated.
+ */
+export interface UserAttributesEvent {
+  /** User attributes were updated. */
+  event: "userAttributes";
+  /** The updated user attributes. */
+  attributes: Record<string, any>;
+}
+
+/**
+ * A non-recurring product was purchased.
+ */
+export interface NonRecurringProductPurchaseEvent {
+  /** A non-recurring product was purchased. */
+  event: "nonRecurringProductPurchase";
+  /**
+   * Identifier of the purchased non-recurring product.
+   * See {@link TransactionProductIdentifier}.
+   */
+  product: TransactionProductIdentifier;
+  /**
+   * Information about the paywall associated with the purchase.
+   * See {@link PaywallInfo}.
+   */
+  paywallInfo: PaywallInfo;
+}
+
+/**
+ * Loading of the paywall response from the server started.
+ */
+export interface PaywallResponseLoadStartEvent {
+  /** Loading of the paywall response from the server started. */
+  event: "paywallResponseLoadStart";
+  /** The name of the event or placement that triggered this load. */
+  triggeredEventName: string;
+}
+
+/**
+ * The paywall response was not found on the server.
+ */
+export interface PaywallResponseLoadNotFoundEvent {
+  /** The paywall response was not found on the server. */
+  event: "paywallResponseLoadNotFound";
+  /** The name of the event or placement that triggered this load. */
+  triggeredEventName: string;
+}
+
+/**
+ * Loading of the paywall response from the server failed.
+ */
+export interface PaywallResponseLoadFailEvent {
+  /** Loading of the paywall response from the server failed. */
+  event: "paywallResponseLoadFail";
+  /** The name of the event or placement that triggered this load. */
+  triggeredEventName: string;
+}
+
+/**
+ * Loading of the paywall response from the server completed successfully.
+ */
+export interface PaywallResponseLoadCompleteEvent {
+  /** Loading of the paywall response from the server completed successfully. */
+  event: "paywallResponseLoadComplete";
+  /** The name of the event or placement that triggered this load. */
+  triggeredEventName: string;
+  /**
+   * Information about the loaded paywall.
+   * See {@link PaywallInfo}.
+   */
+  paywallInfo: PaywallInfo;
+}
+
+/**
+ * The web view started loading the paywall's content.
+ */
+export interface PaywallWebviewLoadStartEvent {
+  /** The web view started loading the paywall's content. */
+  event: "paywallWebviewLoadStart";
+  /**
+   * Information about the paywall whose web view is loading.
+   * See {@link PaywallInfo}.
+   */
+  paywallInfo: PaywallInfo;
+}
+
+/**
+ * The web view failed to load the paywall's content.
+ */
+export interface PaywallWebviewLoadFailEvent {
+  /** The web view failed to load the paywall's content. */
+  event: "paywallWebviewLoadFail";
+  /**
+   * Information about the paywall whose web view failed to load.
+   * See {@link PaywallInfo}.
+   */
+  paywallInfo: PaywallInfo;
+}
+
+/**
+ * The web view completed loading the paywall's content.
+ */
+export interface PaywallWebviewLoadCompleteEvent {
+  /** The web view completed loading the paywall's content. */
+  event: "paywallWebviewLoadComplete";
+  /**
+   * Information about the paywall whose web view completed loading.
+   * See {@link PaywallInfo}.
+   */
+  paywallInfo: PaywallInfo;
+}
+
+/**
+ * The web view timed out while loading the paywall's content.
+ */
+export interface PaywallWebviewLoadTimeoutEvent {
+  /** The web view timed out while loading the paywall's content. */
+  event: "paywallWebviewLoadTimeout";
+  /**
+   * Information about the paywall whose web view timed out.
+   * See {@link PaywallInfo}.
+   */
+  paywallInfo: PaywallInfo;
+}
+
+/**
+ * The web view used fallback content for the paywall due to a loading issue.
+ */
+export interface PaywallWebviewLoadFallbackEvent {
+  /** The web view used fallback content for the paywall due to a loading issue. */
+  event: "paywallWebviewLoadFallback";
+  /**
+   * Information about the paywall that used fallback content.
+   * See {@link PaywallInfo}.
+   */
+  paywallInfo: PaywallInfo;
+}
+
+/**
+ * Loading of products for the paywall started.
+ */
+export interface PaywallProductsLoadStartEvent {
+  /** Loading of products for the paywall started. */
+  event: "paywallProductsLoadStart";
+  /** The name of the event or placement that triggered this load. */
+  triggeredEventName: string;
+  /**
+   * Information about the paywall for which products are loading.
+   * See {@link PaywallInfo}.
+   */
+  paywallInfo: PaywallInfo;
+}
+
+/**
+ * Loading of products for the paywall failed.
+ */
+export interface PaywallProductsLoadFailEvent {
+  /** Loading of products for the paywall failed. */
+  event: "paywallProductsLoadFail";
+  /** The name of the event or placement that triggered this load. */
+  triggeredEventName: string;
+  /**
+   * Information about the paywall for which product loading failed.
+   * See {@link PaywallInfo}.
+   */
+  paywallInfo: PaywallInfo;
+}
+
+/**
+ * Loading of products for the paywall completed successfully.
+ */
+export interface PaywallProductsLoadCompleteEvent {
+  /** Loading of products for the paywall completed successfully. */
+  event: "paywallProductsLoadComplete";
+  /** The name of the event or placement that triggered this load. */
+  triggeredEventName: string;
+  /**
+   * Information about the paywall for which products completed loading.
+   * See {@link PaywallInfo}.
+   */
+  paywallInfo: PaywallInfo;
+}
+
+/**
+ * Retrying the loading of products for the paywall.
+ */
+export interface PaywallProductsLoadRetryEvent {
+  /** Retrying the loading of products for the paywall. */
+  event: "paywallProductsLoadRetry";
+  /** The name of the event or placement that triggered this load. */
+  triggeredEventName: string;
+  /**
+   * Information about the paywall for which product loading is being retried.
+   * See {@link PaywallInfo}.
+   */
+  paywallInfo: PaywallInfo;
+  /** The attempt number for this retry. */
+  attempt: number;
+}
+
+/**
+ * A response to a survey was submitted by the user.
+ */
+export interface SurveyResponseEvent {
+  /** A response to a survey was submitted by the user. */
+  event: "surveyResponse";
+  /**
+   * The survey that was responded to.
+   * See {@link Survey}.
+   */
+  survey: Survey;
+  /**
+   * The option selected by the user in the survey.
+   * See {@link SurveyOption}.
+   */
+  selectedOption: SurveyOption;
+  /** The custom response text entered by the user, if any. */
+  customResponse?: string;
+  /**
+   * Information about the paywall where the survey was presented.
+   * See {@link PaywallInfo}.
+   */
+  paywallInfo: PaywallInfo;
+}
+
+/**
+ * A request to present a paywall was made.
+ */
+export interface PaywallPresentationRequestEvent {
+  /** A request to present a paywall was made. */
+  event: "paywallPresentationRequest";
+  /**
+   * The status of the presentation request.
+   * See {@link PaywallPresentationRequestStatus}.
+   */
+  status: PaywallPresentationRequestStatus;
+  /**
+   * The reason for the status, if applicable (e.g., why a paywall was not presented).
+   * See {@link PaywallPresentationRequestStatusReason}.
+   */
+  reason?: PaywallPresentationRequestStatusReason;
+}
+
+/**
+ * A custom placement (defined by the developer) was executed.
+ */
+export interface CustomPlacementEvent {
+  /** A custom placement (defined by the developer) was executed. */
+  event: "customPlacement";
+  /** The name of the custom placement. */
+  name: string;
+  /** Parameters associated with the custom placement. */
+  params: Record<string, any>;
+  /**
+   * Information about the paywall shown for this placement, if any.
+   * See {@link PaywallInfo}.
+   */
+  paywallInfo?: PaywallInfo;
+}
+
+/**
+ * A union of all possible string literal values for the `event` property from all specific Superwall event types.
+ * This type can be used when you need to refer to an event type name itself.
  */
 export type SuperwallEventType =
-  | "firstSeen"
-  | "appOpen"
-  | "appLaunch"
-  | "identityAlias"
-  | "appInstall"
-  | "sessionStart"
-  | "reset"
-  | "configRefresh"
-  | "configFail"
-  | "configAttributes"
-  | "confirmAllAssignments"
-  | "touchesBegan"
-  | "surveyClose"
-  | "restoreStart"
-  | "restoreComplete"
-  | "restoreFail"
-  | "adServicesTokenRequestStart"
-  | "adServicesTokenRequestFail"
-  | "adServicesTokenRequestComplete"
-  | "shimmerViewStart"
-  | "shimmerViewComplete"
-  | "redemptionStart"
-  | "redemptionComplete"
-  | "redemptionFail"
-  | "enrichmentStart"
-  | "enrichmentComplete"
-  | "enrichmentFail"
-  | "unknown"
-  | "deviceAttributes"
-  | "subscriptionStatusDidChange"
-  | "appClose"
-  | "deepLink"
-  | "triggerFire"
-  | "paywallOpen"
-  | "paywallClose"
-  | "paywallDecline"
-  | "transactionStart"
-  | "transactionFail"
-  | "transactionAbandon"
-  | "transactionComplete"
-  | "subscriptionStart"
-  | "freeTrialStart"
-  | "transactionRestore"
-  | "transactionTimeout"
-  | "userAttributes"
-  | "nonRecurringProductPurchase"
-  | "paywallResponseLoadStart"
-  | "paywallResponseLoadNotFound"
-  | "paywallResponseLoadFail"
-  | "paywallResponseLoadComplete"
-  | "paywallWebviewLoadStart"
-  | "paywallWebviewLoadFail"
-  | "paywallWebviewLoadComplete"
-  | "paywallWebviewLoadTimeout"
-  | "paywallWebviewLoadFallback"
-  | "paywallProductsLoadStart"
-  | "paywallProductsLoadFail"
-  | "paywallProductsLoadComplete"
-  | "paywallProductsLoadRetry"
-  | "surveyResponse"
-  | "paywallPresentationRequest"
-  | "customPlacement";
+  | FirstSeenEvent["event"]
+  | AppOpenEvent["event"]
+  | AppLaunchEvent["event"]
+  | IdentityAliasEvent["event"]
+  | AppInstallEvent["event"]
+  | SessionStartEvent["event"]
+  | ResetEvent["event"]
+  | ConfigRefreshEvent["event"]
+  | ConfigFailEvent["event"]
+  | ConfigAttributesEvent["event"]
+  | ConfirmAllAssignmentsEvent["event"]
+  | TouchesBeganEvent["event"]
+  | SurveyCloseEvent["event"]
+  | RestoreStartEvent["event"]
+  | RestoreCompleteEvent["event"]
+  | RestoreFailEvent["event"]
+  | AdServicesTokenRequestStartEvent["event"]
+  | AdServicesTokenRequestFailEvent["event"]
+  | AdServicesTokenRequestCompleteEvent["event"]
+  | ShimmerViewStartEvent["event"]
+  | ShimmerViewCompleteEvent["event"]
+  | RedemptionStartEvent["event"]
+  | RedemptionCompleteEvent["event"]
+  | RedemptionFailEvent["event"]
+  | EnrichmentStartEvent["event"]
+  | EnrichmentCompleteEvent["event"]
+  | EnrichmentFailEvent["event"]
+  | UnknownEvent["event"]
+  | DeviceAttributesEvent["event"]
+  | SubscriptionStatusDidChangeEvent["event"]
+  | AppCloseEvent["event"]
+  | DeepLinkEvent["event"]
+  | TriggerFireEvent["event"]
+  | PaywallOpenEvent["event"]
+  | PaywallCloseEvent["event"]
+  | PaywallDeclineEvent["event"]
+  | TransactionStartEvent["event"]
+  | TransactionFailEvent["event"]
+  | TransactionAbandonEvent["event"]
+  | TransactionCompleteEvent["event"]
+  | SubscriptionStartEvent["event"]
+  | FreeTrialStartEvent["event"]
+  | TransactionRestoreEvent["event"]
+  | TransactionTimeoutEvent["event"]
+  | UserAttributesEvent["event"]
+  | NonRecurringProductPurchaseEvent["event"]
+  | PaywallResponseLoadStartEvent["event"]
+  | PaywallResponseLoadNotFoundEvent["event"]
+  | PaywallResponseLoadFailEvent["event"]
+  | PaywallResponseLoadCompleteEvent["event"]
+  | PaywallWebviewLoadStartEvent["event"]
+  | PaywallWebviewLoadFailEvent["event"]
+  | PaywallWebviewLoadCompleteEvent["event"]
+  | PaywallWebviewLoadTimeoutEvent["event"]
+  | PaywallWebviewLoadFallbackEvent["event"]
+  | PaywallProductsLoadStartEvent["event"]
+  | PaywallProductsLoadFailEvent["event"]
+  | PaywallProductsLoadCompleteEvent["event"]
+  | PaywallProductsLoadRetryEvent["event"]
+  | SurveyResponseEvent["event"]
+  | PaywallPresentationRequestEvent["event"]
+  | CustomPlacementEvent["event"];
 
 /**
  * Represents a Superwall event that can be tracked by the SDK.
@@ -927,400 +1661,68 @@ export type SuperwallEventType =
  * These events provide insights into user behavior, SDK operations, and paywall interactions.
  */
 export type SuperwallEvent =
-  | { /** User's first time seeing a Superwall-related element or paywall. */ event: "firstSeen" }
-  | { /** The application was opened. */ event: "appOpen" }
-  | { /** The application was launched. */ event: "appLaunch" }
-  | { /** An alias was set for the user's identity. */ event: "identityAlias" }
-  | { /** The application was installed. */ event: "appInstall" }
-  | { /** A new user session started. */ event: "sessionStart" }
-  | { /** The user's identity was reset (logged out). */ event: "reset" }
-  | { /** The Superwall configuration was refreshed. */ event: "configRefresh" }
-  | { /** Failed to refresh the Superwall configuration. */ event: "configFail" }
-  | { /** Attributes were passed with the Superwall configuration. */ event: "configAttributes" }
-  | { /** All pending paywall assignments have been confirmed. */ event: "confirmAllAssignments" }
-  | { /** A touch event began on the screen (generic). */ event: "touchesBegan" }
-  | { /** A survey was closed. */ event: "surveyClose" }
-  | { /** Restoration of purchases started. */ event: "restoreStart" }
-  | { /** Restoration of purchases completed successfully. */ event: "restoreComplete" }
-  | { /** Restoration of purchases failed. */ event: "restoreFail"; /** The error message. */ message: string }
-  | { /** Request for AdServices token started. */ event: "adServicesTokenRequestStart" }
-  | { /** Request for AdServices token failed. */ event: "adServicesTokenRequestFail"; /** The error message. */ error: string }
-  | { /** Request for AdServices token completed. */ event: "adServicesTokenRequestComplete"; /** The AdServices token. */ token: string }
-  | { /** Shimmer view (placeholder loading) started. */ event: "shimmerViewStart" }
-  | { /** Shimmer view (placeholder loading) completed. */ event: "shimmerViewComplete" }
-  | { /** Redemption of a promotional code started. */ event: "redemptionStart" }
-  | { /** Redemption of a promotional code completed. */ event: "redemptionComplete" }
-  | { /** Redemption of a promotional code failed. */ event: "redemptionFail" }
-  | { /** Data enrichment process started. */ event: "enrichmentStart" }
-  | {
-      /** Data enrichment process completed. */
-      event: "enrichmentComplete";
-      /** Enriched user data, if any. */
-      userEnrichment?: Record<string, any>;
-      /** Enriched device data, if any. */
-      deviceEnrichment?: Record<string, any>;
-    }
-  | { /** Data enrichment process failed. */ event: "enrichmentFail" }
-  | { /** An unknown or uncategorized event occurred. */ event: "unknown" }
-  | {
-      /** Device attributes were updated. */
-      event: "deviceAttributes";
-      /** The updated device attributes. */
-      attributes: Record<string, any>;
-    }
-  | {
-      /** The user's subscription status changed. */
-      event: "subscriptionStatusDidChange";
-      /**
-       * The new subscription status.
-       * See {@link SubscriptionStatus}.
-       */
-      subscriptionStatus: SubscriptionStatus;
-    }
-  | { /** The application was closed. */ event: "appClose" }
-  | {
-      /** A deep link was opened by the application, potentially via Superwall. */
-      event: "deepLink";
-      /** The URL of the deep link. */
-      url: string;
-    }
-  | {
-      /** A trigger was fired based on an event or placement. */
-      event: "triggerFire";
-      /** The name of the event or placement that caused the trigger to fire. */
-      placementName: string;
-      /**
-       * The result of the trigger evaluation, determining what action Superwall will take.
-       * See {@link TriggerResult}.
-       */
-      result: TriggerResult;
-    }
-  | {
-      /** A paywall was opened. */
-      event: "paywallOpen";
-      /**
-       * Information about the paywall that was opened.
-       * See {@link PaywallInfo}.
-       */
-      paywallInfo: PaywallInfo;
-    }
-  | {
-      /** A paywall was closed. */
-      event: "paywallClose";
-      /**
-       * Information about the paywall that was closed.
-       * See {@link PaywallInfo}.
-       */
-      paywallInfo: PaywallInfo;
-    }
-  | {
-      /** The user explicitly declined a paywall. */
-      event: "paywallDecline";
-      /**
-       * Information about the paywall that was declined.
-       * See {@link PaywallInfo}.
-       */
-      paywallInfo: PaywallInfo;
-    }
-  | {
-      /** A transaction (purchase, restore) was initiated. */
-      event: "transactionStart";
-      /**
-       * Identifier of the product involved in the transaction.
-       * See {@link TransactionProductIdentifier}.
-       */
-      product: TransactionProductIdentifier;
-      /**
-       * Information about the paywall from which the transaction was initiated.
-       * See {@link PaywallInfo}.
-       */
-      paywallInfo: PaywallInfo;
-    }
-  | {
-      /** A transaction failed. */
-      event: "transactionFail";
-      /** The error message from the transaction failure. */
-      error: string;
-      /**
-       * Information about the paywall associated with the failed transaction.
-       * See {@link PaywallInfo}.
-       */
-      paywallInfo: PaywallInfo;
-    }
-  | {
-      /** A transaction was abandoned by the user. */
-      event: "transactionAbandon";
-      /**
-       * Identifier of the product involved in the abandoned transaction.
-       * See {@link TransactionProductIdentifier}.
-       */
-      product: TransactionProductIdentifier;
-      /**
-       * Information about the paywall associated with the abandoned transaction.
-       * See {@link PaywallInfo}.
-       */
-      paywallInfo: PaywallInfo;
-    }
-  | {
-      /** A transaction was successfully completed. */
-      event: "transactionComplete";
-      /**
-       * Detailed information about the store transaction, if available.
-       * See {@link StoreTransaction}.
-       */
-      transaction?: StoreTransaction;
-      /**
-       * Identifier of the product involved in the completed transaction.
-       * See {@link TransactionProductIdentifier}.
-       */
-      product: TransactionProductIdentifier;
-      /** The type of the transaction (e.g., "purchase", "restore"). */
-      type: string;
-      /**
-       * Information about the paywall associated with the completed transaction.
-       * See {@link PaywallInfo}.
-       */
-      paywallInfo: PaywallInfo;
-    }
-  | {
-      /** A new subscription was started. */
-      event: "subscriptionStart";
-      /**
-       * Identifier of the product for which the subscription started.
-       * See {@link TransactionProductIdentifier}.
-       */
-      product: TransactionProductIdentifier;
-      /**
-       * Information about the paywall associated with the subscription start.
-       * See {@link PaywallInfo}.
-       */
-      paywallInfo: PaywallInfo;
-    }
-  | {
-      /** A free trial was started. */
-      event: "freeTrialStart";
-      /**
-       * Identifier of the product for which the free trial started.
-       * See {@link TransactionProductIdentifier}.
-       */
-      product: TransactionProductIdentifier;
-      /**
-       * Information about the paywall associated with the free trial start.
-       * See {@link PaywallInfo}.
-       */
-      paywallInfo: PaywallInfo;
-    }
-  | {
-      /** A transaction was restored. */
-      event: "transactionRestore";
-      /**
-       * The type of restoration process.
-       * See {@link RestoreType}.
-       */
-      restoreType: RestoreType;
-      /**
-       * Information about the paywall associated with the restoration.
-       * See {@link PaywallInfo}.
-       */
-      paywallInfo: PaywallInfo;
-    }
-  | {
-      /** A transaction timed out. */
-      event: "transactionTimeout";
-      /**
-       * Information about the paywall associated with the timed-out transaction.
-       * See {@link PaywallInfo}.
-       */
-      paywallInfo: PaywallInfo;
-    }
-  | {
-      /** User attributes were updated. */
-      event: "userAttributes";
-      /** The updated user attributes. */
-      attributes: Record<string, any>;
-    }
-  | {
-      /** A non-recurring product was purchased. */
-      event: "nonRecurringProductPurchase";
-      /**
-       * Identifier of the purchased non-recurring product.
-       * See {@link TransactionProductIdentifier}.
-       */
-      product: TransactionProductIdentifier;
-      /**
-       * Information about the paywall associated with the purchase.
-       * See {@link PaywallInfo}.
-       */
-      paywallInfo: PaywallInfo;
-    }
-  | {
-      /** Loading of the paywall response from the server started. */
-      event: "paywallResponseLoadStart";
-      /** The name of the event or placement that triggered this load. */
-      triggeredEventName: string;
-    }
-  | {
-      /** The paywall response was not found on the server. */
-      event: "paywallResponseLoadNotFound";
-      /** The name of the event or placement that triggered this load. */
-      triggeredEventName: string;
-    }
-  | {
-      /** Loading of the paywall response from the server failed. */
-      event: "paywallResponseLoadFail";
-      /** The name of the event or placement that triggered this load. */
-      triggeredEventName: string;
-    }
-  | {
-      /** Loading of the paywall response from the server completed successfully. */
-      event: "paywallResponseLoadComplete";
-      /** The name of the event or placement that triggered this load. */
-      triggeredEventName: string;
-      /**
-       * Information about the loaded paywall.
-       * See {@link PaywallInfo}.
-       */
-      paywallInfo: PaywallInfo;
-    }
-  | {
-      /** The web view started loading the paywall's content. */
-      event: "paywallWebviewLoadStart";
-      /**
-       * Information about the paywall whose web view is loading.
-       * See {@link PaywallInfo}.
-       */
-      paywallInfo: PaywallInfo;
-    }
-  | {
-      /** The web view failed to load the paywall's content. */
-      event: "paywallWebviewLoadFail";
-      /**
-       * Information about the paywall whose web view failed to load.
-       * See {@link PaywallInfo}.
-       */
-      paywallInfo: PaywallInfo;
-    }
-  | {
-      /** The web view completed loading the paywall's content. */
-      event: "paywallWebviewLoadComplete";
-      /**
-       * Information about the paywall whose web view completed loading.
-       * See {@link PaywallInfo}.
-       */
-      paywallInfo: PaywallInfo;
-    }
-  | {
-      /** The web view timed out while loading the paywall's content. */
-      event: "paywallWebviewLoadTimeout";
-      /**
-       * Information about the paywall whose web view timed out.
-       * See {@link PaywallInfo}.
-       */
-      paywallInfo: PaywallInfo;
-    }
-  | {
-      /** The web view used fallback content for the paywall due to a loading issue. */
-      event: "paywallWebviewLoadFallback";
-      /**
-       * Information about the paywall that used fallback content.
-       * See {@link PaywallInfo}.
-       */
-      paywallInfo: PaywallInfo;
-    }
-  | {
-      /** Loading of products for the paywall started. */
-      event: "paywallProductsLoadStart";
-      /** The name of the event or placement that triggered this load. */
-      triggeredEventName: string;
-      /**
-       * Information about the paywall for which products are loading.
-       * See {@link PaywallInfo}.
-       */
-      paywallInfo: PaywallInfo;
-    }
-  | {
-      /** Loading of products for the paywall failed. */
-      event: "paywallProductsLoadFail";
-      /** The name of the event or placement that triggered this load. */
-      triggeredEventName: string;
-      /**
-       * Information about the paywall for which product loading failed.
-       * See {@link PaywallInfo}.
-       */
-      paywallInfo: PaywallInfo;
-    }
-  | {
-      /** Loading of products for the paywall completed successfully. */
-      event: "paywallProductsLoadComplete";
-      /** The name of the event or placement that triggered this load. */
-      triggeredEventName: string;
-      /**
-       * Information about the paywall for which products completed loading.
-       * See {@link PaywallInfo}.
-       */
-      paywallInfo: PaywallInfo;
-    }
-  | {
-      /** Retrying the loading of products for the paywall. */
-      event: "paywallProductsLoadRetry";
-      /** The name of the event or placement that triggered this load. */
-      triggeredEventName: string;
-      /**
-       * Information about the paywall for which product loading is being retried.
-       * See {@link PaywallInfo}.
-       */
-      paywallInfo: PaywallInfo;
-      /** The attempt number for this retry. */
-      attempt: number;
-    }
-  | {
-      /** A response to a survey was submitted by the user. */
-      event: "surveyResponse";
-      /**
-       * The survey that was responded to.
-       * See {@link Survey}.
-       */
-      survey: Survey;
-      /**
-       * The option selected by the user in the survey.
-       * See {@link SurveyOption}.
-       */
-      selectedOption: SurveyOption;
-      /** The custom response text entered by the user, if any. */
-      customResponse?: string;
-      /**
-       * Information about the paywall where the survey was presented.
-       * See {@link PaywallInfo}.
-       */
-      paywallInfo: PaywallInfo;
-    }
-  | {
-      /** A request to present a paywall was made. */
-      event: "paywallPresentationRequest";
-      /**
-       * The status of the presentation request.
-       * See {@link PaywallPresentationRequestStatus}.
-       */
-      status: PaywallPresentationRequestStatus;
-      /**
-       * The reason for the status, if applicable (e.g., why a paywall was not presented).
-       * See {@link PaywallPresentationRequestStatusReason}.
-       */
-      reason?: PaywallPresentationRequestStatusReason;
-    }
-  | {
-      /** A custom placement (defined by the developer) was executed. */
-      event: "customPlacement";
-      /** The name of the custom placement. */
-      name: string;
-      /** Parameters associated with the custom placement. */
-      params: Record<string, any>;
-      /**
-       * Information about the paywall shown for this placement, if any.
-       * See {@link PaywallInfo}.
-       */
-      paywallInfo?: PaywallInfo;
-    };
+  | FirstSeenEvent
+  | AppOpenEvent
+  | AppLaunchEvent
+  | IdentityAliasEvent
+  | AppInstallEvent
+  | SessionStartEvent
+  | ResetEvent
+  | ConfigRefreshEvent
+  | ConfigFailEvent
+  | ConfigAttributesEvent
+  | ConfirmAllAssignmentsEvent
+  | TouchesBeganEvent
+  | SurveyCloseEvent
+  | RestoreStartEvent
+  | RestoreCompleteEvent
+  | RestoreFailEvent
+  | AdServicesTokenRequestStartEvent
+  | AdServicesTokenRequestFailEvent
+  | AdServicesTokenRequestCompleteEvent
+  | ShimmerViewStartEvent
+  | ShimmerViewCompleteEvent
+  | RedemptionStartEvent
+  | RedemptionCompleteEvent
+  | RedemptionFailEvent
+  | EnrichmentStartEvent
+  | EnrichmentCompleteEvent
+  | EnrichmentFailEvent
+  | UnknownEvent
+  | DeviceAttributesEvent
+  | SubscriptionStatusDidChangeEvent
+  | AppCloseEvent
+  | DeepLinkEvent
+  | TriggerFireEvent
+  | PaywallOpenEvent
+  | PaywallCloseEvent
+  | PaywallDeclineEvent
+  | TransactionStartEvent
+  | TransactionFailEvent
+  | TransactionAbandonEvent
+  | TransactionCompleteEvent
+  | SubscriptionStartEvent
+  | FreeTrialStartEvent
+  | TransactionRestoreEvent
+  | TransactionTimeoutEvent
+  | UserAttributesEvent
+  | NonRecurringProductPurchaseEvent
+  | PaywallResponseLoadStartEvent
+  | PaywallResponseLoadNotFoundEvent
+  | PaywallResponseLoadFailEvent
+  | PaywallResponseLoadCompleteEvent
+  | PaywallWebviewLoadStartEvent
+  | PaywallWebviewLoadFailEvent
+  | PaywallWebviewLoadCompleteEvent
+  | PaywallWebviewLoadTimeoutEvent
+  | PaywallWebviewLoadFallbackEvent
+  | PaywallProductsLoadStartEvent
+  | PaywallProductsLoadFailEvent
+  | PaywallProductsLoadCompleteEvent
+  | PaywallProductsLoadRetryEvent
+  | SurveyResponseEvent
+  | PaywallPresentationRequestEvent
+  | CustomPlacementEvent;
 
 /**
  * Contains information about a Superwall event, including the specific {@link SuperwallEvent}
