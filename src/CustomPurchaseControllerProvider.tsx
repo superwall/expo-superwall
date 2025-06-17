@@ -1,6 +1,6 @@
 import { createContext, useContext } from "react"
 import SuperwallExpoModule from "./SuperwallExpoModule"
-import { useSuperwallStore } from "./useSuperwall"
+import type { OnPurchaseParams } from "./SuperwallExpoModule.types"
 import { useSuperwallEvents } from "./useSuperwallEvents"
 
 const customPurchaseControllerContext = createContext<CustomPurchaseControllerContext | null>(null)
@@ -11,8 +11,8 @@ export interface PurchaseResult {
 }
 
 export interface CustomPurchaseControllerContext {
-  onPurchase: (params: any) => Promise<void>
-  onPurchaseRestore: (params: any) => Promise<void>
+  onPurchase: (params: OnPurchaseParams) => Promise<void>
+  onPurchaseRestore: () => Promise<void>
 }
 
 export interface CustomPurchaseControllerProviderProps {
@@ -24,7 +24,6 @@ export const CustomPurchaseControllerProvider = ({
   children,
   controller,
 }: CustomPurchaseControllerProviderProps) => {
-  const store = useSuperwallStore()
   useSuperwallEvents({
     onPurchase: async (params) => {
       await controller.onPurchase(params)
@@ -34,7 +33,7 @@ export const CustomPurchaseControllerProvider = ({
       })
     },
     onPurchaseRestore: async () => {
-      await controller.onPurchaseRestore({})
+      await controller.onPurchaseRestore()
 
       SuperwallExpoModule.didRestore({
         type: "restored",

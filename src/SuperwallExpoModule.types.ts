@@ -10,7 +10,7 @@
  * - `TREATMENT`: The user is assigned to a treatment group and will be presented with a paywall.
  * - `HOLDOUT`: The user is assigned to a holdout group and will not be presented with a paywall for this experiment.
  */
-export type VariantType = "TREATMENT" | "HOLDOUT";
+export type VariantType = "TREATMENT" | "HOLDOUT"
 
 /**
  * Represents an experiment variant, detailing its identifier, type, and associated paywall.
@@ -19,17 +19,17 @@ export interface Variant {
   /**
    * The unique identifier for this specific variant of an experiment.
    */
-  id: string;
+  id: string
   /**
    * The type of the variant, determining the user's experience (e.g., seeing a paywall or being in a holdout).
    * See {@link VariantType}.
    */
-  type: VariantType;
+  type: VariantType
   /**
    * The identifier of the paywall associated with this variant.
    * This will be an empty string if no paywall is linked (e.g., for `HOLDOUT` variants).
    */
-  paywallId: string;
+  paywallId: string
 }
 
 /**
@@ -39,24 +39,24 @@ export interface Experiment {
   /**
    * The unique identifier for the experiment.
    */
-  id: string;
+  id: string
   /**
    * The identifier of the group to which this experiment belongs.
    * Experiments are often grouped for organizational or analytical purposes.
    */
-  groupId: string;
+  groupId: string
   /**
    * The specific variant of the experiment that the current user has been assigned to.
    * See {@link Variant}.
    */
-  variant: Variant;
+  variant: Variant
 }
 
 /**
  * Defines the type of an entitlement, typically indicating a level of service or access.
  * - `SERVICE_LEVEL`: Represents an entitlement that grants a certain service level.
  */
-export type EntitlementType = "SERVICE_LEVEL"; // Currently, only "SERVICE_LEVEL" is used.
+export type EntitlementType = "SERVICE_LEVEL" // Currently, only "SERVICE_LEVEL" is used.
 
 /**
  * Represents a user entitlement, signifying a feature or content piece the user has access to.
@@ -65,11 +65,11 @@ export interface Entitlement {
   /**
    * The unique identifier for the entitlement.
    */
-  id: string;
+  id: string
   /**
    * The type of the entitlement. See {@link EntitlementType}.
    */
-  type: EntitlementType;
+  type: EntitlementType
 }
 
 /**
@@ -82,25 +82,25 @@ export type PaywallSkippedReason =
       /**
        * The user was assigned to a holdout group within an experiment, so the paywall was intentionally skipped.
        */
-      type: "Holdout";
+      type: "Holdout"
       /**
        * Detailed information about the experiment that led to this holdout.
        * See {@link Experiment}.
        */
-      experiment: Experiment;
+      experiment: Experiment
     }
   | {
       /**
        * The user did not match any of the audience rules defined for the campaign or trigger.
        */
-      type: "NoAudienceMatch";
+      type: "NoAudienceMatch"
     }
   | {
       /**
        * The placement ID specified for the paywall presentation was not found in the Superwall dashboard configuration.
        */
-      type: "PlacementNotFound";
-    };
+      type: "PlacementNotFound"
+    }
 
 /**
  * Represents the outcome of a user's interaction with a paywall.
@@ -111,24 +111,24 @@ export type PaywallResult =
       /**
        * The user successfully purchased a product through the paywall.
        */
-      type: "purchased";
+      type: "purchased"
       /**
        * The identifier of the product that was purchased.
        */
-      productId: string;
+      productId: string
     }
   | {
       /**
        * The user explicitly declined or closed the paywall without making a purchase.
        */
-      type: "declined";
+      type: "declined"
     }
   | {
       /**
        * The user successfully restored their previous purchases through the paywall.
        */
-      type: "restored";
-    };
+      type: "restored"
+    }
 
 /**
  * Represents the subscription status of the user.
@@ -140,27 +140,27 @@ export type SubscriptionStatus =
        * The subscription status has not yet been determined or is unavailable.
        * This can be an initial state before the SDK fetches the status.
        */
-      status: "UNKNOWN";
+      status: "UNKNOWN"
     }
   | {
       /**
        * The user does not have an active subscription.
        * They are not currently entitled to any subscription-based features.
        */
-      status: "INACTIVE";
+      status: "INACTIVE"
     }
   | {
       /**
        * The user has an active subscription.
        */
-      status: "ACTIVE";
+      status: "ACTIVE"
       /**
        * A list of entitlements the user has access to due to their active subscription.
        * This array is only present when the status is "ACTIVE".
        * See {@link Entitlement}.
        */
-      entitlements: Entitlement[];
-    };
+      entitlements: Entitlement[]
+    }
 
 /**
  * Specifies the reason why a paywall was closed.
@@ -176,21 +176,21 @@ export type PaywallCloseReason =
   | "forNextPaywall"
   | "webViewFailedToLoad"
   | "manualClose"
-  | "none";
+  | "none"
 
 /**
  * Defines the feature gating behavior for a paywall or feature.
  * - `gated`: The feature or content is gated and requires a specific condition (e.g., active subscription) to be met for access.
  * - `nonGated`: The feature or content is not gated and is available to all users, regardless of subscription status.
  */
-export type FeatureGatingBehavior = "gated" | "nonGated";
+export type FeatureGatingBehavior = "gated" | "nonGated"
 
 /**
  * Specifies the conditions under which a survey should be presented to the user.
  * - `ON_MANUAL_CLOSE`: Present the survey when the user manually closes the paywall.
  * - `ON_PURCHASE`: Present the survey after the user completes a purchase.
  */
-export type SurveyShowCondition = "ON_MANUAL_CLOSE" | "ON_PURCHASE";
+export type SurveyShowCondition = "ON_MANUAL_CLOSE" | "ON_PURCHASE"
 
 /**
  * Represents a single option within a survey.
@@ -199,11 +199,11 @@ export interface SurveyOption {
   /**
    * The unique identifier for this survey option.
    */
-  id: string;
+  id: string
   /**
    * The text displayed to the user for this option.
    */
-  title: string;
+  title: string
 }
 
 /**
@@ -213,48 +213,48 @@ export interface Survey {
   /**
    * The unique identifier for the survey.
    */
-  id: string;
+  id: string
   /**
    * A key used for assigning this survey to a user, often for A/B testing or specific targeting.
    */
-  assignmentKey: string;
+  assignmentKey: string
   /**
    * The title of the survey, displayed to the user.
    */
-  title: string;
+  title: string
   /**
    * The main message or question of the survey.
    */
-  message: string;
+  message: string
   /**
    * An array of options available for the user to choose from in the survey.
    * See {@link SurveyOption}.
    */
-  options: SurveyOption[];
+  options: SurveyOption[]
   /**
    * The condition that triggers the presentation of this survey.
    * See {@link SurveyShowCondition}.
    */
-  presentationCondition: SurveyShowCondition;
+  presentationCondition: SurveyShowCondition
   /**
    * The probability (ranging from 0.0 to 1.0) that this survey will be presented if its condition is met.
    */
-  presentationProbability: number;
+  presentationProbability: number
   /**
    * If true, an "Other" option with a free-text input field will be included in the survey.
    */
-  includeOtherOption: boolean;
+  includeOtherOption: boolean
   /**
    * If true, a close button or option will be available on the survey, allowing the user to dismiss it.
    */
-  includeCloseOption: boolean;
+  includeCloseOption: boolean
 }
 
 /**
  * Defines the types of local notifications that Superwall can schedule.
  * - `trialStarted`: A notification to inform the user that their free trial has started.
  */
-export type LocalNotificationType = "trialStarted"; // Currently, only "trialStarted" is used.
+export type LocalNotificationType = "trialStarted" // Currently, only "trialStarted" is used.
 
 /**
  * Represents a local notification that can be scheduled by the Superwall SDK.
@@ -263,23 +263,23 @@ export interface LocalNotification {
   /**
    * The type of the local notification. See {@link LocalNotificationType}.
    */
-  type: LocalNotificationType;
+  type: LocalNotificationType
   /**
    * The title of the notification.
    */
-  title: string;
+  title: string
   /**
    * The main body text of the notification.
    */
-  body: string;
+  body: string
   /**
    * The delay in seconds before the notification is shown to the user, relative to the scheduling time.
    */
-  delay: number;
+  delay: number
   /**
    * An optional subtitle for the notification.
    */
-  subtitle?: string;
+  subtitle?: string
 }
 
 /**
@@ -290,11 +290,11 @@ export interface ComputedPropertyRequest {
   /**
    * The type or name of the computed property being requested.
    */
-  type: string;
+  type: string
   /**
    * The name of the placement associated with this computed property request, if applicable.
    */
-  placementName: string;
+  placementName: string
 }
 
 /**
@@ -305,16 +305,16 @@ export interface Product {
   /**
    * The unique identifier of the product (e.g., from the App Store or Google Play).
    */
-  id: string;
+  id: string
   /**
    * The name of the product, if available.
    */
-  name?: string;
+  name?: string
   /**
    * A list of entitlements that are granted to the user upon purchasing this product.
    * See {@link Entitlement}.
    */
-  entitlements: Entitlement[];
+  entitlements: Entitlement[]
 }
 
 /**
@@ -323,99 +323,99 @@ export interface Product {
  */
 export interface PaywallInfo {
   /** The unique identifier of the paywall, as configured in the Superwall dashboard. */
-  identifier: string;
+  identifier: string
   /** The name of the paywall, as configured in the Superwall dashboard. */
-  name: string;
+  name: string
   /** The URL where the paywall's web content is hosted. */
-  url: string;
+  url: string
   /**
    * The experiment associated with this paywall presentation, if applicable.
    * See {@link Experiment}.
    */
-  experiment?: Experiment;
+  experiment?: Experiment
   /**
    * A list of products available for purchase on this paywall.
    * See {@link Product}.
    */
-  products: Product[];
+  products: Product[]
   /** A list of product identifiers (SKUs) available on this paywall. */
-  productIds: string[];
+  productIds: string[]
   /**
    * The name of the event or placement that triggered the presentation of this paywall, if applicable.
    * Corresponds to `presentedByPlacementWithName` in the native Swift SDK.
    */
-  presentedByEventWithName?: string;
+  presentedByEventWithName?: string
   /**
    * The identifier of the event or placement that triggered the presentation of this paywall, if applicable.
    * Corresponds to `presentedByPlacementWithId` in the native Swift SDK.
    */
-  presentedByEventWithId?: string;
+  presentedByEventWithId?: string
   /**
    * The Unix timestamp (in seconds or milliseconds) of when the event triggering this paywall occurred, if applicable.
    * Corresponds to `presentedByPlacementAt` in the native Swift SDK.
    */
-  presentedByEventAt?: number;
+  presentedByEventAt?: number
   /**
    * The source that initiated the paywall presentation (e.g., "implicit", "explicit", "getPaywall").
    */
-  presentedBy: string;
+  presentedBy: string
   /**
    * The type of the source that led to the paywall presentation (e.g., "Register" for `Superwall.shared.register(event:)`, "Track" for `Superwall.shared.track(event:)`).
    */
-  presentationSourceType?: string;
+  presentationSourceType?: string
   /** The Unix timestamp when the request to load the paywall configuration and rules (response) started. */
-  responseLoadStartTime?: number;
+  responseLoadStartTime?: number
   /** The Unix timestamp when the paywall response successfully loaded. */
-  responseLoadCompleteTime?: number;
+  responseLoadCompleteTime?: number
   /** The Unix timestamp if the paywall response failed to load. */
-  responseLoadFailTime?: number;
+  responseLoadFailTime?: number
   /** The duration (typically in milliseconds) it took to load the paywall response. */
-  responseLoadDuration?: number;
+  responseLoadDuration?: number
   /** Indicates whether a free trial is available for any of the products on this paywall. */
-  isFreeTrialAvailable: boolean;
+  isFreeTrialAvailable: boolean
   /**
    * The feature gating behavior for this paywall.
    * See {@link FeatureGatingBehavior}.
    */
-  featureGatingBehavior: FeatureGatingBehavior;
+  featureGatingBehavior: FeatureGatingBehavior
   /**
    * The reason why the paywall was closed.
    * See {@link PaywallCloseReason}.
    */
-  closeReason: PaywallCloseReason;
+  closeReason: PaywallCloseReason
   /** The Unix timestamp when the web view started loading the paywall's HTML content. */
-  webViewLoadStartTime?: number;
+  webViewLoadStartTime?: number
   /** The Unix timestamp when the web view successfully loaded the paywall's HTML content. */
-  webViewLoadCompleteTime?: number;
+  webViewLoadCompleteTime?: number
   /** The Unix timestamp if the web view failed to load the paywall's HTML content. */
-  webViewLoadFailTime?: number;
+  webViewLoadFailTime?: number
   /** The duration (typically in milliseconds) it took for the web view to load the paywall's content. */
-  webViewLoadDuration?: number;
+  webViewLoadDuration?: number
   /** The Unix timestamp when the loading of product information (from App Store/Google Play) started. */
-  productsLoadStartTime?: number;
+  productsLoadStartTime?: number
   /** The Unix timestamp when the product information successfully loaded. */
-  productsLoadCompleteTime?: number;
+  productsLoadCompleteTime?: number
   /** The Unix timestamp if loading product information failed. */
-  productsLoadFailTime?: number;
+  productsLoadFailTime?: number
   /** The duration (typically in milliseconds) it took to load the product information. */
-  productsLoadDuration?: number;
+  productsLoadDuration?: number
   /** The version of the `paywall.js` script used in the paywall, if available. */
-  paywalljsVersion?: string;
+  paywalljsVersion?: string
   /**
    * A list of computed property requests associated with this paywall presentation.
    * See {@link ComputedPropertyRequest}.
    */
-  computedPropertyRequests: ComputedPropertyRequest[];
+  computedPropertyRequests: ComputedPropertyRequest[]
   /**
    * A list of surveys associated with this paywall that may be presented.
    * See {@link Survey}.
    */
-  surveys: Survey[];
+  surveys: Survey[]
   /**
    * A list of local notifications that may be scheduled as a result of this paywall presentation.
    * See {@link LocalNotification}.
    */
-  localNotifications: LocalNotification[];
+  localNotifications: LocalNotification[]
 }
 
 /**
@@ -425,7 +425,7 @@ export interface RedemptionErrorInfo {
   /**
    * A developer-readable message describing the error.
    */
-  message: string;
+  message: string
 }
 
 /**
@@ -435,11 +435,11 @@ export interface RedemptionExpiredCodeInfo {
   /**
    * Indicates whether a new code was resent to the user (e.g., via email) if applicable.
    */
-  resent: boolean;
+  resent: boolean
   /**
    * The obfuscated email address to which a new code was resent, if applicable.
    */
-  obfuscatedEmail?: string;
+  obfuscatedEmail?: string
 }
 
 /**
@@ -450,22 +450,22 @@ export type RedemptionOwnership =
       /**
        * Ownership of the redeemed item is tied to a specific application user ID.
        */
-      type: "APP_USER";
+      type: "APP_USER"
       /**
        * The application user ID of the owner.
        */
-      appUserId: string;
+      appUserId: string
     }
   | {
       /**
        * Ownership of the redeemed item is tied to a specific device ID.
        */
-      type: "DEVICE";
+      type: "DEVICE"
       /**
        * The device ID of the owner.
        */
-      deviceId: string;
-    };
+      deviceId: string
+    }
 
 /**
  * Contains store-specific identifiers for a purchaser, relevant for tracking redemptions across different billing systems.
@@ -475,26 +475,26 @@ export type RedemptionStoreIdentifiers =
       /**
        * The purchase or subscription is managed by Stripe.
        */
-      store: "STRIPE";
+      store: "STRIPE"
       /**
        * The Stripe customer ID.
        */
-      stripeCustomerId: string;
+      stripeCustomerId: string
       /**
        * The Stripe subscription IDs associated with the customer.
        */
-      stripeSubscriptionIds: string[];
+      stripeSubscriptionIds: string[]
     }
   | {
       /**
        * The store is unknown or not explicitly handled by this type definition.
        */
-      store: string; // Allows for other store names not explicitly defined
+      store: string // Allows for other store names not explicitly defined
       /**
        * Allows for additional properties specific to other or future store integrations.
        */
-      [key: string]: any;
-    };
+      [key: string]: any
+    }
 
 /**
  * Information about the purchaser involved in a promotional code redemption.
@@ -503,16 +503,16 @@ export interface RedemptionPurchaserInfo {
   /**
    * The application user ID of the purchaser.
    */
-  appUserId: string;
+  appUserId: string
   /**
    * The email address of the purchaser, if available.
    */
-  email?: string;
+  email?: string
   /**
    * Store-specific identifiers for the purchaser.
    * See {@link RedemptionStoreIdentifiers}.
    */
-  storeIdentifiers: RedemptionStoreIdentifiers;
+  storeIdentifiers: RedemptionStoreIdentifiers
 }
 
 /**
@@ -522,23 +522,23 @@ export interface RedemptionPaywallInfo {
   /**
    * The identifier of the paywall.
    */
-  identifier: string;
+  identifier: string
   /**
    * The name of the placement that triggered the paywall presentation.
    */
-  placementName: string;
+  placementName: string
   /**
    * Parameters associated with the placement.
    */
-  placementParams: Record<string, any>;
+  placementParams: Record<string, any>
   /**
    * The ID of the experiment variant shown to the user.
    */
-  variantId: string;
+  variantId: string
   /**
    * The ID of the experiment the user was part of.
    */
-  experimentId: string;
+  experimentId: string
 }
 
 /**
@@ -550,22 +550,22 @@ export interface RedemptionInfo {
    * Information about who owns the redeemed item or subscription.
    * See {@link RedemptionOwnership}.
    */
-  ownership: RedemptionOwnership;
+  ownership: RedemptionOwnership
   /**
    * Information about the purchaser.
    * See {@link RedemptionPurchaserInfo}.
    */
-  purchaserInfo: RedemptionPurchaserInfo;
+  purchaserInfo: RedemptionPurchaserInfo
   /**
    * Information about the paywall related to this redemption, if applicable.
    * See {@link RedemptionPaywallInfo}.
    */
-  paywallInfo?: RedemptionPaywallInfo;
+  paywallInfo?: RedemptionPaywallInfo
   /**
    * A list of entitlements granted by this redemption.
    * See {@link Entitlement}.
    */
-  entitlements: Entitlement[];
+  entitlements: Entitlement[]
 }
 
 /**
@@ -577,73 +577,73 @@ export type RedemptionResult =
       /**
        * The promotional code was successfully redeemed.
        */
-      status: "SUCCESS";
+      status: "SUCCESS"
       /**
        * The promotional code that was redeemed.
        */
-      code: string;
+      code: string
       /**
        * Detailed information about the successful redemption.
        * See {@link RedemptionInfo}.
        */
-      redemptionInfo: RedemptionInfo;
+      redemptionInfo: RedemptionInfo
     }
   | {
       /**
        * An error occurred during the redemption attempt.
        */
-      status: "ERROR";
+      status: "ERROR"
       /**
        * The promotional code that was attempted.
        */
-      code: string;
+      code: string
       /**
        * Information about the error that occurred.
        * See {@link RedemptionErrorInfo}.
        */
-      error: RedemptionErrorInfo;
+      error: RedemptionErrorInfo
     }
   | {
       /**
        * The promotional code has expired and cannot be redeemed.
        */
-      status: "CODE_EXPIRED";
+      status: "CODE_EXPIRED"
       /**
        * The expired promotional code.
        */
-      code: string;
+      code: string
       /**
        * Information related to the expired code, such as whether a new one was resent.
        * See {@link RedemptionExpiredCodeInfo}.
        */
-      expired: RedemptionExpiredCodeInfo;
+      expired: RedemptionExpiredCodeInfo
     }
   | {
       /**
        * The promotional code is invalid or does not exist.
        */
-      status: "INVALID_CODE";
+      status: "INVALID_CODE"
       /**
        * The invalid promotional code that was attempted.
        */
-      code: string;
+      code: string
     }
   | {
       /**
        * The subscription associated with the promotional code has expired,
        * but the code was successfully redeemed in the past.
        */
-      status: "EXPIRED_SUBSCRIPTION";
+      status: "EXPIRED_SUBSCRIPTION"
       /**
        * The promotional code associated with the expired subscription.
        */
-      code: string;
+      code: string
       /**
        * Detailed information about the prior redemption.
        * See {@link RedemptionInfo}.
        */
-      redemptionInfo: RedemptionInfo;
-    };
+      redemptionInfo: RedemptionInfo
+    }
 
 /**
  * Represents the result of a trigger evaluation.
@@ -652,43 +652,43 @@ export type RedemptionResult =
 export type TriggerResult =
   | {
       /** The specified placement ID was not found in the Superwall dashboard configuration. */
-      result: "placementNotFound";
+      result: "placementNotFound"
     }
   | {
       /** The user did not match any audience rules for the trigger. */
-      result: "noAudienceMatch";
+      result: "noAudienceMatch"
     }
   | {
       /** A paywall will be presented to the user as a result of this trigger. */
-      result: "paywall";
+      result: "paywall"
       /**
        * Information about the experiment that led to this paywall presentation.
        * See {@link Experiment}.
        */
-      experiment: Experiment;
+      experiment: Experiment
     }
   | {
       /** The user was assigned to a holdout group, and no paywall will be shown. */
-      result: "holdout";
+      result: "holdout"
       /**
        * Information about the experiment that led to this holdout assignment.
        * See {@link Experiment}.
        */
-      experiment: Experiment;
+      experiment: Experiment
     }
   | {
       /** An error occurred during the trigger evaluation process. */
-      result: "error";
+      result: "error"
       /** A string describing the error. */
-      error: string;
-    };
+      error: string
+    }
 
 /**
  * Represents the identifier of a product involved in a transaction event.
  */
 export interface TransactionProductIdentifier {
   /** The unique identifier of the product (e.g., SKU). */
-  id: string;
+  id: string
 }
 
 /**
@@ -697,63 +697,63 @@ export interface TransactionProductIdentifier {
  */
 export interface StoreTransaction {
   /** The request ID from the Superwall configuration that initiated this transaction, if applicable. */
-  configRequestId?: string;
+  configRequestId?: string
   /** The ID of the app session during which this transaction occurred. */
-  appSessionId?: string;
+  appSessionId?: string
   /** The ISO 8601 date string of when the transaction occurred. */
-  transactionDate?: string;
+  transactionDate?: string
   /** The original transaction identifier, useful for linking related transactions (e.g., subscriptions). */
-  originalTransactionIdentifier?: string;
+  originalTransactionIdentifier?: string
   /** The transaction identifier provided by the respective app store (App Store, Google Play). */
-  storeTransactionId?: string;
+  storeTransactionId?: string
   /** The ISO 8601 date string of the original purchase date, especially relevant for subscriptions. */
-  originalPurchaseDate?: string;
+  originalPurchaseDate?: string
   /** The identifier of the product involved in the transaction. */
-  productIdentifier?: string;
+  productIdentifier?: string
   /** The quantity of the product purchased. */
-  quantity?: number;
+  quantity?: number
   /** The web order line item ID, used for auto-renewable subscriptions on some platforms. */
-  webOrderLineItemId?: string;
+  webOrderLineItemId?: string
   /** The identifier of the promotional offer, if this transaction was part of one. */
-  promotionalOfferIdentifier?: string;
+  promotionalOfferIdentifier?: string
   /** The identifier for the subscription group this transaction belongs to. */
-  subscriptionGroupIdentifier?: string;
+  subscriptionGroupIdentifier?: string
   /** Indicates if this transaction represents an upgrade from a previous subscription. */
-  isUpgraded?: boolean;
+  isUpgraded?: boolean
   /** The ISO 8601 date string of when the subscription or product access expires. */
-  expirationDate?: string;
+  expirationDate?: string
   /** The ISO 8601 date string if the transaction was revoked by the store or developer. */
-  revocationDate?: string;
+  revocationDate?: string
   /** The App Store account token, specific to Apple's App Store. */
-  appAccountToken?: string;
+  appAccountToken?: string
   /** The country code of the storefront where the purchase was made (e.g., "US"). */
-  storefrontCountryCode?: string;
+  storefrontCountryCode?: string
   /** The identifier of the storefront where the purchase was made. */
-  storefrontId?: string;
+  storefrontId?: string
   /**
    * The type of product purchased (e.g., "autoRenewable", "nonConsumable", "consumable", "nonRenewing").
    */
-  productType?: string;
+  productType?: string
   /**
    * The reason for revocation, if `revocationDate` is present (e.g., "developerIssue", "other").
    */
-  revocationReason?: string;
+  revocationReason?: string
   /** The environment in which the transaction occurred (e.g., "Production", "Sandbox"). */
-  environment?: string;
+  environment?: string
   /** The type of ownership for the transaction (e.g., "PURCHASED", "FAMILY_SHARED"). */
-  ownershipType?: string;
+  ownershipType?: string
   /** The formatted price of the product (e.g., "$9.99"). */
-  price?: string;
+  price?: string
   /** The ISO 4217 currency code of the price (e.g., "USD"). */
-  currency?: string;
+  currency?: string
   /**
    * The type of offer, if applicable (e.g., "INTRODUCTORY", "PROMOTIONAL", "CODE").
    */
-  offerType?: string;
+  offerType?: string
   /**
    * The payment mode for an introductory offer (e.g., "PAY_AS_YOU_GO", "PAY_UP_FRONT", "FREE_TRIAL").
    */
-  offerPaymentMode?: string;
+  offerPaymentMode?: string
 }
 
 /**
@@ -762,17 +762,17 @@ export interface StoreTransaction {
 export type RestoreType =
   | {
       /** Indicates that the restoration occurred as part of a purchase attempt. */
-      type: "viaPurchase";
+      type: "viaPurchase"
       /**
        * The store transaction associated with the purchase that led to the restoration, if available.
        * See {@link StoreTransaction}.
        */
-      storeTransaction?: StoreTransaction;
+      storeTransaction?: StoreTransaction
     }
   | {
       /** Indicates that the restoration was initiated manually by the user (e.g., by tapping a "Restore Purchases" button). */
-      type: "viaRestore";
-    };
+      type: "viaRestore"
+    }
 
 /**
  * Defines the possible statuses of a paywall presentation request.
@@ -780,14 +780,14 @@ export type RestoreType =
  * - `noPresentation`: No paywall will be presented.
  * - `timeout`: The request to determine presentation timed out.
  */
-export type PaywallPresentationRequestStatusType = "presentation" | "noPresentation" | "timeout";
+export type PaywallPresentationRequestStatusType = "presentation" | "noPresentation" | "timeout"
 
 /**
  * Represents the status of a request to present a paywall.
  */
 export interface PaywallPresentationRequestStatus {
   /** The overall status of the paywall presentation request. See {@link PaywallPresentationRequestStatusType}. */
-  status: PaywallPresentationRequestStatusType;
+  status: PaywallPresentationRequestStatusType
 }
 
 /**
@@ -796,56 +796,56 @@ export interface PaywallPresentationRequestStatus {
 export type PaywallPresentationRequestStatusReason =
   | {
       /** A paywall was presented because the debugger is active. */
-      reason: "debuggerPresented";
+      reason: "debuggerPresented"
     }
   | {
       /** No paywall was presented because one is already being displayed. */
-      reason: "paywallAlreadyPresented";
+      reason: "paywallAlreadyPresented"
     }
   | {
       /** No paywall was presented because the user is in a holdout group of an experiment. */
-      reason: "holdout";
+      reason: "holdout"
       /**
        * Information about the experiment that led to this holdout.
        * See {@link Experiment}.
        */
-      experiment: Experiment;
+      experiment: Experiment
     }
   | {
       /** No paywall was presented because the user did not match any audience rules. */
-      reason: "noRuleMatch";
+      reason: "noRuleMatch"
     }
   | {
       /** No paywall was presented because the triggering event was not found. */
-      reason: "eventNotFound";
+      reason: "eventNotFound"
     }
   | {
       /** No paywall was presented because the paywall view controller is not available (native SDK specific). */
-      reason: "noPaywallViewController";
+      reason: "noPaywallViewController"
     }
   | {
       /** No paywall was presented because there is no view controller available to present it on (native SDK specific). */
-      reason: "noViewController";
+      reason: "noViewController"
     }
   | {
       /** No paywall was presented because the user is already subscribed. */
-      reason: "userIsSubscribed";
+      reason: "userIsSubscribed"
     }
   | {
       /** No paywall was presented due to an error. */
-      reason: "error";
+      reason: "error"
       /** A string describing the error. */
-      error: string;
+      error: string
     }
   | {
       /** No paywall was presented because it is gated by some condition. */
-      reason: "paywallIsGated";
+      reason: "paywallIsGated"
       /**
        * Information about the paywall that was gated.
        * See {@link PaywallInfo}.
        */
-      paywallInfo: PaywallInfo;
-    };
+      paywallInfo: PaywallInfo
+    }
 
 /**
  * Represents a Superwall event that can be tracked by the SDK.
@@ -860,7 +860,7 @@ export type PaywallPresentationRequestStatusReason =
  */
 export interface FirstSeenEvent {
   /** User's first time seeing a Superwall-related element or paywall. */
-  event: "firstSeen";
+  event: "firstSeen"
 }
 
 /**
@@ -868,7 +868,7 @@ export interface FirstSeenEvent {
  */
 export interface AppOpenEvent {
   /** The application was opened. */
-  event: "appOpen";
+  event: "appOpen"
 }
 
 /**
@@ -876,7 +876,7 @@ export interface AppOpenEvent {
  */
 export interface AppLaunchEvent {
   /** The application was launched. */
-  event: "appLaunch";
+  event: "appLaunch"
 }
 
 /**
@@ -884,7 +884,7 @@ export interface AppLaunchEvent {
  */
 export interface IdentityAliasEvent {
   /** An alias was set for the user's identity. */
-  event: "identityAlias";
+  event: "identityAlias"
 }
 
 /**
@@ -892,7 +892,7 @@ export interface IdentityAliasEvent {
  */
 export interface AppInstallEvent {
   /** The application was installed. */
-  event: "appInstall";
+  event: "appInstall"
 }
 
 /**
@@ -900,7 +900,7 @@ export interface AppInstallEvent {
  */
 export interface SessionStartEvent {
   /** A new user session started. */
-  event: "sessionStart";
+  event: "sessionStart"
 }
 
 /**
@@ -908,7 +908,7 @@ export interface SessionStartEvent {
  */
 export interface ResetEvent {
   /** The user's identity was reset (logged out). */
-  event: "reset";
+  event: "reset"
 }
 
 /**
@@ -916,7 +916,7 @@ export interface ResetEvent {
  */
 export interface ConfigRefreshEvent {
   /** The Superwall configuration was refreshed. */
-  event: "configRefresh";
+  event: "configRefresh"
 }
 
 /**
@@ -924,7 +924,7 @@ export interface ConfigRefreshEvent {
  */
 export interface ConfigFailEvent {
   /** Failed to refresh the Superwall configuration. */
-  event: "configFail";
+  event: "configFail"
 }
 
 /**
@@ -932,7 +932,7 @@ export interface ConfigFailEvent {
  */
 export interface ConfigAttributesEvent {
   /** Attributes were passed with the Superwall configuration. */
-  event: "configAttributes";
+  event: "configAttributes"
 }
 
 /**
@@ -940,7 +940,7 @@ export interface ConfigAttributesEvent {
  */
 export interface ConfirmAllAssignmentsEvent {
   /** All pending paywall assignments have been confirmed. */
-  event: "confirmAllAssignments";
+  event: "confirmAllAssignments"
 }
 
 /**
@@ -948,7 +948,7 @@ export interface ConfirmAllAssignmentsEvent {
  */
 export interface TouchesBeganEvent {
   /** A touch event began on the screen (generic). */
-  event: "touchesBegan";
+  event: "touchesBegan"
 }
 
 /**
@@ -956,7 +956,7 @@ export interface TouchesBeganEvent {
  */
 export interface SurveyCloseEvent {
   /** A survey was closed. */
-  event: "surveyClose";
+  event: "surveyClose"
 }
 
 /**
@@ -964,7 +964,7 @@ export interface SurveyCloseEvent {
  */
 export interface RestoreStartEvent {
   /** Restoration of purchases started. */
-  event: "restoreStart";
+  event: "restoreStart"
 }
 
 /**
@@ -972,7 +972,7 @@ export interface RestoreStartEvent {
  */
 export interface RestoreCompleteEvent {
   /** Restoration of purchases completed successfully. */
-  event: "restoreComplete";
+  event: "restoreComplete"
 }
 
 /**
@@ -980,9 +980,9 @@ export interface RestoreCompleteEvent {
  */
 export interface RestoreFailEvent {
   /** Restoration of purchases failed. */
-  event: "restoreFail";
+  event: "restoreFail"
   /** The error message. */
-  message: string;
+  message: string
 }
 
 /**
@@ -990,7 +990,7 @@ export interface RestoreFailEvent {
  */
 export interface AdServicesTokenRequestStartEvent {
   /** Request for AdServices token started. */
-  event: "adServicesTokenRequestStart";
+  event: "adServicesTokenRequestStart"
 }
 
 /**
@@ -998,9 +998,9 @@ export interface AdServicesTokenRequestStartEvent {
  */
 export interface AdServicesTokenRequestFailEvent {
   /** Request for AdServices token failed. */
-  event: "adServicesTokenRequestFail";
+  event: "adServicesTokenRequestFail"
   /** The error message. */
-  error: string;
+  error: string
 }
 
 /**
@@ -1008,9 +1008,9 @@ export interface AdServicesTokenRequestFailEvent {
  */
 export interface AdServicesTokenRequestCompleteEvent {
   /** Request for AdServices token completed. */
-  event: "adServicesTokenRequestComplete";
+  event: "adServicesTokenRequestComplete"
   /** The AdServices token. */
-  token: string;
+  token: string
 }
 
 /**
@@ -1018,7 +1018,7 @@ export interface AdServicesTokenRequestCompleteEvent {
  */
 export interface ShimmerViewStartEvent {
   /** Shimmer view (placeholder loading) started. */
-  event: "shimmerViewStart";
+  event: "shimmerViewStart"
 }
 
 /**
@@ -1026,7 +1026,7 @@ export interface ShimmerViewStartEvent {
  */
 export interface ShimmerViewCompleteEvent {
   /** Shimmer view (placeholder loading) completed. */
-  event: "shimmerViewComplete";
+  event: "shimmerViewComplete"
 }
 
 /**
@@ -1034,7 +1034,7 @@ export interface ShimmerViewCompleteEvent {
  */
 export interface RedemptionStartEvent {
   /** Redemption of a promotional code started. */
-  event: "redemptionStart";
+  event: "redemptionStart"
 }
 
 /**
@@ -1042,7 +1042,7 @@ export interface RedemptionStartEvent {
  */
 export interface RedemptionCompleteEvent {
   /** Redemption of a promotional code completed. */
-  event: "redemptionComplete";
+  event: "redemptionComplete"
 }
 
 /**
@@ -1050,7 +1050,7 @@ export interface RedemptionCompleteEvent {
  */
 export interface RedemptionFailEvent {
   /** Redemption of a promotional code failed. */
-  event: "redemptionFail";
+  event: "redemptionFail"
 }
 
 /**
@@ -1058,7 +1058,7 @@ export interface RedemptionFailEvent {
  */
 export interface EnrichmentStartEvent {
   /** Data enrichment process started. */
-  event: "enrichmentStart";
+  event: "enrichmentStart"
 }
 
 /**
@@ -1066,11 +1066,11 @@ export interface EnrichmentStartEvent {
  */
 export interface EnrichmentCompleteEvent {
   /** Data enrichment process completed. */
-  event: "enrichmentComplete";
+  event: "enrichmentComplete"
   /** Enriched user data, if any. */
-  userEnrichment?: Record<string, any>;
+  userEnrichment?: Record<string, any>
   /** Enriched device data, if any. */
-  deviceEnrichment?: Record<string, any>;
+  deviceEnrichment?: Record<string, any>
 }
 
 /**
@@ -1078,7 +1078,7 @@ export interface EnrichmentCompleteEvent {
  */
 export interface EnrichmentFailEvent {
   /** Data enrichment process failed. */
-  event: "enrichmentFail";
+  event: "enrichmentFail"
 }
 
 /**
@@ -1086,7 +1086,7 @@ export interface EnrichmentFailEvent {
  */
 export interface UnknownEvent {
   /** An unknown or uncategorized event occurred. */
-  event: "unknown";
+  event: "unknown"
 }
 
 /**
@@ -1094,9 +1094,9 @@ export interface UnknownEvent {
  */
 export interface DeviceAttributesEvent {
   /** Device attributes were updated. */
-  event: "deviceAttributes";
+  event: "deviceAttributes"
   /** The updated device attributes. */
-  attributes: Record<string, any>;
+  attributes: Record<string, any>
 }
 
 /**
@@ -1104,12 +1104,12 @@ export interface DeviceAttributesEvent {
  */
 export interface SubscriptionStatusDidChangeEvent {
   /** The user's subscription status changed. */
-  event: "subscriptionStatusDidChange";
+  event: "subscriptionStatusDidChange"
   /**
    * The new subscription status.
    * See {@link SubscriptionStatus}.
    */
-  subscriptionStatus: SubscriptionStatus;
+  subscriptionStatus: SubscriptionStatus
 }
 
 /**
@@ -1117,7 +1117,7 @@ export interface SubscriptionStatusDidChangeEvent {
  */
 export interface AppCloseEvent {
   /** The application was closed. */
-  event: "appClose";
+  event: "appClose"
 }
 
 /**
@@ -1125,9 +1125,9 @@ export interface AppCloseEvent {
  */
 export interface DeepLinkEvent {
   /** A deep link was opened by the application, potentially via Superwall. */
-  event: "deepLink";
+  event: "deepLink"
   /** The URL of the deep link. */
-  url: string;
+  url: string
 }
 
 /**
@@ -1135,14 +1135,14 @@ export interface DeepLinkEvent {
  */
 export interface TriggerFireEvent {
   /** A trigger was fired based on an event or placement. */
-  event: "triggerFire";
+  event: "triggerFire"
   /** The name of the event or placement that caused the trigger to fire. */
-  placementName: string;
+  placementName: string
   /**
    * The result of the trigger evaluation, determining what action Superwall will take.
    * See {@link TriggerResult}.
    */
-  result: TriggerResult;
+  result: TriggerResult
 }
 
 /**
@@ -1150,12 +1150,12 @@ export interface TriggerFireEvent {
  */
 export interface PaywallOpenEvent {
   /** A paywall was opened. */
-  event: "paywallOpen";
+  event: "paywallOpen"
   /**
    * Information about the paywall that was opened.
    * See {@link PaywallInfo}.
    */
-  paywallInfo: PaywallInfo;
+  paywallInfo: PaywallInfo
 }
 
 /**
@@ -1163,12 +1163,12 @@ export interface PaywallOpenEvent {
  */
 export interface PaywallCloseEvent {
   /** A paywall was closed. */
-  event: "paywallClose";
+  event: "paywallClose"
   /**
    * Information about the paywall that was closed.
    * See {@link PaywallInfo}.
    */
-  paywallInfo: PaywallInfo;
+  paywallInfo: PaywallInfo
 }
 
 /**
@@ -1176,12 +1176,12 @@ export interface PaywallCloseEvent {
  */
 export interface PaywallDeclineEvent {
   /** The user explicitly declined a paywall. */
-  event: "paywallDecline";
+  event: "paywallDecline"
   /**
    * Information about the paywall that was declined.
    * See {@link PaywallInfo}.
    */
-  paywallInfo: PaywallInfo;
+  paywallInfo: PaywallInfo
 }
 
 /**
@@ -1189,17 +1189,17 @@ export interface PaywallDeclineEvent {
  */
 export interface TransactionStartEvent {
   /** A transaction (purchase, restore) was initiated. */
-  event: "transactionStart";
+  event: "transactionStart"
   /**
    * Identifier of the product involved in the transaction.
    * See {@link TransactionProductIdentifier}.
    */
-  product: TransactionProductIdentifier;
+  product: TransactionProductIdentifier
   /**
    * Information about the paywall from which the transaction was initiated.
    * See {@link PaywallInfo}.
    */
-  paywallInfo: PaywallInfo;
+  paywallInfo: PaywallInfo
 }
 
 /**
@@ -1207,14 +1207,14 @@ export interface TransactionStartEvent {
  */
 export interface TransactionFailEvent {
   /** A transaction failed. */
-  event: "transactionFail";
+  event: "transactionFail"
   /** The error message from the transaction failure. */
-  error: string;
+  error: string
   /**
    * Information about the paywall associated with the failed transaction.
    * See {@link PaywallInfo}.
    */
-  paywallInfo: PaywallInfo;
+  paywallInfo: PaywallInfo
 }
 
 /**
@@ -1222,17 +1222,17 @@ export interface TransactionFailEvent {
  */
 export interface TransactionAbandonEvent {
   /** A transaction was abandoned by the user. */
-  event: "transactionAbandon";
+  event: "transactionAbandon"
   /**
    * Identifier of the product involved in the abandoned transaction.
    * See {@link TransactionProductIdentifier}.
    */
-  product: TransactionProductIdentifier;
+  product: TransactionProductIdentifier
   /**
    * Information about the paywall associated with the abandoned transaction.
    * See {@link PaywallInfo}.
    */
-  paywallInfo: PaywallInfo;
+  paywallInfo: PaywallInfo
 }
 
 /**
@@ -1240,24 +1240,24 @@ export interface TransactionAbandonEvent {
  */
 export interface TransactionCompleteEvent {
   /** A transaction was successfully completed. */
-  event: "transactionComplete";
+  event: "transactionComplete"
   /**
    * Detailed information about the store transaction, if available.
    * See {@link StoreTransaction}.
    */
-  transaction?: StoreTransaction;
+  transaction?: StoreTransaction
   /**
    * Identifier of the product involved in the completed transaction.
    * See {@link TransactionProductIdentifier}.
    */
-  product: TransactionProductIdentifier;
+  product: TransactionProductIdentifier
   /** The type of the transaction (e.g., "purchase", "restore"). */
-  type: string;
+  type: string
   /**
    * Information about the paywall associated with the completed transaction.
    * See {@link PaywallInfo}.
    */
-  paywallInfo: PaywallInfo;
+  paywallInfo: PaywallInfo
 }
 
 /**
@@ -1265,17 +1265,17 @@ export interface TransactionCompleteEvent {
  */
 export interface SubscriptionStartEvent {
   /** A new subscription was started. */
-  event: "subscriptionStart";
+  event: "subscriptionStart"
   /**
    * Identifier of the product for which the subscription started.
    * See {@link TransactionProductIdentifier}.
    */
-  product: TransactionProductIdentifier;
+  product: TransactionProductIdentifier
   /**
    * Information about the paywall associated with the subscription start.
    * See {@link PaywallInfo}.
    */
-  paywallInfo: PaywallInfo;
+  paywallInfo: PaywallInfo
 }
 
 /**
@@ -1283,17 +1283,17 @@ export interface SubscriptionStartEvent {
  */
 export interface FreeTrialStartEvent {
   /** A free trial was started. */
-  event: "freeTrialStart";
+  event: "freeTrialStart"
   /**
    * Identifier of the product for which the free trial started.
    * See {@link TransactionProductIdentifier}.
    */
-  product: TransactionProductIdentifier;
+  product: TransactionProductIdentifier
   /**
    * Information about the paywall associated with the free trial start.
    * See {@link PaywallInfo}.
    */
-  paywallInfo: PaywallInfo;
+  paywallInfo: PaywallInfo
 }
 
 /**
@@ -1301,17 +1301,17 @@ export interface FreeTrialStartEvent {
  */
 export interface TransactionRestoreEvent {
   /** A transaction was restored. */
-  event: "transactionRestore";
+  event: "transactionRestore"
   /**
    * The type of restoration process.
    * See {@link RestoreType}.
    */
-  restoreType: RestoreType;
+  restoreType: RestoreType
   /**
    * Information about the paywall associated with the restoration.
    * See {@link PaywallInfo}.
    */
-  paywallInfo: PaywallInfo;
+  paywallInfo: PaywallInfo
 }
 
 /**
@@ -1319,12 +1319,12 @@ export interface TransactionRestoreEvent {
  */
 export interface TransactionTimeoutEvent {
   /** A transaction timed out. */
-  event: "transactionTimeout";
+  event: "transactionTimeout"
   /**
    * Information about the paywall associated with the timed-out transaction.
    * See {@link PaywallInfo}.
    */
-  paywallInfo: PaywallInfo;
+  paywallInfo: PaywallInfo
 }
 
 /**
@@ -1332,9 +1332,9 @@ export interface TransactionTimeoutEvent {
  */
 export interface UserAttributesEvent {
   /** User attributes were updated. */
-  event: "userAttributes";
+  event: "userAttributes"
   /** The updated user attributes. */
-  attributes: Record<string, any>;
+  attributes: Record<string, any>
 }
 
 /**
@@ -1342,17 +1342,17 @@ export interface UserAttributesEvent {
  */
 export interface NonRecurringProductPurchaseEvent {
   /** A non-recurring product was purchased. */
-  event: "nonRecurringProductPurchase";
+  event: "nonRecurringProductPurchase"
   /**
    * Identifier of the purchased non-recurring product.
    * See {@link TransactionProductIdentifier}.
    */
-  product: TransactionProductIdentifier;
+  product: TransactionProductIdentifier
   /**
    * Information about the paywall associated with the purchase.
    * See {@link PaywallInfo}.
    */
-  paywallInfo: PaywallInfo;
+  paywallInfo: PaywallInfo
 }
 
 /**
@@ -1360,9 +1360,9 @@ export interface NonRecurringProductPurchaseEvent {
  */
 export interface PaywallResponseLoadStartEvent {
   /** Loading of the paywall response from the server started. */
-  event: "paywallResponseLoadStart";
+  event: "paywallResponseLoadStart"
   /** The name of the event or placement that triggered this load. */
-  triggeredEventName: string;
+  triggeredEventName: string
 }
 
 /**
@@ -1370,9 +1370,9 @@ export interface PaywallResponseLoadStartEvent {
  */
 export interface PaywallResponseLoadNotFoundEvent {
   /** The paywall response was not found on the server. */
-  event: "paywallResponseLoadNotFound";
+  event: "paywallResponseLoadNotFound"
   /** The name of the event or placement that triggered this load. */
-  triggeredEventName: string;
+  triggeredEventName: string
 }
 
 /**
@@ -1380,9 +1380,9 @@ export interface PaywallResponseLoadNotFoundEvent {
  */
 export interface PaywallResponseLoadFailEvent {
   /** Loading of the paywall response from the server failed. */
-  event: "paywallResponseLoadFail";
+  event: "paywallResponseLoadFail"
   /** The name of the event or placement that triggered this load. */
-  triggeredEventName: string;
+  triggeredEventName: string
 }
 
 /**
@@ -1390,14 +1390,14 @@ export interface PaywallResponseLoadFailEvent {
  */
 export interface PaywallResponseLoadCompleteEvent {
   /** Loading of the paywall response from the server completed successfully. */
-  event: "paywallResponseLoadComplete";
+  event: "paywallResponseLoadComplete"
   /** The name of the event or placement that triggered this load. */
-  triggeredEventName: string;
+  triggeredEventName: string
   /**
    * Information about the loaded paywall.
    * See {@link PaywallInfo}.
    */
-  paywallInfo: PaywallInfo;
+  paywallInfo: PaywallInfo
 }
 
 /**
@@ -1405,12 +1405,12 @@ export interface PaywallResponseLoadCompleteEvent {
  */
 export interface PaywallWebviewLoadStartEvent {
   /** The web view started loading the paywall's content. */
-  event: "paywallWebviewLoadStart";
+  event: "paywallWebviewLoadStart"
   /**
    * Information about the paywall whose web view is loading.
    * See {@link PaywallInfo}.
    */
-  paywallInfo: PaywallInfo;
+  paywallInfo: PaywallInfo
 }
 
 /**
@@ -1418,12 +1418,12 @@ export interface PaywallWebviewLoadStartEvent {
  */
 export interface PaywallWebviewLoadFailEvent {
   /** The web view failed to load the paywall's content. */
-  event: "paywallWebviewLoadFail";
+  event: "paywallWebviewLoadFail"
   /**
    * Information about the paywall whose web view failed to load.
    * See {@link PaywallInfo}.
    */
-  paywallInfo: PaywallInfo;
+  paywallInfo: PaywallInfo
 }
 
 /**
@@ -1431,12 +1431,12 @@ export interface PaywallWebviewLoadFailEvent {
  */
 export interface PaywallWebviewLoadCompleteEvent {
   /** The web view completed loading the paywall's content. */
-  event: "paywallWebviewLoadComplete";
+  event: "paywallWebviewLoadComplete"
   /**
    * Information about the paywall whose web view completed loading.
    * See {@link PaywallInfo}.
    */
-  paywallInfo: PaywallInfo;
+  paywallInfo: PaywallInfo
 }
 
 /**
@@ -1444,12 +1444,12 @@ export interface PaywallWebviewLoadCompleteEvent {
  */
 export interface PaywallWebviewLoadTimeoutEvent {
   /** The web view timed out while loading the paywall's content. */
-  event: "paywallWebviewLoadTimeout";
+  event: "paywallWebviewLoadTimeout"
   /**
    * Information about the paywall whose web view timed out.
    * See {@link PaywallInfo}.
    */
-  paywallInfo: PaywallInfo;
+  paywallInfo: PaywallInfo
 }
 
 /**
@@ -1457,12 +1457,12 @@ export interface PaywallWebviewLoadTimeoutEvent {
  */
 export interface PaywallWebviewLoadFallbackEvent {
   /** The web view used fallback content for the paywall due to a loading issue. */
-  event: "paywallWebviewLoadFallback";
+  event: "paywallWebviewLoadFallback"
   /**
    * Information about the paywall that used fallback content.
    * See {@link PaywallInfo}.
    */
-  paywallInfo: PaywallInfo;
+  paywallInfo: PaywallInfo
 }
 
 /**
@@ -1470,14 +1470,14 @@ export interface PaywallWebviewLoadFallbackEvent {
  */
 export interface PaywallProductsLoadStartEvent {
   /** Loading of products for the paywall started. */
-  event: "paywallProductsLoadStart";
+  event: "paywallProductsLoadStart"
   /** The name of the event or placement that triggered this load. */
-  triggeredEventName: string;
+  triggeredEventName: string
   /**
    * Information about the paywall for which products are loading.
    * See {@link PaywallInfo}.
    */
-  paywallInfo: PaywallInfo;
+  paywallInfo: PaywallInfo
 }
 
 /**
@@ -1485,14 +1485,14 @@ export interface PaywallProductsLoadStartEvent {
  */
 export interface PaywallProductsLoadFailEvent {
   /** Loading of products for the paywall failed. */
-  event: "paywallProductsLoadFail";
+  event: "paywallProductsLoadFail"
   /** The name of the event or placement that triggered this load. */
-  triggeredEventName: string;
+  triggeredEventName: string
   /**
    * Information about the paywall for which product loading failed.
    * See {@link PaywallInfo}.
    */
-  paywallInfo: PaywallInfo;
+  paywallInfo: PaywallInfo
 }
 
 /**
@@ -1500,14 +1500,14 @@ export interface PaywallProductsLoadFailEvent {
  */
 export interface PaywallProductsLoadCompleteEvent {
   /** Loading of products for the paywall completed successfully. */
-  event: "paywallProductsLoadComplete";
+  event: "paywallProductsLoadComplete"
   /** The name of the event or placement that triggered this load. */
-  triggeredEventName: string;
+  triggeredEventName: string
   /**
    * Information about the paywall for which products completed loading.
    * See {@link PaywallInfo}.
    */
-  paywallInfo: PaywallInfo;
+  paywallInfo: PaywallInfo
 }
 
 /**
@@ -1515,16 +1515,16 @@ export interface PaywallProductsLoadCompleteEvent {
  */
 export interface PaywallProductsLoadRetryEvent {
   /** Retrying the loading of products for the paywall. */
-  event: "paywallProductsLoadRetry";
+  event: "paywallProductsLoadRetry"
   /** The name of the event or placement that triggered this load. */
-  triggeredEventName: string;
+  triggeredEventName: string
   /**
    * Information about the paywall for which product loading is being retried.
    * See {@link PaywallInfo}.
    */
-  paywallInfo: PaywallInfo;
+  paywallInfo: PaywallInfo
   /** The attempt number for this retry. */
-  attempt: number;
+  attempt: number
 }
 
 /**
@@ -1532,24 +1532,24 @@ export interface PaywallProductsLoadRetryEvent {
  */
 export interface SurveyResponseEvent {
   /** A response to a survey was submitted by the user. */
-  event: "surveyResponse";
+  event: "surveyResponse"
   /**
    * The survey that was responded to.
    * See {@link Survey}.
    */
-  survey: Survey;
+  survey: Survey
   /**
    * The option selected by the user in the survey.
    * See {@link SurveyOption}.
    */
-  selectedOption: SurveyOption;
+  selectedOption: SurveyOption
   /** The custom response text entered by the user, if any. */
-  customResponse?: string;
+  customResponse?: string
   /**
    * Information about the paywall where the survey was presented.
    * See {@link PaywallInfo}.
    */
-  paywallInfo: PaywallInfo;
+  paywallInfo: PaywallInfo
 }
 
 /**
@@ -1557,17 +1557,17 @@ export interface SurveyResponseEvent {
  */
 export interface PaywallPresentationRequestEvent {
   /** A request to present a paywall was made. */
-  event: "paywallPresentationRequest";
+  event: "paywallPresentationRequest"
   /**
    * The status of the presentation request.
    * See {@link PaywallPresentationRequestStatus}.
    */
-  status: PaywallPresentationRequestStatus;
+  status: PaywallPresentationRequestStatus
   /**
    * The reason for the status, if applicable (e.g., why a paywall was not presented).
    * See {@link PaywallPresentationRequestStatusReason}.
    */
-  reason?: PaywallPresentationRequestStatusReason;
+  reason?: PaywallPresentationRequestStatusReason
 }
 
 /**
@@ -1575,16 +1575,16 @@ export interface PaywallPresentationRequestEvent {
  */
 export interface CustomPlacementEvent {
   /** A custom placement (defined by the developer) was executed. */
-  event: "customPlacement";
+  event: "customPlacement"
   /** The name of the custom placement. */
-  name: string;
+  name: string
   /** Parameters associated with the custom placement. */
-  params: Record<string, any>;
+  params: Record<string, any>
   /**
    * Information about the paywall shown for this placement, if any.
    * See {@link PaywallInfo}.
    */
-  paywallInfo?: PaywallInfo;
+  paywallInfo?: PaywallInfo
 }
 
 /**
@@ -1653,7 +1653,7 @@ export type SuperwallEventType =
   | PaywallProductsLoadRetryEvent["event"]
   | SurveyResponseEvent["event"]
   | PaywallPresentationRequestEvent["event"]
-  | CustomPlacementEvent["event"];
+  | CustomPlacementEvent["event"]
 
 /**
  * Represents a Superwall event that can be tracked by the SDK.
@@ -1722,7 +1722,7 @@ export type SuperwallEvent =
   | PaywallProductsLoadRetryEvent
   | SurveyResponseEvent
   | PaywallPresentationRequestEvent
-  | CustomPlacementEvent;
+  | CustomPlacementEvent
 
 /**
  * Contains information about a Superwall event, including the specific {@link SuperwallEvent}
@@ -1731,13 +1731,13 @@ export type SuperwallEvent =
  */
 export interface SuperwallEventInfo {
   /** The specific Superwall event that occurred. See {@link SuperwallEvent}. */
-  event: SuperwallEvent;
+  event: SuperwallEvent
   /**
    * Additional parameters associated with the event. The structure of these parameters
    * depends on the specific event type and often mirrors the properties defined within
    * the {@link SuperwallEvent} union members.
    */
-  params: Record<string, any>;
+  params: Record<string, any>
 }
 
 /**
@@ -1748,7 +1748,7 @@ export interface SuperwallEventInfo {
  * - `error`: Outputs error messages for issues encountered by the SDK.
  * - `none`: Disables all logging from the SDK.
  */
-export type LogLevel = "debug" | "info" | "warn" | "error" | "none";
+export type LogLevel = "debug" | "info" | "warn" | "error" | "none"
 
 /**
  * Defines the scope of logging within the Superwall SDK, allowing for targeted logging of specific SDK components or features.
@@ -1800,7 +1800,18 @@ export type LogScope =
   | "paywallTransactions"
   | "paywallViewController"
   | "cache"
-  | "all";
+  | "all"
+
+export type OnPurchaseParamsIOS = { productId: string; platform: "ios" }
+
+export type OnPurchaseParamsAndroid = {
+  productId: string
+  platform: "android"
+  basePlanId: string
+  offerId?: string
+}
+
+export type OnPurchaseParams = OnPurchaseParamsIOS | OnPurchaseParamsAndroid
 
 /**
  * Defines the events emitted by the native Superwall Expo module that can be listened to.
@@ -1814,7 +1825,7 @@ export type SuperwallExpoModuleEvents = {
    * @param params.paywallInfoJson - JSON representation of {@link PaywallInfo} for the presented paywall.
    * @param params.handlerId - Identifier for the handler that triggered this presentation (e.g., from `usePlacement`).
    */
-  onPaywallPresent: (params: { paywallInfoJson: PaywallInfo; handlerId: string }) => void;
+  onPaywallPresent: (params: { paywallInfoJson: PaywallInfo; handlerId: string }) => void
   /**
    * Emitted when a paywall is dismissed by the user or programmatically.
    * @param params - Event parameters.
@@ -1823,24 +1834,24 @@ export type SuperwallExpoModuleEvents = {
    * @param params.handlerId - Identifier for the handler associated with this paywall.
    */
   onPaywallDismiss: (params: {
-    paywallInfoJson: PaywallInfo;
-    result: PaywallResult;
-    handlerId: string;
-  }) => void;
+    paywallInfoJson: PaywallInfo
+    result: PaywallResult
+    handlerId: string
+  }) => void
   /**
    * Emitted when an error occurs during the paywall presentation process.
    * @param params - Event parameters.
    * @param params.errorString - A string describing the error.
    * @param params.handlerId - Identifier for the handler associated with this error, if applicable.
    */
-  onPaywallError: (params: { errorString: string; handlerId: string }) => void;
+  onPaywallError: (params: { errorString: string; handlerId: string }) => void
   /**
    * Emitted when a paywall presentation is skipped (e.g., user is in a holdout group, no rule match).
    * @param params - Event parameters.
    * @param params.skippedReason - The reason why the paywall was skipped. See {@link PaywallSkippedReason}.
    * @param params.handlerId - Identifier for the handler associated with this skipped paywall.
    */
-  onPaywallSkip: (params: { skippedReason: PaywallSkippedReason; handlerId: string }) => void;
+  onPaywallSkip: (params: { skippedReason: PaywallSkippedReason; handlerId: string }) => void
 
   // --- SuperwallDelegateBridge Events ---
   /**
@@ -1850,57 +1861,57 @@ export type SuperwallExpoModuleEvents = {
    * @param params.to - The new subscription status. See {@link SubscriptionStatus}.
    */
   subscriptionStatusDidChange: (params: {
-    from: SubscriptionStatus;
-    to: SubscriptionStatus;
-  }) => void;
+    from: SubscriptionStatus
+    to: SubscriptionStatus
+  }) => void
   /**
    * Emitted for various internal Superwall events, providing a detailed stream of SDK activity.
    * @param params - Event parameters.
    * @param params.eventInfo - Detailed information about the Superwall event. See {@link SuperwallEventInfo}.
    */
-  handleSuperwallEvent: (params: { eventInfo: SuperwallEventInfo }) => void;
+  handleSuperwallEvent: (params: { eventInfo: SuperwallEventInfo }) => void
   /**
    * Emitted when a custom action is invoked from a paywall's JavaScript.
    * @param params - Event parameters.
    * @param params.name - The name of the custom action that was invoked.
    */
-  handleCustomPaywallAction: (params: { name: string }) => void;
+  handleCustomPaywallAction: (params: { name: string }) => void
   /**
    * Emitted just before a paywall is dismissed.
    * @param params - Event parameters.
    * @param params.info - Information about the paywall that will be dismissed. See {@link PaywallInfo}.
    */
-  willDismissPaywall: (params: { info: PaywallInfo }) => void;
+  willDismissPaywall: (params: { info: PaywallInfo }) => void
   /**
    * Emitted just before a paywall is presented.
    * @param params - Event parameters.
    * @param params.info - Information about the paywall that will be presented. See {@link PaywallInfo}.
    */
-  willPresentPaywall: (params: { info: PaywallInfo }) => void;
+  willPresentPaywall: (params: { info: PaywallInfo }) => void
   /**
    * Emitted after a paywall has been dismissed.
    * @param params - Event parameters.
    * @param params.info - Information about the paywall that was dismissed. See {@link PaywallInfo}.
    */
-  didDismissPaywall: (params: { info: PaywallInfo }) => void;
+  didDismissPaywall: (params: { info: PaywallInfo }) => void
   /**
    * Emitted after a paywall has been presented.
    * @param params - Event parameters.
    * @param params.info - Information about the paywall that was presented. See {@link PaywallInfo}.
    */
-  didPresentPaywall: (params: { info: PaywallInfo }) => void;
+  didPresentPaywall: (params: { info: PaywallInfo }) => void
   /**
    * Emitted when the paywall intends to open an external URL.
    * @param params - Event parameters.
    * @param params.url - The URL that the paywall intends to open.
    */
-  paywallWillOpenURL: (params: { url: string }) => void;
+  paywallWillOpenURL: (params: { url: string }) => void
   /**
    * Emitted when the paywall intends to open a deep link.
    * @param params - Event parameters.
    * @param params.url - The deep link URL that the paywall intends to open.
    */
-  paywallWillOpenDeepLink: (params: { url: string }) => void;
+  paywallWillOpenDeepLink: (params: { url: string }) => void
   /**
    * Emitted for logging messages generated by the native SDK.
    * @param params - Log parameters.
@@ -1911,22 +1922,22 @@ export type SuperwallExpoModuleEvents = {
    * @param params.error - Error message if the log represents an error (can be null).
    */
   handleLog: (params: {
-    level: LogLevel;
-    scope: LogScope;
-    message: string | null;
-    info: Record<string, any> | null;
-    error: string | null;
-  }) => void;
+    level: LogLevel
+    scope: LogScope
+    message: string | null
+    info: Record<string, any> | null
+    error: string | null
+  }) => void
   /**
    * Emitted before the SDK attempts to redeem a promotional link or code.
    * @param params - Event parameters. For iOS, this is typically an empty dictionary.
    */
-  willRedeemLink: (params: Record<string, never> | null) => void;
+  willRedeemLink: (params: Record<string, never> | null) => void
   /**
    * Emitted after the SDK has attempted to redeem a promotional link or code.
    * @param params - The result of the redemption attempt. See {@link RedemptionResult}.
    */
-  didRedeemLink: (params: RedemptionResult) => void;
+  didRedeemLink: (params: RedemptionResult) => void
 
   // Purchase Events
   /**
@@ -1936,14 +1947,10 @@ export type SuperwallExpoModuleEvents = {
    *   - For Android: `{ productId: string; platform: "android"; basePlanId: string; offerId?: string }`
    *     (offerId is optional for Android).
    */
-  onPurchase: (
-    params:
-      | { productId: string; platform: "ios" }
-      | { productId: string; platform: "android"; basePlanId: string; offerId?: string } // Made offerId optional for Android
-  ) => void;
+  onPurchase: (params: OnPurchaseParams) => void
   /**
    * Emitted when a purchase restoration process is initiated by the user.
    * @param params - Event parameters. For iOS, this is `null`.
    */
-  onPurchaseRestore: (params: null) => void;
-};
+  onPurchaseRestore: () => void
+}

@@ -98,11 +98,17 @@ export default function NewPage() {
     <CustomPurchaseControllerProvider
       controller={{
         onPurchase: async (params) => {
-          console.log("onPurchase", params)
+          if (params.platform === "ios") {
+            console.log("onPurchase", params)
+          } else {
+            console.log("onPurchase", params.productId)
+          }
+          // Set ur system here
           return
         },
-        onPurchaseRestore: async (params) => {
-          console.log("onPurchaseRestore", params)
+        onPurchaseRestore: async () => {
+          console.log("onPurchaseRestore")
+          // Set ur system here
           return
         },
       }}
