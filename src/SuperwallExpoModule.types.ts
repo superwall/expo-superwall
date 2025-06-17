@@ -852,6 +852,80 @@ export type PaywallPresentationRequestStatusReason =
  * This is a discriminated union type where the `event` property determines the specific event and its associated payload.
  * These events provide insights into user behavior, SDK operations, and paywall interactions.
  */
+
+/**
+ * A union of all possible string literal values for the `event` property within the {@link SuperwallEvent} type.
+ * This type can be used when you need to refer to an event type name itself, rather than the entire event object.
+ */
+export type SuperwallEventType =
+  | "firstSeen"
+  | "appOpen"
+  | "appLaunch"
+  | "identityAlias"
+  | "appInstall"
+  | "sessionStart"
+  | "reset"
+  | "configRefresh"
+  | "configFail"
+  | "configAttributes"
+  | "confirmAllAssignments"
+  | "touchesBegan"
+  | "surveyClose"
+  | "restoreStart"
+  | "restoreComplete"
+  | "restoreFail"
+  | "adServicesTokenRequestStart"
+  | "adServicesTokenRequestFail"
+  | "adServicesTokenRequestComplete"
+  | "shimmerViewStart"
+  | "shimmerViewComplete"
+  | "redemptionStart"
+  | "redemptionComplete"
+  | "redemptionFail"
+  | "enrichmentStart"
+  | "enrichmentComplete"
+  | "enrichmentFail"
+  | "unknown"
+  | "deviceAttributes"
+  | "subscriptionStatusDidChange"
+  | "appClose"
+  | "deepLink"
+  | "triggerFire"
+  | "paywallOpen"
+  | "paywallClose"
+  | "paywallDecline"
+  | "transactionStart"
+  | "transactionFail"
+  | "transactionAbandon"
+  | "transactionComplete"
+  | "subscriptionStart"
+  | "freeTrialStart"
+  | "transactionRestore"
+  | "transactionTimeout"
+  | "userAttributes"
+  | "nonRecurringProductPurchase"
+  | "paywallResponseLoadStart"
+  | "paywallResponseLoadNotFound"
+  | "paywallResponseLoadFail"
+  | "paywallResponseLoadComplete"
+  | "paywallWebviewLoadStart"
+  | "paywallWebviewLoadFail"
+  | "paywallWebviewLoadComplete"
+  | "paywallWebviewLoadTimeout"
+  | "paywallWebviewLoadFallback"
+  | "paywallProductsLoadStart"
+  | "paywallProductsLoadFail"
+  | "paywallProductsLoadComplete"
+  | "paywallProductsLoadRetry"
+  | "surveyResponse"
+  | "paywallPresentationRequest"
+  | "customPlacement";
+
+/**
+ * Represents a Superwall event that can be tracked by the SDK.
+ * This is a discriminated union type where the `event` property determines the specific event and its associated payload.
+ * These events provide insights into user behavior, SDK operations, and paywall interactions.
+ */
 export type SuperwallEvent =
   | { /** User's first time seeing a Superwall-related element or paywall. */ event: "firstSeen" }
   | { /** The application was opened. */ event: "appOpen" }
