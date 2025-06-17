@@ -1,4 +1,5 @@
 import {
+  CustomPurchaseControllerProvider,
   SuperwallLoaded,
   SuperwallLoading,
   SuperwallProvider,
@@ -94,18 +95,26 @@ function ScreenContent() {
 
 export default function NewPage() {
   return (
-    <SuperwallProvider
-      apiKeys={{ ios: API_KEY }}
-      options={{
-        manualPurchaseManagment: true,
+    <CustomPurchaseControllerProvider
+      controller={{
+        onPurchase: async (params) => {
+          console.log("onPurchase", params)
+          return
+        },
+        onPurchaseRestore: async (params) => {
+          console.log("onPurchaseRestore", params)
+          return
+        },
       }}
     >
-      <SuperwallLoading>
-        <ActivityIndicator style={{ flex: 1 }} />
-      </SuperwallLoading>
-      <SuperwallLoaded>
-        <ScreenContent />
-      </SuperwallLoaded>
-    </SuperwallProvider>
+      <SuperwallProvider apiKeys={{ ios: API_KEY }}>
+        <SuperwallLoading>
+          <ActivityIndicator style={{ flex: 1 }} />
+        </SuperwallLoading>
+        <SuperwallLoaded>
+          <ScreenContent />
+        </SuperwallLoaded>
+      </SuperwallProvider>
+    </CustomPurchaseControllerProvider>
   )
 }

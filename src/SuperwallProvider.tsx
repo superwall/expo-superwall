@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect } from "react"
 import { Platform } from "react-native"
 import { useShallow } from "zustand/shallow"
+import { useCustomPurchaseController } from "./CustomPurchaseControllerProvider"
 import { SuperwallContext, useSuperwallStore } from "./useSuperwall"
 
 interface SuperwallProviderProps {
@@ -40,6 +41,7 @@ export function SuperwallProvider({
 
   children,
 }: SuperwallProviderProps) {
+  const isUsingCustomPurchaseController = !!useCustomPurchaseController()
   const { isConfigured, isLoading, configure } = useSuperwallStore(
     useShallow((state) => ({
       isConfigured: state.isConfigured,
@@ -55,11 +57,14 @@ export function SuperwallProvider({
         throw new Error(`No API key provided for platform ${Platform.OS}`)
       }
 
-      configure(apiKey, options).catch((err) => {
+      configure(apiKey, {
+        ...options,
+        manualPurchaseManagment: isUsingCustomPurchaseController,
+      }).catch((err) => {
         console.error("Superwall configure failed", err)
       })
     }
-  }, [isConfigured, isLoading, apiKeys, options, configure])
+  }, [isConfigured, isUsingCustomPurchaseController, isLoading, apiKeys, options, configure])
 
   useEffect(() => {
     const cleanup = useSuperwallStore.getState()._initListeners()
