@@ -1149,6 +1149,19 @@ export type LogScope =
   | "cache"
   | "all"
 
+export type OnPurchaseParamsIOS = { productId: string; platform: "ios" };
+
+export type OnPurchaseParamsAndroid = {
+  productId: string;
+  platform: "android";
+  basePlanId: string;
+  offerId?: string; // Retain optional offerId for Android
+};
+
+export type OnPurchaseParams = OnPurchaseParamsIOS | OnPurchaseParamsAndroid;
+
+export type OnPurchaseRestoreParams = null;
+
 /**
  * Defines the events emitted by the Superwall Expo module.
  * These events can be subscribed to using `Superwall.addListener`.
@@ -1258,15 +1271,11 @@ export type SuperwallExpoModuleEvents = {
    * For iOS, this directly reflects the product ID.
    * @param params Contains `productId` (string) and `platform` ("ios").
    */
-  onPurchase: (
-    params:
-      | { productId: string; platform: "ios" }
-      | { productId: string; platform: "android"; basePlanId: string; offerId: string },
-  ) => void
+  onPurchase: (params: OnPurchaseParams) => void;
   /**
    * Called when a restore is initiated.
    * iOS sends `nil` for this event.
    * @param params null.
    */
-  onPurchaseRestore: (params: null) => void // Updated to reflect iOS sending nil
+  onPurchaseRestore: (params: OnPurchaseRestoreParams) => void; // Updated to reflect iOS sending nil
 }
