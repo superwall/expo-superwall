@@ -1,0 +1,58 @@
+{
+  "name": "expo-superwall-ui-tests",
+  "main": "expo-router/entry",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
+    "web": "expo start --web",
+    "lint": "expo lint",
+    "test": "maestro test -e PLATFORM_ID=com.superwall.Advanced maestro/flow.yaml",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@expo/vector-icons": "^14.1.0",
+    "@react-navigation/bottom-tabs": "^7.3.10",
+    "@react-navigation/elements": "^2.3.8",
+    "@react-navigation/native": "^7.1.6",
+    "expo": "~53.0.9",
+    "expo-blur": "~14.1.4",
+    "expo-constants": "~17.1.6",
+    "expo-dev-client": "~5.1.8",
+    "expo-font": "~13.3.1",
+    "expo-haptics": "~14.1.4",
+    "expo-image": "~2.2.0",
+    "expo-linear-gradient": "^14.1.4",
+    "expo-linking": "~7.1.5",
+    "expo-router": "~5.0.7",
+    "expo-splash-screen": "~0.30.8",
+    "expo-status-bar": "~2.2.3",
+    "expo-symbols": "~0.4.4",
+    "expo-system-ui": "~5.0.7",
+    "expo-web-browser": "~14.1.6",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "react-native": "0.79.2",
+    "react-native-gesture-handler": "~2.25.0",
+    "react-native-purchases": "^8.11.3",
+    "react-native-reanimated": "~3.17.5",
+    "react-native-safe-area-context": "5.4.1",
+    "react-native-screens": "~4.10.0",
+    "react-native-web": "~0.20.0",
+    "react-native-webview": "13.13.5"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.27.1",
+    "@types/react": "~19.1.5",
+    "eslint": "^9.27.0",
+    "eslint-config-expo": "~9.2.0",
+    "typescript": "~5.8.3"
+  },
+  "expo": {
+    "autolinking": {
+      "nativeModulesDir": ".."
+    }
+  },
+  "private": true
+}
