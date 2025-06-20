@@ -5,6 +5,7 @@
   <br />
 </p>
 
+> [!WARNING] 
 > **Important: Expo SDK 53+ Required**
 >
 > This SDK is exclusively compatible with Expo SDK version 53 and newer.
@@ -53,6 +54,7 @@ npx expo install expo-superwall
 bunx expo install expo-superwall
 ```
 
+> [!WARNING] 
 > **Important: Expo SDK 53+ Required**
 >
 > This SDK is exclusively compatible with Expo SDK version 53 and newer.
