@@ -25,7 +25,8 @@
         {
           "apiKey": "custom_secret_api"
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true

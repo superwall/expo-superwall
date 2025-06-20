@@ -1,10 +1,14 @@
 import {
+  CustomPurchaseControllerProvider,
   SuperwallLoaded,
   SuperwallLoading,
   SuperwallProvider,
   usePlacement,
+  useSuperwallEvents,
   useUser,
 } from "expo-superwall"
+import SuperwallExpoModule from "expo-superwall/SuperwallExpoModule"
+import { useEffect } from "react"
 import { ActivityIndicator, Alert, Button, Text, View } from "react-native"
 
 const API_KEY = "pk_25605698906751f5383385f9976e21f840d44aa11cd4639c"
@@ -12,6 +16,10 @@ const API_KEY = "pk_25605698906751f5383385f9976e21f840d44aa11cd4639c"
 function ScreenContent() {
   const { identify, user, signOut, update, refresh, subscriptionStatus, setSubscriptionStatus } =
     useUser()
+
+  useSuperwallEvents({
+    onLog: (log) => console.log(log),
+  })
 
   const { registerPlacement, state } = usePlacement({
     onError: (err) => console.error(err),
@@ -28,6 +36,10 @@ function ScreenContent() {
       },
     })
   }
+
+  useEffect(() => {
+    SuperwallExpoModule.setLogLevel("debug")
+  }, [])
 
   const updateUser = async () => {
     await update((old) => ({ ...old, counter: (old.counter || 0) + 1 }))
@@ -83,13 +95,32 @@ function ScreenContent() {
 
 export default function NewPage() {
   return (
-    <SuperwallProvider apiKeys={{ ios: API_KEY }}>
-      <SuperwallLoading>
-        <ActivityIndicator style={{ flex: 1 }} />
-      </SuperwallLoading>
-      <SuperwallLoaded>
-        <ScreenContent />
-      </SuperwallLoaded>
-    </SuperwallProvider>
+    <CustomPurchaseControllerProvider
+      controller={{
+        onPurchase: async (params) => {
+          if (params.platform === "ios") {
+            console.log("onPurchase", params)
+          } else {
+            console.log("onPurchase", params.productId)
+          }
+          // Set ur system here
+          return
+        },
+        onPurchaseRestore: async () => {
+          console.log("onPurchaseRestore")
+          // Set ur system here
+          return
+        },
+      }}
+    >
+      <SuperwallProvider apiKeys={{ ios: API_KEY }}>
+        <SuperwallLoading>
+          <ActivityIndicator style={{ flex: 1 }} />
+        </SuperwallLoading>
+        <SuperwallLoaded>
+          <ScreenContent />
+        </SuperwallLoaded>
+      </SuperwallProvider>
+    </CustomPurchaseControllerProvider>
   )
 }
