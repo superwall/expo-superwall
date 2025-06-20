@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.5
+
+### Patch Changes
+
+- 8f4d758: fix compat subscriptionStatus access failing
+- 9d98a30: fix: android sdk version not being passed correctly
+
 ## 0.0.4
 
 ### Patch Changes
