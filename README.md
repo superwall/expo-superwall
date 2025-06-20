@@ -5,6 +5,15 @@
   <br />
 </p>
 
+## Choosing the Right SDK
+
+This repository contains two SDKs for integrating Superwall with your Expo app:
+
+*   **For new projects (Expo SDK 53+):** We recommend using our new **Hooks-based SDK**. Get started with the [Expo Superwall Hooks SDK Guide](./HOOK_SDK_GETTING_STARTED.md).
+*   **For migrating existing React Native apps or using older Expo SDKs:** Please refer to our [legacy React Native SDK](https://github.com/superwall/react-native-superwall).
+
+The documentation below primarily covers the **legacy/compat SDK (`expo-superwall/compat`)**. If you are using the new Hooks SDK, please refer to its specific [getting started guide](./HOOK_SDK_GETTING_STARTED.md).
+
 [Superwall](https://superwall.com/) lets you remotely configure every aspect of your paywall — helping you find winners quickly.
 
 ## Superwall
@@ -38,7 +47,10 @@ npx expo install expo-superwall
 bunx expo install expo-superwall
 ```
 
-**Warning**: This SDK only supports Expo SDK Version >= 53. If you'd like to use older versions, please use our [legacy react-native sdk](https://github.com/superwall/react-native-superwall). 
+> **Important: Expo SDK 53+ Required**
+>
+> This SDK is exclusively compatible with Expo SDK version 53 and newer.
+> For projects using older Expo versions, please use our [legacy React Native SDK](https://github.com/superwall/react-native-superwall).
 
 ### Basic Setup
 
