@@ -563,7 +563,7 @@ export default class Superwall {
   async getSubscriptionStatus(): Promise<SubscriptionStatus> {
     await this.awaitConfig()
     const subscriptionStatusData = await SuperwallExpoModule.getSubscriptionStatus()
-    return SubscriptionStatus.fromJson(subscriptionStatusData.subscriptionStatus)
+    return SubscriptionStatus.fromJson(subscriptionStatusData)
   }
   /**
    * Sets the user interface style, which overrides the system setting.
