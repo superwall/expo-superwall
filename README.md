@@ -5,12 +5,18 @@
   <br />
 </p>
 
+> **Important: Expo SDK 53+ Required**
+>
+> This SDK is exclusively compatible with Expo SDK version 53 and newer.
+> For projects using older Expo versions, please use our [legacy React Native SDK](https://github.com/superwall/react-native-superwall).
+
 ## Choosing the Right SDK
 
 This repository contains two SDKs for integrating Superwall with your Expo app:
 
-*   **For new projects (Expo SDK 53+):** We recommend using our new **Hooks-based SDK**. Get started with the [Expo Superwall Hooks SDK Guide](./HOOK_SDK_GETTING_STARTED.md).
-*   **For migrating existing React Native apps or using older Expo SDKs:** Please refer to our [legacy React Native SDK](https://github.com/superwall/react-native-superwall).
+*   **For new projects:** We recommend using our new **Hooks-based SDK**. Get started with the [Expo Superwall Hooks SDK Guide](./HOOK_SDK_GETTING_STARTED.md).
+*   **For migrating from the Superwall React Native SDK:** Get setup in minutes with the **legacy/compat SDK (`expo-superwall/compat`)** below
+*   **For older Expo SDKs:** Please refer to our [legacy React Native SDK](https://github.com/superwall/react-native-superwall).
 
 The documentation below primarily covers the **legacy/compat SDK (`expo-superwall/compat`)**. If you are using the new Hooks SDK, please refer to its specific [getting started guide](./HOOK_SDK_GETTING_STARTED.md).
 
