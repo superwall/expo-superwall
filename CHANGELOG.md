@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.6
+
+### Patch Changes
+
+- fc22062: fix: android getSubscriptionStatus returning undefined
+
 ## 0.0.5
 
 ### Patch Changes
