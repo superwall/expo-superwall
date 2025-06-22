@@ -202,7 +202,7 @@ public class SuperwallExpoModule: Module {
     AsyncFunction("getSubscriptionStatus") { (promise: Promise) in
       print("Getting subscription status")
       let subscriptionStatus = Superwall.shared.subscriptionStatus
-      promise.resolve(subscriptionStatus)
+      promise.resolve(subscriptionStatus.toJson())
     }
 
     Function("setSubscriptionStatus") { (status: [String: Any]) in
