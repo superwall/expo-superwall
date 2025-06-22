@@ -87,6 +87,15 @@ function ScreenContent() {
           console.log("Subscription status set to active")
         }}
       />
+      <Button
+        title="Set Subscription Status inactive"
+        onPress={async () => {
+          await setSubscriptionStatus({
+            status: "INACTIVE",
+          })
+          console.log("Subscription status set to inactive")
+        }}
+      />
 
       <Button title="Open paywall placement" onPress={triggerPlacement} />
     </View>
@@ -113,7 +122,9 @@ export default function NewPage() {
         },
       }}
     >
-      <SuperwallProvider apiKeys={{ ios: API_KEY }}>
+      <SuperwallProvider
+        apiKeys={{ ios: API_KEY, android: "pk_6d16c4c892b1e792490ab8bfe831f1ad96e7c18aee7a5257" }}
+      >
         <SuperwallLoading>
           <ActivityIndicator style={{ flex: 1 }} />
         </SuperwallLoading>

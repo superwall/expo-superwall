@@ -253,7 +253,7 @@ class SuperwallExpoModule : Module() {
 
     AsyncFunction("getSubscriptionStatus") { promise: Promise ->
       try {
-        val subscriptionStatus = Superwall.instance.subscriptionStatus
+        val subscriptionStatus = Superwall.instance.subscriptionStatus.value.toJson()
           promise.resolve(subscriptionStatus)
       } catch (error: Exception) {
         promise.reject(CodedException(error))
