@@ -82,7 +82,7 @@ export interface SuperwallStore {
   /**
    * Resets the user's identity and clears all user-specific data, effectively logging them out.
    */
-  reset: () => void
+  reset: () => Promise<void>
 
   /**
    * Registers a placement to potentially show a paywall.
@@ -170,9 +170,11 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   /* -------------------- Actions -------------------- */
   configure: async (apiKey, options) => {
     set({ isLoading: true })
+    const { manualPurchaseManagment, ...restOptions } = options || {}
+
     await SuperwallExpoModule.configure(
       apiKey,
-      options,
+      restOptions,
       !!options?.manualPurchaseManagment,
       pkg.version,
     )
@@ -193,10 +195,13 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
       set({ user: currentUser, subscriptionStatus })
     }, 0)
   },
-  reset: () => {
+  reset: async () => {
     SuperwallExpoModule.reset()
 
-    set({ user: null, subscriptionStatus: undefined })
+    const currentUser = (await SuperwallExpoModule.getUserAttributes()) as UserAttributes
+    const subscriptionStatus = await SuperwallExpoModule.getSubscriptionStatus()
+
+    set({ user: currentUser, subscriptionStatus: subscriptionStatus })
   },
   registerPlacement: async (placement, params, handlerId = "default") => {
     await SuperwallExpoModule.registerPlacement(placement, params, handlerId)

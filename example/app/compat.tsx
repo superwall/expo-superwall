@@ -175,6 +175,16 @@ export default function Compat() {
             </TouchableOpacity>
 
             <TouchableOpacity
+              style={styles.actionButton}
+              onPress={async () => {
+                console.log("SUBSTATUS", await Superwall.shared.getSubscriptionStatus())
+              }}
+            >
+              <Ionicons name="person" size={20} color="#fff" />
+              <Text style={styles.actionButtonText}>Get Subscription Status</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
               style={[styles.actionButton, styles.secondaryButton]}
               onPress={async () => {
                 await Superwall.shared.reset()
