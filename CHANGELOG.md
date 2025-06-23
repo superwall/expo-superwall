@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.8
+
+### Patch Changes
+
+- 0175478: feat: set subscription status to UNKNOWN on startup
+- d8390ab: feat: bump ios SDK version
+
 ## 0.0.7
 
 ### Patch Changes
