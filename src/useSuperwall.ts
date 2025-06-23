@@ -54,7 +54,7 @@ export interface SuperwallStore {
   user?: UserAttributes | null
 
   /** The current subscription status of the user. */
-  subscriptionStatus?: SubscriptionStatus
+  subscriptionStatus: SubscriptionStatus
 
   /* -------------------- Internal -------------------- */
   // Internal listener references for cleanup handled inside Provider effect.
@@ -165,7 +165,9 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   listenersInitialized: false,
 
   user: null,
-  subscriptionStatus: undefined,
+  subscriptionStatus: {
+    status: "UNKNOWN",
+  },
 
   /* -------------------- Actions -------------------- */
   configure: async (apiKey, options) => {
@@ -199,9 +201,8 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     SuperwallExpoModule.reset()
 
     const currentUser = (await SuperwallExpoModule.getUserAttributes()) as UserAttributes
-    const subscriptionStatus = await SuperwallExpoModule.getSubscriptionStatus()
 
-    set({ user: currentUser, subscriptionStatus: subscriptionStatus })
+    set({ user: currentUser })
   },
   registerPlacement: async (placement, params, handlerId = "default") => {
     await SuperwallExpoModule.registerPlacement(placement, params, handlerId)
@@ -256,11 +257,9 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
       ),
     )
 
-    // Use set() to update the store state
     set({ listenersInitialized: true })
     console.log("Initialized listeners", subscriptions.length)
 
-    // Return the cleanup function
     return (): void => {
       console.log("Cleaning up listeners", subscriptions.length)
       subscriptions.forEach((s) => s.remove())
@@ -270,7 +269,6 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   },
 }))
 
-// Context to ensure components are wrapped in <SuperwallProvider />
 export const SuperwallContext = createContext<boolean>(false)
 
 /**
