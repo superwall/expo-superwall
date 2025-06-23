@@ -47,4 +47,3 @@ dependencies {
   implementation 'com.android.billingclient:billing:6.1.0'
   implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.2'
 }
-
