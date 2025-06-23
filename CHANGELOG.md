@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.7
+
+### Patch Changes
+
+- f5a1d9a: fix: signout state changes
+- 4df7557: fix: ios getSubscriptionStatus
+
 ## 0.0.6
 
 ### Patch Changes
