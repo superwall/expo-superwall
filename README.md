@@ -21,7 +21,7 @@ This repository contains two SDKs for integrating Superwall with your Expo app:
 
 ---
 
-# Getting Started with Expo Superwall Hooks SDK
+# Getting Started with Expo Superwall SDK
 
 This guide will help you integrate the Expo Superwall Hooks SDK into your React Native application, allowing you to easily manage users and display paywalls.
 
