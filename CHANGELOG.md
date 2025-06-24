@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.10
+
+### Patch Changes
+
+- d5beb70: fix(compat): subscription event emitter not firing
+
 ## 0.0.9
 
 ### Patch Changes
