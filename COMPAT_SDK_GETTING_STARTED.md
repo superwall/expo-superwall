@@ -25,10 +25,10 @@ import { Platform } from "react-native"
 useEffect(()=> {
 	const apiKey = Platform.OS === "ios"
         ? "yourSuperwall_iOSKey"
-        : "yourSuperwall_androidKey"
-	await Superwall.configure({
+        : "yourSuperwall_androidKey";
+	Superwall.configure({ // `await` is optional here if not chaining or needing immediate confirmation
 		apiKey,
-	})
+	});
 })
 ```
 
@@ -51,7 +51,7 @@ await Superwall.shared.setUserAttributes({
 ```tsx
 // Present a paywall
 Superwall.shared.register({
-      "yourPlacementName",
+      placement: "yourPlacementName",
       feature() {
         console.log(`Feature called!`)
       },
@@ -85,7 +85,7 @@ export class MyDelegate extends SuperwallDelegate {
 }
 
 // 2. Simply set the delegate
-const delegate = new MySuperwallDelegate()
+const delegate = new MyDelegate()
 await Superwall.shared.setDelegate(delegate)
 
 ```
