@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.11
+
+### Patch Changes
+
+- 9c053b3: feat: add experimentalDeviceVariables for ios
+
 ## 0.0.10
 
 ### Patch Changes
