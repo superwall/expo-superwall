@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.12
+
+### Patch Changes
+
+- 4751b75: Fixes issues with identify on Android, updates Android SDK to 2.2.3
+
 ## 0.0.11
 
 ### Patch Changes
