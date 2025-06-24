@@ -106,9 +106,9 @@ class SuperwallExpoModule : Module() {
       return@Function applicationInfo?.metaData?.getString("SUPERWALL_API_KEY")
     }
 
-    Function("identify") { userId: String, options: Map<String, Any> ->
+    Function("identify") { userId: String, options: Map<String, Any>? ->
       try {
-        val options = identityOptionsFromJson(options)
+        val options = options?.let { identityOptionsFromJson(options) }
         Superwall.instance.identify(userId = userId, options = options)
       } catch (error: Exception) {
         error.printStackTrace()
