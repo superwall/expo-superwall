@@ -189,10 +189,13 @@ function PaywallScreen() {
 
 Key aspects of `usePlacement`:
 - `registerPlacement(options)`: Registers and potentially presents a paywall.
-    - `placement`: The ID of the placement you want to show (e.g., "fishing" from the example, or "onboarding_paywall").
-    - `feature()`: A callback function that is executed if the user has access to the feature (either by already being subscribed or by purchasing through the presented paywall).
-- `onError`, `onPresent`, `onDismiss`: Callbacks to handle different stages of the paywall presentation lifecycle.
-- `state`: An object containing information about the last paywall presentation attempt (e.g., `presented`, `purchased`, `cancelled`, `skipped`).
+    - `options.placement`: The ID of the placement you want to show (e.g., "fishing" from the example, or "onboarding_paywall").
+    - `options.feature()`: A callback function that is executed if the user has access to the feature (either by already being subscribed or by purchasing through the presented paywall).
+- Callbacks (passed as options to `usePlacement`):
+    - `onError`: Handles errors during paywall presentation.
+    - `onPresent`: Called when a paywall is presented.
+    - `onDismiss`: Called when a paywall is dismissed.
+- `state`: An object returned by the hook, containing information about the last paywall presentation attempt (e.g., `presented`, `purchased`, `cancelled`, `skipped`).
 
 This covers the basic setup and usage of the `expo-superwall` Hooks SDK. For more advanced scenarios and detailed API information, refer to the official Superwall documentation.
 
@@ -233,7 +236,7 @@ The hook returns an object representing the Superwall store. If a `selector` fun
     -   `identify: (userId: string, options?: IdentifyOptions) => Promise<void>`: Identifies the user with the given `userId`.
         -   `IdentifyOptions`:
             -   `restorePaywallAssignments?: boolean`: If true, restores paywall assignments from a previous session.
-    -   `reset: () => void`: Resets the user's identity and clears any stored user-specific data. This is equivalent to logging out the user.
+    -   `reset: () => Promise<void>`: Resets the user's identity and clears any stored user-specific data. This is equivalent to logging out the user.
     -   `registerPlacement: (placement: string, params?: Record<string, any>, handlerId?: string | null) => Promise<void>`: Registers a placement. This may or may not present a paywall depending on campaign rules. `handlerId` is used internally by `usePlacement` to associate events.
     -   `getPresentationResult: (placement: string, params?: Record<string, any>) => Promise<any>`: Gets the presentation result for a given placement.
     -   `dismiss: () => Promise<void>`: Dismisses any currently presented paywall.

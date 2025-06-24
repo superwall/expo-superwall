@@ -1,50 +1,68 @@
-# Welcome to your Expo app 👋
+# Expo Superwall UI Test App 👋
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+This is an [Expo](https://expo.dev) application specifically for running UI tests for the `expo-superwall` SDK, likely using [Maestro](https://maestro.mobile.dev/). It is created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
 ## Get started
 
-1. Install dependencies
+1. **Install dependencies**
 
+   Use your preferred package manager:
    ```bash
    npm install
+   # or
+   yarn install
+   # or
+   bun install
    ```
 
-2. Start the app
+2. **Configure API Keys (if needed for tests)**
+
+   Some UI tests might require displaying actual paywalls. If so, you may need to configure Superwall API keys.
+   - Check the test setup or relevant files (e.g., `app/index.tsx` or test-specific configurations) for API key placeholders.
+   - Replace them with your actual Superwall API keys if necessary.
+
+3. **Start the app (for manual testing or inspection)**
 
    ```bash
    npx expo start
+   # or
+   yarn expo start
+   # or
+   bun expo start
    ```
+   This will allow you to open the app in a development build, Android emulator, or iOS simulator.
 
-In the output, you'll find options to open the app in a
+## Running UI Tests (Maestro)
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+This app includes Maestro flows for UI testing, located in the `maestro/` directory.
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+1. **Install Maestro:** Follow the [Maestro installation guide](https://maestro.mobile.dev/getting-started/installing-maestro).
 
-## Get a fresh project
+2. **Run tests:**
+   Navigate to the `ui_test_app` directory and execute Maestro flows. For example:
+   ```bash
+   cd ui_test_app
+   maestro test maestro/flow.yaml
+   # Or specific test flows like:
+   # maestro test maestro/delegate/flow.yaml
+   ```
+   (Consult the `maestro` directory and specific test files for exact commands and available flows.)
 
-When you're ready, run:
+## Exploring the App Structure
 
-```bash
-npm run reset-project
-```
+This project uses [file-based routing](https://docs.expo.dev/router/introduction) via Expo Router.
+- **`app/index.tsx`**: Main entry point, likely initializes Superwall for testing various scenarios.
+- **`app/...` (other files)**: Contain specific screens or configurations for different test cases (e.g., `delegateTest.tsx`, `handlerTest.tsx`).
+- **`maestro/`**: Contains Maestro UI test flow definitions.
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
+## Learn more about Expo
 
 To learn more about developing your project with Expo, look at the following resources:
 
 - [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- [Expo Router Documentation](https://docs.expo.dev/router/introduction/)
 
 ## Join the community
 
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- [Superwall Discord Community](https://discord.gg/superwall): Chat with Superwall users and ask questions.
+- [Expo Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
