@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.9
+
+### Patch Changes
+
+- 67edd16: feat: export internal SuperwallExpoModule for advance usage
+
 ## 0.0.8
 
 ### Patch Changes
