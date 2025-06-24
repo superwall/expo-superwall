@@ -255,16 +255,12 @@ export default class Superwall {
       const result = RedemptionResults.fromJson(data)
       Superwall.delegate?.didRedeemLink(result)
     })
+
+    SuperwallExpoModule.addListener("subscriptionStatusDidChange", async (data) => {
+      this.subscriptionStatusEmitter.emit("change", data.to)
+    })
   }
 
-  // TODO: Not sure if this is needed
-  //   private async observeSubscriptionStatus() {
-  //     await SuperwallReactNative.observeSubscriptionStatus()
-  //     SuperwallExpoModule.addListener("observeSubscriptionStatus", async (data) => {
-  //       const status = SubscriptionStatus.fromJson(data)
-  //       this.subscriptionStatusEmitter.emit("change", status)
-  //     })
-  //   }
   /**
    * Returns the configured shared instance of `Superwall`.
    *
