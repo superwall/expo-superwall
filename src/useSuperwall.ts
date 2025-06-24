@@ -70,7 +70,10 @@ export interface SuperwallStore {
    */
   configure: (
     apiKey: string,
-    options?: { manualPurchaseManagment?: boolean } & Record<string, any>,
+    options?: {
+      manualPurchaseManagment?: boolean
+      enableExperimentalDeviceVariables?: boolean
+    } & Record<string, any>,
   ) => Promise<void>
   /**
    * Identifies the current user with a unique ID.
