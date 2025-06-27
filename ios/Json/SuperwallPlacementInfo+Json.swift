@@ -117,7 +117,7 @@ extension SuperwallEvent {
     case .paywallWebviewLoadStart(let paywallInfo):
       return ["event": "paywallWebviewLoadStart", "paywallInfo": paywallInfo.toJson()]
     case .paywallWebviewLoadFail(let paywallInfo):
-      return ["event": "paywallWebviewLoadFail", "paywallInfotoJson": paywallInfo.toJson()]
+      return ["event": "paywallWebviewLoadFail", "paywallInfo": paywallInfo.toJson()]
     case .paywallWebviewLoadComplete(let paywallInfo):
       return ["event": "paywallWebviewLoadComplete", "paywallInfo": paywallInfo.toJson()]
     case .paywallWebviewLoadTimeout(let paywallInfo):
@@ -212,7 +212,7 @@ extension SuperwallEvent {
       return json
     case .enrichmentFail:
       return ["event": "enrichmentFail"]
-    @unknown default:
+    default:
       return ["event": "unknown"]
     }
   

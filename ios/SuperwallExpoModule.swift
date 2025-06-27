@@ -110,12 +110,8 @@ public class SuperwallExpoModule: Module {
     }
 
     AsyncFunction("getConfigurationStatus") { (promise: Promise) in
-      do {
-        let configurationStatus = try Superwall.shared.configurationStatus.toString()
-        promise.resolve(configurationStatus)
-      } catch {
-        promise.reject(error)
-      }
+      let configurationStatus = Superwall.shared.configurationStatus.toString()
+      promise.resolve(configurationStatus)
     }
 
     AsyncFunction("registerPlacement") {
@@ -248,6 +244,10 @@ public class SuperwallExpoModule: Module {
     AsyncFunction("getUserAttributes") { (promise: Promise) in
       let attributes = Superwall.shared.userAttributes
       promise.resolve(attributes)
+    }
+
+    AsyncFunction("getDeviceAttributes") {
+      return await Superwall.shared.getDeviceAttributes()
     }
 
     Function("setUserAttributes") { (userAttributes: [String: Any]) in

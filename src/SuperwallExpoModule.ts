@@ -46,6 +46,8 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
     params?: Map<string, any> | Record<string, any>,
   ): Promise<any>
 
+  getDeviceAttributes(): Promise<Record<string, any>>
+
   preloadPaywalls(placementNames: string[]): void
   preloadAllPaywalls(): void
 
