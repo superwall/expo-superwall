@@ -47,10 +47,10 @@
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
     "@changesets/cli": "^2.29.4",
-    "@types/react": "~19.1.5",
-    "expo": "53.0.9",
+    "@types/react": "~19.0.10",
+    "expo": "*",
     "expo-module-scripts": "^4.1.7",
-    "react-native": "0.79.2"
+    "react-native": "*"
   },
   "peerDependencies": {
     "expo": "*",
