@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.13
+
+### Patch Changes
+
+- 2ead245: feat: add getDeviceAttributes
+- efbd9d5: feat: add getDeviceAttributes to ios
+
 ## 0.0.12
 
 ### Patch Changes
