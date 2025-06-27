@@ -155,6 +155,8 @@ export interface SuperwallStore {
   _initListeners: () => () => void
 
   setSubscriptionStatus: (status: SubscriptionStatus) => Promise<void>
+
+  getDeviceAttributes: () => Promise<Record<string, any>>
 }
 
 /**
@@ -239,6 +241,10 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
 
   setSubscriptionStatus: async (status) => {
     SuperwallExpoModule.setSubscriptionStatus(status)
+  },
+  getDeviceAttributes: async () => {
+    const attributes = await SuperwallExpoModule.getDeviceAttributes()
+    return attributes
   },
 
   /* -------------------- Listener helpers -------------------- */

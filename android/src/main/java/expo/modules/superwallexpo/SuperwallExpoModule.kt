@@ -291,6 +291,18 @@ class SuperwallExpoModule : Module() {
       promise.resolve(attributes)
     }
 
+    AsyncFunction("getDeviceAttributes") { promise: Promise ->
+      scope.launch {
+        try {
+            val attributes = Superwall.instance.deviceAttributes()
+            promise.resolve(attributes)
+        } catch (e: Exception) {
+            promise.reject("GET_DEVICE_ATTRIBUTES_ERROR", e.message, e)
+        }
+      }
+    }
+
+
     Function("setUserAttributes") { userAttributes: Map<String, Any> ->
       Superwall.instance.setUserAttributes(userAttributes)
     }
