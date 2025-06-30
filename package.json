@@ -45,11 +45,11 @@
   "license": "MIT",
   "homepage": "https://github.com/superwall/expo-superwall#readme",
   "devDependencies": {
-    "@biomejs/biome": "^1.9.4",
-    "@changesets/cli": "^2.29.4",
+    "@biomejs/biome": "^2.0.6",
+    "@changesets/cli": "^2.29.5",
     "@types/react": "~19.0.10",
     "expo": "*",
-    "expo-module-scripts": "^4.1.7",
+    "expo-module-scripts": "^4.1.8",
     "react-native": "*"
   },
   "peerDependencies": {
@@ -70,6 +70,6 @@
   ],
   "packageManager": "yarn@4.7.0",
   "dependencies": {
-    "zustand": "^5.0.5"
+    "zustand": "^5.0.6"
   }
 }

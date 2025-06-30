@@ -1,22 +1,8 @@
 {
   "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
-  "organizeImports": {
-    "enabled": true
-  },
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
   "files": {
-    "ignore": [
-      "./cloudflare-env.d.ts",
-      "**/.node_modules/**",
-      "**/*.js",
-      "public/**/*",
-      "**/*.css",
-      ".source",
-      "**/.next/**",
-      "**/.vercel/**",
-      "src/content",
-      "src/stubs/**/*",
-      "components/docs/generated/**/*"
-    ],
+    "includes": ["**/*.ts", "**/*.tsx"],
     "maxSize": 2000000
   },
   "linter": {
@@ -47,8 +33,7 @@
       },
       "suspicious": {
         "noExplicitAny": "off",
-        "noArrayIndexKey": "off",
-        "noConsoleLog": "off"
+        "noArrayIndexKey": "off"
       },
       "security": {
         "noDangerouslySetInnerHtml": "off"
@@ -63,15 +48,13 @@
           }
         }
       }
-    },
-    "ignore": ["node_modules", ".next", ".velite", "dist", ".vercel"]
+    }
   },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
     "indentWidth": 2,
-    "lineWidth": 100,
-    "ignore": ["node_modules", ".next", ".source", "dist", ".vercel"]
+    "lineWidth": 100
   },
   "javascript": {
     "formatter": {
