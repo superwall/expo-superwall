@@ -684,11 +684,147 @@ export type TriggerResult =
     }
 
 /**
- * Represents the identifier of a product involved in a transaction event.
+ * Represents comprehensive information about a product involved in a transaction event.
+ * This interface includes detailed pricing, subscription, trial, and localization information
+ * from both the native iOS (StoreProduct) and Android (Product) implementations.
  */
 export interface TransactionProductIdentifier {
   /** The unique identifier of the product (e.g., SKU). */
   id: string
+
+  /** The product identifier from the store. */
+  productIdentifier: string
+
+  /** The full identifier including any additional qualifiers. */
+  fullIdentifier: string
+
+  /** The raw price of the product as a number. */
+  price: number
+
+  /** The price formatted according to the device's locale and currency. */
+  localizedPrice: string
+
+  /** The subscription period formatted for display (e.g., "1 month"). */
+  localizedSubscriptionPeriod: string
+
+  /** The subscription period type (e.g., "month", "year"). */
+  period: string
+
+  /** The subscription period with "ly" suffix (e.g., "monthly", "yearly"). */
+  periodly: string
+
+  /** The number of weeks in the subscription period. */
+  periodWeeks: number
+
+  /** The weeks duration as a formatted string. */
+  periodWeeksString: string
+
+  /** The number of months in the subscription period. */
+  periodMonths: number
+
+  /** The months duration as a formatted string. */
+  periodMonthsString: string
+
+  /** The number of years in the subscription period. */
+  periodYears: number
+
+  /** The years duration as a formatted string. */
+  periodYearsString: string
+
+  /** The number of days in the subscription period. */
+  periodDays: number
+
+  /** The days duration as a formatted string. */
+  periodDaysString: string
+
+  /** The calculated daily price of the product. */
+  dailyPrice: string
+
+  /** The calculated weekly price of the product. */
+  weeklyPrice: string
+
+  /** The calculated monthly price of the product. */
+  monthlyPrice: string
+
+  /** The calculated yearly price of the product. */
+  yearlyPrice: string
+
+  /** Whether the product includes a free trial period. */
+  hasFreeTrial: boolean
+
+  /** The trial period price formatted for display. */
+  localizedTrialPeriodPrice: string
+
+  /** The trial period price as a number. */
+  trialPeriodPrice: number
+
+  /** The end date of the trial period as an ISO string, or null if no trial. */
+  trialPeriodEndDate: string | null
+
+  /** The trial period end date formatted as a display string. */
+  trialPeriodEndDateString: string
+
+  /** The number of days in the trial period. */
+  trialPeriodDays: number
+
+  /** The trial days duration as a formatted string. */
+  trialPeriodDaysString: string
+
+  /** The number of weeks in the trial period. */
+  trialPeriodWeeks: number
+
+  /** The trial weeks duration as a formatted string. */
+  trialPeriodWeeksString: string
+
+  /** The number of months in the trial period. */
+  trialPeriodMonths: number
+
+  /** The trial months duration as a formatted string. */
+  trialPeriodMonthsString: string
+
+  /** The number of years in the trial period. */
+  trialPeriodYears: number
+
+  /** The trial years duration as a formatted string. */
+  trialPeriodYearsString: string
+
+  /** The trial period formatted as descriptive text (e.g., "7-day free trial"). */
+  trialPeriodText: string
+
+  /** The locale identifier for the product (e.g., "en_US"). */
+  locale: string
+
+  /** The language code extracted from the locale, or null if unavailable. */
+  languageCode: string | null
+
+  /** The currency code for the product's price (e.g., "USD"). */
+  currencyCode: string | null
+
+  /** The currency symbol for the product's price (e.g., "$"). */
+  currencySymbol: string | null
+
+  /** The region code extracted from the locale, or null if unavailable. */
+  regionCode: string | null
+
+  /**
+   * The structured subscription period information.
+   * Contains the unit of time and the value for that unit.
+   */
+  subscriptionPeriod: {
+    /** The time unit for the subscription period. */
+    unit: "day" | "week" | "month" | "year"
+    /** The number of units for the subscription period. */
+    value: number
+  } | null
+
+  /** The identifier for the subscription group this product belongs to, if applicable. */
+  subscriptionGroupIdentifier?: string | null
+
+  /** Whether this product can be shared with family members. */
+  isFamilyShareable?: boolean
+
+  /** Additional attributes and metadata associated with the product. */
+  attributes: Record<string, any>
 }
 
 /**
