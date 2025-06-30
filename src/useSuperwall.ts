@@ -67,6 +67,7 @@ export interface SuperwallStore {
    * @param apiKey - Your Superwall API key.
    * @param options - Optional configuration settings for the SDK.
    * @returns A promise that resolves when configuration is complete.
+   * @internal
    */
   configure: (
     apiKey: string,
@@ -84,6 +85,7 @@ export interface SuperwallStore {
   identify: (userId: string, options?: IdentifyOptions) => Promise<void>
   /**
    * Resets the user's identity and clears all user-specific data, effectively logging them out.
+   * @internal
    */
   reset: () => Promise<void>
 
@@ -278,6 +280,11 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   },
 }))
 
+/**
+ * Public interface for the Superwall store, excluding internal methods.
+ */
+export type PublicSuperwallStore = Omit<SuperwallStore, "configure" | "reset" | "_initListeners">
+
 export const SuperwallContext = createContext<boolean>(false)
 
 /**
@@ -290,7 +297,7 @@ export const SuperwallContext = createContext<boolean>(false)
  *
  * It must be used within a component that is a descendant of `<SuperwallProvider />`.
  *
- * @template T - Optional type parameter for the selected state. Defaults to the entire `SuperwallStore`.
+ * @template T - Optional type parameter for the selected state. Defaults to the entire `PublicSuperwallStore`.
  * @param selector - An optional function to select a specific slice of the store's state.
  *                   This is useful for performance optimization, as components will only re-render
  *                   if the selected part of the state changes. Uses shallow equality checking
@@ -312,7 +319,7 @@ export const SuperwallContext = createContext<boolean>(false)
  * }));
  * console.log(user?.appUserId, subscriptionStatus?.status);
  */
-export function useSuperwall<T = SuperwallStore>(selector?: (state: SuperwallStore) => T): T {
+export function useSuperwall<T = PublicSuperwallStore>(selector?: (state: SuperwallStore) => T): T {
   const inProvider = useContext(SuperwallContext)
   if (!inProvider) {
     throw new Error("useSuperwall must be used within a SuperwallProvider")

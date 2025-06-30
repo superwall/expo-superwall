@@ -232,11 +232,9 @@ The hook returns an object representing the Superwall store. If a `selector` fun
                 -   `Entitlement`: `{ id: string, type: EntitlementType }`
 
 -   **Actions (Functions):**
-    -   `configure: (apiKey: string, options?: Record<string, any>) => Promise<void>`: Initializes the Superwall SDK with the provided API key and optional configuration options.
     -   `identify: (userId: string, options?: IdentifyOptions) => Promise<void>`: Identifies the user with the given `userId`.
         -   `IdentifyOptions`:
             -   `restorePaywallAssignments?: boolean`: If true, restores paywall assignments from a previous session.
-    -   `reset: () => Promise<void>`: Resets the user's identity and clears any stored user-specific data. This is equivalent to logging out the user.
     -   `registerPlacement: (placement: string, params?: Record<string, any>, handlerId?: string | null) => Promise<void>`: Registers a placement. This may or may not present a paywall depending on campaign rules. `handlerId` is used internally by `usePlacement` to associate events.
     -   `getPresentationResult: (placement: string, params?: Record<string, any>) => Promise<any>`: Gets the presentation result for a given placement.
     -   `dismiss: () => Promise<void>`: Dismisses any currently presented paywall.
@@ -256,7 +254,7 @@ The hook returns an object representing the Superwall store. If a `selector` fun
 import { useSuperwall } from 'expo-superwall';
 
 function MyAdvancedComponent() {
-  const { isConfigured, configure, setUserAttributes } = useSuperwall();
+  const { isConfigured, setUserAttributes } = useSuperwall();
 
   if (!isConfigured) {
     return <Text>SDK not configured yet.</Text>;
