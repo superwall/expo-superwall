@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.14
+
+### Patch Changes
+
+- 6153163: mark things as internal
+- 6fbaa94: add types to TransactionProductIdentifier
+
 ## 0.0.13
 
 ### Patch Changes
