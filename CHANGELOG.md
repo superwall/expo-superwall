@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.16
+
+### Patch Changes
+
+- e19e626: require Expo 53+
+
 ## 0.0.15
 
 ### Patch Changes
