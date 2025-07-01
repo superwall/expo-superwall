@@ -7,7 +7,7 @@ import { useSuperwallEvents } from "./useSuperwallEvents"
 // -------------------- Types --------------------
 /**
  * @category Hooks
- * @since 2.0.0
+ * @since 0.0.15
  * Possible states returned by `usePlacement`.
  */
 export type PaywallState =
@@ -19,7 +19,7 @@ export type PaywallState =
 
 /**
  * @category Hooks
- * @since 2.0.0
+ * @since 0.0.15
  */
 export interface usePlacementCallbacks {
   /** Called when a paywall is presented. */
@@ -34,7 +34,7 @@ export interface usePlacementCallbacks {
 
 /**
  * @category Hooks
- * @since 2.0.0
+ * @since 0.0.15
  */
 export interface RegisterPlacementArgs {
   /** The placement name defined on the Superwall dashboard. */
@@ -51,7 +51,7 @@ export interface RegisterPlacementArgs {
 // -------------------- Hook --------------------
 /**
  * @category Hooks
- * @since 2.0.0
+ * @since 0.0.15
  * React hook for managing paywall presentation based on placements.
  *
  * This hook provides a way to register placements configured on the Superwall dashboard.
