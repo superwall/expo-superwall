@@ -2,8 +2,8 @@
   "name": "expo-superwall",
   "version": "0.0.14",
   "description": "Offical Expo Integration for Superwall",
-  "main": "build/index.js",
-  "types": "build/index.d.ts",
+  "main": "build/src/index.js",
+  "types": "build/src/index.d.ts",
   "exports": {
     ".": {
       "import": "./build/src/index.js",
