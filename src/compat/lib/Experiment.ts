@@ -1,3 +1,8 @@
+/**
+ * @category Models
+ * @since 0.0.15
+ * Represents an experiment a user is part of.
+ */
 export class Experiment {
   id: string
   groupId: string
@@ -22,6 +27,11 @@ export class Experiment {
   }
 }
 
+/**
+ * @category Models
+ * @since 0.0.15
+ * Represents a variant in an experiment.
+ */
 export class Variant {
   id: string
   type: VariantType
@@ -50,6 +60,11 @@ export class Variant {
   }
 }
 
+/**
+ * @category Enums
+ * @since 0.0.15
+ * The type of variant in an experiment.
+ */
 export enum VariantType {
   TREATMENT = "TREATMENT",
   HOLDOUT = "HOLDOUT",

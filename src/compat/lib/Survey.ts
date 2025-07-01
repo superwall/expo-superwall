@@ -1,3 +1,8 @@
+/**
+ * @category Enums
+ * @since 0.0.15
+ * Defines the conditions under which a survey can be shown.
+ */
 export enum SurveyShowCondition {
   onManualClose = "ON_MANUAL_CLOSE",
   onPurchase = "ON_PURCHASE",
@@ -17,6 +22,11 @@ export namespace SurveyShowCondition {
   }
 }
 
+/**
+ * @category Models
+ * @since 0.0.15
+ * Represents an option in a survey.
+ */
 export class SurveyOption {
   id: string
   title: string
@@ -31,6 +41,11 @@ export class SurveyOption {
   }
 }
 
+/**
+ * @category Models
+ * @since 0.0.15
+ * Represents a survey.
+ */
 export class Survey {
   id: string
   assignmentKey: string

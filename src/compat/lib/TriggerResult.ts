@@ -1,5 +1,10 @@
 import { Experiment } from "./Experiment"
 
+/**
+ * @category Enums
+ * @since 0.0.15
+ * Defines the possible types of results from a trigger.
+ */
 export enum TriggerResultType {
   placementNotFound = 0,
   noAudienceMatch = 1,
@@ -8,7 +13,11 @@ export enum TriggerResultType {
   error = 4,
 }
 
-// TypeScript class for TriggerResult
+/**
+ * @category Models
+ * @since 0.0.15
+ * Represents the result of a trigger.
+ */
 export class TriggerResult {
   type: TriggerResultType
   experiment?: Experiment

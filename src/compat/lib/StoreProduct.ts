@@ -1,4 +1,8 @@
-/// A wrapper around a store product.
+/**
+ * @category Models
+ * @since 0.0.15
+ * A wrapper around a store product.
+ */
 export class StoreProduct {
   // The product identifier
   productIdentifier: string

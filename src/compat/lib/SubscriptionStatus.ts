@@ -1,20 +1,40 @@
 import { Entitlement } from "./Entitlement"
 
+/**
+ * @category Types
+ * @since 0.0.15
+ * Represents the subscription status of a user.
+ */
 export type SubscriptionStatus =
   | SubscriptionStatus.Active
   | SubscriptionStatus.Inactive
   | SubscriptionStatus.Unknown
 
 export namespace SubscriptionStatus {
+  /**
+   * @category Types
+   * @since 0.0.15
+   * Represents an active subscription status.
+   */
   export type Active = {
     status: `ACTIVE`
     entitlements: Entitlement[]
   }
 
+  /**
+   * @category Types
+   * @since 0.0.15
+   * Represents an inactive subscription status.
+   */
   export type Inactive = {
     status: `INACTIVE`
   }
 
+  /**
+   * @category Types
+   * @since 0.0.15
+   * Represents an unknown subscription status.
+   */
   export type Unknown = {
     status: `UNKNOWN`
   }

@@ -2,6 +2,11 @@ import type { PaywallInfo } from "./PaywallInfo"
 import type { PaywallResult } from "./PaywallResult"
 import type { PaywallSkippedReason } from "./PaywallSkippedReason"
 
+/**
+ * @category Handlers
+ * @since 0.0.15
+ * Handles events related to paywall presentation.
+ */
 export class PaywallPresentationHandler {
   // Handlers for various events
   onPresentHandler?: (info: PaywallInfo) => void

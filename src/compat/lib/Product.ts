@@ -1,5 +1,10 @@
 import { Entitlement } from "./Entitlement"
 
+/**
+ * @category Models
+ * @since 0.0.15
+ * Represents a product that can be purchased.
+ */
 export class Product {
   name?: string
   id: string

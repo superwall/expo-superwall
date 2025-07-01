@@ -1,3 +1,8 @@
+/**
+ * @category Models
+ * @since 0.0.15
+ * Represents a product associated with a transaction.
+ */
 export class TransactionProduct {
   id: string
 

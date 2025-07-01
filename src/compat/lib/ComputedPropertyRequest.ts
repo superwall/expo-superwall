@@ -1,4 +1,8 @@
-// TypeScript class for the request to compute a device property
+/**
+ * @category Models
+ * @since 0.0.15
+ * Represents a request to compute a device property.
+ */
 export class ComputedPropertyRequest {
   type: ComputedPropertyRequestType
   placementName: string
@@ -18,7 +22,11 @@ export class ComputedPropertyRequest {
   }
 }
 
-// TypeScript enum for the types of computed properties
+/**
+ * @category Enums
+ * @since 0.0.15
+ * Enum for the types of computed properties.
+ */
 export enum ComputedPropertyRequestType {
   minutesSince = "minutesSince",
   hoursSince = "hoursSince",

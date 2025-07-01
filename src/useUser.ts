@@ -1,6 +1,8 @@
 import { useSuperwall } from "./useSuperwall"
 
 /**
+ * @category Hooks
+ * @since 2.0.0
  * React hook for managing user-specific aspects of the Superwall SDK.
  *
  * This hook provides functions to identify the user, update user attributes,

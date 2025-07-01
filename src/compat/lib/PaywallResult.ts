@@ -1,3 +1,8 @@
+/**
+ * @category Types
+ * @since 0.0.15
+ * Represents the result of a paywall interaction.
+ */
 export type PaywallResult =
   | {
       type: "purchased"
