@@ -1,7 +1,17 @@
+/**
+ * @category Enums
+ * @since 0.0.15
+ * Defines the types of local notifications.
+ */
 export enum LocalNotificationType {
   TrialStarted = "trialStarted",
 }
 
+/**
+ * @category Utils
+ * @since 0.0.15
+ * Utility functions for LocalNotificationType.
+ */
 export class LocalNotificationTypeUtils {
   static fromJson(value: string): LocalNotificationType {
     switch (value) {
@@ -22,6 +32,11 @@ export class LocalNotificationTypeUtils {
   }
 }
 
+/**
+ * @category Models
+ * @since 0.0.15
+ * Represents a local notification.
+ */
 export class LocalNotification {
   type: LocalNotificationType
   title: string

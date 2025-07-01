@@ -1,6 +1,11 @@
 import type { Entitlement } from "./Entitlement"
 import { SubscriptionStatus } from "./SubscriptionStatus"
 
+/**
+ * @category Models
+ * @since 0.0.15
+ * Interface representing information about user entitlements.
+ */
 export interface EntitlementsInfo {
   status: SubscriptionStatus
   active: Entitlement[]

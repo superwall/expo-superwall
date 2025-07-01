@@ -12,7 +12,8 @@ import type {
 } from "./SuperwallExpoModule.types"
 
 /**
-/**
+ * @category Events
+ * @since 0.0.15
  * Defines the available callbacks for subscribing to Superwall native events.
  * Each property is an optional callback function that will be invoked when the corresponding event occurs.
  * If a callback is not provided, no listener will be registered for that event.
@@ -138,6 +139,8 @@ export interface SuperwallEventCallbacks {
 }
 
 /**
+ * @category Hooks
+ * @since 0.0.15
  * React hook for subscribing to a wide range of native Superwall events.
  *
  * This hook allows you to define callback functions for various events emitted by the

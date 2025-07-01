@@ -1,10 +1,18 @@
-// Defines the different types of views that can appear behind Apple's payment sheet during a transaction.
+/**
+ * @category Enums
+ * @since 0.0.15
+ * Defines the different types of views that can appear behind Apple's payment sheet during a transaction.
+ */
 export enum TransactionBackgroundView {
   spinner = "spinner",
   none = "none",
 }
 
-// Defines the messaging of the alert presented to the user when restoring a transaction fails.
+/**
+ * @category Models
+ * @since 0.0.15
+ * Defines the messaging of the alert presented to the user when restoring a transaction fails.
+ */
 export class RestoreFailed {
   title = "No Subscription Found"
   message = "We couldn't find an active subscription for your account."
@@ -19,7 +27,11 @@ export class RestoreFailed {
   }
 }
 
-// Options for configuring the appearance and behavior of paywalls.
+/**
+ * @category Models
+ * @since 0.0.15
+ * Options for configuring the appearance and behavior of paywalls.
+ */
 export class PaywallOptions {
   isHapticFeedbackEnabled = true
   restoreFailed: RestoreFailed = new RestoreFailed()
@@ -30,20 +42,23 @@ export class PaywallOptions {
 
   constructor(init?: Partial<PaywallOptions>) {
     if (init) {
-      if (init.isHapticFeedbackEnabled) {
+      if (init.isHapticFeedbackEnabled !== undefined) {
         this.isHapticFeedbackEnabled = init.isHapticFeedbackEnabled
       }
-      if (init.shouldShowPurchaseFailureAlert) {
+      if (init.shouldShowPurchaseFailureAlert !== undefined) {
         this.shouldShowPurchaseFailureAlert = init.shouldShowPurchaseFailureAlert
       }
-      if (init.shouldPreload) {
+      if (init.shouldPreload !== undefined) {
         this.shouldPreload = init.shouldPreload
       }
-      if (init.automaticallyDismiss) {
+      if (init.automaticallyDismiss !== undefined) {
         this.automaticallyDismiss = init.automaticallyDismiss
       }
       if (init.transactionBackgroundView) {
         this.transactionBackgroundView = init.transactionBackgroundView
+      }
+      if (init.restoreFailed) {
+        this.restoreFailed = init.restoreFailed
       }
     }
   }

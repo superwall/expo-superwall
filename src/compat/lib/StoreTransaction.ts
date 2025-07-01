@@ -1,3 +1,8 @@
+/**
+ * @category Models
+ * @since 0.0.15
+ * Represents a transaction from the app store.
+ */
 export class StoreTransaction {
   configRequestId: string
   appSessionId: string

@@ -1,3 +1,8 @@
+/**
+ * @category Enums
+ * @since 0.0.15
+ * Defines the behavior of feature gating.
+ */
 export enum FeatureGatingBehavior {
   gated = "gated",
   nonGated = "nonGated",

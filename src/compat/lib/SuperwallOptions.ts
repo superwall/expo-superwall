@@ -2,12 +2,22 @@ import { LogLevel } from "./LogLevel"
 import { LogScope } from "./LogScope"
 import { PaywallOptions } from "./PaywallOptions"
 
+/**
+ * @category Enums
+ * @since 0.0.15
+ * Defines the network environment for Superwall.
+ */
 export enum NetworkEnvironment {
   Release = "release",
   ReleaseCandidate = "releaseCandidate",
   Developer = "developer",
 }
 
+/**
+ * @category Models
+ * @since 0.0.15
+ * Options for configuring logging behavior.
+ */
 export class LoggingOptions {
   level: LogLevel = LogLevel.Info
   scopes: LogScope[] = [LogScope.All]
@@ -20,6 +30,11 @@ export class LoggingOptions {
   }
 }
 
+/**
+ * @category Models
+ * @since 0.0.15
+ * Options for configuring the Superwall SDK.
+ */
 export class SuperwallOptions {
   paywalls: PaywallOptions = new PaywallOptions()
   networkEnvironment: NetworkEnvironment = NetworkEnvironment.Release
@@ -35,10 +50,14 @@ export class SuperwallOptions {
   constructor(init?: Partial<SuperwallOptions>) {
     if (init) {
       if (init.paywalls) {
-        this.paywalls = new PaywallOptions()
-        Object.assign(this.paywalls, init.paywalls)
+        this.paywalls = new PaywallOptions(init.paywalls) // Pass init.paywalls to PaywallOptions constructor
       }
-      Object.assign(this, { ...init, paywalls: this.paywalls })
+      // Assign other properties, ensuring paywalls is handled correctly
+      const { paywalls, ...restInit } = init
+      Object.assign(this, restInit)
+      if (paywalls && !init.paywalls) { // if paywalls was in init but not used for constructor
+        this.paywalls = new PaywallOptions(paywalls)
+      }
     }
   }
 

@@ -1,7 +1,12 @@
 import type { PurchaseResult } from "./PurchaseResult"
 import type { RestorationResult } from "./RestorationResult"
 
-// Abstract class that defines the contract for a purchase controller
+/**
+ * @category Purchase Controller
+ * @since 0.0.15
+ * Abstract class that defines the contract for a purchase controller.
+ * This is used for custom purchase handling.
+ */
 export abstract class PurchaseController {
   /**
    * Purchase a product from the App Store.

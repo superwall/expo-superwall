@@ -1,4 +1,8 @@
-// Define the LogLevel enum
+/**
+ * @category Enums
+ * @since 0.0.15
+ * Defines the log levels for the SDK.
+ */
 export enum LogLevel {
   Debug = "debug",
   Info = "info",

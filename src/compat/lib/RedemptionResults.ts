@@ -6,6 +6,8 @@
 import { Entitlement } from "./Entitlement"
 
 /**
+ * @category Models
+ * @since 0.0.15
  * Information about an error that occurred during code redemption
  */
 export interface ErrorInfo {
@@ -14,6 +16,8 @@ export interface ErrorInfo {
 }
 
 /**
+ * @category Models
+ * @since 0.0.15
  * Information about an expired redemption code
  */
 export interface ExpiredCodeInfo {
@@ -24,6 +28,8 @@ export interface ExpiredCodeInfo {
 }
 
 /**
+ * @category Types
+ * @since 0.0.15
  * Represents the ownership of a redemption code
  */
 export type Ownership =
@@ -31,6 +37,8 @@ export type Ownership =
   | { type: "DEVICE"; deviceId: string }
 
 /**
+ * @category Types
+ * @since 0.0.15
  * Store identifiers for the purchase
  */
 export type StoreIdentifiers =
@@ -42,6 +50,8 @@ export type StoreIdentifiers =
   | { store: string; [key: string]: any } // For unknown store types
 
 /**
+ * @category Models
+ * @since 0.0.15
  * Information about the purchaser
  */
 export interface PurchaserInfo {
@@ -54,6 +64,8 @@ export interface PurchaserInfo {
 }
 
 /**
+ * @category Models
+ * @since 0.0.15
  * Information about the paywall the purchase was made from
  */
 export interface PaywallInfo {
@@ -70,6 +82,8 @@ export interface PaywallInfo {
 }
 
 /**
+ * @category Models
+ * @since 0.0.15
  * Information about a successful redemption
  */
 export interface RedemptionInfo {
@@ -84,6 +98,8 @@ export interface RedemptionInfo {
 }
 
 /**
+ * @category Types
+ * @since 0.0.15
  * The result of redeeming a code via web checkout
  */
 export type RedemptionResult =
@@ -98,6 +114,8 @@ export type RedemptionResult =
     }
 
 /**
+ * @category Utils
+ * @since 0.0.15
  * Static methods for working with RedemptionResult
  */
 export class RedemptionResults {

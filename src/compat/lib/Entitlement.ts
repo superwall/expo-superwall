@@ -1,3 +1,8 @@
+/**
+ * @category Models
+ * @since 0.0.15
+ * Represents a user entitlement.
+ */
 export class Entitlement {
   // The entitlement's identifier.
   id: string

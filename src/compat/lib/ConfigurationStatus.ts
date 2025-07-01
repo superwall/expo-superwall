@@ -1,3 +1,8 @@
+/**
+ * @category Enums
+ * @since 0.0.15
+ * Enum representing the configuration status of the SDK.
+ */
 export enum ConfigurationStatus {
   CONFIGURED = "CONFIGURED",
   FAILED = "FAILED",

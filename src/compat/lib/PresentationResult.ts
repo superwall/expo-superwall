@@ -1,5 +1,10 @@
 import { Experiment } from "./Experiment"
 
+/**
+ * @category Models
+ * @since 0.0.15
+ * Abstract class representing the result of a presentation request.
+ */
 // biome-ignore lint/complexity/noStaticOnlyClass: <explanation>
 export abstract class PresentationResult {
   static fromJson(json: any): PresentationResult {
@@ -29,15 +34,39 @@ export abstract class PresentationResult {
   }
 }
 
-// Derived classes
+/**
+ * @category Models
+ * @since 0.0.15
+ * Presentation result: Placement not found.
+ */
 export class PresentationResultPlacementNotFound extends PresentationResult {}
 
+/**
+ * @category Models
+ * @since 0.0.15
+ * Presentation result: No audience match.
+ */
 export class PresentationResultNoAudienceMatch extends PresentationResult {}
 
+/**
+ * @category Models
+ * @since 0.0.15
+ * Presentation result: User is already subscribed.
+ */
 export class PresentationResultUserIsSubscribed extends PresentationResult {}
 
+/**
+ * @category Models
+ * @since 0.0.15
+ * Presentation result: Paywall not available.
+ */
 export class PresentationResultPaywallNotAvailable extends PresentationResult {}
 
+/**
+ * @category Models
+ * @since 0.0.15
+ * Presentation result: User is in a holdout group.
+ */
 export class PresentationResultHoldout extends PresentationResult {
   experiment: Experiment
 
@@ -47,6 +76,11 @@ export class PresentationResultHoldout extends PresentationResult {
   }
 }
 
+/**
+ * @category Models
+ * @since 0.0.15
+ * Presentation result: Paywall was presented.
+ */
 export class PresentationResultPaywall extends PresentationResult {
   experiment: Experiment
 

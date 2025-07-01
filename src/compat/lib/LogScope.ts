@@ -1,3 +1,8 @@
+/**
+ * @category Enums
+ * @since 0.0.15
+ * Defines the scopes for logging within the SDK.
+ */
 export enum LogScope {
   LocalizationManager = "localizationManager",
   BounceButton = "bounceButton",

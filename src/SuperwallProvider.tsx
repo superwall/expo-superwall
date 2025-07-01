@@ -17,6 +17,8 @@ interface SuperwallProviderProps {
 }
 
 /**
+ * @category Providers
+ * @since 0.0.15
  * Main provider component for the Superwall SDK.
  *
  * This component initializes the Superwall SDK with your API key and configuration options.

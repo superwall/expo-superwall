@@ -6,6 +6,11 @@ import { PaywallCloseReason } from "./PaywallCloseReason"
 import { Product } from "./Product"
 import { Survey } from "./Survey"
 
+/**
+ * @category Models
+ * @since 0.0.15
+ * Represents information about a paywall.
+ */
 export class PaywallInfo {
   identifier: string
   name: string

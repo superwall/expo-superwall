@@ -1,4 +1,8 @@
-/// Options passed in when calling `Superwall.identify(userId:options:)`.
+/**
+ * @category Models
+ * @since 0.0.15
+ * Options passed in when calling `Superwall.identify(userId:options:)`.
+ */
 export class IdentityOptions {
   // Determines whether the SDK should wait to restore paywall assignments from the server
   // before presenting any paywalls.

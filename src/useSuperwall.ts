@@ -7,6 +7,8 @@ import type { SubscriptionStatus } from "./SuperwallExpoModule.types"
 import pkg from "../package.json"
 
 /**
+ * @category Models
+ * @since 0.0.15
  * Interface representing the attributes of a user.
  */
 export interface UserAttributes {
@@ -23,6 +25,8 @@ export interface UserAttributes {
 }
 
 /**
+ * @category Models
+ * @since 0.0.15
  * Options for the `identify` method.
  */
 export interface IdentifyOptions {
@@ -34,6 +38,8 @@ export interface IdentifyOptions {
 }
 
 /**
+ * @category Store
+ * @since 0.0.15
  * Defines the structure of the Superwall store, including its state and actions.
  * This store is managed by Zustand.
  */
@@ -162,6 +168,8 @@ export interface SuperwallStore {
 }
 
 /**
+ * @category Store
+ * @since 0.0.15
  * Zustand store for Superwall SDK state and actions.
  * @internal
  */
@@ -281,6 +289,8 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
 }))
 
 /**
+ * @category Store
+ * @since 0.0.15
  * Public interface for the Superwall store, excluding internal methods.
  */
 export type PublicSuperwallStore = Omit<SuperwallStore, "configure" | "reset" | "_initListeners">
@@ -288,7 +298,8 @@ export type PublicSuperwallStore = Omit<SuperwallStore, "configure" | "reset" | 
 export const SuperwallContext = createContext<boolean>(false)
 
 /**
-/**
+ * @category Hooks
+ * @since 0.0.15
  * Core React hook for interacting with the Superwall SDK.
  *
  * This hook provides access to the Superwall store, which includes SDK state

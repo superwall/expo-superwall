@@ -1,11 +1,20 @@
 import { StoreTransaction } from "./StoreTransaction"
 
-// Enum for RestoreType cases
+/**
+ * @category Enums
+ * @since 0.0.15
+ * Enum for RestoreType cases.
+ */
 export enum RestoreTypeCase {
   viaPurchase = 0,
   viaRestore = 1,
 }
 
+/**
+ * @category Models
+ * @since 0.0.15
+ * Represents the type of restoration.
+ */
 export class RestoreType {
   private constructor(
     public type: RestoreTypeCase,

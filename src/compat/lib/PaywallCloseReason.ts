@@ -1,3 +1,8 @@
+/**
+ * @category Enums
+ * @since 0.0.15
+ * Defines the reasons why a paywall might be closed.
+ */
 export enum PaywallCloseReason {
   SystemLogic = "systemLogic",
   ForNextPaywall = "forNextPaywall",

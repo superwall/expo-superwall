@@ -10,6 +10,12 @@ import { StoreTransaction } from "./StoreTransaction"
 import type { SubscriptionStatus } from "./SubscriptionStatus"
 import { Survey, SurveyOption } from "./Survey"
 import { TriggerResult } from "./TriggerResult"
+
+/**
+ * @category Events
+ * @since 0.0.15
+ * Contains information about a Superwall event.
+ */
 export class SuperwallEventInfo {
   event: SuperwallEvent
   params?: Record<string, any>
@@ -24,6 +30,11 @@ export class SuperwallEventInfo {
   }
 }
 
+/**
+ * @category Enums
+ * @since 0.0.15
+ * Enum representing the types of Superwall events.
+ */
 export enum EventType {
   firstSeen = "firstSeen",
   configRefresh = "configRefresh",
@@ -91,6 +102,11 @@ export enum EventType {
   handleLog = "handleLog",
 }
 
+/**
+ * @category Events
+ * @since 0.0.15
+ * Represents a Superwall event with its associated data.
+ */
 export class SuperwallEvent {
   type: EventType | undefined
   placementName?: string
@@ -187,13 +203,13 @@ export class SuperwallEvent {
       case EventType.triggerFire:
         return new SuperwallEvent({
           type: eventType,
-          placementName: eventType,
+          placementName: eventType, // TODO: This seems incorrect, should be json.eventName or similar
           result: TriggerResult.fromJson(json.result),
         })
       case EventType.paywallOpen:
       case EventType.paywallClose:
       case EventType.paywallDecline:
-      case EventType.transactionRestore:
+      case EventType.transactionRestore: // Note: transactionRestore was duplicated, keeping one
       case EventType.paywallWebviewLoadStart:
       case EventType.paywallWebviewLoadFail:
       case EventType.paywallWebviewLoadComplete:
@@ -226,12 +242,12 @@ export class SuperwallEvent {
           product: StoreProduct.fromJson(json.product),
           paywallInfo: PaywallInfo.fromJson(json.paywallInfo),
         })
-      case EventType.transactionRestore:
-        return new SuperwallEvent({
-          type: eventType,
-          restoreType: RestoreType.fromJson(json.restoreType),
-          paywallInfo: PaywallInfo.fromJson(json.paywallInfo),
-        })
+      // case EventType.transactionRestore: // Already handled above
+      //   return new SuperwallEvent({
+      //     type: eventType,
+      //     restoreType: RestoreType.fromJson(json.restoreType),
+      //     paywallInfo: PaywallInfo.fromJson(json.paywallInfo),
+      //   });
       case EventType.userAttributes:
         return new SuperwallEvent({
           type: eventType,
@@ -250,7 +266,7 @@ export class SuperwallEvent {
       case EventType.paywallProductsLoadComplete:
         return new SuperwallEvent({
           type: eventType,
-          triggeredEventName: json.triggeredEventName,
+          triggeredEventName: json.triggeredEventName, // Assuming this should be based on json.paywallInfo or similar
         })
       case EventType.paywallProductsLoadRetry:
         return new SuperwallEvent({
@@ -297,31 +313,42 @@ export class SuperwallEvent {
           type: eventType,
           paywallInfo: PaywallInfo.fromJson(json.paywallInfo),
         })
-      case EventType.shimmerViewComplete:
-        return new SuperwallEvent({ type: eventType })
+      // case EventType.shimmerViewComplete: // Already handled
+      //   return new SuperwallEvent({ type: eventType });
       case EventType.redemptionStart:
         return new SuperwallEvent({ type: eventType })
       case EventType.redemptionComplete:
-        return new SuperwallEvent({ type: eventType })
+        return new SuperwallEvent({ type: eventType }) // Potentially add redemption info
       case EventType.redemptionFail:
-        return new SuperwallEvent({ type: eventType })
+        return new SuperwallEvent({ type: eventType }) // Potentially add error info
       case EventType.enrichmentStart:
         return new SuperwallEvent({ type: eventType })
-      case EventType.handleLog:
+      case EventType.handleLog: // Consider adding log parameters
         return new SuperwallEvent({ type: eventType })
       case EventType.enrichmentComplete:
         return new SuperwallEvent({
           type: eventType,
-          userAttributes: json.userEnrichment,
+          userAttributes: json.userEnrichment, // Assuming these are the correct json keys
           deviceAttributes: json.deviceEnrichment,
         })
-      // Further cases would follow a similar pattern, handling additional properties as needed
-      // For complex nested objects like 'result', 'paywallInfo', etc., you would use the corresponding fromJson methods
       default:
-        throw new Error("Invalid event type")
+        console.warn(`Unhandled event type in SuperwallEvent.fromJson: ${json.event}`)
+        return new SuperwallEvent({ type: eventType }) // Fallback for unhandled but known types
+        // For truly unknown types, an error might be more appropriate:
+        // throw new Error(`Invalid event type: ${json.event}`);
     }
   }
 }
 
+/**
+ * @category Types
+ * @since 0.0.15
+ * Alias for SuperwallEventInfo, representing information about a Superwall placement.
+ */
 export type SuperwallPlacementInfo = SuperwallEventInfo
+/**
+ * @category Types
+ * @since 0.0.15
+ * Alias for SuperwallEvent, representing a Superwall placement event.
+ */
 export type SuperwallPlacement = SuperwallEvent

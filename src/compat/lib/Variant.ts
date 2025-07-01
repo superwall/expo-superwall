@@ -1,3 +1,8 @@
+/**
+ * @category Enums
+ * @since 0.0.15
+ * Defines the type of a variant in an experiment.
+ */
 export enum VariantType {
   treatment = "treatment",
   holdout = "holdout",
@@ -17,6 +22,11 @@ export namespace VariantType {
   }
 }
 
+/**
+ * @category Models
+ * @since 0.0.15
+ * Represents a variant in an experiment.
+ */
 export class Variant {
   id: string
   type: VariantType

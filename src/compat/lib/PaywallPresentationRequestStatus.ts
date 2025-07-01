@@ -1,11 +1,21 @@
 import { Experiment } from "./Experiment"
 
+/**
+ * @category Enums
+ * @since 0.0.15
+ * The status types for a paywall presentation request.
+ */
 export enum PaywallPresentationRequestStatusType {
   presentation = "presentation",
   noPresentation = "noPresentation",
   timeout = "timeout",
 }
 
+/**
+ * @category Models
+ * @since 0.0.15
+ * Represents the status of a paywall presentation request.
+ */
 export class PaywallPresentationRequestStatus {
   type: PaywallPresentationRequestStatusType
 
@@ -33,6 +43,11 @@ export class PaywallPresentationRequestStatus {
   }
 }
 
+/**
+ * @category Enums
+ * @since 0.0.15
+ * The reason types for a paywall presentation request status.
+ */
 export enum PaywallPresentationRequestStatusReasonType {
   debuggerPresented = "debuggerPresented",
   paywallAlreadyPresented = "paywallAlreadyPresented",
@@ -46,6 +61,11 @@ export enum PaywallPresentationRequestStatusReasonType {
   subscriptionStatusTimeout = "subscriptionStatusTimeout",
 }
 
+/**
+ * @category Models
+ * @since 0.0.15
+ * Represents the reason for a paywall presentation request status.
+ */
 export class PaywallPresentationRequestStatusReason {
   type: PaywallPresentationRequestStatusReasonType
   experiment?: Experiment
