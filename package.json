@@ -29,7 +29,8 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "version": "changeset version",
-    "release": "yarn build && yarn build plugin && changeset publish"
+    "release": "yarn build && yarn build plugin && changeset publish",
+    "postinstall": "node scripts/check-expo-version.js"
   },
   "keywords": [
     "react-native",
@@ -66,7 +67,8 @@
     "android",
     "expo-module.config.json",
     "plugin",
-    "app.plugin.js"
+    "app.plugin.js",
+    "scripts"
   ],
   "packageManager": "yarn@4.7.0",
   "dependencies": {
