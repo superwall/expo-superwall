@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.15
+
+### Patch Changes
+
+- 020c22a: fix: old exports
+
 ## 0.0.14
 
 ### Patch Changes
