@@ -3,6 +3,7 @@ import SuperwallKit
 extension LocalNotification {
   func toJson() -> [String: Any] {
     var json: [String: Any] = [
+      "id": self.id,
       "type": self.type.toJson(),
       "title": self.title,
       "body": self.body,

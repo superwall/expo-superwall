@@ -1,5 +1,5 @@
-import React from 'react'
-import { TouchableOpacity, Text, StyleSheet } from 'react-native'
+import type React from "react"
+import { StyleSheet, Text, TouchableOpacity } from "react-native"
 
 interface TestButtonProps {
   title: string
@@ -9,15 +9,13 @@ interface TestButtonProps {
 
 export const TestButton: React.FC<TestButtonProps> = ({ title, onPress, disabled = false }) => {
   return (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={[styles.button, disabled && styles.disabled]}
       onPress={onPress}
       disabled={disabled}
       activeOpacity={0.7}
     >
-      <Text style={[styles.buttonText, disabled && styles.disabledText]}>
-        {title}
-      </Text>
+      <Text style={[styles.buttonText, disabled && styles.disabledText]}>{title}</Text>
     </TouchableOpacity>
   )
 }
@@ -26,21 +24,21 @@ const styles = StyleSheet.create({
   button: {
     paddingVertical: 12,
     paddingHorizontal: 16,
-    backgroundColor: '#007AFF',
+    backgroundColor: "#007AFF",
     borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginVertical: 4,
   },
   buttonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   disabled: {
-    backgroundColor: '#CCCCCC',
+    backgroundColor: "#CCCCCC",
   },
   disabledText: {
-    color: '#666666',
+    color: "#666666",
   },
-}) 
+})

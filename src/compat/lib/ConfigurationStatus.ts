@@ -23,6 +23,7 @@ export namespace ConfigurationStatus {
     }
   }
 
+  // biome-ignore lint/suspicious/noShadowRestrictedNames: <explanation>
   export function toString(value: ConfigurationStatus): string {
     switch (value) {
       case ConfigurationStatus.FAILED:
