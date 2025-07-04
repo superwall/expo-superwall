@@ -3,11 +3,10 @@ import SuperwallKit
 extension LocalNotification {
   func toJson() -> [String: Any] {
     var json: [String: Any] = [
-      "id": self.id,
       "type": self.type.toJson(),
       "title": self.title,
       "body": self.body,
-      "delay": self.delay
+      "delay": self.delay,
     ]
 
     if let subtitle = self.subtitle {
@@ -21,8 +20,8 @@ extension LocalNotification {
 extension LocalNotificationType {
   func toJson() -> String {
     switch self {
-      case .trialStarted:
-        return "trialStarted"
+    case .trialStarted:
+      return "trialStarted"
     }
   }
 }
