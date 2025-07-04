@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.1.0
+
+### Minor Changes
+
+- b39e98e: feat: Remove the export of the internal SuperwallExpoModule Class,
+  this class should have not been used since it's an internal class and could break the state of the internal SuperwallStore.
+  If you have used in prior for a usecase that the current SDK doesn't support, please open an issue.
+
+### Patch Changes
+
+- 32112a6: feat: handle deeplink automatically, no need for manual handling
+
 ## 0.0.18
 
 ### Patch Changes
