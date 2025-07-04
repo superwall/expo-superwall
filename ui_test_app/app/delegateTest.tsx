@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router"
-import Superwall from "expo-superwall/compat"
 import type { SubscriptionStatus } from "expo-superwall/compat"
+import Superwall from "expo-superwall/compat"
 import { Entitlement } from "expo-superwall/compat/lib/Entitlement"
 import { useRef, useState } from "react"
 import {
