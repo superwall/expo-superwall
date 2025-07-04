@@ -1,7 +1,8 @@
-import { type ReactNode, useEffect } from "react"
-import { Platform } from "react-native"
+import { type ReactNode, useEffect, useRef } from "react"
+import { type EmitterSubscription, Linking, Platform } from "react-native"
 import { useShallow } from "zustand/shallow"
 import { useCustomPurchaseController } from "./CustomPurchaseControllerProvider"
+import SuperwallExpoModule from "./SuperwallExpoModule"
 import { SuperwallContext, useSuperwallStore } from "./useSuperwall"
 
 interface SuperwallProviderProps {
@@ -43,7 +44,9 @@ export function SuperwallProvider({
 
   children,
 }: SuperwallProviderProps) {
+  const deepLinkEventHandlerRef = useRef<EmitterSubscription>(null)
   const isUsingCustomPurchaseController = !!useCustomPurchaseController()
+
   const { isConfigured, isLoading, configure } = useSuperwallStore(
     useShallow((state) => ({
       isConfigured: state.isConfigured,
@@ -72,6 +75,28 @@ export function SuperwallProvider({
     const cleanup = useSuperwallStore.getState()._initListeners()
 
     return cleanup
+  }, [])
+
+  useEffect(() => {
+    const handleDeepLink = async () => {
+      await Linking.getInitialURL().then((url) => {
+        if (url) {
+          SuperwallExpoModule.handleDeepLink(url)
+        }
+      })
+
+      deepLinkEventHandlerRef.current = Linking.addEventListener("url", (event) => {
+        SuperwallExpoModule.handleDeepLink(event.url)
+      })
+    }
+
+    handleDeepLink()
+
+    return () => {
+      if (deepLinkEventHandlerRef.current) {
+        deepLinkEventHandlerRef.current.remove()
+      }
+    }
   }, [])
 
   return <SuperwallContext.Provider value={true}>{children}</SuperwallContext.Provider>
