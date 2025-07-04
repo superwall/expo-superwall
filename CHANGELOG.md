@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.17
+
+### Patch Changes
+
+- db980b6: fix missing types on native
+
 ## 0.0.16
 
 ### Patch Changes
