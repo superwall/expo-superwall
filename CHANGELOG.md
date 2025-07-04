@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1
+
+### Patch Changes
+
+- 707e513: temp fix swift types
+
 ## 0.1.0
 
 ### Minor Changes
