@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 // @ts-nocheck TS6133: Unused variable
-import type { PaywallInfo } from "./PaywallInfo"
-import type { RedemptionResult } from "./RedemptionResults"
-import type { SubscriptionStatus } from "./SubscriptionStatus"
-import type { SuperwallEventInfo } from "./SuperwallEventInfo"
+import { PaywallInfo } from "./PaywallInfo";
+import type { RedemptionResult } from "./RedemptionResults";
+import { SubscriptionStatus } from "./SubscriptionStatus";
+import { SuperwallEventInfo } from "./SuperwallEventInfo";
 
 /**
  * @category Delegate
@@ -18,7 +18,10 @@ export class SuperwallDelegate {
    * @param from The previous subscription status.
    * @param to The new subscription status.
    */
-  subscriptionStatusDidChange(from: SubscriptionStatus, to: SubscriptionStatus): void {}
+  subscriptionStatusDidChange(
+    from: SubscriptionStatus,
+    to: SubscriptionStatus,
+  ): void {}
   /**
    * Called before the SDK attempts to redeem a promotional link.
    */

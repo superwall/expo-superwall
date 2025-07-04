@@ -1,4 +1,5 @@
-import Superwall, {
+import Superwall from "expo-superwall/compat"
+import {
   type PurchaseResult,
   PurchaseResultFailed,
   PurchaseResultPurchased,

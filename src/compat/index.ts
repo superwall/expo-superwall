@@ -23,17 +23,33 @@ import { version } from "../../package.json"
 import SuperwallExpoModule from "../SuperwallExpoModule"
 
 export { ComputedPropertyRequest } from "./lib/ComputedPropertyRequest"
-export { ConfigurationStatus } from "./lib/ConfigurationStatus"
-export { EntitlementsInfo } from "./lib/EntitlementsInfo"
 export { Experiment } from "./lib/Experiment"
 export { FeatureGatingBehavior } from "./lib/FeatureGatingBehavior"
 export { IdentityOptions } from "./lib/IdentityOptions"
-export { InterfaceStyle } from "./lib/InterfaceStyle"
 export { LocalNotification } from "./lib/LocalNotification"
 export { LogLevel } from "./lib/LogLevel"
 export { LogScope } from "./lib/LogScope"
 export { PaywallCloseReason } from "./lib/PaywallCloseReason"
 export { PaywallInfo } from "./lib/PaywallInfo"
+export { Product } from "./lib/Product"
+export { PurchaseController } from "./lib/PurchaseController"
+export { SubscriptionStatus } from "./lib/SubscriptionStatus"
+export { PurchaseResult } from "./lib/PurchaseResult"
+export {
+  PurchaseResultPurchased,
+  PurchaseResultPending,
+  PurchaseResultCancelled,
+  PurchaseResultFailed,
+  PurchaseResultRestored,
+} from "./lib/PurchaseResult"
+export { RestorationResult } from "./lib/RestorationResult"
+export { InterfaceStyle } from "./lib/InterfaceStyle"
+export { ConfigurationStatus } from "./lib/ConfigurationStatus"
+export { SuperwallDelegate } from "./lib/SuperwallDelegate"
+export { SuperwallEventInfo, EventType } from "./lib/SuperwallEventInfo"
+export { SuperwallOptions } from "./lib/SuperwallOptions"
+export { Survey } from "./lib/Survey"
+export { TriggerResult } from "./lib/TriggerResult"
 export {
   PaywallOptions,
   TransactionBackgroundView,
@@ -42,30 +58,14 @@ export { PaywallPresentationHandler } from "./lib/PaywallPresentationHandler"
 export { PaywallPresentationRequestStatus } from "./lib/PaywallPresentationRequestStatus"
 export {
   PaywallSkippedReason,
+  PaywallSkippedReasonPlacementNotFound,
   PaywallSkippedReasonHoldout,
   PaywallSkippedReasonNoAudienceMatch,
-  PaywallSkippedReasonPlacementNotFound,
   PaywallSkippedReasonUserIsSubscribed,
 } from "./lib/PaywallSkippedReason"
-export { Product } from "./lib/Product"
-export { PurchaseController } from "./lib/PurchaseController"
-export {
-  PurchaseResult,
-  PurchaseResultCancelled,
-  PurchaseResultFailed,
-  PurchaseResultPending,
-  PurchaseResultPurchased,
-  PurchaseResultRestored,
-} from "./lib/PurchaseResult"
-export * from "./lib/RedemptionResults"
-export { RestorationResult } from "./lib/RestorationResult"
 export { RestoreType } from "./lib/RestoreType"
-export { SubscriptionStatus } from "./lib/SubscriptionStatus"
-export { SuperwallDelegate } from "./lib/SuperwallDelegate"
-export { EventType, SuperwallEventInfo } from "./lib/SuperwallEventInfo"
-export { SuperwallOptions } from "./lib/SuperwallOptions"
-export { Survey } from "./lib/Survey"
-export { TriggerResult } from "./lib/TriggerResult"
+export { EntitlementsInfo } from "./lib/EntitlementsInfo"
+export * from "./lib/RedemptionResults"
 
 interface UserAttributes {
   [key: string]: any

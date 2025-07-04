@@ -1,12 +1,13 @@
 import * as Superwall from "expo-superwall/compat"
 import {
-  type PaywallInfo,
-  type RedemptionResult,
-  type SubscriptionStatus,
   SuperwallDelegate,
-  type SuperwallEventInfo,
-} from "expo-superwall/compat"
+  PaywallInfo,
+  SubscriptionStatus,
+  SuperwallEventInfo,
+  RedemptionResult,
+}  from "expo-superwall/compat"
 import {
+  TestDelegateEvent,
   DidDismissPaywallEvent,
   DidPresentPaywallEvent,
   HandleCustomPaywallActionEvent,
@@ -15,7 +16,6 @@ import {
   PaywallWillOpenDeepLinkEvent,
   PaywallWillOpenURLEvent,
   SubscriptionStatusDidChangeEvent,
-  type TestDelegateEvent,
   WillDismissPaywallEvent,
   WillPresentPaywallEvent,
 } from "./TestDelegateEvent"
@@ -28,8 +28,8 @@ export class TestDelegate extends SuperwallDelegate {
   }
 
   get eventsWithoutLog(): TestDelegateEvent[] {
-    return this._events.filter(
-      (event) => event.type !== "handleLog" && event.type !== "handleSuperwallEvent",
+    return this._events.filter((event) => 
+      event.type !== 'handleLog' && event.type !== 'handleSuperwallEvent'
     )
   }
 
@@ -46,11 +46,11 @@ export class TestDelegate extends SuperwallDelegate {
   }
 
   handleLog(
-    level: string,
-    scope: string,
-    message?: string,
-    info?: { [key: string]: any },
-    error?: string,
+    level: string, 
+    scope: string, 
+    message?: string, 
+    info?: { [key: string]: any }, 
+    error?: string
   ): void {
     this._events.push(new HandleLogEvent(level, scope, message, info, error))
   }
@@ -100,10 +100,10 @@ export class TestDelegate extends SuperwallDelegate {
   }
 
   getEventsByType(type: string): TestDelegateEvent[] {
-    return this._events.filter((event) => event.type === type)
+    return this._events.filter(event => event.type === type)
   }
 
   getLastEvent(): TestDelegateEvent | undefined {
     return this._events[this._events.length - 1]
   }
-}
+} 

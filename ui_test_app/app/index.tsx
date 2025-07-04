@@ -1,7 +1,8 @@
-import { Link, useRouter } from "expo-router"
 import React, { useEffect } from "react"
 import { Text, View } from "react-native"
+import { Link, useRouter } from "expo-router"
 import { TestButton } from "./TestButton"
+
 
 export default function App() {
   const router = useRouter()
@@ -11,7 +12,7 @@ export default function App() {
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
       <Text style={{ fontSize: 24, marginBottom: 20 }}>Superwall Tests</Text>
-
+      
       <TestButton
         title="Configuration Test"
         onPress={() => {
@@ -20,7 +21,7 @@ export default function App() {
       />
 
       <TestButton
-        title="Subscription Status Test"
+        title="Subscription Status Test" 
         onPress={() => {
           router.push("/subscriptionStatusTest")
         }}

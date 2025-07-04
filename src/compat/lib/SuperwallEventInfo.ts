@@ -4,7 +4,7 @@ import {
   PaywallPresentationRequestStatus,
   PaywallPresentationRequestStatusReason,
 } from "./PaywallPresentationRequestStatus"
-import type { RestoreType } from "./RestoreType"
+import { RestoreType } from "./RestoreType"
 import { StoreProduct } from "./StoreProduct"
 import { StoreTransaction } from "./StoreTransaction"
 import type { SubscriptionStatus } from "./SubscriptionStatus"
@@ -334,8 +334,8 @@ export class SuperwallEvent {
       default:
         console.warn(`Unhandled event type in SuperwallEvent.fromJson: ${json.event}`)
         return new SuperwallEvent({ type: eventType }) // Fallback for unhandled but known types
-      // For truly unknown types, an error might be more appropriate:
-      // throw new Error(`Invalid event type: ${json.event}`);
+        // For truly unknown types, an error might be more appropriate:
+        // throw new Error(`Invalid event type: ${json.event}`);
     }
   }
 }

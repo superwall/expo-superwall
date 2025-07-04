@@ -1,9 +1,10 @@
 import { createContext, useContext } from "react"
 import { create } from "zustand"
 import { useShallow } from "zustand/shallow"
-import pkg from "../package.json"
 import SuperwallExpoModule from "./SuperwallExpoModule"
 import type { SubscriptionStatus } from "./SuperwallExpoModule.types"
+
+import pkg from "../package.json"
 
 /**
  * @category Models

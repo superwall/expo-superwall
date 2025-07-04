@@ -14,12 +14,10 @@ fun PaywallInfo.toJson(): Map<String, Any?> {
   }
 
   val products = this.products.map { product ->
-    val productMap = mutableMapOf<String, Any>(
-      "id" to product.id,
-      "entitlements" to product.entitlements.map { it.toJson() }
+    mapOf(
+      "type" to product.type.toString(),
+      "id" to product.fullProductId
     )
-    product.name?.let { productMap["name"] = it }
-    productMap
   }
   map["products"] = products
 
@@ -53,7 +51,7 @@ fun PaywallInfo.toJson(): Map<String, Any?> {
 
   val computedPropertyRequests = this.computedPropertyRequests.map { request ->
     mapOf(
-      "placementName" to request.placementName,
+      "placementName" to request.eventName,
       "type" to request.type.toString()
     )
   }

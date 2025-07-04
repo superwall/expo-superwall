@@ -23,72 +23,72 @@ export interface SuperwallEventCallbacks {
    * Called when a paywall is presented.
    * @param paywallInfo - Information about the presented paywall. See {@link PaywallInfo}.
    */
-  onPaywallPresent?: (paywallInfo: PaywallInfo) => void
+  onPaywallPresent?: (paywallInfo: PaywallInfo) => void;
   /**
    * Called when a paywall is dismissed.
    * @param paywallInfo - Information about the dismissed paywall. See {@link PaywallInfo}.
    * @param result - The result of the paywall interaction. See {@link PaywallResult}.
    */
-  onPaywallDismiss?: (paywallInfo: PaywallInfo, result: PaywallResult) => void
+  onPaywallDismiss?: (paywallInfo: PaywallInfo, result: PaywallResult) => void;
   /**
    * Called when a paywall is skipped.
    * @param reason - The reason why the paywall was skipped. See {@link PaywallSkippedReason}.
    */
-  onPaywallSkip?: (reason: PaywallSkippedReason) => void
+  onPaywallSkip?: (reason: PaywallSkippedReason) => void;
   /**
    * Called when an error occurs during paywall presentation or other SDK operations.
    * @param error - A string describing the error.
    */
-  onPaywallError?: (error: string) => void
+  onPaywallError?: (error: string) => void;
 
   /**
    * Called when the user's subscription status changes.
    * @param status - The new subscription status. See {@link SubscriptionStatus}.
    */
-  onSubscriptionStatusChange?: (status: SubscriptionStatus) => void
+  onSubscriptionStatusChange?: (status: SubscriptionStatus) => void;
 
   /**
    * Called for all Superwall internal events. This is a general-purpose event handler.
    * @param eventInfo - Information about the Superwall event. See {@link SuperwallEventInfo}.
    */
-  onSuperwallEvent?: (eventInfo: SuperwallEventInfo) => void
+  onSuperwallEvent?: (eventInfo: SuperwallEventInfo) => void;
   /**
    * Called when a custom action is triggered from a paywall (e.g., via `superwall.triggerCustomPaywallAction('myAction')`).
    * @param name - The name of the custom action.
    */
-  onCustomPaywallAction?: (name: string) => void
+  onCustomPaywallAction?: (name: string) => void;
 
   /**
    * Called just before a paywall is dismissed.
    * @param paywallInfo - Information about the paywall that will be dismissed. See {@link PaywallInfo}.
    */
-  willDismissPaywall?: (paywallInfo: PaywallInfo) => void
+  willDismissPaywall?: (paywallInfo: PaywallInfo) => void;
   /**
    * Called just before a paywall is presented.
    * @param paywallInfo - Information about the paywall that will be presented. See {@link PaywallInfo}.
    */
-  willPresentPaywall?: (paywallInfo: PaywallInfo) => void
+  willPresentPaywall?: (paywallInfo: PaywallInfo) => void;
   /**
    * Called after a paywall has been dismissed.
    * @param paywallInfo - Information about the paywall that was dismissed. See {@link PaywallInfo}.
    */
-  didDismissPaywall?: (paywallInfo: PaywallInfo) => void
+  didDismissPaywall?: (paywallInfo: PaywallInfo) => void;
   /**
    * Called after a paywall has been presented.
    * @param paywallInfo - Information about the paywall that was presented. See {@link PaywallInfo}.
    */
-  didPresentPaywall?: (paywallInfo: PaywallInfo) => void
+  didPresentPaywall?: (paywallInfo: PaywallInfo) => void;
 
   /**
    * Called when the paywall attempts to open a URL.
    * @param url - The URL that the paywall will attempt to open.
    */
-  onPaywallWillOpenURL?: (url: string) => void
+  onPaywallWillOpenURL?: (url: string) => void;
   /**
    * Called when the paywall attempts to open a deep link.
    * @param url - The deep link URL that the paywall will attempt to open.
    */
-  onPaywallWillOpenDeepLink?: (url: string) => void
+  onPaywallWillOpenDeepLink?: (url: string) => void;
 
   /**
    * Called for logging messages from the SDK.
@@ -100,33 +100,33 @@ export interface SuperwallEventCallbacks {
    * @param params.error - Error message if applicable.
    */
   onLog?: (params: {
-    level: LogLevel
-    scope: LogScope
-    message: string | null
-    info: Record<string, any> | null
-    error: string | null
-  }) => void
+    level: LogLevel;
+    scope: LogScope;
+    message: string | null;
+    info: Record<string, any> | null;
+    error: string | null;
+  }) => void;
 
   /**
    * Called before the SDK attempts to redeem a promotional link.
    */
-  willRedeemLink?: () => void
+  willRedeemLink?: () => void;
   /**
    * Called after the SDK has attempted to redeem a promotional link.
    * @param result - The result of the redemption attempt. See {@link RedemptionResult}.
    */
-  didRedeemLink?: (result: RedemptionResult) => void
+  didRedeemLink?: (result: RedemptionResult) => void;
 
   /**
    * Called when a purchase is initiated.
    * @param params - Parameters related to the purchase. For iOS, this includes `productId` and `platform`.
    *                 For Android, this includes `productId`, `platform`, `basePlanId`, and `offerId`.
    */
-  onPurchase?: (params: any) => void // Type any due to platform differences, specific types in SuperwallExpoModule.types.ts
+  onPurchase?: (params: any) => void; // Type any due to platform differences, specific types in SuperwallExpoModule.types.ts
   /**
    * Called when a purchase restoration is initiated.
    */
-  onPurchaseRestore?: () => void
+  onPurchaseRestore?: () => void;
 
   /**
    * An optional identifier used to scope certain events (like `onPaywallPresent`, `onPaywallDismiss`, `onPaywallSkip`)
@@ -135,7 +135,7 @@ export interface SuperwallEventCallbacks {
    * This is primarily used internally by the `usePlacement` hook.
    * @internal
    */
-  handlerId?: string
+  handlerId?: string;
 }
 
 /**

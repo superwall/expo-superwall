@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router"
-import type { SubscriptionStatus } from "expo-superwall/compat"
 import Superwall from "expo-superwall/compat"
+import type { SubscriptionStatus } from "expo-superwall/compat"
 import { useEffect, useState } from "react"
 import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native"
 import { TestButton } from "./TestButton"
