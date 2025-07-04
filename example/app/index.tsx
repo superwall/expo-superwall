@@ -1,6 +1,5 @@
-import { View } from "react-native"
-
 import { Link } from "expo-router"
+import { View } from "react-native"
 
 export default function OuterApp() {
   return (

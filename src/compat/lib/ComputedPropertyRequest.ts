@@ -13,10 +13,7 @@ export class ComputedPropertyRequest {
   }
 
   // Static method to create an instance from a JSON object
-  static fromJson(json: {
-    type: string
-    placementName: string
-  }): ComputedPropertyRequest {
+  static fromJson(json: { type: string; placementName: string }): ComputedPropertyRequest {
     const type = ComputedPropertyRequestType.fromJson(json.type)
     return new ComputedPropertyRequest(type, json.placementName)
   }

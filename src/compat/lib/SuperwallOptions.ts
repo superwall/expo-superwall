@@ -55,7 +55,8 @@ export class SuperwallOptions {
       // Assign other properties, ensuring paywalls is handled correctly
       const { paywalls, ...restInit } = init
       Object.assign(this, restInit)
-      if (paywalls && !init.paywalls) { // if paywalls was in init but not used for constructor
+      if (paywalls && !init.paywalls) {
+        // if paywalls was in init but not used for constructor
         this.paywalls = new PaywallOptions(paywalls)
       }
     }

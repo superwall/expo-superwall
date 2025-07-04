@@ -23,9 +23,7 @@ export class PaywallPresentationRequestStatus {
     this.type = type
   }
 
-  static fromJson(json: {
-    [key: string]: any
-  }): PaywallPresentationRequestStatus {
+  static fromJson(json: { [key: string]: any }): PaywallPresentationRequestStatus {
     switch (json.status) {
       case "presentation":
         return new PaywallPresentationRequestStatus(
@@ -75,9 +73,7 @@ export class PaywallPresentationRequestStatusReason {
     this.experiment = experiment
   }
 
-  static fromJson(json: {
-    [key: string]: any
-  }): PaywallPresentationRequestStatusReason {
+  static fromJson(json: { [key: string]: any }): PaywallPresentationRequestStatusReason {
     switch (json.reason) {
       case "debuggerPresented":
         return new PaywallPresentationRequestStatusReason(
