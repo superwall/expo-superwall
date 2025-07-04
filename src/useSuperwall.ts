@@ -188,35 +188,35 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     set({ isLoading: true })
     const { manualPurchaseManagment, ...restOptions } = options || {}
 
-    await SuperwallExpoModule.configure(
-      apiKey,
-      restOptions,
-      !!options?.manualPurchaseManagment,
-      pkg.version,
-    )
-    set({ isConfigured: true, isLoading: false })
+    await SuperwallExpoModule.configure(apiKey, restOptions, !!manualPurchaseManagment, pkg.version)
 
-    const currentUser = (await SuperwallExpoModule.getUserAttributes()) as UserAttributes
+    const currentUser = await SuperwallExpoModule.getUserAttributes()
     const subscriptionStatus = await SuperwallExpoModule.getSubscriptionStatus()
 
-    set({ user: currentUser, subscriptionStatus })
+    set({
+      isConfigured: true,
+      isLoading: false,
+      user: currentUser as UserAttributes,
+      subscriptionStatus,
+    })
   },
   identify: async (userId, options) => {
     SuperwallExpoModule.identify(userId, options)
 
     // TODO: Instead of setting users after identify, we should set this based on an event
     setTimeout(async () => {
-      const currentUser = (await SuperwallExpoModule.getUserAttributes()) as UserAttributes
+      const currentUser = await SuperwallExpoModule.getUserAttributes()
       const subscriptionStatus = await SuperwallExpoModule.getSubscriptionStatus()
-      set({ user: currentUser, subscriptionStatus })
+      set({ user: currentUser as UserAttributes, subscriptionStatus })
     }, 0)
   },
   reset: async () => {
     SuperwallExpoModule.reset()
 
-    const currentUser = (await SuperwallExpoModule.getUserAttributes()) as UserAttributes
+    const currentUser = await SuperwallExpoModule.getUserAttributes()
+    const subscriptionStatus = await SuperwallExpoModule.getSubscriptionStatus()
 
-    set({ user: currentUser })
+    set({ user: currentUser as UserAttributes, subscriptionStatus })
   },
   registerPlacement: async (placement, params, handlerId = "default") => {
     await SuperwallExpoModule.registerPlacement(placement, params, handlerId)
@@ -236,8 +236,8 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   setUserAttributes: async (attrs) => {
     SuperwallExpoModule.setUserAttributes(attrs)
 
-    const currentUser = (await SuperwallExpoModule.getUserAttributes()) as UserAttributes
-    set({ user: currentUser })
+    const currentUser = await SuperwallExpoModule.getUserAttributes()
+    set({ user: currentUser as UserAttributes })
   },
   getUserAttributes: async () => {
     const attributes = await SuperwallExpoModule.getUserAttributes()
@@ -336,6 +336,6 @@ export function useSuperwall<T = PublicSuperwallStore>(selector?: (state: Superw
   }
 
   const identity = (state: SuperwallStore) => state as unknown as T
-  // biome-ignore lint/correctness/useHookAtTopLevel: <explanation>
+  // biome-ignore lint/correctness/useHookAtTopLevel: good here
   return useSuperwallStore(selector ? useShallow(selector) : identity)
 }
