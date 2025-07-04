@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.18
+
+### Patch Changes
+
+- 3a93b2b: feat: fix inital loading state
+
 ## 0.0.17
 
 ### Patch Changes
