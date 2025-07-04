@@ -261,10 +261,6 @@ export type LocalNotificationType = "trialStarted" // Currently, only "trialStar
  */
 export interface LocalNotification {
   /**
-   * The unique identifier for the notification.
-   */
-  id: string
-  /**
    * The type of the local notification. See {@link LocalNotificationType}.
    */
   type: LocalNotificationType

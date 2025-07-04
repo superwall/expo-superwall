@@ -196,7 +196,7 @@ class SuperwallExpoModule : Module() {
         handler?.onError { error ->
           val data =
           mapOf(
-            "errorString" to error.localizedDescription,
+            "errorString" to error.localizedMessage,
           "handlerId" to handlerId,
           )
           sendEvent(onPaywallError, data)
