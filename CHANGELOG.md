@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2
+
+### Patch Changes
+
+- f243226: fix: type issues
+
 ## 0.1.1
 
 ### Patch Changes
