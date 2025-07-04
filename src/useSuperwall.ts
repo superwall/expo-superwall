@@ -188,18 +188,12 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     set({ isLoading: true })
     const { manualPurchaseManagment, ...restOptions } = options || {}
 
-    await SuperwallExpoModule.configure(
-      apiKey,
-      restOptions,
-      !!options?.manualPurchaseManagment,
-      pkg.version,
-    )
-    set({ isConfigured: true, isLoading: false })
+    await SuperwallExpoModule.configure(apiKey, restOptions, !!manualPurchaseManagment, pkg.version)
 
     const currentUser = (await SuperwallExpoModule.getUserAttributes()) as UserAttributes
     const subscriptionStatus = await SuperwallExpoModule.getSubscriptionStatus()
 
-    set({ user: currentUser, subscriptionStatus })
+    set({ isConfigured: true, isLoading: false, user: currentUser, subscriptionStatus })
   },
   identify: async (userId, options) => {
     SuperwallExpoModule.identify(userId, options)
