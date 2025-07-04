@@ -1,6 +1,6 @@
 {
   "name": "expo-superwall",
-  "version": "0.0.17",
+  "version": "0.0.18",
   "description": "Offical Expo Integration for Superwall",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
