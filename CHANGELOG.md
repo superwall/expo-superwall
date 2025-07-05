@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.3
+
+### Patch Changes
+
+- d273d2a: bump expo module
+
 ## 0.1.2
 
 ### Patch Changes
