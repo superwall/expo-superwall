@@ -309,7 +309,7 @@ class SuperwallExpoModule : Module() {
 
     AsyncFunction("handleDeepLink") { url: String, promise: Promise ->
       val url = Uri.parse(url)
-      val result = Superwall.instance.handleDeepLink(url).fold({
+      val result = Superwall.handleDeepLink(url).fold({
         promise.resolve(it)
       }, { error ->
         promise.reject(CodedException(error))
