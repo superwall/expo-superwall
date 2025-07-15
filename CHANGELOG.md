@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.0
+
+### Minor Changes
+
+- 3b58ea4: Updates Android SDK to 2.3.1 (with Google Play Billing library 7)
+
 ## 0.1.3
 
 ### Patch Changes
