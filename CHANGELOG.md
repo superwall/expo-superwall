@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1
+
+### Patch Changes
+
+- 4327c59: expose internal types
+
 ## 0.2.0
 
 ### Minor Changes
