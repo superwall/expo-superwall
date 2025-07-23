@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.2
+
+### Patch Changes
+
+- 3f832c7: Updates Android SDK to 2.3.2
+
 ## 0.2.1
 
 ### Patch Changes
