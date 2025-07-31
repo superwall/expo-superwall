@@ -1,5 +1,5 @@
 ---
-"expo-superwall": minor
+"expo-superwall": patch
 ---
 
 Exposes StoreTransaction in /compat
