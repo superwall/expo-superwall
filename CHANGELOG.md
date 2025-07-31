@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.3
+
+### Patch Changes
+
+- f9372f1: Exposes StoreTransaction in /compat
+
 ## 0.2.2
 
 ### Patch Changes
