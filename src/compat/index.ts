@@ -60,6 +60,7 @@ export {
 export * from "./lib/RedemptionResults"
 export { RestorationResult } from "./lib/RestorationResult"
 export { RestoreType } from "./lib/RestoreType"
+export { StoreTransaction } from "./lib/StoreTransaction"
 export { SubscriptionStatus } from "./lib/SubscriptionStatus"
 export { SuperwallDelegate } from "./lib/SuperwallDelegate"
 export { EventType, SuperwallEventInfo } from "./lib/SuperwallEventInfo"
