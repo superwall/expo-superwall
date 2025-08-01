@@ -1,66 +1,52 @@
 /**
- * @category Enums
+ * @category Types
  * @since 0.0.15
  * Defines the log levels for the SDK.
  */
-export enum LogLevel {
-  Debug = "debug",
-  Info = "info",
-  Warn = "warn",
-  Error = "error",
-  None = "none",
-}
+export type LogLevel = "debug" | "info" | "warn" | "error" | "none"
 
 /**
- * @category Enums
+ * @category Types
  * @since 0.0.15
  * Defines the scopes for logging within the SDK.
  */
-export enum LogScope {
-  LocalizationManager = "localizationManager",
-  BounceButton = "bounceButton",
-  CoreData = "coreData",
-  ConfigManager = "configManager",
-  IdentityManager = "identityManager",
-  DebugManager = "debugManager",
-  DebugViewController = "debugViewController",
-  LocalizationViewController = "localizationViewController",
-  GameControllerManager = "gameControllerManager",
-  Device = "device",
-  Network = "network",
-  PaywallEvents = "paywallEvents",
-  ProductsManager = "productsManager",
-  StoreKitManager = "storeKitManager",
-  Placements = "placements",
-  Receipts = "receipts",
-  SuperwallCore = "superwallCore",
-  PaywallPresentation = "paywallPresentation",
-  PaywallTransactions = "paywallTransactions",
-  PaywallViewController = "paywallViewController",
-  Cache = "cache",
-  All = "all",
-}
+export type LogScope = 
+  | "localizationManager"
+  | "bounceButton"
+  | "coreData"
+  | "configManager"
+  | "identityManager"
+  | "debugManager"
+  | "debugViewController"
+  | "localizationViewController"
+  | "gameControllerManager"
+  | "device"
+  | "network"
+  | "paywallEvents"
+  | "productsManager"
+  | "storeKitManager"
+  | "placements"
+  | "receipts"
+  | "superwallCore"
+  | "paywallPresentation"
+  | "paywallTransactions"
+  | "paywallViewController"
+  | "cache"
+  | "all"
 
 /**
- * @category Enums
+ * @category Types
  * @since 0.0.15
  * Defines the network environment for Superwall.
  */
-export enum NetworkEnvironment {
-  Release = "release",
-  ReleaseCandidate = "releaseCandidate",
-  Developer = "developer",
-}
+export type NetworkEnvironment = "release" | "releaseCandidate" | "developer"
 
 /**
- * @category Enums
+ * @category Types
  * @since 0.0.15
  * Defines the different types of views that can appear behind Apple's payment sheet during a transaction.
  */
-export enum TransactionBackgroundView {
-  spinner = "spinner",
-  none = "none",
-}
+export type TransactionBackgroundView = "spinner" | "none"
 
 /**
  * @category Models
@@ -132,14 +118,14 @@ export const DefaultSuperwallOptions: SuperwallOptions = {
     shouldShowPurchaseFailureAlert: true,
     shouldPreload: false,
     automaticallyDismiss: true,
-    transactionBackgroundView: TransactionBackgroundView.spinner,
+    transactionBackgroundView: "spinner",
   },
-  networkEnvironment: NetworkEnvironment.Release,
+  networkEnvironment: "release",
   isExternalDataCollectionEnabled: true,
   isGameControllerEnabled: false,
   logging: {
-    level: LogLevel.Info,
-    scopes: [LogScope.All],
+    level: "info",
+    scopes: ["all"],
   },
   collectAdServicesAttribution: false,
   passIdentifiersToPlayStore: false,
