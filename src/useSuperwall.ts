@@ -4,6 +4,7 @@ import { useShallow } from "zustand/shallow"
 import pkg from "../package.json"
 import SuperwallExpoModule from "./SuperwallExpoModule"
 import type { SubscriptionStatus } from "./SuperwallExpoModule.types"
+import type { SuperwallOptions } from "./SuperwallOptions"
 
 /**
  * @category Models
@@ -76,10 +77,10 @@ export interface SuperwallStore {
    */
   configure: (
     apiKey: string,
-    options?: {
+    options?: Partial<SuperwallOptions> & {
+      /** @deprecated Use manualPurchaseManagement instead */
       manualPurchaseManagment?: boolean
-      enableExperimentalDeviceVariables?: boolean
-    } & Record<string, any>,
+    },
   ) => Promise<void>
   /**
    * Identifies the current user with a unique ID.
@@ -186,9 +187,12 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   /* -------------------- Actions -------------------- */
   configure: async (apiKey, options) => {
     set({ isLoading: true })
-    const { manualPurchaseManagment, ...restOptions } = options || {}
+    const { manualPurchaseManagement, manualPurchaseManagment, ...restOptions } = options || {}
 
-    await SuperwallExpoModule.configure(apiKey, restOptions, !!manualPurchaseManagment, pkg.version)
+    // Support both spellings for backward compatibility
+    const isManualPurchaseManagement = manualPurchaseManagement ?? manualPurchaseManagment ?? false
+
+    await SuperwallExpoModule.configure(apiKey, restOptions, isManualPurchaseManagement, pkg.version)
 
     const currentUser = await SuperwallExpoModule.getUserAttributes()
     const subscriptionStatus = await SuperwallExpoModule.getSubscriptionStatus()
