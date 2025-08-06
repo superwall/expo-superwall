@@ -3,6 +3,7 @@ import { type EmitterSubscription, Linking, Platform } from "react-native"
 import { useShallow } from "zustand/shallow"
 import { useCustomPurchaseController } from "./CustomPurchaseControllerProvider"
 import SuperwallExpoModule from "./SuperwallExpoModule"
+import type { SuperwallOptions } from "./SuperwallOptions"
 import { SuperwallContext, useSuperwallStore } from "./useSuperwall"
 
 interface SuperwallProviderProps {
@@ -12,7 +13,10 @@ interface SuperwallProviderProps {
     ios?: string
   }
   /** Optional configuration options passed to the native SDK */
-  options?: Record<string, any>
+  options?: Partial<SuperwallOptions> & {
+    /** @deprecated Use manualPurchaseManagement instead */
+    manualPurchaseManagment?: boolean
+  }
   /** App content to render once configured */
   children: ReactNode
 }
@@ -64,7 +68,7 @@ export function SuperwallProvider({
 
       configure(apiKey, {
         ...options,
-        manualPurchaseManagment: isUsingCustomPurchaseController,
+        manualPurchaseManagement: isUsingCustomPurchaseController,
       }).catch((err) => {
         console.error("Superwall configure failed", err)
       })
