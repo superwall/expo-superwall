@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.4
+
+### Patch Changes
+
+- c274e6a: Add typed SuperwallOptions and fix mispelled option name
+
 ## 0.2.3
 
 ### Patch Changes
