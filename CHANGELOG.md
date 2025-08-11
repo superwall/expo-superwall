@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.6
+
+### Patch Changes
+
+- 10bb039: force release?
+
 ## 0.2.5
 
 ### Patch Changes
