@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.5
+
+### Patch Changes
+
+- 95636a6: Bump internal android sdk to 2.5.1
+
 ## 0.2.4
 
 ### Patch Changes
