@@ -378,5 +378,18 @@ class SuperwallExpoModule : Module() {
         Superwall.instance.logLevel = logLevel
       }
     }
+    Function("showAlert") { title: String?,
+        message: String?,
+        actionTitle: String?,
+        closeActionTitle: String?,
+        action: (()->Unit)?,
+        onClose: (()->Unit)? ->
+        Superwall.instance.paywallView?
+          .showAlert(title = title,
+                  message = message,
+         actionTitle = actionTitle, 
+         closeActionTitle = closeActionTitle?:"Done", 
+         action = action?.let { { it.invoke() } }, onClose = onClose?.let { { it.invoke() } })
+    }
   }
 }

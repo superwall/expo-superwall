@@ -251,7 +251,9 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   setLogLevel: async (level) => {
     SuperwallExpoModule.setLogLevel(level)
   },
-
+  showAlert: async (title: string, message: string, actionTitle: string, closeActionTitle: string, action?: () => void, onClose?: () => void) => {
+    SuperwallExpoModule.showAlert(title, message, actionTitle, closeActionTitle, action, onClose)
+  },
   setSubscriptionStatus: async (status) => {
     SuperwallExpoModule.setSubscriptionStatus(status)
   },

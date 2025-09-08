@@ -52,6 +52,8 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
   preloadAllPaywalls(): void
 
   setLogLevel(level: string): void
+
+  showAlert(title: string, message: string, actionTitle: string, closeActionTitle: string, action?: Promise<void>, onClose?: Promise<void>): void
 }
 
 export default requireNativeModule<SuperwallExpoModule>("SuperwallExpo")

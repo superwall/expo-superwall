@@ -310,5 +310,16 @@ public class SuperwallExpoModule: Module {
         Superwall.shared.logLevel = logLevel
       }
     }
+
+    Function("showAlert") { (title: String?, message: String?, actionTitle: String?, closeActionTitle: String?, action: Promise?, onClose: Promise?) in
+      Superwall.shared.paywallViewController?.showAlert(
+        title: title,
+        message: message,
+        actionTitle: actionTitle,
+        closeActionTitle: closeActionTitle ?? "Done",
+        action: action != nil ? { action?.resolve(nil) } : nil,
+        onClose: onClose != nil ? { onClose?.resolve(nil) } : nil
+      )
+    }
   }
 }
