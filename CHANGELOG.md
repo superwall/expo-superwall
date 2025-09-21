@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.7
+
+### Patch Changes
+
+- adccfe4: Update Android SDK to 2.5.4 and iOS to 4.8.2
+
 ## 0.2.6
 
 ### Patch Changes
