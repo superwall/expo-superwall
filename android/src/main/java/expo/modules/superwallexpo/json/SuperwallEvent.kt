@@ -98,6 +98,14 @@ class SuperwallEvent {
           map["event"] = "userAttributes"
           map["attributes"] = superwallPlacement.attributes
         }
+        is SuperwallEvent.IntegrationProps -> {
+          map["event"] = "integration_attributes"
+          map["audienceFilterParams"] = superwallPlacement.audienceFilterParams
+        }
+        is SuperwallEvent.IntegrationAttributes -> {
+          map["event"] = "integration_attributes"
+          map["audienceFilterParams"] = superwallPlacement.audienceFilterParams
+        }
         is SuperwallEvent.NonRecurringProductPurchase -> {
           map["event"] = "nonRecurringProductPurchase"
           map["product"] = superwallPlacement.product.toJson()
@@ -127,6 +135,9 @@ class SuperwallEvent {
         is SuperwallEvent.PaywallWebviewLoadFail -> {
           map["event"] = "paywallWebviewLoadFail"
           map["paywallInfo"] = superwallPlacement.paywallInfo.toJson()
+          superwallPlacement.errorMessage?.let {
+            map["errorMessage"] = it.toString()
+          }
         }
         is SuperwallEvent.PaywallWebviewLoadComplete -> {
           map["event"] = "paywallWebviewLoadComplete"
@@ -145,6 +156,9 @@ class SuperwallEvent {
           map["event"] = "paywallProductsLoadFail"
           map["triggeredPlacementName"] = superwallPlacement.triggeredPlacementName ?: ""
           map["paywallInfo"] = superwallPlacement.paywallInfo.toJson()
+          superwallPlacement.errorMessage?.let {
+            map["errorMessage"] = it
+          }
         }
         is SuperwallEvent.PaywallProductsLoadComplete -> {
           map["event"] = "paywallProductsLoadComplete"
@@ -193,9 +207,34 @@ class SuperwallEvent {
         }
         is SuperwallEvent.ShimmerViewComplete -> {
           map["event"] = "shimmerViewComplete"
+          map["duration"] = superwallPlacement.duration
         }
         is SuperwallEvent.ShimmerViewStart -> {
           map["event"] = "shimmerViewStart"
+        }
+        is SuperwallEvent.RedemptionComplete -> {
+          map["event"] = "redemptionComplete"
+        }
+        is SuperwallEvent.RedemptionFail -> {
+          map["event"] = "redemptionFail"
+        }
+        is SuperwallEvent.RedemptionStart -> {
+          map["event"] = "redemptionStart"
+        }
+        is SuperwallEvent.EnrichmentStart -> {
+          map["event"] = "enrichmentStart"
+        }
+        is SuperwallEvent.EnrichmentFail -> {
+          map["event"] = "enrichmentFail"
+        }
+        is SuperwallEvent.EnrichmentComplete -> {
+          map["event"] = "enrichmentComplete"
+          map["userEnrichment"] = superwallPlacement.userEnrichment
+          map["deviceEnrichment"] = superwallPlacement.deviceEnrichment
+        }
+        is SuperwallEvent.ReviewRequested -> {
+          map["event"] = "reviewRequested"
+          map["count"] = superwallPlacement.count
         }
         else -> {}
       }
