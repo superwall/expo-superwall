@@ -212,6 +212,19 @@ extension SuperwallEvent {
       return json
     case .enrichmentFail:
       return ["event": "enrichmentFail"]
+    case .paywallProductsLoadMissingProducts(let triggeredEventName, let paywallInfo, let identifiers):
+      return [
+        "event": "paywallProductsLoadMissingProducts",
+        "triggeredEventName": triggeredEventName ?? "",
+        "paywallInfo": paywallInfo.toJson(),
+        "identifiers": Array(identifiers)
+      ]
+    case .networkDecodingFail:
+      return ["event": "networkDecodingFail"]
+    case .integrationAttributes(let attributes):
+      return ["event": "integrationAttributes", "attributes": attributes]
+    case .reviewRequested(let count):
+      return ["event": "reviewRequested", "count": count]
     default:
       return ["event": "unknown"]
     }
