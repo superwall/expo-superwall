@@ -17,6 +17,8 @@ export class StoreTransaction {
   expirationDate?: Date | null
   offerId?: string | null
   revocationDate?: Date | null
+  appAccountToken?: string | null
+  purchaseToken?: string | null
 
   constructor({
     configRequestId,
@@ -32,6 +34,8 @@ export class StoreTransaction {
     expirationDate,
     offerId,
     revocationDate,
+    appAccountToken,
+    purchaseToken,
   }: {
     configRequestId: string
     appSessionId: string
@@ -46,6 +50,8 @@ export class StoreTransaction {
     expirationDate?: string | null
     offerId?: string | null
     revocationDate?: string | null
+    appAccountToken?: string | null
+    purchaseToken?: string | null
   }) {
     this.configRequestId = configRequestId
     this.appSessionId = appSessionId
@@ -62,6 +68,8 @@ export class StoreTransaction {
     this.expirationDate = expirationDate ? new Date(expirationDate) : null
     this.offerId = offerId || null
     this.revocationDate = revocationDate ? new Date(revocationDate) : null
+    this.appAccountToken = appAccountToken || null
+    this.purchaseToken = purchaseToken || null
   }
 
   static fromJson(json: any): StoreTransaction {
@@ -79,6 +87,8 @@ export class StoreTransaction {
       expirationDate: json.expirationDate,
       offerId: json.offerId,
       revocationDate: json.revocationDate,
+      appAccountToken: json.appAccountToken,
+      purchaseToken: json.purchaseToken,
     })
   }
 }
