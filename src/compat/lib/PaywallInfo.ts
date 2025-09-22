@@ -171,7 +171,7 @@ export class PaywallInfo {
       computedPropertyRequests: json.computedPropertyRequests.map((r: any) =>
         ComputedPropertyRequest.fromJson(r),
       ),
-      surveys: json.surveys.map((s: any) => Survey.fromJson(s)),
+      surveys: json.surveys?.map((s: any) => Survey.fromJson(s)),
     })
   }
 }
