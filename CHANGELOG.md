@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.8
+
+### Patch Changes
+
+- e0b57bc: fix(compat): none nullable access
+- 314be3c: bump deps
+
 ## 0.2.7
 
 ### Patch Changes
