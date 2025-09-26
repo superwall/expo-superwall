@@ -19,6 +19,7 @@ export class StoreTransaction {
   revocationDate?: Date | null
   appAccountToken?: string | null
   purchaseToken?: string | null
+  signature?: string | null
 
   constructor({
     configRequestId,
@@ -36,6 +37,7 @@ export class StoreTransaction {
     revocationDate,
     appAccountToken,
     purchaseToken,
+    signature,
   }: {
     configRequestId: string
     appSessionId: string
@@ -52,6 +54,7 @@ export class StoreTransaction {
     revocationDate?: string | null
     appAccountToken?: string | null
     purchaseToken?: string | null
+    signature?: string | null
   }) {
     this.configRequestId = configRequestId
     this.appSessionId = appSessionId
@@ -70,6 +73,7 @@ export class StoreTransaction {
     this.revocationDate = revocationDate ? new Date(revocationDate) : null
     this.appAccountToken = appAccountToken || null
     this.purchaseToken = purchaseToken || null
+    this.signature = signature || null
   }
 
   static fromJson(json: any): StoreTransaction {
@@ -89,6 +93,7 @@ export class StoreTransaction {
       revocationDate: json.revocationDate,
       appAccountToken: json.appAccountToken,
       purchaseToken: json.purchaseToken,
+      signature: json.signature,
     })
   }
 }

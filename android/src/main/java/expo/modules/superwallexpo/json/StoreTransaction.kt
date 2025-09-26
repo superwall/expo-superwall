@@ -28,6 +28,6 @@ fun StoreTransaction.toJson(): Map<String, Any?> {
   map["revocationDate"] = revocationDate?.toIsoString()
   map["appAccountToken"] = appAccountToken
   map["purchaseToken"] = purchaseToken
-
+  map["signature"] = signature
   return map
 }
