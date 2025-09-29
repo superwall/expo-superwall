@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.9
+
+### Patch Changes
+
+- bd460a7: Expose signature in android StoreTransaction
+- e9eeff8: Expose appAcounttoken and purchaseToken on Android StoreTransaction
+
 ## 0.2.8
 
 ### Patch Changes
