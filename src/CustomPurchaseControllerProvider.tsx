@@ -9,8 +9,8 @@ const customPurchaseControllerContext = createContext<CustomPurchaseControllerCo
  * @category Purchase Controller
  * @since 0.0.15
  */
-export interface PurchaseResult {
-  type: string
+export type PurchaseResult = {
+  type: "cancelled" | "failed" | "purchased" | "pending"
   error?: string
 }
 
@@ -19,8 +19,8 @@ export interface PurchaseResult {
  * @since 0.0.15
  */
 export interface CustomPurchaseControllerContext {
-  onPurchase: (params: OnPurchaseParams) => Promise<void>
-  onPurchaseRestore: () => Promise<void>
+  onPurchase: (params: OnPurchaseParams) => Promise<PurchaseResult | undefined | undefined>
+  onPurchaseRestore: () => Promise<PurchaseResult | undefined | undefined>
 }
 
 /**
@@ -52,18 +52,34 @@ export const CustomPurchaseControllerProvider = ({
 }: CustomPurchaseControllerProviderProps) => {
   useSuperwallEvents({
     onPurchase: async (params) => {
-      await controller.onPurchase(params)
+      try {
+        const result = await controller.onPurchase(params)
 
-      SuperwallExpoModule.didPurchase({
-        type: "purchased",
-      })
+        SuperwallExpoModule.didPurchase({
+          type: result?.type ?? "purchased",
+          error: result?.error,
+        })
+      } catch (error: any) {
+        SuperwallExpoModule.didPurchase({
+          type: "failed",
+          error: error.error.message || "Unknown error",
+        })
+      }
     },
     onPurchaseRestore: async () => {
-      await controller.onPurchaseRestore()
+      try {
+        const result = await controller.onPurchaseRestore()
 
-      SuperwallExpoModule.didRestore({
-        type: "restored",
-      })
+        SuperwallExpoModule.didRestore({
+          type: result?.type ?? "restored",
+          error: result?.error,
+        })
+      } catch (error: any) {
+        SuperwallExpoModule.didRestore({
+          type: "failed",
+          error: error.message || "Unknown error",
+        })
+      }
     },
   })
 

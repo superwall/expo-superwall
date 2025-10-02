@@ -330,6 +330,7 @@ export function useSuperwallEvents({
       )
     }
 
+    // biome-ignore lint/suspicious/useIterableCallbackReturn: <explanation>
     return () => subs.forEach((s) => s.remove())
   }, [trackedHandlerId])
 }

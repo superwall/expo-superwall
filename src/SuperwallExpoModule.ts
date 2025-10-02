@@ -35,7 +35,14 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
 
   handleDeepLink(url: string): Promise<boolean>
 
-  didPurchase(result: Record<string, any>): void
+  didPurchase(
+    result:
+      | { type: "cancelled" | "purchased" | "pending" }
+      | {
+          type: "failed"
+          error?: string
+        },
+  ): void
   didRestore(result: Record<string, any>): void
 
   dismiss(): Promise<void>
