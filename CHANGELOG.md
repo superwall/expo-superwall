@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.0
+
+### Minor Changes
+
+- 9ed73eb: feat: improve error handling of Custom Purchase Controller
+
 ## 0.2.9
 
 ### Patch Changes
