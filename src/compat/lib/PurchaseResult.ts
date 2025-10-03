@@ -11,7 +11,7 @@ export class PurchaseResult {
 
   toJSON() {
     return {
-      type: this.type,
+      type: this.type as "cancelled" | "purchased" | "pending" | "failed",
       ...(this.error && { error: this.error }), // Conditionally add error field if present
     }
   }
