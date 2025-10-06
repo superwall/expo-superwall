@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1
+
+### Patch Changes
+
+- 4a3f540: fix: compat typeissues
+
 ## 0.3.0
 
 ### Minor Changes
