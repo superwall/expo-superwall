@@ -113,12 +113,16 @@ export default function NewPage() {
             console.log("onPurchase", params.productId)
           }
           // Set ur system here
-          return
+          return {
+            type: "purchased",
+          }
         },
         onPurchaseRestore: async () => {
           console.log("onPurchaseRestore")
           // Set ur system here
-          return
+          return {
+            type: "failed",
+          }
         },
       }}
     >
