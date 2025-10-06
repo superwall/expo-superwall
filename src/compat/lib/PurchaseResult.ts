@@ -5,14 +5,21 @@
  */
 export class PurchaseResult {
   constructor(
-    public type: string,
+    public type: "cancelled" | "purchased" | "pending" | "failed",
     public error?: string,
   ) {}
 
-  toJSON() {
+  toJSON():
+    | { type: "cancelled" | "purchased" | "pending" }
+    | { type: "failed"; error: string } {
+    if (this.type === "failed") {
+      return {
+        type: this.type,
+        error: this.error!,
+      }
+    }
     return {
-      type: this.type,
-      ...(this.error && { error: this.error }), // Conditionally add error field if present
+      type: this.type as "cancelled" | "purchased" | "pending",
     }
   }
 }
@@ -36,17 +43,6 @@ export class PurchaseResultCancelled extends PurchaseResult {
 export class PurchaseResultPurchased extends PurchaseResult {
   constructor() {
     super("purchased")
-  }
-}
-
-/**
- * @category Models
- * @since 0.0.15
- * Represents a successful restoration of purchases.
- */
-export class PurchaseResultRestored extends PurchaseResult {
-  constructor() {
-    super("restored")
   }
 }
 

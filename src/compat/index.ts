@@ -55,7 +55,6 @@ export {
   PurchaseResultFailed,
   PurchaseResultPending,
   PurchaseResultPurchased,
-  PurchaseResultRestored,
 } from "./lib/PurchaseResult"
 export * from "./lib/RedemptionResults"
 export { RestorationResult } from "./lib/RestorationResult"

@@ -2,8 +2,7 @@ import Superwall, {
   type PurchaseResult,
   PurchaseResultFailed,
   PurchaseResultPurchased,
-  PurchaseResultRestored,
-  type RestorationResult,
+  RestorationResult,
   type SubscriptionStatus,
 } from "expo-superwall/compat"
 import { Entitlement } from "expo-superwall/compat/lib/Entitlement"
@@ -85,9 +84,9 @@ export class TestingPurchaseController {
 
       await Superwall.shared.setSubscriptionStatus(activeStatus)
 
-      return new PurchaseResultRestored()
+      return RestorationResult.restored()
     }
 
-    return new PurchaseResultFailed("Restore failed in TestingPurchaseController")
+    return RestorationResult.failed(new Error("Restore failed in TestingPurchaseController"))
   }
 }
