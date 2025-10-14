@@ -1,0 +1,16 @@
+.kotlin
+**/*.iml
+**/.gradle
+**/local.properties
+**/.DS_Store
+**/build
+**/captures
+**/.externalNativeBuild
+**/.cxx
+**/local.properties
+**/.idea/
+private_key.pepk
+upload-keystore.jks
+.env
+**/google-services.json
+.claude

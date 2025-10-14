@@ -1,0 +1,16 @@
+name: Notify android release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  notify_pwn:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository Dispatch
+        uses: peter-evans/repository-dispatch@98b1133981c5060126325c279a8840c1711a9fe0
+        with:
+          token: ${{ secrets.MAIN_REPO_PAT }}
+          repository: superwall/paywall-next
+          event-type: android-release

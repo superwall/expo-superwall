@@ -1,0 +1,122 @@
+[versions]
+billing_version = "8.0.0"
+browser_version = "1.5.0"
+gradle_plugin_version = "8.6.0"
+jna_version = "5.14.0@aar"
+kotlinxCoroutinesGuavaVersion = "1.9.0"
+leakcanaryAndroidVersion = "2.14"
+lifecycleProcessVersion = "2.8.1"
+orchestratorVersion = "1.5.0"
+playServicesAdsIdentifierVersion = "18.2.0"
+playServicesAppsetVersion = "16.1.0"
+revenue_cat_version = "9.1.2"
+compose_version = "2024.12.01"
+kotlinx_serialization_json_version = "1.7.2"
+activity_compose_version = "1.9.3"
+core_version = "1.13.1"
+appcompat_version = "1.7.0"
+material_version = "1.12.0"
+constraintlayout_version = "2.1.4"
+core_ktx_version = "1.13.1"
+lifecycle_runtime_ktx_version = "2.8.1"
+junit_version = "4.13.2"
+kotlinx_coroutines_test_version = "1.9.0"
+room_runtime_version = "2.6.1"
+supercel_version = "1.0.4"
+test_ext_junit_version = "1.2.1"
+espresso_core_version = "3.6.1"
+test_runner_version = "1.6.1"
+test_rules_version = "1.6.1"
+kotlin = "2.0.21"
+kotlinx_coroutines_core_version = "1.9.0"
+mockk_version = "1.13.12"
+threetenbp_version = "1.6.8"
+uiautomator_version = "2.3.0"
+workRuntimeKtx_version = "2.9.0"
+serialization_version = "1.6.0"
+dropshot_version = "0.4.2"
+ksp = "2.0.21-1.0.27"
+install_referrer = "2.2"
+publisher_version = "0.33.0"
+play_review = "2.0.2"
+ads_identifier = "1.0.0-alpha5"
+[libraries]
+
+# SQL
+
+jna = { module = "net.java.dev.jna:jna", version.ref = "jna_version" }
+leakcanary-android = { module = "com.squareup.leakcanary:leakcanary-android", version.ref = "leakcanaryAndroidVersion" }
+orchestrator = { module = "androidx.test:orchestrator", version.ref = "orchestratorVersion" }
+play-services-ads-identifier = { module = "com.google.android.gms:play-services-ads-identifier", version.ref = "playServicesAdsIdentifierVersion" }
+play-services-appset = { module = "com.google.android.gms:play-services-appset", version.ref = "playServicesAppsetVersion" }
+room-compiler = { module = "androidx.room:room-compiler", version.ref = "room_runtime_version" }
+room-ktx = { module = "androidx.room:room-ktx", version.ref = "room_runtime_version" }
+room-runtime = { module = "androidx.room:room-runtime", version.ref = "room_runtime_version" }
+
+
+# Billing
+billing = { module = "com.android.billingclient:billing", version.ref = "billing_version" }
+revenue_cat = { module = "com.revenuecat.purchases:purchases", version.ref = "revenue_cat_version" }
+
+# Browser
+browser = { module = "androidx.browser:browser", version.ref = "browser_version" }
+
+# Compose
+compose_bom = { module = "androidx.compose:compose-bom", version.ref = "compose_version" }
+activity_compose = { module = "androidx.activity:activity-compose", version.ref = "activity_compose_version" }
+supercel = { module = "com.superwall.supercel:supercel", version.ref = "supercel_version" }
+threetenbp = { module = "org.threeten:threetenbp", version.ref = "threetenbp_version" }
+ui = { module = "androidx.compose.ui:ui" }
+ui_graphics = { module = "androidx.compose.ui:ui-graphics" }
+ui_tooling_preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+material3 = { module = "androidx.compose.material3:material3" }
+
+# Core
+core = { module = "androidx.core:core", version.ref = "core_version" }
+appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat_version" }
+material = { module = "com.google.android.material:material", version.ref = "material_version" }
+constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout_version" }
+core_ktx = { module = "androidx.core:core-ktx", version.ref = "core_ktx_version" }
+lifecycle_runtime_ktx = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle_runtime_ktx_version" }
+lifecycle_testing = { module = "androidx.lifecycle:lifecycle-runtime-testing", version.ref = "lifecycle_runtime_ktx_version" }
+uiautomator = { module = "androidx.test.uiautomator:uiautomator", version.ref = "uiautomator_version" }
+work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx_version" }
+lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "lifecycleProcessVersion" }
+install_referrer = { module = "com.android.installreferrer:installreferrer", version.ref = "install_referrer"}
+play_review_ktx = { module = "com.google.android.play:review", version.ref="play_review"}
+reviewplay_review_ktx = { module = "com.google.android.play:review-ktx", version.ref="play_review"}
+ads_identifiers = { module = "androidx.ads:ads-identifier", version.ref="ads_identifier"}
+# Coroutines
+kotlinx_coroutines_core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx_coroutines_core_version" }
+kotlinx-coroutines-guava = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-guava", version.ref = "kotlinxCoroutinesGuavaVersion" }
+
+# Serialization
+kotlinx_serialization_json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx_serialization_json_version" }
+
+# Test
+junit = { module = "junit:junit", version.ref = "junit_version" }
+kotlinx_coroutines_test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx_coroutines_test_version" }
+mockk_core = { module = "io.mockk:mockk", version.ref = "mockk_version" }
+
+# Test (Android)
+test_ext_junit = { module = "androidx.test.ext:junit", version.ref = "test_ext_junit_version" }
+espresso_core = { module = "androidx.test.espresso:espresso-core", version.ref = "espresso_core_version" }
+test_runner = { module = "androidx.test:runner", version.ref = "test_runner_version" }
+test_core = { module = "androidx.test:core", version.ref = "test_runner_version" }
+test_rules = { module = "androidx.test:rules", version.ref = "test_rules_version" }
+ui_test_junit4 = { module = "androidx.compose.ui:ui-test-junit4" }
+mockk_android = { module = "io.mockk:mockk-android", version.ref = "mockk_version" }
+
+# Debug
+ui_tooling = { module = "androidx.compose.ui:ui-tooling" }
+ui_test_manifest = { module = "androidx.compose.ui:ui-test-manifest" }
+
+[plugins]
+androidApplication = { id = "com.android.application", version.ref = "gradle_plugin_version" }
+kotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "serialization_version" }
+dropshot = { id = "com.dropbox.dropshots", version.ref = "dropshot_version" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp"}
+androidLibrary = { id = "com.android.library", version.ref = "gradle_plugin_version" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+publisher = { id ="com.vanniktech.maven.publish", version.ref = "publisher_version" }

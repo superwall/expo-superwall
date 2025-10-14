@@ -1,0 +1,52 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+# This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle
+
+name: Build, Test
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+# Prevents running a bunch of we push right back to back
+concurrency:
+  group: test-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Set Up JDK
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'zulu' # See 'Supported distributions' for available options
+        java-version: '17'
+        cache: 'gradle'
+
+    # Allow us to run the command
+    - name: Change wrapper permissions
+      run: chmod +x ./gradlew
+
+    # Run Build & Test the Project
+    - name: Build gradle project
+      run: ./gradlew build
+
+    - name: Build test project
+      run: ./gradlew :app:assembleAndroidTest -DtestBuildType=debug
+
+    - name: Run tests on Firebase Test Lab
+      uses: asadmansr/Firebase-Test-Lab-Action@v1.0
+      with:
+        arg-spec: '.github/firebase-tests.yml:android-pixel-7'
+      env:
+        SERVICE_ACCOUNT: ${{ secrets.SERVICE_ACCOUNT }}
+
