@@ -1,0 +1,15 @@
+{
+  "originHash" : "db362fdf36eaf1c479870b40c7a6c2e2165345c7210ebe36257ee38523125878",
+  "pins" : [
+    {
+      "identity" : "superscript-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/superwall/Superscript-iOS",
+      "state" : {
+        "revision" : "59227a3450de9b06857986bc317be387bca3ed4b",
+        "version" : "1.0.2"
+      }
+    }
+  ],
+  "version" : 3
+}

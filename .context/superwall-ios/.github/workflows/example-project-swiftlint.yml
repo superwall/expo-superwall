@@ -1,0 +1,26 @@
+name: Example Projects SwiftLint
+
+on:
+  push:
+    paths:
+      - '.github/workflows/example-project-swiftlint.yml'
+      - 'Examples/.swiftlint.yml'
+      - 'Examples/**/*.swift'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  Example-Projects-SwiftLint:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: GitHub Action for SwiftLint
+        uses: norio-nomura/action-swiftlint@3.2.1
+        with:
+          args: --config .swiftlint.yml
+        env:
+          WORKING_DIRECTORY: Examples

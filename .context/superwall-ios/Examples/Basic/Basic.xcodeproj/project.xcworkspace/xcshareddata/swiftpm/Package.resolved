@@ -1,0 +1,16 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "Superscript",
+        "repositoryURL": "https://github.com/superwall/Superscript-iOS",
+        "state": {
+          "branch": null,
+          "revision": "5f99cecebdbbdb0be96f413dbd0e7458180977ed",
+          "version": "0.2.8"
+        }
+      }
+    ]
+  },
+  "version": 1
+}
