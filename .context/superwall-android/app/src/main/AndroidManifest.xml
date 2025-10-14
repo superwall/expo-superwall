@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="com.android.vending.BILLING" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
+
+    <application
+        android:name=".MainApplication"
+        package="com.superwall.superapp"
+        android:requestLegacyExternalStorage="true"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:sharedUserId="com.superwall.superapp.uid         tools:targetApi="
+        android:sharedUserMaxSdkVersion="32"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.MyApplication">
+        <activity
+            android:name=".test.UITestActivity"
+            android:exported="false"
+            android:label="@string/title_activity_uitest"
+            android:theme="@style/Theme.MyApplication" />
+
+        <activity
+            android:name=".test.WebTestActivity"
+            android:exported="false"
+            android:label="@string/title_activity_uitest"
+            android:theme="@style/Theme.MyApplication" />
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="superapp" />
+            </intent-filter>
+        </activity>
+        <activity android:name=".ComposeActivity" />
+        <activity 
+            android:name=".debug.SuperwallDebugActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+        <activity
+            android:name="com.superwall.sdk.paywall.view.SuperwallPaywallActivity"
+            android:theme="@style/Theme.MaterialComponents.DayNight.NoActionBar"
+            android:configChanges="orientation|screenSize|keyboardHidden">
+        </activity>
+        <activity android:name="com.superwall.sdk.debug.DebugViewActivity" />
+        <activity android:name="com.superwall.sdk.debug.localizations.SWLocalizationActivity" />
+        <activity android:name="com.superwall.sdk.debug.SWConsoleActivity" />
+
+        <activity
+            android:name="com.superwall.sdk.view.DeepLinkHandler"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="superapp" android:host="superwall"  />
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>
+
+
+
+
+
+
+
+
+
+
+
+
+
+

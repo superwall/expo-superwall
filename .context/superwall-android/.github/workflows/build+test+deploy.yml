@@ -1,0 +1,129 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+# This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle
+
+name: Build, Test & Publish
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Prevents running a bunch of we push right back to back
+concurrency:
+  group: test-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+
+    runs-on: android-large-runner
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Set Up JDK
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'zulu' # See 'Supported distributions' for available options
+        java-version: '17'
+        cache: 'gradle'
+
+    # Allow us to run the command
+    - name: Change wrapper permissions
+      run: chmod +x ./gradlew
+
+    # Run Build & Test the Project
+    - name: Build gradle project
+      run: ./gradlew build
+
+    - name: Build test project
+      run: ./gradlew :app:assembleAndroidTest -DtestBuildType=debug
+
+    # See what version we're on
+    # Writes to superwall/build/version.json with the version set 
+    # in the superwall build.gradle
+    - name: Generate version from config
+      run: ./gradlew :superwall:generateBuildInfo
+
+    - name: Get Version
+      uses: notiz-dev/github-action-json-property@release
+      id: version
+      with:
+        path: "superwall/build/version.json"
+        prop_path: "version"
+
+    # Only try to publish if we're on main
+    - name: Check if tag exists
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      id: check-tag
+      run: |
+        EXISTS=$(git tag -l | grep -Fxq "${{steps.version.outputs.prop}}" && echo 'true' || echo 'false')
+        echo "::set-output name=tag-exists::$EXISTS"
+
+    - name: Import GPG key
+      if: steps.check-tag.outputs.tag-exists == 'false'
+      run: |
+        echo "${{ secrets.GPG_SIGNING_KEY }}" | base64 -d > private.key
+        gpg --batch --import private.key
+        rm private.key
+
+    - name: Deploy
+      if: steps.check-tag.outputs.tag-exists == 'false'
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.ORG_GRADLE_PROJECT_mavenCentralUsername }}
+        ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.ORG_GRADLE_PROJECT_mavenCentralPassword }}
+        ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.ORG_GRADLE_PROJECT_signingInMemoryKeyPassword }}
+        ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.ORG_GRADLE_PROJECT_signingInMemoryKeyId }}
+        ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.ORG_GRADLE_PROJECT_signingInMemoryKey }}
+      run: |
+        ./gradlew :superwall:publish
+        ./gradlew :superwall-compose:publish
+
+    - name: Determine prerelease status
+      id: prerelease
+      run: |
+        VERSION=${{steps.version.outputs.prop}}
+        if [[ "$VERSION" == *"-alpha"* || "$VERSION" == *"-beta"* || "$VERSION" == *"-rc"* ]]; then
+          echo "::set-output name=status::true"
+        else
+          echo "::set-output name=status::false"
+        fi
+
+    - name: Tag
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      run: |
+        if [ "${{ steps.check-tag.outputs.tag-exists }}" == "false" ]; then
+          sudo git config --global user.name 'Jake'
+          sudo git config --global user.email 'jakemor@users.noreply.github.com'
+          sudo git pull
+          echo "\n\n\n- - - - - VERSION - - - - -\n\n\n"
+          echo ${{steps.version.outputs.prop}}
+          echo "\n\n\n- - - - - END VERSION - - - - -\n\n\n"
+          sudo git tag -a ${{steps.version.outputs.prop}} -m "tags with latest version"
+          sudo git push --tags
+          sudo git checkout -b release/${{steps.version.outputs.prop}}
+          sudo git push -u origin release/${{steps.version.outputs.prop}}
+        fi
+
+    - name: slack-send
+      # Only notify on a new tag
+      if: steps.check-tag.outputs.tag-exists == 'false'
+      uses: slackapi/slack-github-action@v1.24.0
+      with:
+        payload: |
+          {
+            "text": "Please create a new Android Release! https://github.com/superwall/Superwall-Android/releases/new?tag=${{steps.version.outputs.prop}}&prerelease=${{steps.prerelease.outputs.status}}"
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+        SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

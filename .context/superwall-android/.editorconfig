@@ -1,0 +1,11 @@
+[*.{kt,kts}]
+ktlint_code_style = ktlint_official
+ij_kotlin_packages_to_use_import_on_demand = disabled
+ktlint_standard_enum-entry-name-case = disabled
+ktlint_standard_no-wildcard-imports = disabled
+ktlint_standard_package-name = disabled
+ktlint_standard_filename = disabled
+ktlint_function_naming_ignore_when_annotated_with=Composable
+ktlint_standard_class-naming = disable
+ktlint_standard_backing-property-naming = disabled
+ktlint_standard_property-naming = disabled
