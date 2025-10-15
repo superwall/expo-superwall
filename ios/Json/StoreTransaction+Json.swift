@@ -14,10 +14,11 @@ extension StoreTransaction {
       "webOrderLineItemID": webOrderLineItemID,
       "appBundleId": appBundleId,
       "subscriptionGroupId": subscriptionGroupId,
-      "isUpgraded": isUpgraded,
+      "isUpgraded": isUpgraded ?? false,
       "expirationDate": expirationDate.map { dateFormatter.string(from: $0) },
       "offerId": offerId,
-      "revocationDate": revocationDate.map { dateFormatter.string(from: $0) }
+      "revocationDate": revocationDate.map { dateFormatter.string(from: $0) },
+      "appAccountToken": appAccountToken?.uuidString
     ]
   }
 }

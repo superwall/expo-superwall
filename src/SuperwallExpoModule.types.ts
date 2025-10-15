@@ -842,54 +842,28 @@ export interface StoreTransaction {
   originalTransactionIdentifier?: string
   /** The transaction identifier provided by the respective app store (App Store, Google Play). */
   storeTransactionId?: string
-  /** The ISO 8601 date string of the original purchase date, especially relevant for subscriptions. */
-  originalPurchaseDate?: string
-  /** The identifier of the product involved in the transaction. */
-  productIdentifier?: string
-  /** The quantity of the product purchased. */
-  quantity?: number
+  /** The ISO 8601 date string of the original transaction date, especially relevant for subscriptions. */
+  originalTransactionDate?: string
   /** The web order line item ID, used for auto-renewable subscriptions on some platforms. */
-  webOrderLineItemId?: string
-  /** The identifier of the promotional offer, if this transaction was part of one. */
-  promotionalOfferIdentifier?: string
+  webOrderLineItemID?: string
+  /** The app bundle ID associated with this transaction. */
+  appBundleId?: string
   /** The identifier for the subscription group this transaction belongs to. */
-  subscriptionGroupIdentifier?: string
+  subscriptionGroupId?: string
   /** Indicates if this transaction represents an upgrade from a previous subscription. */
   isUpgraded?: boolean
   /** The ISO 8601 date string of when the subscription or product access expires. */
   expirationDate?: string
+  /** The offer ID associated with this transaction, if any. */
+  offerId?: string
   /** The ISO 8601 date string if the transaction was revoked by the store or developer. */
   revocationDate?: string
   /** The App Store account token, specific to Apple's App Store. */
   appAccountToken?: string
-  /** The country code of the storefront where the purchase was made (e.g., "US"). */
-  storefrontCountryCode?: string
-  /** The identifier of the storefront where the purchase was made. */
-  storefrontId?: string
-  /**
-   * The type of product purchased (e.g., "autoRenewable", "nonConsumable", "consumable", "nonRenewing").
-   */
-  productType?: string
-  /**
-   * The reason for revocation, if `revocationDate` is present (e.g., "developerIssue", "other").
-   */
-  revocationReason?: string
-  /** The environment in which the transaction occurred (e.g., "Production", "Sandbox"). */
-  environment?: string
-  /** The type of ownership for the transaction (e.g., "PURCHASED", "FAMILY_SHARED"). */
-  ownershipType?: string
-  /** The formatted price of the product (e.g., "$9.99"). */
-  price?: string
-  /** The ISO 4217 currency code of the price (e.g., "USD"). */
-  currency?: string
-  /**
-   * The type of offer, if applicable (e.g., "INTRODUCTORY", "PROMOTIONAL", "CODE").
-   */
-  offerType?: string
-  /**
-   * The payment mode for an introductory offer (e.g., "PAY_AS_YOU_GO", "PAY_UP_FRONT", "FREE_TRIAL").
-   */
-  offerPaymentMode?: string
+  /** The purchase token for Android transactions (Google Play). */
+  purchaseToken?: string
+  /** The signature for Android transactions for verification (Google Play). */
+  signature?: string
 }
 
 /**

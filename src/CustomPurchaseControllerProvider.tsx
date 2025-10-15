@@ -18,9 +18,18 @@ export type PurchaseResult = {
  * @category Purchase Controller
  * @since 0.0.15
  */
+export type RestoreResult = {
+  type: "restored" | "failed"
+  error?: string
+}
+
+/**
+ * @category Purchase Controller
+ * @since 0.0.15
+ */
 export interface CustomPurchaseControllerContext {
-  onPurchase: (params: OnPurchaseParams) => Promise<PurchaseResult | undefined | undefined>
-  onPurchaseRestore: () => Promise<PurchaseResult | undefined | undefined>
+  onPurchase: (params: OnPurchaseParams) => Promise<PurchaseResult | undefined>
+  onPurchaseRestore: () => Promise<RestoreResult | undefined>
 }
 
 /**
@@ -57,12 +66,12 @@ export const CustomPurchaseControllerProvider = ({
 
         SuperwallExpoModule.didPurchase({
           type: result?.type ?? "purchased",
-          error: result?.error,
+          error: result?.type === "failed" ? (result?.error || "Unknown error") : result?.error,
         })
       } catch (error: any) {
         SuperwallExpoModule.didPurchase({
           type: "failed",
-          error: error.error.message || "Unknown error",
+          error: error?.message || "Unknown error",
         })
       }
     },
@@ -71,13 +80,13 @@ export const CustomPurchaseControllerProvider = ({
         const result = await controller.onPurchaseRestore()
 
         SuperwallExpoModule.didRestore({
-          type: result?.type ?? "restored",
-          error: result?.error,
+          result: result?.type ?? "restored",
+          errorMessage: result?.type === "failed" ? (result?.error || "Unknown error") : result?.error,
         })
       } catch (error: any) {
         SuperwallExpoModule.didRestore({
-          type: "failed",
-          error: error.message || "Unknown error",
+          result: "failed",
+          errorMessage: error?.message || "Unknown error",
         })
       }
     },
