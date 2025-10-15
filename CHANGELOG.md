@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.2
+
+### Patch Changes
+
+- 5555e8e: make error handling more defensive
+
 ## 0.3.1
 
 ### Patch Changes
