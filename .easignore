@@ -1,0 +1,34 @@
+# Context folders with external repositories (for LLM context only)
+.context/
+
+# Git files
+.git/
+.gitignore
+
+# Node modules (will be reinstalled during build)
+node_modules/
+
+# Build outputs
+build/
+dist/
+*.log
+
+# Development files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Documentation that's not needed for builds
+*.md
+docs/
