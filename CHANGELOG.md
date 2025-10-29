@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.4.1
+
+### Patch Changes
+
+- 86a3b28: Update Android version to 2.6.1 adding app2web support
+- 6df6cc4: Adds paddle store identifiers
+
 ## 0.4.0
 
 ### Minor Changes
