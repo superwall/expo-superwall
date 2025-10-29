@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.4.0
+
+### Minor Changes
+
+- 6d3e625: bump ios to fix critical webview bug
+
 ## 0.3.2
 
 ### Patch Changes
