@@ -47,6 +47,11 @@ export type StoreIdentifiers =
       stripeCustomerId: string
       stripeSubscriptionIds: string[]
     }
+  | {
+      store: "PADDLE"
+      paddleCustomerId: string
+      paddleSubscriptionIds: string[]
+    }
   | { store: string; [key: string]: any } // For unknown store types
 
 /**

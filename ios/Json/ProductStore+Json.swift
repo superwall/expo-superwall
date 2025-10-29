@@ -5,6 +5,9 @@ extension ProductStore {
     switch self {
     case .appStore:
       return "APP_STORE"
+    case .stripe:
+      return "STRIPE"
     }
+
   }
 }

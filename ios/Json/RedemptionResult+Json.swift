@@ -111,6 +111,10 @@ extension RedemptionResult.RedemptionInfo.PurchaserInfo.StoreIdentifiers {
       map["store"] = "STRIPE"
       map["stripeCustomerId"] = customerId
       map["stripeSubscriptionIds"] = subscriptionIds
+    case let .paddle(customerId, subscriptionIds):
+      map["store"] = "PADDLE"
+      map["paddleCustomerId"] = customerId
+      map["paddleSubscriptionIds"] = subscriptionIds
     case let .unknown(store, additionalInfo):
       map["store"] = store
       // Add all the additional info to the map

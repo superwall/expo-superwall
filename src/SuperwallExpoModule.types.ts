@@ -487,6 +487,20 @@ export type RedemptionStoreIdentifiers =
     }
   | {
       /**
+       * The purchase or subscription is managed by Paddle.
+       */
+      store: "PADDLE"
+      /**
+       * The Paddle customer ID.
+       */
+      paddleCustomerId: string
+      /**
+       * The Paddle subscription IDs associated with the customer.
+       */
+      paddleSubscriptionIds: string[]
+    }
+  | {
+      /**
        * The store is unknown or not explicitly handled by this type definition.
        */
       store: string // Allows for other store names not explicitly defined
