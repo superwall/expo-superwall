@@ -4,7 +4,7 @@
 //
 //  Created by Yusuf Tör on 04/03/2022.
 //
-// swiftlint:disable line_length function_body_length type_body_length file_length
+// swiftlint:disable function_body_length type_body_length file_length
 
 import UIKit
 import WebKit
@@ -22,6 +22,7 @@ protocol PaywallMessageHandlerDelegate: AnyObject {
   func presentSafariInApp(_ url: URL)
   func presentSafariExternal(_ url: URL)
   func requestReview(type: ReviewType)
+  func openPaymentSheet(_ url: URL)
 }
 
 @MainActor
@@ -145,6 +146,8 @@ final class PaywallMessageHandler: WebEventDelegate {
       openUrl(url)
     case .openUrlInSafari(let url):
       openUrlInSafari(url)
+    case .openPaymentSheet(let url):
+      openPaymentSheet(url)
     case .openDeepLink(let url):
       openDeepLink(url)
     case .restore:
@@ -361,6 +364,15 @@ final class PaywallMessageHandler: WebEventDelegate {
     hapticFeedback()
     delegate?.eventDidOccur(.openedUrlInSafari(url))
     delegate?.presentSafariExternal(url)
+  }
+
+  private func openPaymentSheet(_ url: URL) {
+    detectHiddenPaywallEvent(
+      "openPaymentSheet",
+      userInfo: ["url": url]
+    )
+    hapticFeedback()
+    delegate?.openPaymentSheet(url)
   }
 
   private func openDeepLink(_ url: URL) {
