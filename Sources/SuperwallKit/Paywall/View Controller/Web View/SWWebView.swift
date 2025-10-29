@@ -4,7 +4,7 @@
 //
 //  Created by Yusuf Tör on 03/03/2022.
 //
-// swiftlint:disable implicitly_unwrapped_optional function_body_length line_length
+// swiftlint:disable implicitly_unwrapped_optional function_body_length
 
 import Foundation
 import WebKit
@@ -55,7 +55,9 @@ class SWWebView: WKWebView {
     self.isOnDeviceCacheEnabled = isOnDeviceCacheEnabled
     let featureFlags = factory.makeFeatureFlags()
 
-    self.loadingHandler = SWWebViewLoadingHandler(enableMultiplePaywallUrls: featureFlags?.enableMultiplePaywallUrls == true)
+    self.loadingHandler = SWWebViewLoadingHandler(
+      enableMultiplePaywallUrls: featureFlags?.enableMultiplePaywallUrls == true
+    )
 
     let config = WKWebViewConfiguration()
     config.allowsInlineMediaPlayback = true
@@ -233,5 +235,21 @@ extension SWWebView: WKNavigationDelegate {
     withError error: Error
   ) {
     completion?(error)
+  }
+
+  func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+    webView.reload()
+
+    Task {
+      guard let paywallInfo = delegate?.info else {
+        return
+      }
+
+      let processTerminated = InternalSuperwallEvent.PaywallWebviewLoad(
+        state: .processTerminated,
+        paywallInfo: paywallInfo
+      )
+      await Superwall.shared.track(processTerminated)
+    }
   }
 }

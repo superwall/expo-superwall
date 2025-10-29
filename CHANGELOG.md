@@ -2,6 +2,45 @@
 
 The changelog for `SuperwallKit`. Also see the [releases](https://github.com/superwall/Superwall-iOS/releases) on GitHub.
 
+## 4.9.3
+
+### Enhancements
+
+- Zero second delay when presenting paywalls after calling `Superwall.configure` if 1. the user is subscribed, and 2. there is a cached configuration.
+
+### Fixes
+
+- Allowed paywall webviews to refresh if they were terminated by the system. This typically happened in Expo apps if very large photos were used in the paywall.
+
+## 4.9.2
+
+### Fixes
+
+- Fixes delay in paywall presentation if there's an issue retrieving web entitlements.
+
+## 4.9.1
+
+### Fixes
+
+- Fixes a rare issue where calling reset while the SDK was still retrieving its configuration could occasionally prevent paywalls from appearing.
+- Fixes positioning issue for surveys in iOS 26.
+
+## 4.9.0
+
+### Enhancements
+
+- Adds ability to open the web checkout page in a payment sheet style web view.
+- Updates Superscript version to 1.0.4. View the original Rust release changelog [here](https://github.com/superwall/superscript/releases/tag/1.0.4).
+- Adds the `SuperwallOption` `shouldBypassAppTransactionCheck`, which allows you to opt out of `AppTransaction.shared` usage during SDK initialization. This is useful in testing environments to avoid triggering the Apple ID sign-in prompt.
+- Adds `device.isApplePayAvailable` to the device attributes that can be used in audience filters.
+- Adds `onWillDismiss` to the `PaywallPresentationHandler`, which is called when the paywall will dismiss.
+
+### Fixes
+
+- Changes "With/Without Free Trial" to "With/Without Intro Offer" in the debugger.
+- Fixes rare crash caused by a concurrency issue.
+- Fixes issue where no internet would cause a minute delay for paywall presentation.
+
 ## 4.8.3
 
 ### Enhancements
@@ -13,10 +52,6 @@ The changelog for `SuperwallKit`. Also see the [releases](https://github.com/sup
 ### Enhancements
 
 - Adds `review_requested` event when a review is requested.
-
-### Fixes
-
-- Fixes rare crash caused by a concurrency issue.
 
 ## 4.8.1
 
