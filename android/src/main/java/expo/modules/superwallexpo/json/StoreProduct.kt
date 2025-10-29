@@ -1,15 +1,16 @@
 package expo.modules.superwallexpo.json
 
 
-import com.superwall.sdk.store.abstractions.product.StoreProduct
+import com.superwall.sdk.store.abstractions.product.StoreProductType
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-fun StoreProduct.toJson(): Map<String, Any?> {
+fun StoreProductType.toJson(): Map<String, Any?> {
   val map = mutableMapOf<String, Any?>()
   val dateFormatter = DateTimeFormatter.ISO_DATE_TIME.withLocale(Locale.getDefault())
 
+  map["fullIdentifier"] = fullIdentifier
   map["productIdentifier"] = productIdentifier
   map["localizedPrice"] = localizedPrice
   map["localizedSubscriptionPeriod"] = localizedSubscriptionPeriod
@@ -46,6 +47,13 @@ fun StoreProduct.toJson(): Map<String, Any?> {
   map["currencySymbol"] = currencySymbol
   map["regionCode"] = regionCode
   map["price"] = price.toDouble()
+
+  subscriptionPeriod?.let {
+    map["subscriptionPeriod"] = mapOf(
+      "value" to it.value,
+      "unit" to it.unit.name
+    )
+  } ?: run { map["subscriptionPeriod"] = null }
 
   trialPeriodEndDate?.let {
     val instant = it.toInstant()

@@ -75,6 +75,15 @@ private fun StoreIdentifiers.toJson(): Map<String, Any> {
             }
             map["stripeSubscriptionIds"] = subscriptionIdsArray
         }
+        is StoreIdentifiers.Paddle -> {
+            map["store"] = "PADDLE"
+            map["paddleCustomerId"] = this.paddleCustomerId
+            val subscriptionIdsArray = mutableListOf<String>()
+            this.paddleSubscriptionIds.forEach { id ->
+                subscriptionIdsArray.add(id)
+            }
+            map["paddleSubscriptionIds"] = subscriptionIdsArray
+        }
         is StoreIdentifiers.Unknown -> {
             map["store"] = "UNKNOWN"
         }
