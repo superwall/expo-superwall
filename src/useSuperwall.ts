@@ -205,7 +205,7 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     })
   },
   identify: async (userId, options) => {
-    SuperwallExpoModule.identify(userId, options)
+    await SuperwallExpoModule.identify(userId, options)
 
     // TODO: Instead of setting users after identify, we should set this based on an event
     setTimeout(async () => {
@@ -215,7 +215,7 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     }, 0)
   },
   reset: async () => {
-    SuperwallExpoModule.reset()
+    await SuperwallExpoModule.reset()
 
     const currentUser = await SuperwallExpoModule.getUserAttributes()
     const subscriptionStatus = await SuperwallExpoModule.getSubscriptionStatus()
@@ -238,7 +238,7 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     SuperwallExpoModule.preloadPaywalls(placements)
   },
   setUserAttributes: async (attrs) => {
-    SuperwallExpoModule.setUserAttributes(attrs)
+    await SuperwallExpoModule.setUserAttributes(attrs)
 
     const currentUser = await SuperwallExpoModule.getUserAttributes()
     set({ user: currentUser as UserAttributes })
@@ -253,7 +253,7 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   },
 
   setSubscriptionStatus: async (status) => {
-    SuperwallExpoModule.setSubscriptionStatus(status)
+    await SuperwallExpoModule.setSubscriptionStatus(status)
   },
   getDeviceAttributes: async () => {
     const attributes = await SuperwallExpoModule.getDeviceAttributes()

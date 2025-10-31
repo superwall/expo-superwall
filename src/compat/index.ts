@@ -341,7 +341,7 @@ export default class Superwall {
   }): Promise<void> {
     await this.awaitConfig()
     const serializedOptions = options ? options.toJson() : new IdentityOptions().toJson()
-    SuperwallExpoModule.identify(userId, serializedOptions)
+    await SuperwallExpoModule.identify(userId, serializedOptions)
   }
 
   /**
@@ -662,7 +662,7 @@ export default class Superwall {
    */
   async setUserAttributes(userAttributes: UserAttributes): Promise<void> {
     await this.awaitConfig()
-    SuperwallExpoModule.setUserAttributes(userAttributes)
+    await SuperwallExpoModule.setUserAttributes(userAttributes)
   }
 
   /**
