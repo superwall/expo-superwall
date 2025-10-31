@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.0
+
+### Minor Changes
+
+- 8c2c14f: User identification and attribute operations are now non-blocking async calls, preventing UI freezes while ensuring proper state synchronization
+
+  Thanks to @gursheyss for the PR #90
+
 ## 0.4.1
 
 ### Patch Changes
