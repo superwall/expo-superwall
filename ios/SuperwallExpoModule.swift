@@ -70,13 +70,19 @@ public class SuperwallExpoModule: Module {
       return Bundle.main.object(forInfoDictionaryKey: "SUPERWALL_API_KEY") as? String
     }
 
-    Function("identify") { (userId: String, options: [String: Any]?) in
-      let options = IdentityOptions.fromJson(options)
-      Superwall.shared.identify(userId: userId, options: options)
+    AsyncFunction("identify") { (userId: String, options: [String: Any]?, promise: Promise) in
+      DispatchQueue.main.async {
+        let identityOptions = IdentityOptions.fromJson(options)
+        Superwall.shared.identify(userId: userId, options: identityOptions)
+        promise.resolve(nil)
+      }
     }
 
-    Function("reset") {
-      Superwall.shared.reset()
+    AsyncFunction("reset") { (promise: Promise) in
+      DispatchQueue.main.async {
+        Superwall.shared.reset()
+        promise.resolve(nil)
+      }
     }
 
     AsyncFunction("configure") {
@@ -201,36 +207,39 @@ public class SuperwallExpoModule: Module {
       promise.resolve(subscriptionStatus.toJson())
     }
 
-    Function("setSubscriptionStatus") { (status: [String: Any]) in
-      let statusString = (status["status"] as? String)?.uppercased() ?? "UNKNOWN"
-      let subscriptionStatus: SubscriptionStatus
+    AsyncFunction("setSubscriptionStatus") { (status: [String: Any], promise: Promise) in
+      DispatchQueue.main.async {
+        let statusString = (status["status"] as? String)?.uppercased() ?? "UNKNOWN"
+        let subscriptionStatus: SubscriptionStatus
 
-      print("Setting subscription status to: \(statusString)")
+        print("Setting subscription status to: \(statusString)")
 
-      switch statusString {
-      case "UNKNOWN":
-        subscriptionStatus = .unknown
-      case "INACTIVE":
-        subscriptionStatus = .inactive
-      case "ACTIVE":
-        if let entitlementsArray = status["entitlements"] as? [[String: Any]] {
-          let entitlementsSet: Set<Entitlement> = Set(
-            entitlementsArray.compactMap { item in
-              if let id = item["id"] as? String {
-                return Entitlement(id: id)
-              }
-              return nil
-            }
-          )
-          subscriptionStatus = .active(entitlementsSet)
-        } else {
+        switch statusString {
+        case "UNKNOWN":
+          subscriptionStatus = .unknown
+        case "INACTIVE":
           subscriptionStatus = .inactive
+        case "ACTIVE":
+          if let entitlementsArray = status["entitlements"] as? [[String: Any]] {
+            let entitlementsSet: Set<Entitlement> = Set(
+              entitlementsArray.compactMap { item in
+                if let id = item["id"] as? String {
+                  return Entitlement(id: id)
+                }
+                return nil
+              }
+            )
+            subscriptionStatus = .active(entitlementsSet)
+          } else {
+            subscriptionStatus = .inactive
+          }
+        default:
+          subscriptionStatus = .unknown
         }
-      default:
-        subscriptionStatus = .unknown
-      }
 
-      Superwall.shared.subscriptionStatus = subscriptionStatus
+        Superwall.shared.subscriptionStatus = subscriptionStatus
+        promise.resolve(nil)
+      }
     }
 
     Function("setInterfaceStyle") { (style: String?) in
@@ -250,8 +259,11 @@ public class SuperwallExpoModule: Module {
       return await Superwall.shared.getDeviceAttributes()
     }
 
-    Function("setUserAttributes") { (userAttributes: [String: Any]) in
-      Superwall.shared.setUserAttributes(userAttributes)
+    AsyncFunction("setUserAttributes") { (userAttributes: [String: Any], promise: Promise) in
+      DispatchQueue.main.async {
+        Superwall.shared.setUserAttributes(userAttributes)
+        promise.resolve(nil)
+      }
     }
 
     AsyncFunction("handleDeepLink") { (url: String, promise: Promise) in

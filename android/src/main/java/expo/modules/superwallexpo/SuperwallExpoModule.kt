@@ -106,17 +106,27 @@ class SuperwallExpoModule : Module() {
       return@Function applicationInfo?.metaData?.getString("SUPERWALL_API_KEY")
     }
 
-    Function("identify") { userId: String, options: Map<String, Any>? ->
-      try {
-        val options = options?.let { identityOptionsFromJson(options) }
-        Superwall.instance.identify(userId = userId, options = options)
-      } catch (error: Exception) {
-        error.printStackTrace()
+    AsyncFunction("identify") { userId: String, options: Map<String, Any>?, promise: Promise ->
+      scope.launch {
+        try {
+          val identityOptions = options?.let { identityOptionsFromJson(it) }
+          Superwall.instance.identify(userId = userId, options = identityOptions)
+          promise.resolve(null)
+        } catch (error: Exception) {
+          promise.reject(CodedException(error))
+        }
       }
     }
 
-    Function("reset") {
-      Superwall.instance.reset()
+    AsyncFunction("reset") { promise: Promise ->
+      scope.launch {
+        try {
+          Superwall.instance.reset()
+          promise.resolve(null)
+        } catch (error: Exception) {
+          promise.reject(CodedException(error))
+        }
+      }
     }
 
     AsyncFunction("configure") {
@@ -260,27 +270,34 @@ class SuperwallExpoModule : Module() {
       }
     }
 
-    Function("setSubscriptionStatus") { status: Map<String,Any> ->
-      val statusString = (status["status"] as? String)?.uppercase() ?: "UNKNOWN"
-      val subscriptionStatus: SubscriptionStatus
+    AsyncFunction("setSubscriptionStatus") { status: Map<String,Any>, promise: Promise ->
+      scope.launch {
+        try {
+          val statusString = (status["status"] as? String)?.uppercase() ?: "UNKNOWN"
+          val subscriptionStatus: SubscriptionStatus
 
-      when (statusString) {
-        "UNKNOWN" -> subscriptionStatus = SubscriptionStatus.Unknown
-        "INACTIVE" -> subscriptionStatus = SubscriptionStatus.Inactive
-        "ACTIVE" -> {
-          val entitlementsArray = status["entitlements"] as? List<Map<String, Any>>
-          val entitlementsSet: Set<Entitlement> = entitlementsArray?.map { item ->
-            val id = item["id"] as? String
-            id?.let { Entitlement(id = it) }
-          }?.filterNotNull()?.toSet() ?: emptySet()
-          subscriptionStatus = SubscriptionStatus.Active(entitlementsSet)
+          when (statusString) {
+            "UNKNOWN" -> subscriptionStatus = SubscriptionStatus.Unknown
+            "INACTIVE" -> subscriptionStatus = SubscriptionStatus.Inactive
+            "ACTIVE" -> {
+              val entitlementsArray = status["entitlements"] as? List<Map<String, Any>>
+              val entitlementsSet: Set<Entitlement> = entitlementsArray?.map { item ->
+                val id = item["id"] as? String
+                id?.let { Entitlement(id = it) }
+              }?.filterNotNull()?.toSet() ?: emptySet()
+              subscriptionStatus = SubscriptionStatus.Active(entitlementsSet)
+            }
+            else -> subscriptionStatus = SubscriptionStatus.Unknown
+          }
+
+          Superwall.instance.setSubscriptionStatus(subscriptionStatus)
+          promise.resolve(null)
+        } catch (error: Exception) {
+          promise.reject(CodedException(error))
         }
-        else -> subscriptionStatus = SubscriptionStatus.Unknown
       }
-
-      Superwall.instance.setSubscriptionStatus(subscriptionStatus)
     }
-    
+
     Function("setInterfaceStyle") { style: String? ->
       var interfaceStyle: InterfaceStyle? = style?.let { interfaceStyleFromString(it) }
       Superwall.instance.setInterfaceStyle(interfaceStyle)
@@ -303,8 +320,15 @@ class SuperwallExpoModule : Module() {
     }
 
 
-    Function("setUserAttributes") { userAttributes: Map<String, Any> ->
-      Superwall.instance.setUserAttributes(userAttributes)
+    AsyncFunction("setUserAttributes") { userAttributes: Map<String, Any>, promise: Promise ->
+      scope.launch {
+        try {
+          Superwall.instance.setUserAttributes(userAttributes)
+          promise.resolve(null)
+        } catch (error: Exception) {
+          promise.reject(CodedException(error))
+        }
+      }
     }
 
     AsyncFunction("handleDeepLink") { url: String, promise: Promise ->

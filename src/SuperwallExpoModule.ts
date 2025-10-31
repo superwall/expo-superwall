@@ -20,18 +20,18 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
 
   getConfigurationStatus(): Promise<string>
 
-  identify(userId: string, options?: Map<string, any> | Record<string, any> | null): void
-  reset(): void
+  identify(userId: string, options?: Map<string, any> | Record<string, any> | null): Promise<void>
+  reset(): Promise<void>
 
   getAssignments(): Promise<any[]>
   getEntitlements(): Promise<any>
   getSubscriptionStatus(): Promise<SubscriptionStatus>
-  setSubscriptionStatus(status: Record<string, any>): void
+  setSubscriptionStatus(status: Record<string, any>): Promise<void>
 
   setInterfaceStyle(style?: string): void
 
   getUserAttributes(): Promise<Record<string, any>>
-  setUserAttributes(userAttributes: Record<string, any>): void
+  setUserAttributes(userAttributes: Record<string, any>): Promise<void>
 
   handleDeepLink(url: string): Promise<boolean>
 
