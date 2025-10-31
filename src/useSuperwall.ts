@@ -208,11 +208,14 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     await SuperwallExpoModule.identify(userId, options)
 
     // TODO: Instead of setting users after identify, we should set this based on an event
-    setTimeout(async () => {
-      const currentUser = await SuperwallExpoModule.getUserAttributes()
-      const subscriptionStatus = await SuperwallExpoModule.getSubscriptionStatus()
-      set({ user: currentUser as UserAttributes, subscriptionStatus })
-    }, 0)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    const [currentUser, subscriptionStatus] = await Promise.all([
+      SuperwallExpoModule.getUserAttributes(),
+      SuperwallExpoModule.getSubscriptionStatus(),
+    ])
+
+    set({ user: currentUser as UserAttributes, subscriptionStatus })
   },
   reset: async () => {
     await SuperwallExpoModule.reset()
