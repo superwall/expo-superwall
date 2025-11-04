@@ -402,5 +402,18 @@ class SuperwallExpoModule : Module() {
         Superwall.instance.logLevel = logLevel
       }
     }
+
+    Function("setIntegrationAttributes") { attributes: Map<String, String> ->
+      val converted = attributes.mapNotNull { (key, value) ->
+        attributionProviderFromString(key)?.let { it to value }
+      }.toMap()
+
+      Superwall.instance.setIntegrationAttributes(converted)
+    }
+
+    Function("getIntegrationAttributes") {
+      val attributes = Superwall.instance.integrationAttributes
+      return@Function attributes
+    }
   }
 }
