@@ -73,6 +73,56 @@ export interface Entitlement {
 }
 
 /**
+ * Third-party integration providers supported by Superwall.
+ * Use these values with `setIntegrationAttributes()` to link user IDs from
+ * attribution and analytics platforms.
+ */
+export type IntegrationAttribute =
+  | "adjustId"
+  | "amplitudeDeviceId"
+  | "amplitudeUserId"
+  | "appsflyerId"
+  | "brazeAliasName"
+  | "brazeAliasLabel"
+  | "onesignalId"
+  | "fbAnonId"
+  | "firebaseAppInstanceId"
+  | "iterableUserId"
+  | "iterableCampaignId"
+  | "iterableTemplateId"
+  | "mixpanelDistinctId"
+  | "mparticleId"
+  | "clevertapId"
+  | "airshipChannelId"
+  | "kochavaDeviceId"
+  | "tenjinId"
+  | "posthogUserId"
+  | "customerioId"
+
+/**
+ * Object with optional keys for third-party integration provider IDs.
+ * Used with `setIntegrationAttributes()` to link attribution and analytics platforms.
+ *
+ * Available keys: adjustId, amplitudeDeviceId, amplitudeUserId, appsflyerId,
+ * brazeAliasName, brazeAliasLabel, onesignalId, fbAnonId, firebaseAppInstanceId,
+ * iterableUserId, iterableCampaignId, iterableTemplateId, mixpanelDistinctId,
+ * mparticleId, clevertapId, airshipChannelId, kochavaDeviceId, tenjinId,
+ * posthogUserId, customerioId
+ *
+ * @example
+ * ```typescript
+ * setIntegrationAttributes({
+ *   adjustId: "adjust_123",
+ *   amplitudeUserId: "user_456",
+ *   airshipChannelId: "channel_789"
+ * })
+ * ```
+ */
+export type IntegrationAttributes = {
+  [K in IntegrationAttribute]?: string
+}
+
+/**
  * Describes the reason why a paywall presentation was skipped for the user.
  * This can happen due to various conditions like being in a holdout group,
  * not matching audience rules, or if the specified placement doesn't exist.

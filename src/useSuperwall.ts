@@ -3,7 +3,7 @@ import { create } from "zustand"
 import { useShallow } from "zustand/shallow"
 import pkg from "../package.json"
 import SuperwallExpoModule from "./SuperwallExpoModule"
-import type { SubscriptionStatus } from "./SuperwallExpoModule.types"
+import type { SubscriptionStatus, IntegrationAttributes } from "./SuperwallExpoModule.types"
 import type { SuperwallOptions } from "./SuperwallOptions"
 
 /**
@@ -153,6 +153,19 @@ export interface SuperwallStore {
    */
   setLogLevel: (level: string) => Promise<void>
 
+  /**
+   * Sets attributes for third-party integrations.
+   * @param attributes - Object mapping IntegrationAttribute string values to their IDs
+   * @returns A promise that resolves when attributes are set
+   */
+  setIntegrationAttributes: (attributes: IntegrationAttributes) => Promise<void>
+
+  /**
+   * Gets the currently set integration attributes.
+   * @returns A promise that resolves with the current integration attributes
+   */
+  getIntegrationAttributes: () => Promise<Record<string, string>>
+
   /* -------------------- Listener helpers -------------------- */
   /**
    * Initializes native event listeners for the SDK.
@@ -253,6 +266,17 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   },
   setLogLevel: async (level) => {
     SuperwallExpoModule.setLogLevel(level)
+  },
+
+  setIntegrationAttributes: async (attributes) => {
+    SuperwallExpoModule.setIntegrationAttributes(attributes)
+
+    const currentUser = await SuperwallExpoModule.getUserAttributes()
+    set({ user: currentUser as UserAttributes })
+  },
+
+  getIntegrationAttributes: async () => {
+    return SuperwallExpoModule.getIntegrationAttributes()
   },
 
   setSubscriptionStatus: async (status) => {
