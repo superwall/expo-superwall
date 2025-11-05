@@ -262,6 +262,9 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     const attributes = await SuperwallExpoModule.getDeviceAttributes()
     return attributes
   },
+  consume: async (purchaseToken: string) => {
+    return await SuperwallExpoModule.consume(purchaseToken)
+  },
 
   /* -------------------- Listener helpers -------------------- */
   _initListeners: (): (() => void) => {

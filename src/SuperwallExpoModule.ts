@@ -58,6 +58,8 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
   preloadPaywalls(placementNames: string[]): void
   preloadAllPaywalls(): void
 
+  consume(purchaseToken: string): Promise<string>
+
   setLogLevel(level: string): void
 }
 

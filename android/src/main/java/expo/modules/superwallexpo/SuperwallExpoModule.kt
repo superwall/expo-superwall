@@ -402,5 +402,20 @@ class SuperwallExpoModule : Module() {
         Superwall.instance.logLevel = logLevel
       }
     }
+
+    AsyncFunction("consume") { purchaseToken, promise: Promise ->
+      ioScope.launch {
+        Superwall.instance.consume(purchaseToken)
+          .fold({ result ->
+            scope.launch {
+              promise.resolve(result)
+            }
+          }, { error ->
+            scope.launch {
+              promise.reject(CodedException(error))
+            }
+          })
+      }
+    }
   }
 }

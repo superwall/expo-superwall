@@ -632,6 +632,18 @@ export default class Superwall {
   }
 
   /**
+   * Initiates a consumption of an In-App product.
+   *
+   * Use this function to consume an In-App product after processing it in your application.
+   *
+   * @param {string} purchaseToken - The token related to the purchase you wish to consume.
+   * @return {Promise<string>} Containing the consumed token, or an error.
+   */
+  async consume(purchaseToken: string): Promise<string> {
+    return await SuperwallExpoModule.consume(purchaseToken)
+  }
+
+  /**
    * Sets user attributes for use in paywalls and on the Superwall dashboard.
    *
    * If an attribute already exists, its value will be overwritten while other attributes remain unchanged.
