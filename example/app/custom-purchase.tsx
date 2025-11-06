@@ -186,8 +186,8 @@ function ScreenContent({
       <View style={{ gap: 12, marginTop: 20 }}>
         <Text style={{ fontSize: 18, fontWeight: "600" }}>Restore Purchases (Test)</Text>
         <Text style={{ fontSize: 12, color: "#666" }}>
-          Note: In real usage, restore is triggered by the paywall's restore button. This is for testing
-          the controller logic.
+          Note: In real usage, restore is triggered by the paywall's restore button. This is for
+          testing the controller logic.
         </Text>
         <Button
           title="Test Restore Flow"
@@ -264,8 +264,8 @@ function ScreenContent({
           {"\n"}6. Superwall dismisses the paywall or shows error based on your result
         </Text>
         <Text style={{ fontSize: 12, color: "#666", marginTop: 8 }}>
-          Important: Return undefined or {`{type: "purchased"}`} for success, {`{type: "failed", error: "..."}`}{" "}
-          for failures.
+          Important: Return undefined or {`{type: "purchased"}`} for success,{" "}
+          {`{type: "failed", error: "..."}`} for failures.
         </Text>
       </View>
     </ScrollView>
