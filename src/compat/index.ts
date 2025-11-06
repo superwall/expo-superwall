@@ -2,6 +2,7 @@ import { Assignment } from "./lib/Assigments"
 import { ConfigurationStatus } from "./lib/ConfigurationStatus"
 import { EntitlementsInfo } from "./lib/EntitlementsInfo"
 import { IdentityOptions } from "./lib/IdentityOptions"
+import type { IntegrationAttributes } from "./lib/IntegrationAttributes"
 import type { InterfaceStyle } from "./lib/InterfaceStyle"
 import type { LogLevel } from "./lib/LogLevel"
 import { PaywallInfo } from "./lib/PaywallInfo"
@@ -677,5 +678,23 @@ export default class Superwall {
 
   async setLogLevel(level: LogLevel): Promise<void> {
     await SuperwallExpoModule.setLogLevel(level.toString())
+  }
+
+  /**
+   * Sets attributes for third-party integrations.
+   * @param attributes - Object mapping IntegrationAttribute string values to their IDs
+   */
+  async setIntegrationAttributes(attributes: IntegrationAttributes): Promise<void> {
+    await this.awaitConfig()
+    SuperwallExpoModule.setIntegrationAttributes(attributes)
+  }
+
+  /**
+   * Gets the currently set integration attributes.
+   * @returns Object mapping IntegrationAttribute string values to their IDs
+   */
+  async getIntegrationAttributes(): Promise<Record<string, string>> {
+    await this.awaitConfig()
+    return SuperwallExpoModule.getIntegrationAttributes()
   }
 }
