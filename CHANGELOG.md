@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.5.1
+
+### Patch Changes
+
+- 889aaf7: fix: improve custom purchase type handling
+- 56a72c9: Bump Android version to 2.6.3
+- 465a215: Exposes Product identifier in Redemption Info
+
 ## 0.5.0
 
 ### Minor Changes
