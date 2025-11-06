@@ -28,8 +28,10 @@ export type RestoreResult = {
  * @since 0.0.15
  */
 export interface CustomPurchaseControllerContext {
-  onPurchase: (params: OnPurchaseParams) => Promise<PurchaseResult | undefined>
-  onPurchaseRestore: () => Promise<RestoreResult | undefined>
+  // biome-ignore lint/suspicious/noConfusingVoidType: void is intentional to allow implicit returns for success
+  onPurchase: (params: OnPurchaseParams) => Promise<PurchaseResult | void>
+  // biome-ignore lint/suspicious/noConfusingVoidType: void is intentional to allow implicit returns for success
+  onPurchaseRestore: () => Promise<RestoreResult | void>
 }
 
 /**

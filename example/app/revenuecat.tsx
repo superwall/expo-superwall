@@ -8,7 +8,7 @@ import {
 } from "expo-superwall"
 import { useEffect, useState } from "react"
 import { ActivityIndicator, Alert, Button, Platform, ScrollView, Text, View } from "react-native"
-import Purchases from "react-native-purchases"
+import Purchases, { PURCHASES_ERROR_CODE } from "react-native-purchases"
 
 const API_KEY = "pk_a5959912ceb3087d55c7ea63001202335adfbb54e0f70475"
 
@@ -253,7 +253,6 @@ export default function RevenueCatPage() {
           console.log("🛒 onPurchase called with params:", params)
 
           try {
-            // Get products from RevenueCat
             const products = await Purchases.getProducts([params.productId])
             const product = products[0]
 
@@ -264,23 +263,19 @@ export default function RevenueCatPage() {
 
             console.log("Found product:", product.identifier)
 
-            // Make the purchase through RevenueCat
             const { customerInfo } = await Purchases.purchaseStoreProduct(product)
 
             console.log("✅ Purchase successful!", customerInfo)
 
-            // Return undefined to indicate success (defaults to "purchased")
-            return undefined
+            // Success - no return needed (defaults to "purchased")
           } catch (error: any) {
             console.error("❌ Purchase failed:", error)
 
-            // Check if user cancelled
-            if (error.userCancelled) {
+            if (error.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
               console.log("User cancelled the purchase")
               return { type: "cancelled" }
             }
 
-            // Return failure result
             return { type: "failed", error: error.message || "Purchase failed" }
           }
         },
@@ -289,12 +284,10 @@ export default function RevenueCatPage() {
           console.log("🔄 onPurchaseRestore called")
 
           try {
-            // Restore purchases through RevenueCat
             const customerInfo = await Purchases.restorePurchases()
 
             console.log("✅ Restore successful!", customerInfo)
 
-            // Check if any entitlements were restored
             const hasActiveEntitlements = Object.keys(customerInfo.entitlements.active).length > 0
 
             if (hasActiveEntitlements) {
@@ -306,8 +299,7 @@ export default function RevenueCatPage() {
               console.log("No active entitlements found")
             }
 
-            // Return undefined to indicate success (defaults to "restored")
-            return undefined
+            // Success - no return needed (defaults to "restored")
           } catch (error: any) {
             console.error("❌ Restore failed:", error)
 
