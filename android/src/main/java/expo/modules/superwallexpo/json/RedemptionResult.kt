@@ -132,5 +132,6 @@ private fun RedemptionResult.PaywallInfo.toJson(): Map<String, Any> {
 
     map["variantId"] = this.variantId
     map["experimentId"] = this.experimentId
+    map["productIdentifier"] = this.productIdentifier
     return map
 }
