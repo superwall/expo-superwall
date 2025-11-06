@@ -63,10 +63,11 @@ export const CustomPurchaseControllerProvider = ({
     onPurchase: async (params) => {
       try {
         const result = await controller.onPurchase(params)
+        const type = result?.type ?? "purchased"
 
         SuperwallExpoModule.didPurchase({
-          type: result?.type ?? "purchased",
-          error: result?.type === "failed" ? (result?.error || "Unknown error") : result?.error,
+          type,
+          ...(type === "failed" && { error: result?.error || "Unknown error" }),
         })
       } catch (error: any) {
         SuperwallExpoModule.didPurchase({
@@ -78,10 +79,11 @@ export const CustomPurchaseControllerProvider = ({
     onPurchaseRestore: async () => {
       try {
         const result = await controller.onPurchaseRestore()
+        const resultType = result?.type ?? "restored"
 
         SuperwallExpoModule.didRestore({
-          result: result?.type ?? "restored",
-          errorMessage: result?.type === "failed" ? (result?.error || "Unknown error") : result?.error,
+          result: resultType,
+          ...(resultType === "failed" && { errorMessage: result?.error || "Unknown error" }),
         })
       } catch (error: any) {
         SuperwallExpoModule.didRestore({

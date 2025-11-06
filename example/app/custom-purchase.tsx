@@ -184,19 +184,57 @@ function ScreenContent({
 
       {/* Restore Purchases */}
       <View style={{ gap: 12, marginTop: 20 }}>
-        <Text style={{ fontSize: 18, fontWeight: "600" }}>Restore Purchases</Text>
+        <Text style={{ fontSize: 18, fontWeight: "600" }}>Restore Purchases (Test)</Text>
+        <Text style={{ fontSize: 12, color: "#666" }}>
+          Note: In real usage, restore is triggered by the paywall's restore button. This is for testing
+          the controller logic.
+        </Text>
         <Button
-          title="Restore Purchases"
-          onPress={() => {
-            // This would trigger the restore flow in a real implementation
-            setRestoreStatus("This would trigger onPurchaseRestore in the controller")
-            console.log("Restore button pressed")
+          title="Test Restore Flow"
+          onPress={async () => {
+            setRestoreStatus("Testing restore flow...")
+            console.log("Restore button pressed - calling controller.onPurchaseRestore()")
+
+            try {
+              // Simulate what happens when Superwall's paywall restore button is tapped
+              // In production, CustomPurchaseControllerProvider handles this automatically
+              const controller = {
+                onPurchaseRestore: async () => {
+                  console.log("🔄 onPurchaseRestore called")
+                  await new Promise((resolve) => setTimeout(resolve, 1500))
+
+                  // In real implementation: check backend, restore entitlements
+                  const hasEntitlements = Math.random() > 0.5
+
+                  if (hasEntitlements) {
+                    return { type: "restored" as const }
+                  } else {
+                    return { type: "failed" as const, error: "No purchases found to restore" }
+                  }
+                },
+              }
+
+              const result = await controller.onPurchaseRestore()
+
+              if (result.type === "restored") {
+                setRestoreStatus("✓ Restore successful! Entitlements restored.")
+                await setSubscriptionStatus({
+                  status: "ACTIVE",
+                  entitlements: [{ id: "pro", type: "SERVICE_LEVEL" }],
+                })
+              } else {
+                setRestoreStatus(`✗ Restore failed: ${result.error}`)
+              }
+            } catch (error: any) {
+              setRestoreStatus(`✗ Error: ${error.message}`)
+              console.error("Restore error:", error)
+            }
           }}
         />
         {restoreStatus ? (
           <View
             style={{
-              backgroundColor: "#e3f2fd",
+              backgroundColor: restoreStatus.includes("✓") ? "#e8f5e9" : "#ffebee",
               padding: 12,
               borderRadius: 8,
             }}
@@ -218,14 +256,16 @@ function ScreenContent({
       >
         <Text style={{ fontSize: 16, fontWeight: "600" }}>How It Works:</Text>
         <Text style={{ fontSize: 14, lineHeight: 20 }}>
-          1. The CustomPurchaseControllerProvider wraps the app
-          {"\n"}2. When a user taps a purchase button in the paywall, onPurchase is called
-          {"\n"}3. Your custom logic processes the purchase (e.g., call your backend, validate)
-          {"\n"}4. Return a PurchaseResult to inform Superwall of the outcome
-          {"\n"}5. For restores, implement onPurchaseRestore similarly
+          1. CustomPurchaseControllerProvider wraps your app and listens for purchase events
+          {"\n"}2. When user taps purchase button in paywall → onPurchase() is called
+          {"\n"}3. When user taps restore button in paywall → onPurchaseRestore() is called
+          {"\n"}4. Your custom logic processes the purchase/restore (e.g., RevenueCat, backend API)
+          {"\n"}5. Return PurchaseResult or RestoreResult to inform Superwall of the outcome
+          {"\n"}6. Superwall dismisses the paywall or shows error based on your result
         </Text>
         <Text style={{ fontSize: 12, color: "#666", marginTop: 8 }}>
-          Check the console logs to see the purchase flow in action!
+          Important: Return undefined or {`{type: "purchased"}`} for success, {`{type: "failed", error: "..."}`}{" "}
+          for failures.
         </Text>
       </View>
     </ScrollView>
