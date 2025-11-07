@@ -66,10 +66,6 @@ public class SuperwallExpoModule: Module {
       didRedeemLink
     )
 
-    Function("getApiKey") {
-      return Bundle.main.object(forInfoDictionaryKey: "SUPERWALL_API_KEY") as? String
-    }
-
     AsyncFunction("identify") { (userId: String, options: [String: Any]?, promise: Promise) in
       DispatchQueue.main.async {
         let identityOptions = IdentityOptions.fromJson(options)
