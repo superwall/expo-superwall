@@ -1,4 +1,4 @@
-appId: com.superwall.superapp
+appId: ${PLATFORM_ID}
 ---
 # Initialize the app and configure
 - launchApp: ${PLATFORM_ID}

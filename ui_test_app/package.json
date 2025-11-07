@@ -8,7 +8,7 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "test": "maestro test -e PLATFORM_ID=com.superwall.Advanced maestro/flow.yaml",
+    "test": "maestro test -e PLATFORM_ID=com.superwall.Advanced .maestro/flow.yaml",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -40,7 +40,8 @@
     "react-native-safe-area-context": "5.4.1",
     "react-native-screens": "~4.10.0",
     "react-native-web": "~0.20.0",
-    "react-native-webview": "13.13.5"
+    "react-native-webview": "13.13.5",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@babel/core": "^7.27.1",

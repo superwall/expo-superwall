@@ -1,0 +1,101 @@
+# Run Maestro E2E Tests
+#
+# This workflow runs end-to-end tests on the ui_test_app using Maestro via EAS Workflows.
+# Tests run on both iOS and Android platforms using EAS Build and Maestro Cloud.
+#
+# Test Coverage:
+# - Core configuration and subscription status (flow.yaml)
+# - Delegate events and callbacks (delegate/flow.yaml)
+# - Paywall handlers - gated and non-gated (handler/flow.yaml)
+# - Purchase controller with and without PC (purchasecontroller/*.yaml)
+#
+# Setup:
+# The workflow uses the EXPO_TOKEN secret which should have access to the
+# ui_test_app EAS project (31623af0-a268-462d-b611-22d52bc35e31).
+#
+# EAS Workflows are defined in:
+# - ui_test_app/.eas/workflows/e2e-test.yml (iOS)
+# - ui_test_app/.eas/workflows/e2e-test-android.yml (Android)
+
+name: E2E Tests
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  e2e-ios:
+    name: iOS E2E Tests (Maestro)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Enable Corepack for Yarn 4
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build module
+        run: yarn build
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install ui_test_app dependencies
+        working-directory: ui_test_app
+        run: bun install
+
+      - name: Setup EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Run iOS E2E workflow
+        working-directory: ui_test_app
+        run: eas workflow:run .eas/workflows/e2e-test.yml --non-interactive
+
+  e2e-android:
+    name: Android E2E Tests (Maestro)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Enable Corepack for Yarn 4
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build module
+        run: yarn build
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install ui_test_app dependencies
+        working-directory: ui_test_app
+        run: bun install
+
+      - name: Setup EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Run Android E2E workflow
+        working-directory: ui_test_app
+        run: eas workflow:run .eas/workflows/e2e-test-android.yml --non-interactive
