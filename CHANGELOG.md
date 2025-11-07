@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.2
+
+### Patch Changes
+
+- 72519cd: remove unused expo plugin
+
 ## 0.6.1
 
 ### Patch Changes
