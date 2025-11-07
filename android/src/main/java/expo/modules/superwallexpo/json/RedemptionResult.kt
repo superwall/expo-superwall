@@ -130,8 +130,8 @@ private fun RedemptionResult.PaywallInfo.toJson(): Map<String, Any> {
     }
     map["placementParams"] = placementParamsMap
 
-    map["variantId"] = this.variantId
-    map["experimentId"] = this.experimentId
-    map["productIdentifier"] = this.productIdentifier
+    this.variantId?.let { map["variantId"] = it }
+    this.experimentId?.let { map["experimentId"] = it }
+    this.productIdentifier?.let { map["productIdentifier"] = it }
     return map
 }
