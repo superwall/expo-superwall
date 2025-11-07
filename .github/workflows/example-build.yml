@@ -45,9 +45,12 @@ jobs:
       - name: Build module
         run: yarn build
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
       - name: Install example dependencies
         working-directory: example
-        run: yarn install
+        run: bun install
 
       - name: Setup EAS CLI
         uses: expo/expo-github-action@v8
@@ -80,9 +83,12 @@ jobs:
       - name: Build module
         run: yarn build
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
       - name: Install example dependencies
         working-directory: example
-        run: yarn install
+        run: bun install
 
       - name: Setup EAS CLI
         uses: expo/expo-github-action@v8
