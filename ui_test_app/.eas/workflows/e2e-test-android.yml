@@ -15,4 +15,11 @@ jobs:
     type: maestro
     params:
       build_id: ${{ needs.build_android_for_e2e.outputs.build_id }}
-      flow_path: ['.maestro/home.yml']
+      flow_path:
+        - '.maestro/flow.yaml'
+        - '.maestro/delegate/flow.yaml'
+        - '.maestro/handler/flow.yaml'
+        - '.maestro/purchasecontroller/no_pc_purchases.yaml'
+        - '.maestro/purchasecontroller/test_pc_purchases.yaml'
+      env:
+        PLATFORM_ID: 'com.superwall.superapp'
