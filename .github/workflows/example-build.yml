@@ -1,0 +1,95 @@
+# Build Example App with EAS Build
+#
+# This workflow verifies that the example app builds successfully for both
+# Android and iOS using Expo Application Services (EAS Build).
+#
+# Setup Instructions:
+# 1. Generate an Expo access token:
+#    - Visit https://expo.dev/accounts/[account]/settings/access-tokens
+#    - Or run: npx eas-cli login && npx eas-cli whoami --json
+# 2. Add the token as a repository secret named 'EXPO_TOKEN':
+#    - Go to Settings > Secrets and variables > Actions
+#    - Click 'New repository secret'
+#    - Name: EXPO_TOKEN
+#    - Value: [your token]
+#
+# The workflow uses the 'preview' build profile from example/eas.json which:
+# - iOS: Builds for simulator (no code signing required)
+# - Android: Builds APK (faster than AAB for verification)
+
+name: Build Example App
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-android:
+    name: Build Android (EAS)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Enable Corepack for Yarn 4
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build module
+        run: yarn build
+
+      - name: Install example dependencies
+        working-directory: example
+        run: yarn install
+
+      - name: Setup EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build Android with EAS
+        working-directory: example
+        run: eas build --platform android --profile preview --non-interactive --wait
+
+  build-ios:
+    name: Build iOS (EAS)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Enable Corepack for Yarn 4
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build module
+        run: yarn build
+
+      - name: Install example dependencies
+        working-directory: example
+        run: yarn install
+
+      - name: Setup EAS CLI
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build iOS with EAS
+        working-directory: example
+        run: eas build --platform ios --profile preview --non-interactive --wait
