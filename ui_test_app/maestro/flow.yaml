@@ -1,4 +1,4 @@
-appId: ${PLATFORM_ID}
+appId: com.superwall.superapp
 ---
 - launchApp: ${PLATFORM_ID}
 - tapOn:

@@ -1,4 +1,4 @@
-appId: com.superwall.superapp
+appId: ${PLATFORM_ID}
 ---
 - launchApp: ${PLATFORM_ID}
 - tapOn: "Configuration test"
