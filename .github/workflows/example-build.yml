@@ -43,7 +43,7 @@ jobs:
         run: yarn install
 
       - name: Build module
-        run: yarn build && yarn build plugin
+        run: yarn build
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -81,7 +81,7 @@ jobs:
         run: yarn install
 
       - name: Build module
-        run: yarn build && yarn build plugin
+        run: yarn build
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
