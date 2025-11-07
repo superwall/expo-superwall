@@ -83,6 +83,9 @@ jobs:
       - name: Build module
         run: yarn build
 
+      - name: Build Plugin
+        run: yarn build plugin
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
