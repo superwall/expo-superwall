@@ -11,6 +11,10 @@ extension ProductStore {
       return "PADDLE"
     case .superwall:
       return "SUPERWALL"
+    case .playStore:
+      return "PLAY_STORE"
+    case .other:
+      return "OTHER"
     }
   }
 }
