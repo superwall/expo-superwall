@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.3
+
+### Patch Changes
+
+- 0278ad4: bump ios to 4.10.0. This fixes missing localization for app2web restore flow
+
 ## 0.6.2
 
 ### Patch Changes
