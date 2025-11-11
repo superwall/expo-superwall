@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.4
+
+### Patch Changes
+
+- fedde41: fix: compat superwall options on android
+
 ## 0.6.3
 
 ### Patch Changes
