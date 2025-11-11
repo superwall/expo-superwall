@@ -12,7 +12,8 @@ We have a quick list of common questions to get you started engaging with this p
 ### Create a new release
 
 ```bash
-yarn changeset create
+bun run changeset create
 ```
 
 This will create a new changeset file in the `changesets` directory.
+
