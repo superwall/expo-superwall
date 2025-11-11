@@ -14,7 +14,7 @@ import { RedemptionResults } from "./lib/RedemptionResults"
 import { SubscriptionStatus } from "./lib/SubscriptionStatus"
 import type { SuperwallDelegate } from "./lib/SuperwallDelegate"
 import { SuperwallEventInfo } from "./lib/SuperwallEventInfo"
-import type { SuperwallOptions } from "./lib/SuperwallOptions"
+import { SuperwallOptions } from "./lib/SuperwallOptions"
 
 export { PaywallResult } from "./lib/PaywallResult"
 
@@ -305,9 +305,15 @@ export default class Superwall {
     completion?: () => void
   }): Promise<Superwall> {
     Superwall.purchaseController = purchaseController
+
+    // Ensure options is always a SuperwallOptions instance with defaults
+    const superwallOptions = options instanceof SuperwallOptions
+      ? options
+      : new SuperwallOptions(options)
+
     await SuperwallExpoModule.configure(
       apiKey,
-      options?.toJson(),
+      superwallOptions.toJson(),
       !!purchaseController,
       `${version}compat`,
     )
