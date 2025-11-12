@@ -1,5 +1,5 @@
 import { NativeModule, requireNativeModule } from "expo"
-import type { SuperwallExpoModuleEvents } from "./SuperwallExpoModule.types"
+import type { EntitlementsInfo, SuperwallExpoModuleEvents } from "./SuperwallExpoModule.types"
 
 export type SubscriptionStatus = any
 
@@ -24,7 +24,7 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
   reset(): Promise<void>
 
   getAssignments(): Promise<any[]>
-  getEntitlements(): Promise<any>
+  getEntitlements(): Promise<EntitlementsInfo>
   getSubscriptionStatus(): Promise<SubscriptionStatus>
   setSubscriptionStatus(status: Record<string, any>): Promise<void>
 

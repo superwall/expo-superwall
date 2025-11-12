@@ -24,6 +24,11 @@ import { useSuperwall } from "./useSuperwall"
  *   - `refresh: () => Promise<Record<string, any>>`:
  *     Manually refreshes the user's attributes and subscription status from the Superwall servers.
  *     Returns a promise that resolves with the refreshed user attributes.
+ *   - `getEntitlements: () => Promise<EntitlementsInfo>`:
+ *     Retrieves the user's entitlements from Superwall's servers. Returns both active and inactive entitlements.
+ *     (See `EntitlementsInfo` type in `SuperwallExpoModule.types.ts`).
+ *   - `setSubscriptionStatus: (status: SubscriptionStatus) => Promise<void>`:
+ *     Manually sets the subscription status of the user. This is typically called after a purchase or restore.
  *   - `subscriptionStatus?: SubscriptionStatus`: The current subscription status of the user.
  *     (See `SubscriptionStatus` type in `SuperwallExpoModule.types.ts`).
  *   - `user?: UserAttributes | null`: An object containing the current user's attributes
@@ -31,7 +36,7 @@ import { useSuperwall } from "./useSuperwall"
  *     (See `UserAttributes` type in `useSuperwall.ts`).
  *
  * @example
- * const { identify, update, signOut, user, subscriptionStatus } = useUser();
+ * const { identify, update, signOut, user, subscriptionStatus, getEntitlements, setSubscriptionStatus } = useUser();
  *
  * const handleLogin = async (userId: string) => {
  *   await identify(userId);
@@ -44,6 +49,18 @@ import { useSuperwall } from "./useSuperwall"
  * const handleLogout = () => {
  *   signOut();
  * };
+ *
+ * const syncSubscriptionStatus = async () => {
+ *   const entitlements = await getEntitlements();
+ *   if (entitlements.active.length > 0) {
+ *     await setSubscriptionStatus({
+ *       status: "ACTIVE",
+ *       entitlements: entitlements.active
+ *     });
+ *   } else {
+ *     await setSubscriptionStatus({ status: "INACTIVE" });
+ *   }
+ * };
  */
 export const useUser = () => {
   const {
@@ -54,6 +71,7 @@ export const useUser = () => {
     refresh,
     subscriptionStatus,
     setSubscriptionStatus,
+    getEntitlements,
   } = useSuperwall((state) => ({
     identify: state.identify,
     user: state.user,
@@ -62,6 +80,7 @@ export const useUser = () => {
     refresh: state.getUserAttributes,
     subscriptionStatus: state.subscriptionStatus,
     setSubscriptionStatus: state.setSubscriptionStatus,
+    getEntitlements: state.getEntitlements,
   }))
 
   const update = async (
@@ -83,6 +102,7 @@ export const useUser = () => {
     refresh,
     subscriptionStatus,
     setSubscriptionStatus,
+    getEntitlements,
     user,
   } as const
 }
