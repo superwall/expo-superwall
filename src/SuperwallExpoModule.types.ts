@@ -73,6 +73,24 @@ export interface Entitlement {
 }
 
 /**
+ * Contains information about the user's entitlements, separated into active and inactive.
+ * This is typically fetched from Superwall's servers to determine what content or features
+ * the user has access to.
+ */
+export interface EntitlementsInfo {
+  /**
+   * Array of entitlements that are currently active for the user.
+   * See {@link Entitlement}.
+   */
+  active: Entitlement[]
+  /**
+   * Array of entitlements that are not currently active for the user.
+   * See {@link Entitlement}.
+   */
+  inactive: Entitlement[]
+}
+
+/**
  * Describes the reason why a paywall presentation was skipped for the user.
  * This can happen due to various conditions like being in a holdout group,
  * not matching audience rules, or if the specified placement doesn't exist.
