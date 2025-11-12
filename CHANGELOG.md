@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.5
+
+### Patch Changes
+
+- e4c6aec: add getEntitlements to useUser hook
+
 ## 0.6.4
 
 ### Patch Changes
