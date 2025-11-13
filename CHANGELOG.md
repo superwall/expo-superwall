@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.6
+
+### Patch Changes
+
+- 9c5a9a5: bump ios to 4.10.1
+
 ## 0.6.5
 
 ### Patch Changes
