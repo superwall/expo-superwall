@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.7
+
+### Patch Changes
+
+- 02a9d2d: add missing productIdentifier to RedmeptionPaywallInfo
+
 ## 0.6.6
 
 ### Patch Changes
