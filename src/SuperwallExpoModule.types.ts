@@ -571,6 +571,10 @@ export interface RedemptionPaywallInfo {
    * The ID of the experiment the user was part of.
    */
   experimentId: string
+  /**
+   * The product identifier associated with the paywall, if any.
+   */
+  productIdentifier?: string
 }
 
 /**
