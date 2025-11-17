@@ -318,5 +318,22 @@ public class SuperwallExpoModule: Module {
         Superwall.shared.logLevel = logLevel
       }
     }
+
+    Function("setIntegrationAttributes") { (attributes: [String: String]) in
+      var converted: [IntegrationAttribute: String] = [:]
+
+      for (key, value) in attributes {
+        if let attribute = IntegrationAttribute.fromString(key) {
+          converted[attribute] = value
+        }
+      }
+
+      Superwall.shared.setIntegrationAttributes(converted)
+    }
+
+    Function("getIntegrationAttributes") { () -> [String: String] in
+      let attributes = Superwall.shared.integrationAttributes
+      return attributes
+    }
   }
 }

@@ -24,6 +24,11 @@ import { useSuperwall } from "./useSuperwall"
  *   - `refresh: () => Promise<Record<string, any>>`:
  *     Manually refreshes the user's attributes and subscription status from the Superwall servers.
  *     Returns a promise that resolves with the refreshed user attributes.
+ *   - `setIntegrationAttributes: (attributes: IntegrationAttributes) => Promise<void>`:
+ *     Sets attributes for third-party integrations (e.g., attribution providers, analytics platforms).
+ *     Used to link user IDs from services like Adjust, Amplitude, AppsFlyer, etc.
+ *   - `getIntegrationAttributes: () => Promise<Record<string, string>>`:
+ *     Gets the currently set integration attributes.
  *   - `getEntitlements: () => Promise<EntitlementsInfo>`:
  *     Retrieves the user's entitlements from Superwall's servers. Returns both active and inactive entitlements.
  *     (See `EntitlementsInfo` type in `SuperwallExpoModule.types.ts`).
@@ -71,6 +76,8 @@ export const useUser = () => {
     refresh,
     subscriptionStatus,
     setSubscriptionStatus,
+    setIntegrationAttributes,
+    getIntegrationAttributes,
     getEntitlements,
   } = useSuperwall((state) => ({
     identify: state.identify,
@@ -80,6 +87,8 @@ export const useUser = () => {
     refresh: state.getUserAttributes,
     subscriptionStatus: state.subscriptionStatus,
     setSubscriptionStatus: state.setSubscriptionStatus,
+    setIntegrationAttributes: state.setIntegrationAttributes,
+    getIntegrationAttributes: state.getIntegrationAttributes,
     getEntitlements: state.getEntitlements,
   }))
 
@@ -102,6 +111,8 @@ export const useUser = () => {
     refresh,
     subscriptionStatus,
     setSubscriptionStatus,
+    setIntegrationAttributes,
+    getIntegrationAttributes,
     getEntitlements,
     user,
   } as const

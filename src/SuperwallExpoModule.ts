@@ -1,5 +1,5 @@
 import { NativeModule, requireNativeModule } from "expo"
-import type { EntitlementsInfo, SuperwallExpoModuleEvents } from "./SuperwallExpoModule.types"
+import type { IntegrationAttributes, EntitlementsInfo, SuperwallExpoModuleEvents } from "./SuperwallExpoModule.types"
 
 export type SubscriptionStatus = any
 
@@ -59,6 +59,9 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
   preloadAllPaywalls(): void
 
   setLogLevel(level: string): void
+
+  setIntegrationAttributes(attributes: IntegrationAttributes): void
+  getIntegrationAttributes(): Record<string, string>
 }
 
 export default requireNativeModule<SuperwallExpoModule>("SuperwallExpo")
