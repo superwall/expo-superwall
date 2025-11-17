@@ -398,17 +398,24 @@ class SuperwallExpoModule : Module() {
       }
     }
 
-    AsyncFunction("setIntegrationAttributes") { attributes: Map<String, String> ->
-      val converted = attributes.mapNotNull { (key, value) ->
-        attributionProviderFromString(key)?.let { it to value }
-      }.toMap()
+    AsyncFunction("setIntegrationAttributes") { attributes: Map<String, String>, promise: Promise ->
+      scope.launch {
+        try {
+          val converted = attributes.mapNotNull { (key, value) ->
+            attributionProviderFromString(key)?.let { it to value }
+          }.toMap()
 
-      Superwall.instance.setIntegrationAttributes(converted)
+          Superwall.instance.setIntegrationAttributes(converted)
+          promise.resolve(null)
+        } catch (error: Exception) {
+          promise.reject(CodedException(error))
+        }
+      }
     }
 
-    Function("getIntegrationAttributes") {
+    AsyncFunction("getIntegrationAttributes") { promise: Promise ->
       val attributes = Superwall.instance.integrationAttributes
-      return@Function attributes
+      promise.resolve(attributes)
     }
   }
 }

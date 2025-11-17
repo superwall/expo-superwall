@@ -319,7 +319,7 @@ public class SuperwallExpoModule: Module {
       }
     }
 
-    AsyncFunction("setIntegrationAttributes") { (attributes: [String: String]) in
+    AsyncFunction("setIntegrationAttributes") { (attributes: [String: String], promise: Promise) in
       var converted: [IntegrationAttribute: String] = [:]
 
       for (key, value) in attributes {
@@ -329,11 +329,12 @@ public class SuperwallExpoModule: Module {
       }
 
       Superwall.shared.setIntegrationAttributes(converted)
+      promise.resolve(nil)
     }
 
-    Function("getIntegrationAttributes") { () -> [String: String] in
+    AsyncFunction("getIntegrationAttributes") { (promise: Promise) in
       let attributes = Superwall.shared.integrationAttributes
-      return attributes
+      promise.resolve(attributes)
     }
   }
 }

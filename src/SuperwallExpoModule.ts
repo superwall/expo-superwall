@@ -61,7 +61,7 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
   setLogLevel(level: string): void
 
   setIntegrationAttributes(attributes: IntegrationAttributes): Promise<void>
-  getIntegrationAttributes(): Record<string, string>
+  getIntegrationAttributes(): Promise<Record<string, string>>
 }
 
 export default requireNativeModule<SuperwallExpoModule>("SuperwallExpo")
