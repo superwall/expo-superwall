@@ -84,6 +84,8 @@ export interface PaywallInfo {
   variantId: string
   /** The ID of the experiment that the paywall belongs to */
   experimentId: string
+  /** The product identifier that the user purchased */
+  productIdentifier?: string 
 }
 
 /**
@@ -188,6 +190,7 @@ export class RedemptionResults {
         placementParams: json.paywallInfo.placementParams || {},
         variantId: json.paywallInfo.variantId,
         experimentId: json.paywallInfo.experimentId,
+        productIdentifier: json.paywallInfo.productIdentifier || undefined
       }
     }
 

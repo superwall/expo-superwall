@@ -3,7 +3,7 @@ import { create } from "zustand"
 import { useShallow } from "zustand/shallow"
 import pkg from "../package.json"
 import SuperwallExpoModule from "./SuperwallExpoModule"
-import type { SubscriptionStatus, IntegrationAttributes } from "./SuperwallExpoModule.types"
+import type { SubscriptionStatus, IntegrationAttributes, EntitlementsInfo } from "./SuperwallExpoModule.types"
 import type { SuperwallOptions } from "./SuperwallOptions"
 
 /**
@@ -178,6 +178,13 @@ export interface SuperwallStore {
   setSubscriptionStatus: (status: SubscriptionStatus) => Promise<void>
 
   getDeviceAttributes: () => Promise<Record<string, any>>
+
+  /**
+   * Retrieves the user's entitlements from Superwall's servers.
+   * This includes both active and inactive entitlements.
+   * @returns A promise that resolves with the entitlements information.
+   */
+  getEntitlements: () => Promise<EntitlementsInfo>
 }
 
 /**
@@ -205,7 +212,12 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     // Support both spellings for backward compatibility
     const isManualPurchaseManagement = manualPurchaseManagement ?? manualPurchaseManagment ?? false
 
-    await SuperwallExpoModule.configure(apiKey, restOptions, isManualPurchaseManagement, pkg.version)
+    await SuperwallExpoModule.configure(
+      apiKey,
+      restOptions,
+      isManualPurchaseManagement,
+      pkg.version,
+    )
 
     const currentUser = await SuperwallExpoModule.getUserAttributes()
     const subscriptionStatus = await SuperwallExpoModule.getSubscriptionStatus()
@@ -286,6 +298,10 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     const attributes = await SuperwallExpoModule.getDeviceAttributes()
     return attributes
   },
+  getEntitlements: async () => {
+    const entitlements = await SuperwallExpoModule.getEntitlements()
+    return entitlements as EntitlementsInfo
+  },
 
   /* -------------------- Listener helpers -------------------- */
   _initListeners: (): (() => void) => {
@@ -311,6 +327,7 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
 
     return (): void => {
       console.log("Cleaning up listeners", subscriptions.length)
+      // biome-ignore lint/suspicious/useIterableCallbackReturn: <explanation>
       subscriptions.forEach((s) => s.remove())
       // Reset the state on cleanup
       set({ listenersInitialized: false })

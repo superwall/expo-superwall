@@ -1,6 +1,6 @@
 {
   "name": "expo-superwall",
-  "version": "0.5.0",
+  "version": "0.6.8",
   "description": "Offical Expo Integration for Superwall",
   "main": "build/src/index.js",
   "types": "build/src/index.d.ts",
@@ -29,7 +29,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "version": "changeset version",
-    "release": "yarn build && yarn build plugin && changeset publish",
+    "release": "yarn build && changeset publish",
     "postinstall": "node scripts/check-expo-version.js"
   },
   "keywords": [
@@ -66,8 +66,6 @@
     "ios",
     "android",
     "expo-module.config.json",
-    "plugin",
-    "app.plugin.js",
     "scripts"
   ],
   "packageManager": "yarn@4.7.0",

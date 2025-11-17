@@ -1,0 +1,43 @@
+appId: ${PLATFORM_ID}
+---
+- launchApp: ${PLATFORM_ID}
+- tapOn:
+    text: "Continue"
+    optional: true
+- tapOn:
+    text: "X"
+    optional: true
+
+- tapOn: "Configuration test"
+- tapOn: "Configure with dialog shown + no PC"
+- assertVisible:
+    text: "Configuration completed"
+- tapOn: "OK"
+- runFlow: "util/back.yaml"
+
+# Navigate to Subscription Status Test screen
+- tapOn: "Subscription Status Test"
+
+# Test Unknown status
+- tapOn: "Set Subscription Status Unknown"
+- assertVisible:
+    text: "Subscription status: Unknown"
+- tapOn: "OK"
+
+# Test Inactive status
+- tapOn: "Set Subscription Status Inactive"
+- assertVisible:
+    text: "Subscription status: Inactive"
+- tapOn: "OK"
+
+# Test Active status with specific entitlements
+- tapOn: "Set Subscription Status Active"
+- assertVisible:
+    text: "Subscription status: Active - Entitlements: pro, test_entitlement"
+- tapOn: "OK"
+
+- tapOn: "Set Subscription Status Inactive"
+
+# Return to previous screen
+- runFlow: "util/back.yaml"
+

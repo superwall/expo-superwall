@@ -1,5 +1,115 @@
 # Changelog
 
+## 0.6.8
+
+### Patch Changes
+
+- f70ebe4: Fix undefined being returned for PaywallResult
+
+## 0.6.7
+
+### Patch Changes
+
+- 02a9d2d: add missing productIdentifier to RedmeptionPaywallInfo
+
+## 0.6.6
+
+### Patch Changes
+
+- 9c5a9a5: bump ios to 4.10.1
+
+## 0.6.5
+
+### Patch Changes
+
+- e4c6aec: add getEntitlements to useUser hook
+
+## 0.6.4
+
+### Patch Changes
+
+- fedde41: fix: compat superwall options on android
+
+## 0.6.3
+
+### Patch Changes
+
+- 0278ad4: bump ios to 4.10.0. This fixes missing localization for app2web restore flow
+
+## 0.6.2
+
+### Patch Changes
+
+- 72519cd: remove unused expo plugin
+
+## 0.6.1
+
+### Patch Changes
+
+- 7920773: fix(android): handle nullable properties in RedemptionResult JSON serialization
+
+  Fixed a Kotlin compilation error where nullable properties (`variantId`, `experimentId`, `productIdentifier`) were being assigned directly to a Map<String, Any>. Now using the null-safe let operator to conditionally add these properties only when they have values.
+
+## 0.6.0
+
+### Minor Changes
+
+- b816292: # Custom Purchase Controller API Improvement
+
+  Changed `CustomPurchaseControllerContext` return types from `Promise<PurchaseResult | undefined>` to `Promise<PurchaseResult | void>` for cleaner success handling.
+
+  Now you can simply not return anything for success instead of `return undefined`:
+
+  ```tsx
+  import Purchases, { PURCHASES_ERROR_CODE } from "react-native-purchases";
+
+  <CustomPurchaseControllerProvider
+    controller={{
+      onPurchase: async (params) => {
+        try {
+          const products = await Purchases.getProducts([params.productId]);
+          const product = products[0];
+
+          if (!product) {
+            return { type: "failed", error: "Product not found" };
+          }
+
+          await Purchases.purchaseStoreProduct(product);
+          // Success - no return needed ✨
+        } catch (error: any) {
+          if (error.code === PURCHASES_ERROR_CODE.PURCHASE_CANCELLED_ERROR) {
+            return { type: "cancelled" };
+          }
+          return { type: "failed", error: error.message };
+        }
+      },
+
+      onPurchaseRestore: async () => {
+        try {
+          await Purchases.restorePurchases();
+          // Success - no return needed ✨
+        } catch (error: any) {
+          return { type: "failed", error: error.message };
+        }
+      },
+    }}
+  >
+    {/* Your app */}
+  </CustomPurchaseControllerProvider>;
+  ```
+
+### Patch Changes
+
+- acb9956: feature: add StoreProduct Type to exports
+
+## 0.5.1
+
+### Patch Changes
+
+- 889aaf7: fix: improve custom purchase type handling
+- 56a72c9: Bump Android version to 2.6.3
+- 465a215: Exposes Product identifier in Redemption Info
+
 ## 0.5.0
 
 ### Minor Changes

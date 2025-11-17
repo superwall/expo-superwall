@@ -101,11 +101,6 @@ class SuperwallExpoModule : Module() {
       didRedeemLink
     )
 
-    Function("getApiKey") {
-      val applicationInfo = appContext?.reactContext?.packageManager?.getApplicationInfo(appContext?.reactContext?.packageName.toString(), PackageManager.GET_META_DATA)
-      return@Function applicationInfo?.metaData?.getString("SUPERWALL_API_KEY")
-    }
-
     AsyncFunction("identify") { userId: String, options: Map<String, Any>?, promise: Promise ->
       scope.launch {
         try {

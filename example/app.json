@@ -23,12 +23,6 @@
     },
     "plugins": [
       "expo-router",
-      [
-        "../app.plugin.js",
-        {
-          "apiKey": "custom_secret_api"
-        }
-      ],
       "expo-web-browser"
     ],
     "experiments": {

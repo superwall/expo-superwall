@@ -34,6 +34,13 @@ export default function RootLayout() {
           headerShown: false
         }}
       />
+      <Stack.Screen
+        name="custom-purchase"
+        options={{
+          title: 'Custom Purchase Controller',
+          headerShown: true
+        }}
+      />
     </Stack>
   );
 }

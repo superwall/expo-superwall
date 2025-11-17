@@ -1,4 +1,4 @@
-appId: com.superwall.superapp
+appId: ${PLATFORM_ID}
 ---
 - runFlow:
     when:

@@ -55,7 +55,7 @@ expo run:android
 changeset version
 
 # Build and publish
-yarn build && yarn build plugin && changeset publish
+yarn build && changeset publish
 ```
 
 ## Architecture Overview

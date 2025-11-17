@@ -136,6 +136,9 @@ extension RedemptionResult.RedemptionInfo.PaywallInfo {
     map["placementParams"] = self.placementParams
     map["variantId"] = self.variantId
     map["experimentId"] = self.experimentId
+    if let productIdentifier = self.productIdentifier {
+      map["productIdentifier"] = productIdentifier
+    }
 
     return map
   }

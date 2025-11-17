@@ -19,13 +19,7 @@
       "package": "com.superwall.superapp"
     },
     "plugins": [
-      "expo-router",
-      [
-        "../app.plugin.js",
-        {
-          "apiKey": "custom_secret_api"
-        }
-      ]
+      "expo-router"
     ],
     "experiments": {
       "typedRoutes": true

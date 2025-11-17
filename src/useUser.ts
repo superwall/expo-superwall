@@ -29,6 +29,11 @@ import { useSuperwall } from "./useSuperwall"
  *     Used to link user IDs from services like Adjust, Amplitude, AppsFlyer, etc.
  *   - `getIntegrationAttributes: () => Promise<Record<string, string>>`:
  *     Gets the currently set integration attributes.
+ *   - `getEntitlements: () => Promise<EntitlementsInfo>`:
+ *     Retrieves the user's entitlements from Superwall's servers. Returns both active and inactive entitlements.
+ *     (See `EntitlementsInfo` type in `SuperwallExpoModule.types.ts`).
+ *   - `setSubscriptionStatus: (status: SubscriptionStatus) => Promise<void>`:
+ *     Manually sets the subscription status of the user. This is typically called after a purchase or restore.
  *   - `subscriptionStatus?: SubscriptionStatus`: The current subscription status of the user.
  *     (See `SubscriptionStatus` type in `SuperwallExpoModule.types.ts`).
  *   - `user?: UserAttributes | null`: An object containing the current user's attributes
@@ -36,7 +41,7 @@ import { useSuperwall } from "./useSuperwall"
  *     (See `UserAttributes` type in `useSuperwall.ts`).
  *
  * @example
- * const { identify, update, signOut, user, subscriptionStatus } = useUser();
+ * const { identify, update, signOut, user, subscriptionStatus, getEntitlements, setSubscriptionStatus } = useUser();
  *
  * const handleLogin = async (userId: string) => {
  *   await identify(userId);
@@ -48,6 +53,18 @@ import { useSuperwall } from "./useSuperwall"
  *
  * const handleLogout = () => {
  *   signOut();
+ * };
+ *
+ * const syncSubscriptionStatus = async () => {
+ *   const entitlements = await getEntitlements();
+ *   if (entitlements.active.length > 0) {
+ *     await setSubscriptionStatus({
+ *       status: "ACTIVE",
+ *       entitlements: entitlements.active
+ *     });
+ *   } else {
+ *     await setSubscriptionStatus({ status: "INACTIVE" });
+ *   }
  * };
  */
 export const useUser = () => {
@@ -61,6 +78,7 @@ export const useUser = () => {
     setSubscriptionStatus,
     setIntegrationAttributes,
     getIntegrationAttributes,
+    getEntitlements,
   } = useSuperwall((state) => ({
     identify: state.identify,
     user: state.user,
@@ -71,6 +89,7 @@ export const useUser = () => {
     setSubscriptionStatus: state.setSubscriptionStatus,
     setIntegrationAttributes: state.setIntegrationAttributes,
     getIntegrationAttributes: state.getIntegrationAttributes,
+    getEntitlements: state.getEntitlements,
   }))
 
   const update = async (
@@ -94,6 +113,7 @@ export const useUser = () => {
     setSubscriptionStatus,
     setIntegrationAttributes,
     getIntegrationAttributes,
+    getEntitlements,
     user,
   } as const
 }
