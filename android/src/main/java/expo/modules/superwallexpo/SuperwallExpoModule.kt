@@ -398,7 +398,7 @@ class SuperwallExpoModule : Module() {
       }
     }
 
-    Function("setIntegrationAttributes") { attributes: Map<String, String> ->
+    AsyncFunction("setIntegrationAttributes") { attributes: Map<String, String> ->
       val converted = attributes.mapNotNull { (key, value) ->
         attributionProviderFromString(key)?.let { it to value }
       }.toMap()

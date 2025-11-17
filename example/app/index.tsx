@@ -8,6 +8,7 @@ export default function OuterApp() {
       <Link href="/new">Hooks SDK Demo</Link>
       <Link href="/custom-purchase">Custom Purchase Controller</Link>
       <Link href="/revenuecat">RevenueCat Integration</Link>
+      <Link href="/integration-attributes">Integration Attributes</Link>
     </View>
   )
 }

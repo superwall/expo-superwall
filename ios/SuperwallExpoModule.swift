@@ -319,7 +319,7 @@ public class SuperwallExpoModule: Module {
       }
     }
 
-    Function("setIntegrationAttributes") { (attributes: [String: String]) in
+    AsyncFunction("setIntegrationAttributes") { (attributes: [String: String]) in
       var converted: [IntegrationAttribute: String] = [:]
 
       for (key, value) in attributes {

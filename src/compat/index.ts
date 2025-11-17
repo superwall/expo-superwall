@@ -693,7 +693,7 @@ export default class Superwall {
    */
   async setIntegrationAttributes(attributes: IntegrationAttributes): Promise<void> {
     await this.awaitConfig()
-    SuperwallExpoModule.setIntegrationAttributes(attributes)
+    await SuperwallExpoModule.setIntegrationAttributes(attributes)
   }
 
   /**
