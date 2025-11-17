@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.8
+
+### Patch Changes
+
+- f70ebe4: Fix undefined being returned for PaywallResult
+
 ## 0.6.7
 
 ### Patch Changes
