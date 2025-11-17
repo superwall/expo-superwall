@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.9
+
+### Patch Changes
+
+- 7f28aa0: bump kotlin to 2.6.4
+- ec246be: Added integration attributes support for third-party platforms
+
 ## 0.6.8
 
 ### Patch Changes
