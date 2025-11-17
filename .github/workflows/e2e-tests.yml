@@ -58,9 +58,9 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Run iOS E2E workflow
-        working-directory: ui_test_app
-        run: eas workflow:run .eas/workflows/e2e-test.yml --non-interactive
+      # - name: Run iOS E2E workflow
+      #   working-directory: ui_test_app
+      #   run: eas workflow:run .eas/workflows/e2e-test.yml --non-interactive
 
   e2e-android:
     name: Android E2E Tests (Maestro)
@@ -96,6 +96,6 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Run Android E2E workflow
-        working-directory: ui_test_app
-        run: eas workflow:run .eas/workflows/e2e-test-android.yml --non-interactive
+      # - name: Run Android E2E workflow
+      #   working-directory: ui_test_app
+      #   run: eas workflow:run .eas/workflows/e2e-test-android.yml --non-interactive

@@ -41,6 +41,13 @@ export default function RootLayout() {
           headerShown: true
         }}
       />
+      <Stack.Screen
+        name="integration-attributes"
+        options={{
+          title: 'Integration Attributes',
+          headerShown: true
+        }}
+      />
     </Stack>
   );
 }

@@ -281,7 +281,7 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   },
 
   setIntegrationAttributes: async (attributes) => {
-    SuperwallExpoModule.setIntegrationAttributes(attributes)
+    await SuperwallExpoModule.setIntegrationAttributes(attributes)
 
     const currentUser = await SuperwallExpoModule.getUserAttributes()
     set({ user: currentUser as UserAttributes })
