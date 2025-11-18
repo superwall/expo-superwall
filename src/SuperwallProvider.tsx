@@ -108,13 +108,17 @@ export function SuperwallProvider({
     const handleDeepLink = async () => {
       await Linking.getInitialURL().then((url) => {
         if (url && !isExpoDeepLink(url) && !isExpoPlatformUrl(url)) {
-          SuperwallExpoModule.handleDeepLink(url)
+          SuperwallExpoModule.handleDeepLink(url).catch((error) => {
+            console.debug("Superwall: Non-Superwall deep link ignored", url, error)
+          })
         }
       })
 
       deepLinkEventHandlerRef.current = Linking.addEventListener("url", (event) => {
         if (!isExpoDeepLink(event.url) && !isExpoPlatformUrl(event.url)) {
-          SuperwallExpoModule.handleDeepLink(event.url)
+          SuperwallExpoModule.handleDeepLink(event.url).catch((error) => {
+            console.debug("Superwall: Non-Superwall deep link ignored", event.url, error)
+          })
         }
       })
     }

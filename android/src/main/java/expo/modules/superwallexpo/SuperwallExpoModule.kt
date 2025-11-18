@@ -331,7 +331,7 @@ class SuperwallExpoModule : Module() {
       val result = Superwall.handleDeepLink(url).fold({
         promise.resolve(it)
       }, { error ->
-        promise.reject(CodedException(error))
+        promise.resolve(false)
       })
     }
 
