@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.11
+
+### Patch Changes
+
+- ed77ab7: fix: filter our expo specific deeplinks
+
 ## 0.6.10
 
 ### Patch Changes
