@@ -144,7 +144,7 @@ export class PaywallInfo {
       name: json.name,
       url: json.url,
       experiment: json.experiment ? Experiment.fromJson(json.experiment) : undefined,
-      products: json.products.map((p: any) => Product.fromJson(p)),
+      products: json.products?.map((p: any) => Product.fromJson(p)),
       productIds: json.productIds,
       presentedByEventWithName: json.presentedByEventWithName,
       presentedByEventWithId: json.presentedByEventWithId,
