@@ -22,6 +22,29 @@ interface SuperwallProviderProps {
 }
 
 /**
+ * Checks if a URL is an Expo deep link scheme.
+ * Matches expo://, exp://, or exp+{slug}:// schemes.
+ *
+ * @param url - The URL string to check
+ * @returns true if the URL is an Expo deep link scheme, false otherwise
+ */
+const isExpoDeepLink = (url: string): boolean => {
+  const re = /^(?:expo|exp\+[^:]+|exp):\/\//i
+  return re.test(url)
+}
+
+/**
+ * Checks if a URL is an Expo platform URL (expo.dev domain).
+ *
+ * @param url - The URL string to check
+ * @returns true if the URL is an Expo platform URL, false otherwise
+ */
+const isExpoPlatformUrl = (url: string): boolean => {
+  const re = /^https?:\/\/(?:www\.)?expo\.dev\//i
+  return re.test(url)
+}
+
+/**
  * @category Providers
  * @since 0.0.15
  * Main provider component for the Superwall SDK.
@@ -84,13 +107,15 @@ export function SuperwallProvider({
   useEffect(() => {
     const handleDeepLink = async () => {
       await Linking.getInitialURL().then((url) => {
-        if (url) {
+        if (url && !isExpoDeepLink(url) && !isExpoPlatformUrl(url)) {
           SuperwallExpoModule.handleDeepLink(url)
         }
       })
 
       deepLinkEventHandlerRef.current = Linking.addEventListener("url", (event) => {
-        SuperwallExpoModule.handleDeepLink(event.url)
+        if (!isExpoDeepLink(event.url) && !isExpoPlatformUrl(event.url)) {
+          SuperwallExpoModule.handleDeepLink(event.url)
+        }
       })
     }
 
