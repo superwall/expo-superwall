@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.10
+
+### Patch Changes
+
+- 2e2fc96: fix: compat products when empty crashing
+
 ## 0.6.9
 
 ### Patch Changes
