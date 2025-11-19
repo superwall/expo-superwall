@@ -133,7 +133,9 @@ export function SuperwallProvider({
       try {
         const url = await Linking.getInitialURL()
         if (url && !isExpoDeepLink(url) && !isExpoPlatformUrl(url)) {
-          SuperwallExpoModule.handleDeepLink(url)
+          SuperwallExpoModule.handleDeepLink(url).catch((error) => {
+            console.debug("Superwall: Non-Superwall deep link ignored", url, error)
+          })
         }
       } catch (error) {
         console.debug("Superwall: Failed to get initial URL", error)
@@ -141,7 +143,9 @@ export function SuperwallProvider({
 
       deepLinkEventHandlerRef.current = Linking.addEventListener("url", (event) => {
         if (!isExpoDeepLink(event.url) && !isExpoPlatformUrl(event.url)) {
-          SuperwallExpoModule.handleDeepLink(event.url)
+          SuperwallExpoModule.handleDeepLink(event.url).catch((error) => {
+            console.debug("Superwall: Non-Superwall deep link ignored", event.url, error)
+          })
         }
       })
     }
