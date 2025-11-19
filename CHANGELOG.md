@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.1
+
+### Patch Changes
+
+- bab902d: fix compat android serialziaiton
+
 ## 0.7.0
 
 ### Minor Changes
