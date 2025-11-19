@@ -3,6 +3,17 @@ import { LogScope } from "./LogScope"
 import { PaywallOptions } from "./PaywallOptions"
 
 /**
+ * Helper function to remove undefined values from an object.
+ * This is necessary for Android compatibility as the Expo bridge
+ * cannot convert undefined to Kotlin types.
+ */
+function filterUndefined<T extends Record<string, any>>(obj: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([_, value]) => value !== undefined),
+  ) as Partial<T>
+}
+
+/**
  * @category Enums
  * @since 0.0.15
  * Defines the network environment for Superwall.
@@ -23,10 +34,10 @@ export class LoggingOptions {
   scopes: LogScope[] = [LogScope.All]
 
   toJson(): object {
-    return {
+    return filterUndefined({
       level: this.level,
       scopes: this.scopes,
-    }
+    })
   }
 }
 
@@ -52,8 +63,16 @@ export class SuperwallOptions {
       if (init.paywalls) {
         this.paywalls = new PaywallOptions(init.paywalls) // Pass init.paywalls to PaywallOptions constructor
       }
-      // Assign other properties, ensuring paywalls is handled correctly
-      const { paywalls, ...restInit } = init
+      if (init.logging) {
+        // Ensure logging is always a LoggingOptions instance
+        this.logging =
+          init.logging instanceof LoggingOptions
+            ? init.logging
+            : Object.assign(new LoggingOptions(), init.logging)
+      }
+      // Assign other properties, excluding nested objects
+      // biome-ignore lint/correctness/noUnusedVariables: Extracted to exclude from spread
+      const { paywalls, logging, ...restInit } = init
       Object.assign(this, restInit)
       if (paywalls && !init.paywalls) {
         // if paywalls was in init but not used for constructor
@@ -65,7 +84,8 @@ export class SuperwallOptions {
   // You can add methods to this class if needed
   toJson(): object {
     // Method to serialize class instance to a plain object, useful when passing to native code
-    return {
+    // Filter out undefined values to prevent Android Expo bridge conversion errors
+    return filterUndefined({
       paywalls: this.paywalls.toJson(),
       networkEnvironment: this.networkEnvironment,
       isExternalDataCollectionEnabled: this.isExternalDataCollectionEnabled,
@@ -76,6 +96,6 @@ export class SuperwallOptions {
       passIdentifiersToPlayStore: this.passIdentifiersToPlayStore,
       storeKitVersion: this.storeKitVersion,
       enableExperimentalDeviceVariables: this.enableExperimentalDeviceVariables,
-    }
+    })
   }
 }

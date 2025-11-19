@@ -1,4 +1,15 @@
 /**
+ * Helper function to remove undefined values from an object.
+ * This is necessary for Android compatibility as the Expo bridge
+ * cannot convert undefined to Kotlin types.
+ */
+function filterUndefined<T extends Record<string, any>>(obj: T): Partial<T> {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([_, value]) => value !== undefined),
+  ) as Partial<T>
+}
+
+/**
  * @category Enums
  * @since 0.0.15
  * Defines the different types of views that can appear behind Apple's payment sheet during a transaction.
@@ -19,11 +30,11 @@ export class RestoreFailed {
   closeButtonTitle = "Okay"
 
   toJson(): object {
-    return {
+    return filterUndefined({
       title: this.title,
       message: this.message,
       closeButtonTitle: this.closeButtonTitle,
-    }
+    })
   }
 }
 
@@ -58,19 +69,23 @@ export class PaywallOptions {
         this.transactionBackgroundView = init.transactionBackgroundView
       }
       if (init.restoreFailed) {
-        this.restoreFailed = init.restoreFailed
+        // Ensure restoreFailed is always a RestoreFailed instance
+        this.restoreFailed =
+          init.restoreFailed instanceof RestoreFailed
+            ? init.restoreFailed
+            : Object.assign(new RestoreFailed(), init.restoreFailed)
       }
     }
   }
 
   toJson(): object {
-    return {
+    return filterUndefined({
       isHapticFeedbackEnabled: this.isHapticFeedbackEnabled,
       restoreFailed: this.restoreFailed.toJson(),
       shouldShowPurchaseFailureAlert: this.shouldShowPurchaseFailureAlert,
       shouldPreload: this.shouldPreload,
       automaticallyDismiss: this.automaticallyDismiss,
       transactionBackgroundView: this.transactionBackgroundView,
-    }
+    })
   }
 }
