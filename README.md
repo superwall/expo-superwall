@@ -56,6 +56,19 @@ export default function App() {
 
 **Note:** You can find your API key in your Superwall dashboard.
 
+### SuperwallProvider Props
+
+The `SuperwallProvider` component accepts the following props:
+
+- **`apiKeys`** (required): An object containing your Superwall API keys
+  - `ios?: string` - Your iOS API key
+  - `android?: string` - Your Android API key
+- **`options`** (optional): Configuration options for the SDK (see `SuperwallOptions` type)
+- **`onConfigurationError`** (optional): Callback function invoked when SDK configuration fails
+  - Useful for error tracking and analytics
+  - Example: `(error: Error) => void`
+- **`children`**: Your app content
+
 ## Basic Usage
 
 The SDK provides hooks to interact with Superwall's features.
@@ -97,6 +110,95 @@ function MainAppScreen() {
   );
 }
 ```
+
+### Handling Configuration Errors
+
+The SDK provides robust error handling for cases when configuration fails (e.g., during offline scenarios). You can handle errors in three ways:
+
+#### 1. Using the `SuperwallError` Component
+
+Display error UI declaratively when SDK initialization fails:
+
+```tsx
+import {
+  SuperwallProvider,
+  SuperwallLoading,
+  SuperwallLoaded,
+  SuperwallError,
+} from "expo-superwall";
+import { ActivityIndicator, View, Text, Button } from "react-native";
+
+const API_KEY = "YOUR_SUPERWALL_API_KEY";
+
+export default function App() {
+  return (
+    <SuperwallProvider apiKeys={{ ios: API_KEY }}>
+      <SuperwallLoading>
+        <ActivityIndicator style={{ flex: 1 }} />
+      </SuperwallLoading>
+
+      <SuperwallError>
+        {(error) => (
+          <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+            <Text style={{ fontSize: 18, marginBottom: 10 }}>
+              Failed to initialize Superwall
+            </Text>
+            <Text style={{ color: "gray", marginBottom: 20 }}>{error}</Text>
+            <Button title="Retry" onPress={() => {/* retry logic */}} />
+          </View>
+        )}
+      </SuperwallError>
+
+      <SuperwallLoaded>
+        <MainAppScreen />
+      </SuperwallLoaded>
+    </SuperwallProvider>
+  );
+}
+```
+
+#### 2. Using the `onConfigurationError` Callback
+
+Handle errors with a callback for logging or analytics:
+
+```tsx
+import { SuperwallProvider } from "expo-superwall";
+
+export default function App() {
+  return (
+    <SuperwallProvider
+      apiKeys={{ ios: API_KEY }}
+      onConfigurationError={(error) => {
+        // Log to your error tracking service
+        console.error("Superwall config failed:", error);
+        // Sentry.captureException(error);
+      }}
+    >
+      <YourApp />
+    </SuperwallProvider>
+  );
+}
+```
+
+#### 3. Accessing Error State Directly
+
+Access the error state programmatically using `useSuperwall`:
+
+```tsx
+import { useSuperwall } from "expo-superwall";
+
+function ErrorHandler() {
+  const configError = useSuperwall((state) => state.configurationError);
+
+  if (configError) {
+    return <Text>Configuration Error: {configError}</Text>;
+  }
+
+  return null;
+}
+```
+
+**Note:** The SDK will gracefully handle offline scenarios and other configuration failures, ensuring your app doesn't hang indefinitely in a loading state.
 
 ### Managing Users with `useUser`
 
@@ -218,6 +320,7 @@ The hook returns an object representing the Superwall store. If a `selector` fun
     -   `isConfigured: boolean`: True if the Superwall SDK has been configured with an API key.
     -   `isLoading: boolean`: True when the SDK is performing an asynchronous operation like configuration.
     -   `listenersInitialized: boolean`: True if native event listeners have been initialized.
+    -   `configurationError: string | null`: Contains error message if SDK configuration failed, `null` otherwise. When set, the SDK is not configured and app should show error UI.
     -   `user?: UserAttributes | null`: An object containing the current user's attributes.
         -   `UserAttributes`:
             -   `aliasId: string`: The alias ID of the user.

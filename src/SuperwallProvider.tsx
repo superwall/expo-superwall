@@ -19,6 +19,12 @@ interface SuperwallProviderProps {
   }
   /** App content to render once configured */
   children: ReactNode
+  /**
+   * Optional callback invoked when SDK configuration fails.
+   * Use this to track errors, show custom UI, or implement retry logic.
+   * @param error - The error that occurred during configuration
+   */
+  onConfigurationError?: (error: Error) => void
 }
 
 /**
@@ -68,35 +74,53 @@ const isExpoPlatformUrl = (url: string): boolean => {
 export function SuperwallProvider({
   apiKeys,
   options,
-
   children,
+  onConfigurationError,
 }: SuperwallProviderProps) {
   const deepLinkEventHandlerRef = useRef<EmitterSubscription>(null)
   const isUsingCustomPurchaseController = !!useCustomPurchaseController()
 
-  const { isConfigured, isLoading, configure } = useSuperwallStore(
+  const { isConfigured, isLoading, configure, configurationError } = useSuperwallStore(
     useShallow((state) => ({
       isConfigured: state.isConfigured,
       isLoading: state.isLoading,
       configure: state.configure,
+      configurationError: state.configurationError,
     })),
   )
 
   useEffect(() => {
-    if (!isConfigured && !isLoading) {
+    if (!isConfigured && !isLoading && !configurationError) {
       const apiKey = apiKeys[Platform.OS as keyof typeof apiKeys]
       if (!apiKey) {
-        throw new Error(`No API key provided for platform ${Platform.OS}`)
+        const error = new Error(`No API key provided for platform ${Platform.OS}`)
+        console.error("Superwall configure failed", error)
+        onConfigurationError?.(error)
+        return
       }
 
       configure(apiKey, {
         ...options,
         manualPurchaseManagement: isUsingCustomPurchaseController,
-      }).catch((err) => {
-        console.error("Superwall configure failed", err)
       })
     }
-  }, [isConfigured, isUsingCustomPurchaseController, isLoading, apiKeys, options, configure])
+  }, [
+    isConfigured,
+    isUsingCustomPurchaseController,
+    isLoading,
+    configurationError,
+    apiKeys,
+    options,
+    configure,
+    onConfigurationError,
+  ])
+
+  // Notify callback when configuration error changes
+  useEffect(() => {
+    if (configurationError && onConfigurationError) {
+      onConfigurationError(new Error(configurationError))
+    }
+  }, [configurationError, onConfigurationError])
 
   useEffect(() => {
     const cleanup = useSuperwallStore.getState()._initListeners()
@@ -106,11 +130,14 @@ export function SuperwallProvider({
 
   useEffect(() => {
     const handleDeepLink = async () => {
-      await Linking.getInitialURL().then((url) => {
+      try {
+        const url = await Linking.getInitialURL()
         if (url && !isExpoDeepLink(url) && !isExpoPlatformUrl(url)) {
           SuperwallExpoModule.handleDeepLink(url)
         }
-      })
+      } catch (error) {
+        console.debug("Superwall: Failed to get initial URL", error)
+      }
 
       deepLinkEventHandlerRef.current = Linking.addEventListener("url", (event) => {
         if (!isExpoDeepLink(event.url) && !isExpoPlatformUrl(event.url)) {
@@ -119,7 +146,9 @@ export function SuperwallProvider({
       })
     }
 
-    handleDeepLink()
+    handleDeepLink().catch((error) => {
+      console.error("Superwall: Deep link setup failed", error)
+    })
 
     return () => {
       if (deepLinkEventHandlerRef.current) {
