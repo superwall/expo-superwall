@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.7.0
+
+### Minor Changes
+
+- 183a7d2: feat: comprehensive error handling for SDK configuration failures
+
+  Added robust error handling to prevent apps from hanging indefinitely when SDK configuration fails (e.g., during offline scenarios). This introduces three new ways for developers to handle configuration errors:
+
+  **New Features:**
+
+  - Added `configurationError` state to store for programmatic error access
+  - Added `onConfigurationError` callback prop to `SuperwallProvider` for error tracking/analytics
+  - Added `SuperwallError` component for declarative error UI rendering
+  - Listen to native `configFail` events to capture configuration failures
+  - Improved `SuperwallLoading` and `SuperwallLoaded` to respect error states
+
+  **Breaking Changes:** None - all changes are backward compatible
+
+  **Fixes:**
+
+  - Fixed app hanging in loading state when offline or configuration fails
+  - Fixed unhandled promise rejections in deep link initialization
+  - Fixed loading state not resetting on configuration failure
+
+  Developers can now gracefully handle offline scenarios and provide better UX when SDK initialization fails.
+
+### Patch Changes
+
+- 4e246c9: fix: resolve Android handleDeepLink promise consistently with iOS
+
+  Fixed Android crash on app launch caused by "Not a superwall link" error. The Android implementation now resolves the handleDeepLink promise with a boolean value (matching iOS behavior) instead of rejecting it for non-Superwall links. This prevents unhandled promise rejections that were causing production app crashes.
+
+  Additionally added error handling in TypeScript as a safety net for any future edge cases.
+
+- 4e246c9: fix: filter our expo specific deeplinks
+
 ## 0.6.11
 
 ### Patch Changes
