@@ -3,7 +3,11 @@ import { create } from "zustand"
 import { useShallow } from "zustand/shallow"
 import pkg from "../package.json"
 import SuperwallExpoModule from "./SuperwallExpoModule"
-import type { SubscriptionStatus, IntegrationAttributes, EntitlementsInfo } from "./SuperwallExpoModule.types"
+import type {
+  EntitlementsInfo,
+  IntegrationAttributes,
+  SubscriptionStatus,
+} from "./SuperwallExpoModule.types"
 import type { SuperwallOptions } from "./SuperwallOptions"
 
 /**
@@ -51,6 +55,12 @@ export interface SuperwallStore {
   isLoading: boolean
   /** Indicates whether the native event listeners have been initialized. */
   listenersInitialized: boolean
+
+  /**
+   * Contains error message if SDK configuration failed, `null` otherwise.
+   * When this is set, the SDK is not configured and app should show error UI.
+   */
+  configurationError: string | null
 
   /**
    * The current user's attributes.
@@ -198,6 +208,7 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   isConfigured: false,
   isLoading: false,
   listenersInitialized: false,
+  configurationError: null,
 
   user: null,
   subscriptionStatus: {
@@ -206,28 +217,40 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
 
   /* -------------------- Actions -------------------- */
   configure: async (apiKey, options) => {
-    set({ isLoading: true })
-    const { manualPurchaseManagement, manualPurchaseManagment, ...restOptions } = options || {}
+    set({ isLoading: true, configurationError: null })
 
-    // Support both spellings for backward compatibility
-    const isManualPurchaseManagement = manualPurchaseManagement ?? manualPurchaseManagment ?? false
+    try {
+      const { manualPurchaseManagement, manualPurchaseManagment, ...restOptions } = options || {}
 
-    await SuperwallExpoModule.configure(
-      apiKey,
-      restOptions,
-      isManualPurchaseManagement,
-      pkg.version,
-    )
+      // Support both spellings for backward compatibility
+      const isManualPurchaseManagement =
+        manualPurchaseManagement ?? manualPurchaseManagment ?? false
 
-    const currentUser = await SuperwallExpoModule.getUserAttributes()
-    const subscriptionStatus = await SuperwallExpoModule.getSubscriptionStatus()
+      await SuperwallExpoModule.configure(
+        apiKey,
+        restOptions,
+        isManualPurchaseManagement,
+        pkg.version,
+      )
 
-    set({
-      isConfigured: true,
-      isLoading: false,
-      user: currentUser as UserAttributes,
-      subscriptionStatus,
-    })
+      const currentUser = await SuperwallExpoModule.getUserAttributes()
+      const subscriptionStatus = await SuperwallExpoModule.getSubscriptionStatus()
+
+      set({
+        isConfigured: true,
+        isLoading: false,
+        configurationError: null,
+        user: currentUser as UserAttributes,
+        subscriptionStatus,
+      })
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error)
+      set({
+        isLoading: false,
+        configurationError: errorMessage,
+      })
+      // Don't throw - let developers handle via state or callback
+    }
   },
   identify: async (userId, options) => {
     await SuperwallExpoModule.identify(userId, options)
@@ -322,12 +345,27 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
       ),
     )
 
+    // Listen for configuration events
+    subscriptions.push(
+      SuperwallExpoModule.addListener("handleSuperwallEvent", ({ eventInfo }) => {
+        if (eventInfo.event.event === "configFail") {
+          set({
+            configurationError: "Failed to load Superwall configuration",
+            isLoading: false,
+          })
+        } else if (eventInfo.event.event === "configRefresh") {
+          // Clear any previous errors on successful refresh
+          set({ configurationError: null })
+        }
+      }),
+    )
+
     set({ listenersInitialized: true })
     console.log("Initialized listeners", subscriptions.length)
 
     return (): void => {
       console.log("Cleaning up listeners", subscriptions.length)
-      // biome-ignore lint/suspicious/useIterableCallbackReturn: <explanation>
+      // biome-ignore lint/suspicious/useIterableCallbackReturn: forEach is used for side effects only
       subscriptions.forEach((s) => s.remove())
       // Reset the state on cleanup
       set({ listenersInitialized: false })
