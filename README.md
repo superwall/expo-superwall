@@ -184,6 +184,7 @@ export default function App() {
 
 Access the error state programmatically using `useSuperwall`:
 
+
 ```tsx
 import { useSuperwall } from "expo-superwall";
 
