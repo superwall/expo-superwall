@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.7.2
+
+### Patch Changes
+
+- 5e2491a: improve event listens to always subscribe no matter what
+
 ## 0.7.1
 
 ### Patch Changes
