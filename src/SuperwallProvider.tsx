@@ -128,14 +128,21 @@ export function SuperwallProvider({
     return cleanup
   }, [])
 
+  const hasCheckedInitialUrl = useRef(false)
+
   useEffect(() => {
+    if (!isConfigured) return
+
     const handleDeepLink = async () => {
       try {
-        const url = await Linking.getInitialURL()
-        if (url && !isExpoDeepLink(url) && !isExpoPlatformUrl(url)) {
-          SuperwallExpoModule.handleDeepLink(url).catch((error) => {
-            console.debug("Superwall: Non-Superwall deep link ignored", url, error)
-          })
+        if (!hasCheckedInitialUrl.current) {
+          const url = await Linking.getInitialURL()
+          if (url && !isExpoDeepLink(url) && !isExpoPlatformUrl(url)) {
+            SuperwallExpoModule.handleDeepLink(url).catch((error) => {
+              console.debug("Superwall: Non-Superwall deep link ignored", url, error)
+            })
+          }
+          hasCheckedInitialUrl.current = true
         }
       } catch (error) {
         console.debug("Superwall: Failed to get initial URL", error)
@@ -159,7 +166,7 @@ export function SuperwallProvider({
         deepLinkEventHandlerRef.current.remove()
       }
     }
-  }, [])
+  }, [isConfigured])
 
   return <SuperwallContext.Provider value={true}>{children}</SuperwallContext.Provider>
 }
