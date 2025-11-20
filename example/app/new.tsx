@@ -1,5 +1,4 @@
 import {
-  CustomPurchaseControllerProvider,
   SuperwallLoaded,
   SuperwallLoading,
   SuperwallProvider,
@@ -11,7 +10,7 @@ import SuperwallExpoModule from "expo-superwall/SuperwallExpoModule"
 import { useEffect } from "react"
 import { ActivityIndicator, Alert, Button, Text, View } from "react-native"
 
-const API_KEY = "pk_25605698906751f5383385f9976e21f840d44aa11cd4639c"
+const API_KEY = "pk_e361c8a9662281f4249f2fa11d1a63854615fa80e15e7a4d"
 
 function ScreenContent() {
   const { identify, user, signOut, update, refresh, subscriptionStatus, setSubscriptionStatus } =
@@ -29,7 +28,7 @@ function ScreenContent() {
 
   const triggerPlacement = async () => {
     await registerPlacement({
-      placement: "fishing",
+      placement: "test",
       feature() {
         console.log("Feature called")
         Alert.alert("Feature Unlocked! 🎉", "Successfully accessed fishing feature")
@@ -44,6 +43,18 @@ function ScreenContent() {
   const updateUser = async () => {
     await update((old) => ({ ...old, counter: (old.counter || 0) + 1 }))
   }
+
+  useSuperwallEvents({
+    onSuperwallEvent: (event) => {
+      console.log("DID: onSuperwallEvent", event)
+    },
+    willRedeemLink: () => {
+      console.log("DID: willRedeemLink")
+    },
+    didRedeemLink: () => {
+      console.log("DID: didRedeemLink")
+    },
+  })
 
   return (
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 12 }}>
@@ -104,38 +115,15 @@ function ScreenContent() {
 
 export default function NewPage() {
   return (
-    <CustomPurchaseControllerProvider
-      controller={{
-        onPurchase: async (params) => {
-          if (params.platform === "ios") {
-            console.log("onPurchase", params)
-          } else {
-            console.log("onPurchase", params.productId)
-          }
-          // Set ur system here
-          return {
-            type: "purchased",
-          }
-        },
-        onPurchaseRestore: async () => {
-          console.log("onPurchaseRestore")
-          // Set ur system here
-          return {
-            type: "failed",
-          }
-        },
-      }}
+    <SuperwallProvider
+      apiKeys={{ ios: API_KEY, android: "pk_6d16c4c892b1e792490ab8bfe831f1ad96e7c18aee7a5257" }}
     >
-      <SuperwallProvider
-        apiKeys={{ ios: API_KEY, android: "pk_6d16c4c892b1e792490ab8bfe831f1ad96e7c18aee7a5257" }}
-      >
-        <SuperwallLoading>
-          <ActivityIndicator style={{ flex: 1 }} />
-        </SuperwallLoading>
-        <SuperwallLoaded>
-          <ScreenContent />
-        </SuperwallLoaded>
-      </SuperwallProvider>
-    </CustomPurchaseControllerProvider>
+      <SuperwallLoading>
+        <ActivityIndicator style={{ flex: 1 }} />
+      </SuperwallLoading>
+      <SuperwallLoaded>
+        <ScreenContent />
+      </SuperwallLoaded>
+    </SuperwallProvider>
   )
 }
