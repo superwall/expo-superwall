@@ -10,7 +10,7 @@ export type LogLevel = "debug" | "info" | "warn" | "error" | "none"
  * @since 0.0.15
  * Defines the scopes for logging within the SDK.
  */
-export type LogScope = 
+export type LogScope =
   | "localizationManager"
   | "bounceButton"
   | "coreData"
@@ -141,7 +141,7 @@ export const DefaultSuperwallOptions: SuperwallOptions = {
     shouldPreload: false,
     automaticallyDismiss: true,
     transactionBackgroundView: "spinner",
-    shouldShowWebPurchaseConfirmationAlert: true,
+    shouldShowWebPurchaseConfirmationAlert: false,
   },
   networkEnvironment: "release",
   isExternalDataCollectionEnabled: true,

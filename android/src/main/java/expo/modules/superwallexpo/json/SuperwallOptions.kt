@@ -50,14 +50,13 @@ fun superwallOptionsFromJson(json: Map<String, Any?>): SuperwallOptions {
       val shouldShowPurchaseFailureAlert = paywallsMap?.get("shouldShowPurchaseFailureAlert") as Boolean?
       val shouldPreload = paywallsMap?.get("shouldPreload") as Boolean?
       val automaticallyDismiss = paywallsMap?.get("automaticallyDismiss") as Boolean?
-      val shouldShowWebPurchaseConfirmationAlert = paywallsMap?.get("shouldShowWebPurchaseConfirmationAlert") as Boolean?
 
       val paywalls = PaywallOptions()
       paywalls.isHapticFeedbackEnabled = isHapticFeedbackEnabled ?: paywalls.isHapticFeedbackEnabled
       paywalls.shouldShowPurchaseFailureAlert = shouldShowPurchaseFailureAlert ?: paywalls.shouldShowPurchaseFailureAlert
       paywalls.shouldPreload = shouldPreload ?: paywalls.shouldPreload
       paywalls.automaticallyDismiss = automaticallyDismiss ?: paywalls.automaticallyDismiss
-      paywalls.shouldShowWebPurchaseConfirmationAlert = shouldShowWebPurchaseConfirmationAlert ?: paywalls.shouldShowWebPurchaseConfirmationAlert
+      // Note: shouldShowWebPurchaseConfirmationAlert is iOS-only
 
       val restoreFailedMap = paywallsMap?.get("restoreFailed") as Map<String, Any>?
       val restoreFailed = PaywallOptions.RestoreFailed().apply {
