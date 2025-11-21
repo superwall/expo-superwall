@@ -81,6 +81,7 @@ export interface PaywallOptions {
   shouldPreload: boolean
   automaticallyDismiss: boolean
   transactionBackgroundView: TransactionBackgroundView
+  shouldShowWebPurchaseConfirmationAlert: boolean
 }
 
 /**
@@ -119,6 +120,7 @@ export const DefaultSuperwallOptions: SuperwallOptions = {
     shouldPreload: false,
     automaticallyDismiss: true,
     transactionBackgroundView: "spinner",
+    shouldShowWebPurchaseConfirmationAlert: true,
   },
   networkEnvironment: "release",
   isExternalDataCollectionEnabled: true,

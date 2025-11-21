@@ -117,6 +117,11 @@ export default function NewPage() {
   return (
     <SuperwallProvider
       apiKeys={{ ios: API_KEY, android: "pk_6d16c4c892b1e792490ab8bfe831f1ad96e7c18aee7a5257" }}
+      options={{
+        paywalls: {
+          shouldShowWebPurchaseConfirmationAlert: false,
+        },
+      }}
     >
       <SuperwallLoading>
         <ActivityIndicator style={{ flex: 1 }} />
