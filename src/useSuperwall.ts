@@ -8,7 +8,7 @@ import type {
   IntegrationAttributes,
   SubscriptionStatus,
 } from "./SuperwallExpoModule.types"
-import type { SuperwallOptions } from "./SuperwallOptions"
+import type { PartialSuperwallOptions } from "./SuperwallOptions"
 
 /**
  * @category Models
@@ -87,7 +87,7 @@ export interface SuperwallStore {
    */
   configure: (
     apiKey: string,
-    options?: Partial<SuperwallOptions> & {
+    options?: PartialSuperwallOptions & {
       /** @deprecated Use manualPurchaseManagement instead */
       manualPurchaseManagment?: boolean
     },

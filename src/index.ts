@@ -4,6 +4,7 @@ export * from "./components"
 
 export { default as SuperwallExpoModule } from "./SuperwallExpoModule"
 export type * from "./SuperwallExpoModule.types"
+export type * from "./SuperwallOptions"
 
 export * from "./SuperwallProvider"
 export * from "./usePlacement"
