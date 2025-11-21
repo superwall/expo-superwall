@@ -10,7 +10,7 @@ export type LogLevel = "debug" | "info" | "warn" | "error" | "none"
  * @since 0.0.15
  * Defines the scopes for logging within the SDK.
  */
-export type LogScope = 
+export type LogScope =
   | "localizationManager"
   | "bounceButton"
   | "coreData"
@@ -81,6 +81,7 @@ export interface PaywallOptions {
   shouldPreload: boolean
   automaticallyDismiss: boolean
   transactionBackgroundView: TransactionBackgroundView
+  shouldShowWebPurchaseConfirmationAlert: boolean
 }
 
 /**
@@ -103,6 +104,27 @@ export interface SuperwallOptions {
 }
 
 /**
+ * @category Types
+ * @since 0.2.8
+ * Deep partial type for SuperwallOptions, allowing partial configuration at any nesting level.
+ */
+export interface PartialSuperwallOptions {
+  paywalls?: Partial<PaywallOptions> & {
+    restoreFailed?: Partial<RestoreFailed>
+  }
+  networkEnvironment?: NetworkEnvironment
+  isExternalDataCollectionEnabled?: boolean
+  localeIdentifier?: string
+  isGameControllerEnabled?: boolean
+  logging?: Partial<LoggingOptions>
+  collectAdServicesAttribution?: boolean
+  passIdentifiersToPlayStore?: boolean
+  storeKitVersion?: "STOREKIT1" | "STOREKIT2"
+  enableExperimentalDeviceVariables?: boolean
+  manualPurchaseManagement?: boolean
+}
+
+/**
  * @category Models
  * @since 0.0.15
  * Default options for the Superwall SDK.
@@ -119,6 +141,7 @@ export const DefaultSuperwallOptions: SuperwallOptions = {
     shouldPreload: false,
     automaticallyDismiss: true,
     transactionBackgroundView: "spinner",
+    shouldShowWebPurchaseConfirmationAlert: false,
   },
   networkEnvironment: "release",
   isExternalDataCollectionEnabled: true,

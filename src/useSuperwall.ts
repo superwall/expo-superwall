@@ -8,7 +8,7 @@ import type {
   IntegrationAttributes,
   SubscriptionStatus,
 } from "./SuperwallExpoModule.types"
-import type { SuperwallOptions } from "./SuperwallOptions"
+import { DefaultSuperwallOptions, type PartialSuperwallOptions } from "./SuperwallOptions"
 
 /**
  * @category Models
@@ -87,7 +87,7 @@ export interface SuperwallStore {
    */
   configure: (
     apiKey: string,
-    options?: Partial<SuperwallOptions> & {
+    options?: PartialSuperwallOptions & {
       /** @deprecated Use manualPurchaseManagement instead */
       manualPurchaseManagment?: boolean
     },
@@ -226,9 +226,27 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
       const isManualPurchaseManagement =
         manualPurchaseManagement ?? manualPurchaseManagment ?? false
 
+      // Deep merge partial options with defaults to ensure all required fields are present
+      const mergedOptions = {
+        ...DefaultSuperwallOptions,
+        ...restOptions,
+        paywalls: {
+          ...DefaultSuperwallOptions.paywalls,
+          ...restOptions.paywalls,
+          restoreFailed: {
+            ...DefaultSuperwallOptions.paywalls.restoreFailed,
+            ...restOptions.paywalls?.restoreFailed,
+          },
+        },
+        logging: {
+          ...DefaultSuperwallOptions.logging,
+          ...restOptions.logging,
+        },
+      }
+
       await SuperwallExpoModule.configure(
         apiKey,
-        restOptions,
+        mergedOptions,
         isManualPurchaseManagement,
         pkg.version,
       )

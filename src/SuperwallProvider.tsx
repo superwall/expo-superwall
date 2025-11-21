@@ -3,7 +3,7 @@ import { type EmitterSubscription, Linking, Platform } from "react-native"
 import { useShallow } from "zustand/shallow"
 import { useCustomPurchaseController } from "./CustomPurchaseControllerProvider"
 import SuperwallExpoModule from "./SuperwallExpoModule"
-import type { SuperwallOptions } from "./SuperwallOptions"
+import type { PartialSuperwallOptions } from "./SuperwallOptions"
 import { SuperwallContext, useSuperwallStore } from "./useSuperwall"
 
 interface SuperwallProviderProps {
@@ -13,7 +13,7 @@ interface SuperwallProviderProps {
     ios?: string
   }
   /** Optional configuration options passed to the native SDK */
-  options?: Partial<SuperwallOptions> & {
+  options?: PartialSuperwallOptions & {
     /** @deprecated Use manualPurchaseManagement instead */
     manualPurchaseManagment?: boolean
   }

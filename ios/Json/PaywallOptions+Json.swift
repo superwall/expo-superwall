@@ -8,7 +8,8 @@ extension PaywallOptions {
       let shouldShowPurchaseFailureAlert = dictionary["shouldShowPurchaseFailureAlert"] as? Bool,
       let shouldPreload = dictionary["shouldPreload"] as? Bool,
       let automaticallyDismiss = dictionary["automaticallyDismiss"] as? Bool,
-      let transactionBackgroundViewValue = dictionary["transactionBackgroundView"] as? String else {
+      let transactionBackgroundViewValue = dictionary["transactionBackgroundView"] as? String,
+      let shouldShowWebPurchaseConfirmationAlert = dictionary["shouldShowWebPurchaseConfirmationAlert"] as? Bool else {
       return nil
     }
 
@@ -24,6 +25,7 @@ extension PaywallOptions {
     paywallOptions.shouldPreload = shouldPreload
     paywallOptions.automaticallyDismiss = automaticallyDismiss
     paywallOptions.transactionBackgroundView = transactionBackgroundView
+    paywallOptions.shouldShowWebPurchaseConfirmationAlert = shouldShowWebPurchaseConfirmationAlert
 
     return paywallOptions
   }
