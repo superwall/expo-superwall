@@ -37,7 +37,9 @@ public class SuperwallExpoModule: Module {
   }
 
   public static func emitEvent(_ name: String, _ data: [String: Any]?) {
-    SuperwallExpoModule.shared?.sendEvent(name, data ?? [:])
+    guard let shared = SuperwallExpoModule.shared else { return }
+    let sanitized = validateEventData(data ?? [:], eventName: name)
+    shared.sendEvent(name, sanitized)
   }
 
   public func definition() -> ModuleDefinition {
@@ -135,7 +137,8 @@ public class SuperwallExpoModule: Module {
               "paywallInfoJson": paywallInfo.toJson(),
               "handlerId": handlerId,
             ] as [String: Any]
-          self.sendEvent(self.onPaywallPresent, data)
+          let sanitized = validateEventData(data, eventName: self.onPaywallPresent)
+          self.sendEvent(self.onPaywallPresent, sanitized)
         }
 
         handler?.onDismiss { [weak self] paywallInfo, result in
@@ -146,7 +149,8 @@ public class SuperwallExpoModule: Module {
               "result": result.toJson(),
               "handlerId": handlerId,
             ] as [String: Any]
-          self.sendEvent(self.onPaywallDismiss, data)
+          let sanitized = validateEventData(data, eventName: self.onPaywallDismiss)
+          self.sendEvent(self.onPaywallDismiss, sanitized)
         }
 
         handler?.onError { [weak self] error in
@@ -156,7 +160,8 @@ public class SuperwallExpoModule: Module {
               "errorString": error.localizedDescription,
               "handlerId": handlerId,
             ] as [String: Any]
-          self.sendEvent(self.onPaywallError, data)
+          let sanitized = validateEventData(data, eventName: self.onPaywallError)
+          self.sendEvent(self.onPaywallError, sanitized)
         }
 
         handler?.onSkip { [weak self] reason in
@@ -166,7 +171,8 @@ public class SuperwallExpoModule: Module {
               "skippedReason": reason.toJson(),
               "handlerId": handlerId,
             ] as [String: Any]
-          self.sendEvent(self.onPaywallSkip, data)
+          let sanitized = validateEventData(data, eventName: self.onPaywallSkip)
+          self.sendEvent(self.onPaywallSkip, sanitized)
         }
       }
 
