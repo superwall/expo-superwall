@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.8.0
+
+### Minor Changes
+
+- 0fcbf57: hotfix web2app redemption by disabling shouldShowWebPurchaseConfirmationAlert per default
+
+### Patch Changes
+
+- 5768d51: expose shouldShowWebPurchaseConfirmationAlert option
+
 ## 0.7.2
 
 ### Patch Changes
