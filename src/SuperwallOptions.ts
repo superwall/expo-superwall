@@ -96,11 +96,32 @@ export interface SuperwallOptions {
   localeIdentifier?: string
   isGameControllerEnabled: boolean
   logging: LoggingOptions
-  collectAdServicesAttribution: boolean
   passIdentifiersToPlayStore: boolean
   storeKitVersion?: "STOREKIT1" | "STOREKIT2"
   enableExperimentalDeviceVariables: boolean
   manualPurchaseManagement: boolean
+  /**
+   * Observe purchases made outside of Superwall. When true, Superwall will observe
+   * StoreKit/Play Store transactions and report them. Defaults to false.
+   * @platform iOS and Android
+   */
+  shouldObservePurchases: boolean
+  /**
+   * Disables the app transaction check on SDK launch. Defaults to false.
+   * @platform iOS only
+   */
+  shouldBypassAppTransactionCheck: boolean
+  /**
+   * Number of times the SDK will attempt to get the Superwall configuration after
+   * a network failure before it times out. Defaults to 6.
+   * @platform iOS only
+   */
+  maxConfigRetryCount: number
+  /**
+   * Enable mock review functionality. Defaults to false.
+   * @platform Android only
+   */
+  useMockReviews: boolean
 }
 
 /**
@@ -117,11 +138,32 @@ export interface PartialSuperwallOptions {
   localeIdentifier?: string
   isGameControllerEnabled?: boolean
   logging?: Partial<LoggingOptions>
-  collectAdServicesAttribution?: boolean
   passIdentifiersToPlayStore?: boolean
   storeKitVersion?: "STOREKIT1" | "STOREKIT2"
   enableExperimentalDeviceVariables?: boolean
   manualPurchaseManagement?: boolean
+  /**
+   * Observe purchases made outside of Superwall. When true, Superwall will observe
+   * StoreKit/Play Store transactions and report them. Defaults to false.
+   * @platform iOS and Android
+   */
+  shouldObservePurchases?: boolean
+  /**
+   * Disables the app transaction check on SDK launch. Defaults to false.
+   * @platform iOS only
+   */
+  shouldBypassAppTransactionCheck?: boolean
+  /**
+   * Number of times the SDK will attempt to get the Superwall configuration after
+   * a network failure before it times out. Defaults to 6.
+   * @platform iOS only
+   */
+  maxConfigRetryCount?: number
+  /**
+   * Enable mock review functionality. Defaults to false.
+   * @platform Android only
+   */
+  useMockReviews?: boolean
 }
 
 /**
@@ -150,8 +192,11 @@ export const DefaultSuperwallOptions: SuperwallOptions = {
     level: "info",
     scopes: ["all"],
   },
-  collectAdServicesAttribution: false,
   passIdentifiersToPlayStore: false,
   enableExperimentalDeviceVariables: false,
   manualPurchaseManagement: false,
+  shouldObservePurchases: false,
+  shouldBypassAppTransactionCheck: false,
+  maxConfigRetryCount: 6,
+  useMockReviews: false,
 }

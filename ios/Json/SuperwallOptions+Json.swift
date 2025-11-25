@@ -19,6 +19,9 @@ extension SuperwallOptions {
     let storeKitVersion = dictionary["storeKitVersion"] as? String
     let enableExperimentalDeviceVariables =
       dictionary["enableExperimentalDeviceVariables"] as? Bool ?? false
+    let shouldObservePurchases = dictionary["shouldObservePurchases"] as? Bool ?? false
+    let shouldBypassAppTransactionCheck = dictionary["shouldBypassAppTransactionCheck"] as? Bool ?? false
+    let maxConfigRetryCount = dictionary["maxConfigRetryCount"] as? Int ?? 6
 
     let superwallOptions = SuperwallOptions()
     superwallOptions.paywalls = paywalls
@@ -31,6 +34,9 @@ extension SuperwallOptions {
       superwallOptions.storeKitVersion = storeKitVersion == "STOREKIT1" ? .storeKit1 : .storeKit2
     }
     superwallOptions.enableExperimentalDeviceVariables = enableExperimentalDeviceVariables
+    superwallOptions.shouldObservePurchases = shouldObservePurchases
+    superwallOptions.shouldBypassAppTransactionCheck = shouldBypassAppTransactionCheck
+    superwallOptions.maxConfigRetryCount = maxConfigRetryCount
 
     return superwallOptions
   }
