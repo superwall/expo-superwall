@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.0.0
+
+### Major Changes
+
+- 197c0c8: Add missing SDK configuration options from native iOS and Android SDKs:
+
+  - `shouldObservePurchases` (iOS & Android): Observe purchases made outside of Superwall
+  - `shouldBypassAppTransactionCheck` (iOS only): Disables app transaction check on SDK launch
+  - `maxConfigRetryCount` (iOS only): Number of retry attempts for config fetch (default: 6)
+  - `useMockReviews` (Android only): Enable mock review functionality
+
+  Also fixes `enableExperimentalDeviceVariables` not being passed to the Android native SDK.
+
+  **Breaking change**: Removed deprecated `collectAdServicesAttribution` option (AdServices attribution is now collected automatically by the native iOS SDK).
+
 ## 0.8.1
 
 ### Patch Changes
