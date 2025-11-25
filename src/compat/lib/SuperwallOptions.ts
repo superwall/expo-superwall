@@ -53,10 +53,31 @@ export class SuperwallOptions {
   localeIdentifier?: string
   isGameControllerEnabled = false
   logging: LoggingOptions = new LoggingOptions()
-  collectAdServicesAttribution = false
   passIdentifiersToPlayStore = false
   storeKitVersion?: "STOREKIT1" | "STOREKIT2"
   enableExperimentalDeviceVariables = false
+  /**
+   * Observe purchases made outside of Superwall. When true, Superwall will observe
+   * StoreKit/Play Store transactions and report them. Defaults to false.
+   * @platform iOS and Android
+   */
+  shouldObservePurchases = false
+  /**
+   * Disables the app transaction check on SDK launch. Defaults to false.
+   * @platform iOS only
+   */
+  shouldBypassAppTransactionCheck = false
+  /**
+   * Number of times the SDK will attempt to get the Superwall configuration after
+   * a network failure before it times out. Defaults to 6.
+   * @platform iOS only
+   */
+  maxConfigRetryCount = 6
+  /**
+   * Enable mock review functionality. Defaults to false.
+   * @platform Android only
+   */
+  useMockReviews = false
 
   constructor(init?: Partial<SuperwallOptions>) {
     if (init) {
@@ -92,10 +113,13 @@ export class SuperwallOptions {
       localeIdentifier: this.localeIdentifier,
       isGameControllerEnabled: this.isGameControllerEnabled,
       logging: this.logging.toJson(),
-      collectAdServicesAttribution: this.collectAdServicesAttribution,
       passIdentifiersToPlayStore: this.passIdentifiersToPlayStore,
       storeKitVersion: this.storeKitVersion,
       enableExperimentalDeviceVariables: this.enableExperimentalDeviceVariables,
+      shouldObservePurchases: this.shouldObservePurchases,
+      shouldBypassAppTransactionCheck: this.shouldBypassAppTransactionCheck,
+      maxConfigRetryCount: this.maxConfigRetryCount,
+      useMockReviews: this.useMockReviews,
     })
   }
 }

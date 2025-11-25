@@ -12,7 +12,10 @@ fun superwallOptionsFromJson(json: Map<String, Any?>): SuperwallOptions {
   options.localeIdentifier = json["localeIdentifier"] as String?
   options.isExternalDataCollectionEnabled = (json["isExternalDataCollectionEnabled"] as Boolean?)?:true
   options.isGameControllerEnabled = (json["isGameControllerEnabled"] as Boolean?)?:false
-    options.passIdentifiersToPlayStore = (json["passIdentifiersToPlayStore"] as Boolean?)?:false
+  options.passIdentifiersToPlayStore = (json["passIdentifiersToPlayStore"] as Boolean?)?:false
+  options.enableExperimentalDeviceVariables = (json["enableExperimentalDeviceVariables"] as Boolean?)?:false
+  options.shouldObservePurchases = (json["shouldObservePurchases"] as Boolean?)?:false
+  options.useMockReviews = (json["useMockReviews"] as Boolean?)?:false
 
       val networkEnvironment = when (json["networkEnvironment"] as String?) {
         "release" -> SuperwallOptions.NetworkEnvironment.Release()
