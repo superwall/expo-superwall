@@ -1,5 +1,5 @@
 ---
-"expo-superwall": minor
+"expo-superwall": major
 ---
 
 Add missing SDK configuration options from native iOS and Android SDKs:
