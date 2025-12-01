@@ -5,6 +5,7 @@ import { useCustomPurchaseController } from "./CustomPurchaseControllerProvider"
 import SuperwallExpoModule from "./SuperwallExpoModule"
 import type { PartialSuperwallOptions } from "./SuperwallOptions"
 import { SuperwallContext, useSuperwallStore } from "./useSuperwall"
+import { useSuperwallEvents } from "./useSuperwallEvents"
 
 interface SuperwallProviderProps {
   /** Your Superwall API key */
@@ -79,6 +80,11 @@ export function SuperwallProvider({
 }: SuperwallProviderProps) {
   const deepLinkEventHandlerRef = useRef<EmitterSubscription>(null)
   const isUsingCustomPurchaseController = !!useCustomPurchaseController()
+
+  // Handle onBackPressed callback from options
+  useSuperwallEvents({
+    onBackPressed: options?.paywalls?.onBackPressed,
+  })
 
   const { isConfigured, isLoading, configure, configurationError } = useSuperwallStore(
     useShallow((state) => ({

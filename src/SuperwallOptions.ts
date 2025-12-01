@@ -1,3 +1,5 @@
+import type { PaywallInfo } from "./SuperwallExpoModule.types"
+
 /**
  * @category Types
  * @since 0.0.15
@@ -82,6 +84,7 @@ export interface PaywallOptions {
   automaticallyDismiss: boolean
   transactionBackgroundView: TransactionBackgroundView
   shouldShowWebPurchaseConfirmationAlert: boolean
+  onBackPressed?: (paywallInfo: PaywallInfo) => boolean
 }
 
 /**

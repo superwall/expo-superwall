@@ -42,6 +42,28 @@ export class LoggingOptions {
 }
 
 /**
+ * @category Types
+ * @since 0.0.15
+ * Partial configuration options for the Superwall SDK.
+ * Allows configuring only the options you want to override from defaults.
+ */
+export interface PartialSuperwallOptions {
+  paywalls?: Partial<PaywallOptions>
+  networkEnvironment?: NetworkEnvironment
+  isExternalDataCollectionEnabled?: boolean
+  localeIdentifier?: string
+  isGameControllerEnabled?: boolean
+  logging?: Partial<LoggingOptions>
+  passIdentifiersToPlayStore?: boolean
+  storeKitVersion?: "STOREKIT1" | "STOREKIT2"
+  enableExperimentalDeviceVariables?: boolean
+  shouldObservePurchases?: boolean
+  shouldBypassAppTransactionCheck?: boolean
+  maxConfigRetryCount?: number
+  useMockReviews?: boolean
+}
+
+/**
  * @category Models
  * @since 0.0.15
  * Options for configuring the Superwall SDK.
@@ -79,7 +101,7 @@ export class SuperwallOptions {
    */
   useMockReviews = false
 
-  constructor(init?: Partial<SuperwallOptions>) {
+  constructor(init?: PartialSuperwallOptions) {
     if (init) {
       if (init.paywalls) {
         this.paywalls = new PaywallOptions(init.paywalls) // Pass init.paywalls to PaywallOptions constructor

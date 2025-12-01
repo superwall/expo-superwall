@@ -1,3 +1,5 @@
+import type { PaywallInfo } from "./PaywallInfo"
+
 /**
  * Helper function to remove undefined values from an object.
  * This is necessary for Android compatibility as the Expo bridge
@@ -50,6 +52,7 @@ export class PaywallOptions {
   shouldPreload = false
   automaticallyDismiss = true
   transactionBackgroundView: TransactionBackgroundView = TransactionBackgroundView.spinner
+  onBackPressed?: (paywallInfo: PaywallInfo) => boolean
 
   constructor(init?: Partial<PaywallOptions>) {
     if (init) {
@@ -67,6 +70,9 @@ export class PaywallOptions {
       }
       if (init.transactionBackgroundView) {
         this.transactionBackgroundView = init.transactionBackgroundView
+      }
+      if (init.onBackPressed) {
+        this.onBackPressed = init.onBackPressed
       }
       if (init.restoreFailed) {
         // Ensure restoreFailed is always a RestoreFailed instance
