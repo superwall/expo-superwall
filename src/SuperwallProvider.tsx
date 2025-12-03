@@ -94,7 +94,7 @@ export function SuperwallProvider({
       const apiKey = apiKeys[Platform.OS as keyof typeof apiKeys]
       if (!apiKey) {
         const error = new Error(`No API key provided for platform ${Platform.OS}`)
-        console.error("Superwall configure failed", error)
+        console.error("[Superwall] Configure failed", error)
         onConfigurationError?.(error)
         return
       }
@@ -134,24 +134,24 @@ export function SuperwallProvider({
         const url = await Linking.getInitialURL()
         if (url && !isExpoDeepLink(url) && !isExpoPlatformUrl(url)) {
           SuperwallExpoModule.handleDeepLink(url).catch((error) => {
-            console.debug("Superwall: Non-Superwall deep link ignored", url, error)
+            console.debug("[Superwall] Non-Superwall deep link ignored", url, error)
           })
         }
       } catch (error) {
-        console.debug("Superwall: Failed to get initial URL", error)
+        console.debug("[Superwall] Failed to get initial URL", error)
       }
 
       deepLinkEventHandlerRef.current = Linking.addEventListener("url", (event) => {
         if (!isExpoDeepLink(event.url) && !isExpoPlatformUrl(event.url)) {
           SuperwallExpoModule.handleDeepLink(event.url).catch((error) => {
-            console.debug("Superwall: Non-Superwall deep link ignored", event.url, error)
+            console.debug("[Superwall] Non-Superwall deep link ignored", event.url, error)
           })
         }
       })
     }
 
     handleDeepLink().catch((error) => {
-      console.error("Superwall: Deep link setup failed", error)
+      console.error("[Superwall] Deep link setup failed", error)
     })
 
     return () => {

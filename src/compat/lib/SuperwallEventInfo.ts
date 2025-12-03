@@ -385,7 +385,7 @@ export class SuperwallEvent {
           error: json.error,
         })
       default:
-        console.warn(`Unhandled event type in SuperwallEvent.fromJson: ${json.event}`)
+        console.warn(`[Superwall] Unhandled event type in SuperwallEvent.fromJson: ${json.event}`)
         return new SuperwallEvent({ type: eventType }) // Fallback for unhandled but known types
       // For truly unknown types, an error might be more appropriate:
       // throw new Error(`Invalid event type: ${json.event}`);
