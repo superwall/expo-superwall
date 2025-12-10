@@ -348,7 +348,7 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   _initListeners: (): (() => void) => {
     // Use get() to read the state from within the store
     if (get().listenersInitialized) {
-      console.warn("Listeners already initialized. Skipping.")
+      console.warn("[Superwall] Listeners already initialized. Skipping.")
       return () => {} // Return no-op cleanup
     }
 
@@ -379,10 +379,10 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     )
 
     set({ listenersInitialized: true })
-    console.log("Initialized listeners", subscriptions.length)
+    console.log("[Superwall] Initialized listeners", subscriptions.length)
 
     return (): void => {
-      console.log("Cleaning up listeners", subscriptions.length)
+      console.log("[Superwall] Cleaning up listeners", subscriptions.length)
       // biome-ignore lint/suspicious/useIterableCallbackReturn: forEach is used for side effects only
       subscriptions.forEach((s) => s.remove())
       // Reset the state on cleanup
