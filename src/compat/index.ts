@@ -15,7 +15,7 @@ import { RedemptionResults } from "./lib/RedemptionResults"
 import { SubscriptionStatus } from "./lib/SubscriptionStatus"
 import type { SuperwallDelegate } from "./lib/SuperwallDelegate"
 import { SuperwallEventInfo } from "./lib/SuperwallEventInfo"
-import { SuperwallOptions } from "./lib/SuperwallOptions"
+import { type PartialSuperwallOptions, SuperwallOptions } from "./lib/SuperwallOptions"
 
 export { PaywallResult } from "./lib/PaywallResult"
 
@@ -60,12 +60,12 @@ export {
 export * from "./lib/RedemptionResults"
 export { RestorationResult } from "./lib/RestorationResult"
 export { RestoreType } from "./lib/RestoreType"
-export { StoreTransaction } from "./lib/StoreTransaction"
 export { StoreProduct } from "./lib/StoreProduct"
+export { StoreTransaction } from "./lib/StoreTransaction"
 export { SubscriptionStatus } from "./lib/SubscriptionStatus"
 export { SuperwallDelegate } from "./lib/SuperwallDelegate"
 export { EventType, SuperwallEventInfo } from "./lib/SuperwallEventInfo"
-export { SuperwallOptions } from "./lib/SuperwallOptions"
+export { type PartialSuperwallOptions, SuperwallOptions } from "./lib/SuperwallOptions"
 export { Survey } from "./lib/Survey"
 export { TriggerResult } from "./lib/TriggerResult"
 
@@ -76,6 +76,7 @@ interface UserAttributes {
 export default class Superwall {
   static purchaseController?: PurchaseController
   private static delegate?: SuperwallDelegate
+  private static onBackPressedCallback?: (paywallInfo: PaywallInfo) => boolean
   private static _superwall = new Superwall()
 
   private static configEmitter = new EventEmitter<{
@@ -261,6 +262,12 @@ export default class Superwall {
     SuperwallExpoModule.addListener("subscriptionStatusDidChange", async (data) => {
       this.subscriptionStatusEmitter.emit("change", data.to)
     })
+
+    SuperwallExpoModule.addListener("onBackPressed", ({ paywallInfo }) => {
+      const info = PaywallInfo.fromJson(paywallInfo)
+      const shouldConsume = Superwall.onBackPressedCallback?.(info) ?? false
+      SuperwallExpoModule.didHandleBackPressed(shouldConsume)
+    })
   }
 
   /**
@@ -284,8 +291,8 @@ export default class Superwall {
    * @param {object} config - Configuration object.
    * @param {string} config.apiKey - Your lib API Key that you can get from the Superwall dashboard settings.
    *   If you don't have an account, you can [sign up for free](https://superwall.com/sign-up).
-   * @param {SuperwallOptions} [config.options] - An optional object which allows you to customize the appearance and behavior
-   *   of the paywall.
+   * @param {PartialSuperwallOptions} [config.options] - An optional partial configuration object which allows you to customize
+   *   the appearance and behavior of the paywall. You can provide only the options you want to override from the defaults.
    * @param {PurchaseController} [config.purchaseController] - An optional object that conforms to `PurchaseController`.
    *   Implement this if you'd like to handle all subscription-related logic yourself. You'll need to also set the `subscriptionStatus`
    *   every time the user's entitlements change. You can read more about that in [Purchases and Subscription Status](https://docs.superwall.com/docs/advanced-configuration).
@@ -301,16 +308,20 @@ export default class Superwall {
     completion,
   }: {
     apiKey: string
-    options?: SuperwallOptions
+    options?: PartialSuperwallOptions
     purchaseController?: PurchaseController
     completion?: () => void
   }): Promise<Superwall> {
     Superwall.purchaseController = purchaseController
 
     // Ensure options is always a SuperwallOptions instance with defaults
-    const superwallOptions = options instanceof SuperwallOptions
-      ? options
-      : new SuperwallOptions(options)
+    const superwallOptions =
+      options instanceof SuperwallOptions ? options : new SuperwallOptions(options)
+
+    // Store the onBackPressed callback if provided
+    if (superwallOptions.paywalls.onBackPressed) {
+      Superwall.onBackPressedCallback = superwallOptions.paywalls.onBackPressed
+    }
 
     await SuperwallExpoModule.configure(
       apiKey,

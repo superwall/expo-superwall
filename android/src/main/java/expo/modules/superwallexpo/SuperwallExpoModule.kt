@@ -31,7 +31,10 @@ import com.superwall.sdk.paywall.presentation.get_presentation_result.getPresent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.future.await
+import kotlinx.coroutines.runBlocking
 import android.util.Log
+import java.util.concurrent.CompletableFuture
 
 class SuperwallExpoModule : Module() {
 
@@ -41,6 +44,8 @@ class SuperwallExpoModule : Module() {
 
   val scope = CoroutineScope(Dispatchers.Main)
   val ioScope = CoroutineScope(Dispatchers.IO)
+  var backPressedPromise: CompletableFuture<Boolean>? = null
+
   init {
     instance = this
   }
@@ -57,6 +62,9 @@ class SuperwallExpoModule : Module() {
   // Purchase Events
   private val onPurchase = "onPurchase"
   private val onPurchaseRestore = "onPurchaseRestore"
+
+  // Back Button Event
+  private val onBackPressed = "onBackPressed"
 
   // Legacy Events
   private val subscriptionStatusDidChange = "subscriptionStatusDidChange"
@@ -85,6 +93,7 @@ class SuperwallExpoModule : Module() {
       onPaywallSkip,
       onPurchase,
       onPurchaseRestore,
+      onBackPressed,
 
       // Legacy events
       subscriptionStatusDidChange,
@@ -136,6 +145,21 @@ class SuperwallExpoModule : Module() {
         superwallOptionsFromJson(options)
       }?:SuperwallOptions()
 
+      // Set up onBackPressed callback to emit event to JS and wait for response
+      superwallOptions.paywalls.onBackPressed = { paywallInfo ->
+        backPressedPromise = CompletableFuture()
+
+        val data = paywallInfo?.let {
+          mapOf("paywallInfo" to it.toJson())
+        } ?: emptyMap()
+
+        emitEvent("onBackPressed", data)
+
+        // Block and wait for JS response via didHandleBackPressed
+        runBlocking {
+          backPressedPromise?.await() ?: false
+        }
+      }
 
       Superwall.configure(
         apiKey = apiKey,
@@ -343,6 +367,10 @@ class SuperwallExpoModule : Module() {
     Function("didRestore") { result: Map<String, Any> ->
       val restorationResult = restorationResultFromJson(result)
       purchaseController.restorePromise?.complete(restorationResult)
+    }
+
+    Function("didHandleBackPressed") { shouldConsume: Boolean ->
+      backPressedPromise?.complete(shouldConsume)
     }
 
     AsyncFunction("dismiss") { promise: Promise ->

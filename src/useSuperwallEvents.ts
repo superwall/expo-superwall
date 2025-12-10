@@ -129,6 +129,18 @@ export interface SuperwallEventCallbacks {
   onPurchaseRestore?: () => void
 
   /**
+   * Called when the back button is pressed while a paywall is displayed (Android only).
+   * This is only triggered when `rerouteBackButton` is enabled in the paywall settings.
+   *
+   * @param paywallInfo - Information about the currently displayed paywall
+   * @returns `true` to consume the back press and prevent default dismiss behavior, `false` to allow normal dismiss
+   *
+   * @platform Android
+   * @internal This is used internally by SuperwallProvider and should not be called directly.
+   */
+  onBackPressed?: (paywallInfo: PaywallInfo) => boolean
+
+  /**
    * An optional identifier used to scope certain events (like `onPaywallPresent`, `onPaywallDismiss`, `onPaywallSkip`)
    * to a specific `usePlacement` hook instance. If provided, these events will only be triggered
    * if the event originated from a `registerPlacement` call associated with the same `handlerId`.
@@ -229,12 +241,9 @@ export function useSuperwallEvents({
     )
 
     subs.push(
-      SuperwallExpoModule.addListener(
-        "handleCustomPaywallAction",
-        ({ name }: { name: string }) => {
-          callbacksRef.current.onCustomPaywallAction?.(name)
-        },
-      ),
+      SuperwallExpoModule.addListener("handleCustomPaywallAction", ({ name }: { name: string }) => {
+        callbacksRef.current.onCustomPaywallAction?.(name)
+      }),
     )
 
     /* ---------------- Paywall lifecycle ---------------- */
@@ -297,6 +306,13 @@ export function useSuperwallEvents({
     subs.push(
       SuperwallExpoModule.addListener("onPurchaseRestore", () => {
         callbacksRef.current.onPurchaseRestore?.()
+      }),
+    )
+
+    subs.push(
+      SuperwallExpoModule.addListener("onBackPressed", ({ paywallInfo }) => {
+        const shouldConsume = callbacksRef.current.onBackPressed?.(paywallInfo) ?? false
+        SuperwallExpoModule.didHandleBackPressed(shouldConsume)
       }),
     )
 
