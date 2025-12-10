@@ -70,6 +70,6 @@
   ],
   "packageManager": "yarn@4.7.0",
   "dependencies": {
-    "zustand": "^5.0.8"
+    "zustand": "^5.0.9"
   }
 }
