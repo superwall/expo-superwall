@@ -2149,4 +2149,12 @@ export type SuperwallExpoModuleEvents = {
    * @param params - Event parameters. For iOS, this is `null`.
    */
   onPurchaseRestore: () => void
+  /**
+   * Emitted when the back button is pressed while a paywall is displayed (Android only).
+   * This is only triggered when `rerouteBackButton` is enabled in the paywall settings.
+   * @param params - Event parameters.
+   * @param params.paywallInfo - Information about the paywall that is currently displayed. See {@link PaywallInfo}.
+   * @platform Android
+   */
+  onBackPressed: (params: { paywallInfo: PaywallInfo }) => void
 }
