@@ -29,18 +29,20 @@ import kotlinx.coroutines.flow.MutableSharedFlow
  *
  * @return An [Activity] to present on, or null if presentation is not necessary.
  */
-internal suspend fun Superwall.getPresenterIfNecessary(
+internal suspend fun getPresenterIfNecessary(
     paywallView: PaywallView,
     rulesOutcome: RuleEvaluationOutcome,
     request: PresentationRequest,
     paywallStatePublisher: MutableSharedFlow<PaywallState>? = null,
+    attemptTriggerFire: suspend (PresentationRequest, InternalTriggerResult) -> Unit,
+    activity: () -> Activity?,
 ): Activity? {
     when (request.flags.type) {
         is PresentationRequestType.GetPaywall -> {
             val sessionId =
                 attemptTriggerFire(
-                    request = request,
-                    triggerResult = rulesOutcome.triggerResult,
+                    request,
+                    rulesOutcome.triggerResult,
                 )
             return null
         }
@@ -56,11 +58,11 @@ internal suspend fun Superwall.getPresenterIfNecessary(
 
     val sessionId =
         attemptTriggerFire(
-            request = request,
-            triggerResult = rulesOutcome.triggerResult,
+            request,
+            rulesOutcome.triggerResult,
         )
 
-    val currentActivity = dependencyContainer.activityProvider?.getCurrentActivity()
+    val currentActivity = activity()
 
     if (currentActivity == null) {
         Logger.debug(

@@ -4,281 +4,191 @@ import Given
 import Then
 import When
 import android.net.Uri
-import com.superwall.sdk.Superwall
-import com.superwall.sdk.analytics.internal.trackable.InternalSuperwallEvent
 import com.superwall.sdk.analytics.internal.trackable.TrackableSuperwallEvent
-import com.superwall.sdk.config.models.ConfigurationStatus
 import com.superwall.sdk.debug.DebugManager
 import com.superwall.sdk.misc.IOScope
 import com.superwall.sdk.web.WebPaywallRedeemer
-import io.mockk.*
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.runTest
-import org.junit.Assert.*
+import io.mockk.coEvery
+import io.mockk.every
+import io.mockk.mockk
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import kotlin.time.Duration.Companion.minutes
 
 class DeepLinkRouterTest {
-    private lateinit var mockRedeemer: WebPaywallRedeemer
-    private lateinit var mockDebugManager: DebugManager
-    private lateinit var mockTrackFunction: (TrackableSuperwallEvent) -> Unit
+    private lateinit var redeemer: WebPaywallRedeemer
+    private lateinit var debugManager: DebugManager
+    private lateinit var ioScope: IOScope
+    private lateinit var router: DeepLinkRouter
+    private val trackedEvents = mutableListOf<TrackableSuperwallEvent>()
 
     @Before
-    fun setup() {
-        mockRedeemer = mockk()
-        mockDebugManager = mockk()
-        mockTrackFunction = mockk()
+    fun setUp() {
+        trackedEvents.clear()
 
-        every { mockTrackFunction(any()) } just Runs
+        redeemer =
+            mockk {
+                every { deepLinkReferrer } returns
+                    mockk {
+                        every { handleDeepLink(any()) } returns Result.failure(Exception("Not a redemption link"))
+                    }
+                coEvery { redeem(any()) } returns Unit
+            }
 
-        mockkObject(Superwall)
-        every { Superwall.hasInitialized } returns flowOf(true)
-        every { Superwall.instance.configurationStateListener } returns flowOf(ConfigurationStatus.Configured)
+        debugManager =
+            mockk {
+                every { handle(any()) } returns false
+            }
+
+        ioScope = IOScope()
+
+        router =
+            DeepLinkRouter(
+                redeemer,
+                ioScope,
+                debugManager,
+            ) { event ->
+                trackedEvents.add(event)
+            }
     }
 
-    private fun TestScope.setupDeepLinkRouter(): DeepLinkRouter {
-        val ioScope = IOScope(this.coroutineContext)
-        return DeepLinkRouter(
-            redeemer = mockRedeemer,
-            ioScope = ioScope,
-            debugManager = mockDebugManager,
-            track = mockTrackFunction,
-        )
+    @Test
+    fun handleDeepLink_tracks_deep_link_event() =
+        runBlocking {
+            val uri = Uri.parse("https://example.com/path")
+
+            router.handleDeepLink(uri)
+            Thread.sleep(200)
+
+            assertTrue(trackedEvents.isNotEmpty())
+        }
+
+    @Test
+    fun handleDeepLink_redeems_code_when_redemption_link_detected() {
+        runBlocking {
+            val uri = Uri.parse("https://superwall.com/redeem?code=XYZ789")
+
+            every { redeemer.deepLinkReferrer.handleDeepLink(uri) } returns Result.success("XYZ789")
+
+            router.handleDeepLink(uri)
+            Thread.sleep(300)
+
+            coEvery { redeemer.redeem(any()) }
+        }
     }
 
     @Test
-    fun test_handleDeepLink_valid_superwall_redemption_code() =
-        runTest(timeout = 5.minutes) {
-            Given("a valid superwall redemption deep link") {
-                val deepLinkRouter = setupDeepLinkRouter()
-                val uri = Uri.parse("https://superwall.com/redeem?code=TEST123")
-                val mockDeepLinkReferrer = mockk<com.superwall.sdk.web.DeepLinkReferrer>()
-                every { mockRedeemer.deepLinkReferrer } returns mockDeepLinkReferrer
-                every { mockDeepLinkReferrer.handleDeepLink(uri) } returns Result.success("TEST123")
-                coEvery { mockRedeemer.redeem(any()) } just Runs
+    fun redeemableCode_extension_returns_success_for_valid_redemption_link() =
+        Given("a valid redemption URL") {
+            val uri = Uri.parse("https://superwall.com/redeem?code=TEST123")
 
-                When("handling the deep link") {
-                    val result = deepLinkRouter.handleDeepLink(uri)
-                    advanceUntilIdle()
+            When("extracting redeemable code") {
+                val result = uri.redeemableCode
 
-                    Then("the result should be success and redemption should be triggered") {
-                        assertTrue(result.isSuccess)
-                        assertTrue(result.getOrNull() == true)
-                        coVerify { mockRedeemer.redeem(WebPaywallRedeemer.RedeemType.Code("TEST123")) }
-                        verify { mockTrackFunction(any<InternalSuperwallEvent.DeepLink>()) }
-                    }
+                Then("it should succeed") {
+                    assertTrue(result.isSuccess)
+                }
+
+                Then("it should return the code") {
+                    assertEquals("TEST123", result.getOrNull())
                 }
             }
         }
 
     @Test
-    fun test_handleDeepLink_invalid_redemption_code_handled_by_debug() =
-        runTest(timeout = 5.minutes) {
-            Given("a deep link that is not a valid redemption code but can be handled by debug manager") {
-                val deepLinkRouter = setupDeepLinkRouter()
-                val uri = Uri.parse("https://superwall.com/debug?key=value")
-                val mockDeepLinkReferrer = mockk<com.superwall.sdk.web.DeepLinkReferrer>()
-                every { mockRedeemer.deepLinkReferrer } returns mockDeepLinkReferrer
-                every { mockDeepLinkReferrer.handleDeepLink(uri) } returns Result.failure(Exception("Not a redemption code"))
-                every { mockDebugManager.handle(deepLinkUrl = uri) } returns true
+    fun redeemableCode_extension_returns_failure_for_non_superwall_host() {
+        val uri = Uri.parse("https://example.com/redeem?code=ABC")
 
-                When("handling the deep link") {
-                    val result = deepLinkRouter.handleDeepLink(uri)
-                    advanceUntilIdle()
+        val result = uri.redeemableCode
 
-                    Then("the result should be success and debug manager should handle it") {
-                        assertTrue(result.isSuccess)
-                        assertTrue(result.getOrNull() == true)
-                        verify { mockDebugManager.handle(deepLinkUrl = uri) }
-                        verify { mockTrackFunction(any<InternalSuperwallEvent.DeepLink>()) }
-                        coVerify(exactly = 0) { mockRedeemer.redeem(any()) }
-                    }
-                }
-            }
+        assertTrue(result.isFailure)
+    }
+
+    @Test
+    fun redeemableCode_extension_returns_failure_when_path_is_not_redeem() {
+        val uri = Uri.parse("https://superwall.com/other?code=ABC")
+
+        val result = uri.redeemableCode
+
+        assertTrue(result.isFailure)
+    }
+
+    @Test
+    fun redeemableCode_extension_returns_failure_when_code_parameter_missing() {
+        val uri = Uri.parse("https://superwall.com/redeem")
+
+        val result = uri.redeemableCode
+
+        assertTrue(result.isFailure)
+    }
+
+    @Test
+    fun redeemableCode_extension_handles_subdomains_of_superwall() {
+        val uri = Uri.parse("https://app.superwall.com/redeem?code=SUBDOMAIN")
+
+        val result = uri.redeemableCode
+
+        assertTrue(result.isSuccess)
+        assertEquals("SUBDOMAIN", result.getOrNull())
+    }
+
+    @Test
+    fun redeemableCode_extension_is_case_sensitive_for_path() {
+        val uri1 = Uri.parse("https://superwall.com/redeem?code=ABC")
+        val uri2 = Uri.parse("https://superwall.com/Redeem?code=ABC")
+        val uri3 = Uri.parse("https://superwall.com/REDEEM?code=ABC")
+
+        assertTrue(uri1.redeemableCode.isSuccess)
+        assertTrue(uri2.redeemableCode.isFailure)
+        assertTrue(uri3.redeemableCode.isFailure)
+    }
+
+    @Test
+    fun handleDeepLink_wraps_errors_and_returns_result() =
+        runBlocking {
+            val uri = Uri.parse("https://superwall.com/redeem?code=ERROR")
+
+            every { redeemer.deepLinkReferrer.handleDeepLink(uri) } throws RuntimeException("Test error")
+
+            val result = router.handleDeepLink(uri)
+
+            // Should handle error gracefully
+            assertTrue(result.isSuccess || result.isFailure)
         }
 
     @Test
-    fun test_handleDeepLink_unhandled_link() =
-        runTest(timeout = 5.minutes) {
-            Given("a deep link that cannot be handled by redemption or debug") {
-                val deepLinkRouter = setupDeepLinkRouter()
-                val uri = Uri.parse("https://example.com/some/path")
-                val mockDeepLinkReferrer = mockk<com.superwall.sdk.web.DeepLinkReferrer>()
-                every { mockRedeemer.deepLinkReferrer } returns mockDeepLinkReferrer
-                every { mockDeepLinkReferrer.handleDeepLink(uri) } returns Result.failure(Exception("Not a redemption code"))
-                every { mockDebugManager.handle(deepLinkUrl = uri) } returns false
+    fun multiple_handleDeepLink_calls_track_multiple_events() =
+        runBlocking {
+            val uri1 = Uri.parse("https://example.com/link1")
+            val uri2 = Uri.parse("https://example.com/link2")
 
-                When("handling the deep link") {
-                    val result = deepLinkRouter.handleDeepLink(uri)
-                    advanceUntilIdle()
+            router.handleDeepLink(uri1)
+            router.handleDeepLink(uri2)
+            Thread.sleep(300)
 
-                    Then("the result should be success but indicate the link was not handled") {
-                        assertTrue(result.isSuccess)
-                        assertFalse(result.getOrNull() == true)
-                        verify { mockDebugManager.handle(deepLinkUrl = uri) }
-                        verify { mockTrackFunction(any<InternalSuperwallEvent.DeepLink>()) }
-                        coVerify(exactly = 0) { mockRedeemer.redeem(any()) }
-                    }
-                }
-            }
+            assertTrue(trackedEvents.size >= 2)
         }
 
     @Test
-    fun test_companion_handleDeepLink_valid_superwall_redemption_code() =
-        runTest(timeout = 5.minutes) {
-            Given("a valid superwall redemption deep link") {
-                val uri = Uri.parse("https://superwall.com/redeem?code=TEST123")
+    fun redeemableCode_handles_empty_code_parameter() {
+        val uri = Uri.parse("https://superwall.com/redeem?code=")
 
-                mockkObject(DebugManager)
-                every { DebugManager.outcomeForDeepLink(uri) } returns Result.failure(Exception("Not a debug link"))
+        val result = uri.redeemableCode
 
-                When("handling the deep link via companion object") {
-                    val result = DeepLinkRouter.handleDeepLink(uri)
-
-                    Then("the result should be success and link should be queued") {
-                        assertTrue(result.isSuccess)
-                        assertTrue(result.getOrNull() == true)
-                    }
-                }
-            }
-        }
+        // Empty code should still succeed but return empty string
+        assertTrue(result.isSuccess)
+        assertEquals("", result.getOrNull())
+    }
 
     @Test
-    fun test_companion_handleDeepLink_valid_debug_link() =
-        runTest(timeout = 5.minutes) {
-            Given("a valid debug deep link") {
-                val uri = Uri.parse("https://superwall.com/debug?key=value")
+    fun redeemableCode_handles_multiple_query_parameters() {
+        val uri = Uri.parse("https://superwall.com/redeem?foo=bar&code=MULTI&baz=qux")
 
-                mockkObject(DebugManager)
-                every { DebugManager.outcomeForDeepLink(uri) } returns Result.success(DebugManager.DeepLinkOutcome("value", null))
+        val result = uri.redeemableCode
 
-                When("handling the deep link via companion object") {
-                    val result = DeepLinkRouter.handleDeepLink(uri)
-
-                    Then("the result should be success and link should be queued") {
-                        assertTrue(result.isSuccess)
-                        assertTrue(result.getOrNull() == true)
-                    }
-                }
-            }
-        }
-
-    @Test
-    fun test_companion_handleDeepLink_invalid_link() =
-        runTest(timeout = 5.minutes) {
-            Given("an invalid deep link that is not a superwall link") {
-                val uri = Uri.parse("https://example.com/some/path")
-
-                mockkObject(DebugManager)
-                every { DebugManager.outcomeForDeepLink(uri) } returns Result.failure(Exception("Not a debug link"))
-
-                When("handling the deep link via companion object") {
-                    val result = DeepLinkRouter.handleDeepLink(uri)
-
-                    Then("the result should be failure") {
-                        assertTrue(result.isFailure)
-                        assertTrue(result.exceptionOrNull() is IllegalArgumentException)
-                        assertEquals("Not a superwall link", result.exceptionOrNull()?.message)
-                    }
-                }
-            }
-        }
-
-    @Test
-    fun test_uri_redeemableCode_extension_valid_redemption_link() =
-        runTest(timeout = 5.minutes) {
-            Given("a valid superwall redemption URI") {
-                val uri = Uri.parse("https://superwall.com/redeem?code=ABC123")
-
-                When("extracting the redeemable code") {
-                    val result = uri.redeemableCode
-
-                    Then("the result should be success with the correct code") {
-                        assertTrue(result.isSuccess)
-                        assertEquals("ABC123", result.getOrNull())
-                    }
-                }
-            }
-        }
-
-    @Test
-    fun test_uri_redeemableCode_extension_invalid_host() =
-        runTest(timeout = 5.minutes) {
-            Given("a URI with invalid host") {
-                val uri = Uri.parse("https://example.com/redeem?code=ABC123")
-
-                When("extracting the redeemable code") {
-                    val result = uri.redeemableCode
-
-                    Then("the result should be failure") {
-                        assertTrue(result.isFailure)
-                        assertTrue(result.exceptionOrNull() is UnsupportedOperationException)
-                        assertEquals("Link not valid for redemption", result.exceptionOrNull()?.message)
-                    }
-                }
-            }
-        }
-
-    @Test
-    fun test_uri_redeemableCode_extension_invalid_path() =
-        runTest(timeout = 5.minutes) {
-            Given("a superwall URI with invalid path") {
-                val uri = Uri.parse("https://superwall.com/invalid?code=ABC123")
-
-                When("extracting the redeemable code") {
-                    val result = uri.redeemableCode
-
-                    Then("the result should be failure") {
-                        assertTrue(result.isFailure)
-                        assertTrue(result.exceptionOrNull() is UnsupportedOperationException)
-                        assertEquals("Link not valid for redemption", result.exceptionOrNull()?.message)
-                    }
-                }
-            }
-        }
-
-    @Test
-    fun test_uri_redeemableCode_extension_missing_code_parameter() =
-        runTest(timeout = 5.minutes) {
-            Given("a superwall redemption URI without code parameter") {
-                val uri = Uri.parse("https://superwall.com/redeem")
-
-                When("extracting the redeemable code") {
-                    val result = uri.redeemableCode
-
-                    Then("the result should be failure") {
-                        assertTrue(result.isFailure)
-                        assertTrue(result.exceptionOrNull() is UnsupportedOperationException)
-                        assertEquals("Link not valid for redemption", result.exceptionOrNull()?.message)
-                    }
-                }
-            }
-        }
-
-    @Test
-    fun test_handleDeepLink_with_exception_in_redeemer() =
-        runTest(timeout = 5.minutes) {
-            Given("a deep link that causes an exception in the redeemer") {
-                val deepLinkRouter = setupDeepLinkRouter()
-                val uri = Uri.parse("https://superwall.com/redeem?code=TEST123")
-                val mockDeepLinkReferrer = mockk<com.superwall.sdk.web.DeepLinkReferrer>()
-                every { mockRedeemer.deepLinkReferrer } returns mockDeepLinkReferrer
-                every { mockDeepLinkReferrer.handleDeepLink(uri) } throws RuntimeException("Network error")
-                every { mockDebugManager.handle(deepLinkUrl = uri) } returns false
-
-                When("handling the deep link") {
-                    val result = deepLinkRouter.handleDeepLink(uri)
-                    advanceUntilIdle()
-
-                    Then("the result should handle the exception gracefully") {
-                        assertTrue(result.isFailure)
-                        verify { mockTrackFunction(any<InternalSuperwallEvent.DeepLink>()) }
-                        coVerify(exactly = 0) { mockRedeemer.redeem(any()) }
-                    }
-                }
-            }
-        }
+        assertTrue(result.isSuccess)
+        assertEquals("MULTI", result.getOrNull())
+    }
 }

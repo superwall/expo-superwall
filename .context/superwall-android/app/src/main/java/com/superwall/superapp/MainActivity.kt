@@ -1,5 +1,6 @@
 package com.superwall.superapp
 
+import android.app.ComponentCaller
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
@@ -135,9 +136,16 @@ class MainActivity : AppCompatActivity() {
 
     //region Deep Links
 
+    override fun onNewIntent(
+        intent: Intent,
+        caller: ComponentCaller,
+    ) {
+        super.onNewIntent(intent, caller)
+    }
+
     private fun respondToDeepLinks() {
         intent?.data?.let { uri ->
-            Superwall.instance.handleDeepLink(uri)
+            Superwall.handleDeepLink(uri)
         }
     }
 

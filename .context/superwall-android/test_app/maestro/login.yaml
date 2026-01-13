@@ -1,0 +1,103 @@
+appId: com.superwall.superapp
+env:
+  TEST_USER : ${TEST_USER}
+  TEST_PW: ${TEST_PW}
+---
+- assertVisible: Play Store
+- tapOn:
+    text: Play Store
+    waitToSettleTimeoutMs: 500
+
+- tapOn:
+    text: Sign in
+    waitToSettleTimeoutMs: 500
+- waitForAnimationToEnd:
+    timeout: 1000
+- tapOn:
+    text: Email or phone
+    waitToSettleTimeoutMs: 500
+- waitForAnimationToEnd:
+    timeout: 1000
+- inputText: ${TEST_USER}
+- tapOn:
+    text: Next
+    waitToSettleTimeoutMs: 1000
+- waitForAnimationToEnd:
+    timeout: 1000
+- extendedWaitUntil: # This is just to add a 2 second delay so focus is properly taken
+   visible: randText
+   optional: true
+   timeout: 2000
+
+- inputText:
+    text: ${TEST_PW}
+    waitToSettleTimeoutMs: 1000
+- tapOn: Next
+- tapOn:
+    text: I agree
+    optional: true
+    waitToSettleTimeoutMs: 1000
+- scroll
+- tapOn:
+    text: Skip
+    optional: true
+    waitToSettleTimeoutMs: 1000
+- tapOn:
+   text: Don't turn on
+   optional: true
+   waitToSettleTimeoutMs: 1000
+- tapOn:
+    text: Cancel
+    optional: true
+- tapOn:
+    text: Cancel
+    optional: true
+- tapOn:
+    text: I agree
+    optional: true
+    waitToSettleTimeoutMs: 1000
+- tapOn:
+    id: sud_items_switch
+    optional: true
+    waitToSettleTimeoutMs: 1000
+- tapOn:
+    text: More
+    optional: true
+- tapOn:
+      text: Accept
+      optional: true
+      waitToSettleTimeoutMs: 1000
+- tapOn:
+    text: I accept
+    optional: true
+    waitToSettleTimeoutMs: 1000
+- tapOn:
+    text: Not now
+    optional: true
+    waitToSettleTimeoutMs: 1000
+- tapOn:
+    text: Don't turn on
+    optional: true
+    waitToSettleTimeoutMs: 1000
+- tapOn:
+     text: Cancel
+     optional: true
+- tapOn:
+     text: Cancel
+     optional: true
+- tapOn:
+     text: I agree
+     optional: true
+     waitToSettleTimeoutMs: 1000
+- tapOn:
+      text: I accept
+      optional: true
+      waitToSettleTimeoutMs: 1000
+- tapOn:
+      text: Not now
+      optional: true
+      waitToSettleTimeoutMs: 1000
+- tapOn:
+    text: No thanks
+    optional: true
+    waitToSettleTimeoutMs: 1000

@@ -1,6 +1,7 @@
 package com.superwall.sdk.store
 
 import com.superwall.sdk.delegate.RestorationResult
+import com.superwall.sdk.models.entitlements.Entitlement
 import com.superwall.sdk.models.paywall.Paywall
 import com.superwall.sdk.models.paywall.PaywallProducts
 import com.superwall.sdk.models.product.ProductItem
@@ -35,7 +36,7 @@ interface StoreKitManagerInterface {
 
     suspend fun refreshReceipt()
 
-    suspend fun loadPurchasedProducts()
+    suspend fun loadPurchasedProducts(serverEntitlementsByProductId: Map<String, Set<Entitlement>>)
 
     suspend fun isFreeTrialAvailable(product: StoreProduct): Boolean
 

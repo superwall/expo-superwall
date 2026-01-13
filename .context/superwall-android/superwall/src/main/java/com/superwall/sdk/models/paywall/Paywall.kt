@@ -1,5 +1,6 @@
 package com.superwall.sdk.models.paywall
 
+import android.annotation.SuppressLint
 import android.graphics.Color
 import com.superwall.sdk.config.models.OnDeviceCaching
 import com.superwall.sdk.config.models.Survey
@@ -10,8 +11,10 @@ import com.superwall.sdk.models.SerializableEntity
 import com.superwall.sdk.models.config.ComputedPropertyRequest
 import com.superwall.sdk.models.config.FeatureGatingBehavior
 import com.superwall.sdk.models.events.EventData
+import com.superwall.sdk.models.product.CrossplatformProduct
+import com.superwall.sdk.models.product.Offer.*
 import com.superwall.sdk.models.product.ProductItem
-import com.superwall.sdk.models.product.ProductItemsDeserializer
+import com.superwall.sdk.models.product.ProductItem.StoreProductType.*
 import com.superwall.sdk.models.product.ProductVariable
 import com.superwall.sdk.models.serialization.DateSerializer
 import com.superwall.sdk.models.triggers.Experiment
@@ -34,6 +37,7 @@ data class Paywalls(
     val paywalls: List<Paywall>,
 ) : SerializableEntity
 
+@SuppressLint("UnsafeOptInUsageError")
 @Serializable
 data class Paywall(
     @SerialName("id")
@@ -75,11 +79,12 @@ data class Paywall(
     // Declared as private to prevent direct access
     @kotlinx.serialization.Transient()
     private var _products: List<ProductItem> = emptyList(),
-    @Serializable(with = ProductItemsDeserializer::class)
+    @SerialName("products_v3")
+    internal var _productItemsV3: List<CrossplatformProduct> = emptyList(),
     @SerialName("products_v2")
-    private var _productItems: List<ProductItem>,
+    internal var _productItems: List<ProductItem> = emptyList(),
     @kotlinx.serialization.Transient()
-    var productIds: List<String> = arrayListOf(),
+    var productIds: List<String> = _productItems.map { it.compositeId },
     @kotlinx.serialization.Transient()
     var responseLoadingInfo: LoadingInfo = LoadingInfo(),
     @kotlinx.serialization.Transient()
@@ -127,14 +132,46 @@ data class Paywall(
     @SerialName("reroute_back_button")
     val rerouteBackButton: ToggleMode? = null,
 ) : SerializableEntity {
+    val playStoreProducts: List<CrossplatformProduct>
+        get() =
+            if (_productItemsV3.isEmpty() && productItems.isNotEmpty()) {
+                productItems.filter { it.type is PlayStore }.map {
+                    val type = it.type as PlayStore
+                    CrossplatformProduct(
+                        it.compositeId,
+                        CrossplatformProduct.StoreProduct.PlayStore(
+                            type.product.productIdentifier,
+                            type.product.basePlanIdentifier,
+                            type.product.offer,
+                        ),
+                        it.entitlements.toList(),
+                        it.name,
+                    )
+                }
+            } else {
+                _productItemsV3.filter { it.storeProduct is CrossplatformProduct.StoreProduct.PlayStore }
+            }
+
+    val stripeProducts: List<CrossplatformProduct>
+        get() = _productItemsV3.filter { it.storeProduct is CrossplatformProduct.StoreProduct.Stripe }
+
+    val paddleProducts: List<CrossplatformProduct>
+        get() = _productItemsV3.filter { it.storeProduct is CrossplatformProduct.StoreProduct.Paddle }
+
     // Public getter for productItems
     var productItems: List<ProductItem>
-        get() = _productItems
+        get() = (
+            _productItems.ifEmpty {
+                _productItemsV3
+                    .map {
+                        CrossplatformProduct.toProductItem(it)
+                    }
+            }
+        )
         set(value) {
             _productItems = value
-            // Automatically update related properties when productItems is set
+            _products = value
             productIds = value.map { it.fullProductId }
-            _products = value // Assuming makeProducts is a function that generates products based on product items
         }
 
     // Public getter for products to allow access but not direct modification
@@ -169,10 +206,6 @@ data class Paywall(
             )
             null
         }
-    }
-
-    init {
-        productItems = _productItems
     }
 
     @Serializable
@@ -249,7 +282,6 @@ data class Paywall(
                 backgroundColorHex = "000000",
                 darkBackgroundColorHex = null,
                 productIds = arrayListOf(),
-                _productItems = emptyList(),
                 _products = emptyList(),
                 responseLoadingInfo = LoadingInfo(),
                 webviewLoadingInfo = LoadingInfo(),
@@ -272,6 +304,7 @@ data class Paywall(
                 buildId = "test",
                 isScrollEnabled = true,
                 rerouteBackButton = ToggleMode.DISABLED,
+                _productItemsV3 = emptyList(),
             )
     }
 

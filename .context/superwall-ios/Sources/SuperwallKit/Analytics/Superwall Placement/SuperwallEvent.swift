@@ -236,11 +236,28 @@ public enum SuperwallEvent {
   /// When a response from the network fails to decode.
   case networkDecodingFail
 
+  /// When the customer info did change.
+  case customerInfoDidChange
+
   /// When the integration attributes are set.
   case integrationAttributes(_ attributes: [String: Any])
 
   /// When a review is requested from the user.
   case reviewRequested(count: Int)
+
+  /// When a permission is requested from a paywall.
+  case permissionRequested(permissionName: String, paywallIdentifier: String)
+
+  /// When a permission is granted after being requested from a paywall.
+  case permissionGranted(permissionName: String, paywallIdentifier: String)
+
+  /// When a permission is denied after being requested from a paywall.
+  case permissionDenied(permissionName: String, paywallIdentifier: String)
+  /// When paywall preloading starts.
+  case paywallPreloadStart(paywallCount: Int)
+
+  /// When paywall preloading completes.
+  case paywallPreloadComplete(paywallCount: Int)
 
   var canImplicitlyTriggerPaywall: Bool {
     switch self {
@@ -411,10 +428,22 @@ extension SuperwallEvent {
       return .init(objcEvent: .enrichmentComplete)
     case .networkDecodingFail:
       return .init(objcEvent: .networkDecodingFail)
+    case .customerInfoDidChange:
+      return .init(objcEvent: .customerInfoDidChange)
     case .integrationAttributes:
       return .init(objcEvent: .integrationAttributes)
     case .reviewRequested:
       return .init(objcEvent: .reviewRequested)
+    case .permissionRequested:
+      return .init(objcEvent: .permissionRequested)
+    case .permissionGranted:
+      return .init(objcEvent: .permissionGranted)
+    case .permissionDenied:
+      return .init(objcEvent: .permissionDenied)
+    case .paywallPreloadStart:
+      return .init(objcEvent: .paywallPreloadStart)
+    case .paywallPreloadComplete:
+      return .init(objcEvent: .paywallPreloadComplete)
     }
   }
 }

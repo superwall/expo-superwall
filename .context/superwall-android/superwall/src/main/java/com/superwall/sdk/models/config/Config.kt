@@ -3,6 +3,7 @@ package com.superwall.sdk.models.config
 import com.superwall.sdk.models.SerializableEntity
 import com.superwall.sdk.models.paywall.Paywall
 import com.superwall.sdk.models.postback.PostbackRequest
+import com.superwall.sdk.models.product.CrossplatformProduct
 import com.superwall.sdk.models.product.ProductItem
 import com.superwall.sdk.models.triggers.Trigger
 import kotlinx.serialization.SerialName
@@ -18,6 +19,7 @@ data class Config(
     @SerialName("appSessionTimeoutMs") var appSessionTimeout: Long,
     @SerialName("toggles") var rawFeatureFlags: List<RawFeatureFlag>,
     @SerialName("products") val products: List<ProductItem>,
+    @SerialName("products_v3") val productsV3: List<CrossplatformProduct>? = null,
     @SerialName("disablePreload") var preloadingDisabled: PreloadingDisabled,
     @SerialName("localization") var localizationConfig: LocalizationConfig,
     var requestId: String? = null,
@@ -79,6 +81,7 @@ data class Config(
                 localizationConfig = LocalizationConfig(locales = emptyList()),
                 buildId = "stub-build-id",
                 products = emptyList(),
+                productsV3 = null,
             )
     }
 }

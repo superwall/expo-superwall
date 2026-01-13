@@ -25,7 +25,9 @@ sealed class WebviewError {
         override fun toString(): String = "The network failed with error code: $code - $description - $url ."
     }
 
-    object Timeout : WebviewError() {
+    data class Timeout(
+        val msg: String,
+    ) : WebviewError() {
         override fun toString(): String = "Paywall loading reached specified timeout"
     }
 

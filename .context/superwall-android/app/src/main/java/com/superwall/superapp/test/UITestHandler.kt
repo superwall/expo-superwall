@@ -133,19 +133,37 @@ object UITestHandler {
                     1006,
                     "Try handling a VALID link with invalid code.",
                     test = { scope, events, _ ->
-                        Superwall.handleDeepLink("superapp://superwall/redeem?code=redeem_testing123".toUri())?.let {
-                            Log.e("Output", "IS HANDLED: ${it.getOrThrow()}")
-                        }
+                        Superwall
+                            .handleDeepLink("superapp://superwall/redeem?code=redeem_testing123".toUri())
+                            ?.let {
+                                Log.e("Output", "IS HANDLED: ${it.getOrThrow()}")
+                            }
                     },
                 ),
                 UITestInfo(
                     1006,
                     "Try handling an INVALID link with invalid code.",
                     test = { scope, events, _ ->
-                        Superwall.handleDeepLink("superapp://superwall/dontredeem?code=abcd".toUri())?.let {
-                            Log.e("Output", "IS HANDLED: ${it.getOrThrow()}")
-                        }
+                        Superwall
+                            .handleDeepLink("superapp://superwall/dontredeem?code=abcd".toUri())
+                            ?.let {
+                                Log.e("Output", "IS HANDLED: ${it.getOrThrow()}")
+                            }
                         Log.e("Registering event", "identify after ${Superwall.instance.userId}")
+                    },
+                ),
+                UITestInfo(
+                    number = 1007,
+                    description = "Purchase the product, payment sheet should show, after purchase should be redirected back to app",
+                    test = { scope, events, _ ->
+                        Superwall.instance.register(placement = "internal_purchase")
+                    },
+                ),
+                UITestInfo(
+                    number = 1008,
+                    description = "Paywall which should show to all users",
+                    test = { scope, events, _ ->
+                        Superwall.instance.register(placement = "campaign_trigger")
                     },
                 ),
             )
@@ -159,7 +177,9 @@ object UITestHandler {
                 Log.e("Registering event", "present_data")
                 Superwall.instance.identify(userId = "test0")
                 Superwall.instance.setUserAttributes(attributes = mapOf("first_name" to "Jack"))
-                Superwall.instance.register(placement = "present_data")
+                Superwall.instance.register(
+                    placement = "present_data",
+                )
                 Log.e("Registering event", "done")
             },
         )
@@ -749,7 +769,7 @@ object UITestHandler {
 
                     val result = Superwall.instance.getPresentationResult("holdout")
                     fatalAssert(
-                        result.getOrNull() is PresentationResult.Holdout,
+                        result.getOrNull() is PresentationResult.NoAudienceMatch,
                         "NoRuleMatch expected, received $result",
                     )
                     println("!!! TEST 31 !!! $result")

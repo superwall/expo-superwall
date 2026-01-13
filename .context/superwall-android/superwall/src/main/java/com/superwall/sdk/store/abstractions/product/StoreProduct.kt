@@ -33,6 +33,9 @@ class StoreProduct(
     override val price: BigDecimal
         get() = rawStoreProduct.price
 
+    override val productType: String
+        get() = rawStoreProduct.productType
+
     override val localizedPrice: String
         get() = rawStoreProduct.localizedPrice
 
@@ -142,43 +145,4 @@ class StoreProduct(
         get() = rawStoreProduct.subscriptionPeriod
 
     override fun trialPeriodPricePerUnit(unit: SubscriptionPeriod.Unit): String = rawStoreProduct.trialPeriodPricePerUnit(unit)
-
-    val attributes: Map<String, String>
-        get() {
-            val attributes = mutableMapOf<String, String>()
-
-            attributes["rawPrice"] = price.toString()
-            attributes["price"] = localizedPrice
-            attributes["periodAlt"] = localizedSubscriptionPeriod
-            attributes["localizedPeriod"] = localizedSubscriptionPeriod
-            attributes["period"] = period
-            attributes["periodly"] = periodly
-            attributes["weeklyPrice"] = weeklyPrice
-            attributes["dailyPrice"] = dailyPrice
-            attributes["monthlyPrice"] = monthlyPrice
-            attributes["yearlyPrice"] = yearlyPrice
-            attributes["rawTrialPeriodPrice"] = trialPeriodPrice.toString()
-            attributes["trialPeriodPrice"] = localizedTrialPeriodPrice
-            attributes["trialPeriodDailyPrice"] = trialPeriodPricePerUnit(SubscriptionPeriod.Unit.day)
-            attributes["trialPeriodWeeklyPrice"] = trialPeriodPricePerUnit(SubscriptionPeriod.Unit.week)
-            attributes["trialPeriodMonthlyPrice"] = trialPeriodPricePerUnit(SubscriptionPeriod.Unit.month)
-            attributes["trialPeriodYearlyPrice"] = trialPeriodPricePerUnit(SubscriptionPeriod.Unit.year)
-            attributes["trialPeriodDays"] = trialPeriodDaysString
-            attributes["trialPeriodWeeks"] = trialPeriodWeeksString
-            attributes["trialPeriodMonths"] = trialPeriodMonthsString
-            attributes["trialPeriodYears"] = trialPeriodYearsString
-            attributes["trialPeriodText"] = trialPeriodText
-            attributes["trialPeriodEndDate"] = trialPeriodEndDateString
-            attributes["periodDays"] = periodDaysString
-            attributes["periodWeeks"] = periodWeeksString
-            attributes["periodMonths"] = periodMonthsString
-            attributes["periodYears"] = periodYearsString
-            attributes["locale"] = locale
-            attributes["languageCode"] = languageCode ?: "n/a"
-            attributes["currencyCode"] = currencyCode ?: "n/a"
-            attributes["currencySymbol"] = currencySymbol ?: "n/a"
-            attributes["identifier"] = productIdentifier
-
-            return attributes
-        }
 }

@@ -2,6 +2,7 @@ package com.superwall.sdk.delegate
 
 import android.net.Uri
 import com.superwall.sdk.analytics.superwall.SuperwallEventInfo
+import com.superwall.sdk.models.customer.CustomerInfo
 import com.superwall.sdk.models.entitlements.SubscriptionStatus
 import com.superwall.sdk.models.internal.RedemptionResult
 import com.superwall.sdk.paywall.presentation.PaywallInfo
@@ -11,7 +12,8 @@ interface SuperwallDelegate {
     fun subscriptionStatusDidChange(
         from: SubscriptionStatus,
         to: SubscriptionStatus,
-    ) {}
+    ) {
+    }
 
     fun handleSuperwallEvent(eventInfo: SuperwallEventInfo) {}
 
@@ -35,9 +37,17 @@ interface SuperwallDelegate {
         message: String?,
         info: Map<String, Any>?,
         error: Throwable?,
-    ) {}
+    ) {
+    }
 
     fun willRedeemLink() {}
 
     fun didRedeemLink(result: RedemptionResult) {}
+
+    fun userAttributesDidChange(newAttributes: Map<String, Any>) {}
+
+    fun customerInfoDidChange(
+        from: CustomerInfo,
+        to: CustomerInfo,
+    ) {}
 }

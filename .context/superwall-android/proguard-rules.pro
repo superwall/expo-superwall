@@ -7,7 +7,7 @@
 
 # If your project uses WebView with JS, uncomment the following
 # and specify the fully qualified class name to the JavaScript interface
--keepclassmembers class com.superwall.sdk.paywall.vc.web_view.messaging.PaywallMessageHandler {
+-keepclassmembers class com.superwall.sdk.paywall.view.webview.messaging.PaywallMessageHandler {
    public *;
 }
 

@@ -7,10 +7,8 @@ import com.superwall.sdk.assertTrue
 import com.superwall.sdk.models.events.EventData
 import com.superwall.sdk.models.paywall.Paywall
 import com.superwall.sdk.models.paywall.PaywallPresentationStyle
+import com.superwall.sdk.models.product.CrossplatformProduct
 import com.superwall.sdk.models.product.Offer
-import com.superwall.sdk.models.product.PlayStoreProduct
-import com.superwall.sdk.models.product.ProductItem
-import com.superwall.sdk.models.product.Store
 import com.superwall.sdk.models.triggers.TriggerRuleOccurrence
 import com.superwall.sdk.paywall.presentation.PaywallCloseReason
 import com.superwall.sdk.paywall.presentation.internal.PresentationRequest
@@ -221,19 +219,18 @@ class PaywallViewStateTest {
             val from =
                 Paywall.stub().copy(
                     // Configure product items so that productIds get refreshed
-                    _productItems =
+                    _productItemsV3 =
                         listOf(
-                            ProductItem(
-                                "Item1",
-                                ProductItem.StoreProductType.PlayStore(
-                                    PlayStoreProduct(
-                                        store = Store.PLAY_STORE,
+                            CrossplatformProduct(
+                                compositeId = "p1:b1:sw-auto",
+                                storeProduct =
+                                    CrossplatformProduct.StoreProduct.PlayStore(
                                         productIdentifier = "p1",
                                         basePlanIdentifier = "b1",
                                         offer = Offer.Automatic(),
                                     ),
-                                ),
-                                entitlements = emptySet(),
+                                entitlements = emptyList(),
+                                name = "Item1",
                             ),
                         ),
                 )

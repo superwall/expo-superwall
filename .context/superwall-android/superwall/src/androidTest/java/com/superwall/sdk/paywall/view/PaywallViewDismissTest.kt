@@ -1,10 +1,15 @@
 package com.superwall.sdk.paywall.view
 
+import And
+import Given
+import Then
+import When
 import android.app.Application
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.superwall.sdk.Superwall
 import com.superwall.sdk.config.options.SuperwallOptions
+import com.superwall.sdk.delayFor
 import com.superwall.sdk.models.events.EventData
 import com.superwall.sdk.models.paywall.Paywall
 import com.superwall.sdk.paywall.presentation.PaywallCloseReason
@@ -19,6 +24,8 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -26,10 +33,14 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import java.util.Date
+import kotlin.time.Duration.Companion.milliseconds
 
 @RunWith(AndroidJUnit4::class)
 class PaywallViewDismissTest {
     private lateinit var app: Application
+
+    // Hold a strong reference so the delegate isn't GC'd before callbacks fire during the test
+    private var retainedCallback: PaywallViewCallback? = null
 
     @Before
     fun setUp() =
@@ -75,6 +86,11 @@ class PaywallViewDismissTest {
         )
     }
 
+    @After
+    fun tearDown() {
+        retainedCallback = null
+    }
+
     @Test
     fun dismiss_purchased_emits_dismissed_and_clears_publisher() =
         runTest {
@@ -91,42 +107,63 @@ class PaywallViewDismissTest {
                         finished.complete(Unit)
                     }
                 }
+            retainedCallback = callback
             val delegate = PaywallViewDelegateAdapter(callback)
             val view = makeView(delegate)
 
             val publisher = MutableSharedFlow<PaywallState>(replay = 1, extraBufferCapacity = 1)
             val request = makeRequest()
-            withContext(Dispatchers.Main) {
-                view.set(request, publisher, null)
-                view.onViewCreated()
-            }
+            Given("a paywall view configured with a dismissal callback") {
+                runBlocking {
+                    withContext(Dispatchers.Main) {
+                        view.set(request, publisher, null)
+                        view.onViewCreated()
+                    }
+                }
 
-            withContext(Dispatchers.Main) {
-                view.dismiss(
-                    result = PaywallResult.Purchased(productId = "product1"),
-                    closeReason = PaywallCloseReason.SystemLogic,
-                )
-            }
-            // Simulate lifecycle cleanup
-            withContext(Dispatchers.Main) { view.beforeOnDestroy() }
-            withContext(Dispatchers.Main) { view.destroyed() }
+                When("the paywall is dismissed after a purchase due to system logic") {
+                    runBlocking {
+                        withContext(Dispatchers.Main) {
+                            view.dismiss(
+                                result = PaywallResult.Purchased(productId = "product1"),
+                                closeReason = PaywallCloseReason.SystemLogic,
+                            )
+                        }
 
-            // Await delegate callback completion
-            withContext(Dispatchers.IO) {
-                try {
-                    kotlinx.coroutines.withTimeout(2000) { finished.await() }
-                } catch (_: Throwable) {
+                        delayFor(100.milliseconds)
+
+                        withContext(Dispatchers.Main) {
+                            view.beforeOnDestroy()
+                            view.destroyed()
+                        }
+
+                        withContext(Dispatchers.IO) {
+                            try {
+                                withTimeout(3000) { finished.await() }
+                            } catch (_: Throwable) {
+                            }
+                        }
+                    }
+
+                    val dismissed = publisher.replayCache.lastOrNull() as? PaywallState.Dismissed
+
+                    Then("the publisher emits a dismissed purchased result") {
+                        assertNotNull(dismissed)
+                        assertEquals(
+                            "product1",
+                            (dismissed!!.paywallResult as PaywallResult.Purchased).productId,
+                        )
+                    }
+
+                    And("the paywall view clears its state publisher") {
+                        assertNull(view.state.paywallStatePublisher)
+                    }
+
+                    And("the delegate receives shouldDismiss true") {
+                        assertEquals(true, callbackShouldDismiss)
+                    }
                 }
             }
-
-            val dismissed = publisher.replayCache.lastOrNull() as? PaywallState.Dismissed
-            assertNotNull(dismissed)
-            dismissed!!
-            assertEquals("product1", (dismissed.paywallResult as PaywallResult.Purchased).productId)
-            // Publisher should be cleared when stateShouldComplete is true (SystemLogic)
-            assertNull(view.state.paywallStatePublisher)
-            // Callback should have been invoked with shouldDismiss = true
-            assertEquals(true, callbackShouldDismiss)
         }
 
     @Test
@@ -141,28 +178,39 @@ class PaywallViewDismissTest {
                     ) {
                     }
                 }
+            retainedCallback = callback
             val delegate = PaywallViewDelegateAdapter(callback)
             val view = makeView(delegate)
 
             val publisher = MutableSharedFlow<PaywallState>(replay = 1, extraBufferCapacity = 1)
             val request = makeRequest()
-            withContext(Dispatchers.Main) {
-                view.set(request, publisher, null)
-                view.onViewCreated()
-            }
+            Given("a paywall view configured to continue to the next paywall") {
+                runBlocking {
+                    withContext(Dispatchers.Main) {
+                        view.set(request, publisher, null)
+                        view.onViewCreated()
+                    }
+                }
 
-            withContext(Dispatchers.Main) {
-                view.dismiss(
-                    result = PaywallResult.Declined(),
-                    closeReason = PaywallCloseReason.ForNextPaywall,
-                )
-                view.beforeOnDestroy()
-                view.destroyed()
-            }
+                When("the paywall is dismissed as declined for the next paywall") {
+                    runBlocking {
+                        withContext(Dispatchers.Main) {
+                            view.dismiss(
+                                result = PaywallResult.Declined(),
+                                closeReason = PaywallCloseReason.ForNextPaywall,
+                            )
+                            view.beforeOnDestroy()
+                            view.destroyed()
+                        }
+                    }
 
-            val dismissed = publisher.replayCache.lastOrNull() as? PaywallState.Dismissed
-            assertNotNull(dismissed)
-            // Publisher should remain when stateShouldComplete is false (ForNextPaywall)
-            assertNotNull(view.state.paywallStatePublisher)
+                    val dismissed = publisher.replayCache.lastOrNull() as? PaywallState.Dismissed
+
+                    Then("the dismissed state is emitted without clearing the publisher") {
+                        assertNotNull(dismissed)
+                        assertNotNull(view.state.paywallStatePublisher)
+                    }
+                }
+            }
         }
 }

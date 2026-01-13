@@ -30,8 +30,8 @@ typealias RedemptionCode = String
 data class WebRedemptionResponse(
     @SerialName("codes")
     val codes: List<RedemptionResult>,
-    @SerialName("entitlements")
-    val entitlements: List<Entitlement>,
+    @SerialName("customerInfo")
+    val customerInfo: com.superwall.sdk.models.customer.CustomerInfo? = null,
     @kotlinx.serialization.Transient
     val allCodes: List<Redeemable> = codes.map { Redeemable(it.code, false) },
 )
@@ -197,9 +197,9 @@ sealed class StoreIdentifiers {
     data class Paddle(
         @SerialName("paddleCustomerId")
         val paddleCustomerId: String,
-        @SerialName("paddleSubscriptionId")
+        @SerialName("paddleSubscriptionIds")
         val paddleSubscriptionIds: List<String>,
-    )
+    ) : StoreIdentifiers()
 
     @Serializable
     @SerialName("UNKNOWN")

@@ -1,0 +1,46 @@
+// Only apply to projects that have the Android plugin
+if (project.plugins.hasPlugin('com.android.library') ||
+    project.plugins.hasPlugin('com.android.application')) {
+
+    apply plugin: 'io.gitlab.arturbosch.detekt'
+
+    detekt {
+        buildUponDefaultConfig = true
+        allRules = false
+        config.setFrom(files("$rootDir/config/detekt/detekt.yml"))
+        baseline = file("$rootDir/config/detekt/baseline.xml")
+
+        source.setFrom(
+            "src/main/java",
+            "src/main/kotlin",
+            "src/test/java",
+            "src/test/kotlin"
+        )
+
+        reports {
+            html {
+                required.set(true)
+                outputLocation.set(file("build/reports/detekt/detekt.html"))
+            }
+            xml {
+                required.set(true)
+                outputLocation.set(file("build/reports/detekt/detekt.xml"))
+            }
+            txt {
+                required.set(false)
+            }
+            sarif {
+                required.set(true)
+                outputLocation.set(file("build/reports/detekt/detekt.sarif"))
+            }
+        }
+    }
+
+    tasks.withType(io.gitlab.arturbosch.detekt.Detekt).configureEach {
+        jvmTarget = "17"
+    }
+
+    dependencies {
+        detektPlugins "io.gitlab.arturbosch.detekt:detekt-formatting:1.23.7"
+    }
+}

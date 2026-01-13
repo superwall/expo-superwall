@@ -6,6 +6,9 @@ import com.android.installreferrer.api.InstallReferrerClient
 import com.android.installreferrer.api.InstallReferrerClient.newBuilder
 import com.android.installreferrer.api.InstallReferrerStateListener
 import com.superwall.sdk.deeplinks.redeemableCode
+import com.superwall.sdk.logger.LogLevel
+import com.superwall.sdk.logger.LogScope
+import com.superwall.sdk.logger.Logger
 import com.superwall.sdk.misc.IOScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
@@ -113,7 +116,26 @@ class DeepLinkReferrer(
             Result.failure(e)
         }
 
-    override fun handleDeepLink(url: Uri): Result<String> = url.redeemableCode
+    override fun handleDeepLink(url: Uri): Result<String> =
+        url.redeemableCode
+            .onSuccess {
+                Logger.debug(
+                    LogLevel.info,
+                    LogScope.webEntitlements,
+                    "Successfully extracted code from deep link",
+                )
+            }.onFailure {
+                Logger.debug(
+                    LogLevel.error,
+                    LogScope.webEntitlements,
+                    "Failed to extract code from deep link",
+                    info =
+                        mapOf(
+                            "URL" to url.toString(),
+                            "Error" to (it.message ?: ""),
+                        ),
+                )
+            }
 
     private fun String.getUrlParams(): Map<String, List<String>> {
         val urlParts = split("\\?".toRegex()).filter(String::isNotEmpty)

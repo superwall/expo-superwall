@@ -1,15 +1,13 @@
 [versions]
 billing_version = "8.0.0"
-browser_version = "1.5.0"
-gradle_plugin_version = "8.6.0"
+browser_version = "1.8.0"
+gradle_plugin_version = "8.6.1"
 jna_version = "5.14.0@aar"
 kotlinxCoroutinesGuavaVersion = "1.9.0"
 leakcanaryAndroidVersion = "2.14"
-lifecycleProcessVersion = "2.8.1"
+lifecycleProcessVersion = "2.8.5"
 orchestratorVersion = "1.5.0"
-playServicesAdsIdentifierVersion = "18.2.0"
-playServicesAppsetVersion = "16.1.0"
-revenue_cat_version = "9.1.2"
+revenue_cat_version = "9.2.0"
 compose_version = "2024.12.01"
 kotlinx_serialization_json_version = "1.7.2"
 activity_compose_version = "1.9.3"
@@ -18,7 +16,7 @@ appcompat_version = "1.7.0"
 material_version = "1.12.0"
 constraintlayout_version = "2.1.4"
 core_ktx_version = "1.13.1"
-lifecycle_runtime_ktx_version = "2.8.1"
+lifecycle_runtime_ktx_version = "2.8.5"
 junit_version = "4.13.2"
 kotlinx_coroutines_test_version = "1.9.0"
 room_runtime_version = "2.6.1"
@@ -40,6 +38,11 @@ install_referrer = "2.2"
 publisher_version = "0.33.0"
 play_review = "2.0.2"
 ads_identifier = "1.0.0-alpha5"
+jacoco = "0.8.12"
+dokka = "2.1.0"
+detekt = "1.23.7"
+robolectric = "4.13"
+activity_ktx_version = "1.10.1"
 [libraries]
 
 # SQL
@@ -47,8 +50,6 @@ ads_identifier = "1.0.0-alpha5"
 jna = { module = "net.java.dev.jna:jna", version.ref = "jna_version" }
 leakcanary-android = { module = "com.squareup.leakcanary:leakcanary-android", version.ref = "leakcanaryAndroidVersion" }
 orchestrator = { module = "androidx.test:orchestrator", version.ref = "orchestratorVersion" }
-play-services-ads-identifier = { module = "com.google.android.gms:play-services-ads-identifier", version.ref = "playServicesAdsIdentifierVersion" }
-play-services-appset = { module = "com.google.android.gms:play-services-appset", version.ref = "playServicesAppsetVersion" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "room_runtime_version" }
 room-ktx = { module = "androidx.room:room-ktx", version.ref = "room_runtime_version" }
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "room_runtime_version" }
@@ -82,10 +83,12 @@ lifecycle_testing = { module = "androidx.lifecycle:lifecycle-runtime-testing", v
 uiautomator = { module = "androidx.test.uiautomator:uiautomator", version.ref = "uiautomator_version" }
 work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx_version" }
 lifecycle-process = { module = "androidx.lifecycle:lifecycle-process", version.ref = "lifecycleProcessVersion" }
-install_referrer = { module = "com.android.installreferrer:installreferrer", version.ref = "install_referrer"}
-play_review_ktx = { module = "com.google.android.play:review", version.ref="play_review"}
-reviewplay_review_ktx = { module = "com.google.android.play:review-ktx", version.ref="play_review"}
-ads_identifiers = { module = "androidx.ads:ads-identifier", version.ref="ads_identifier"}
+install_referrer = { module = "com.android.installreferrer:installreferrer", version.ref = "install_referrer" }
+play_review_ktx = { module = "com.google.android.play:review", version.ref = "play_review" }
+reviewplay_review_ktx = { module = "com.google.android.play:review-ktx", version.ref = "play_review" }
+activity_ktx = { module = "androidx.activity:activity-ktx", version.ref = "activity_ktx_version" }
+activity = { module = "androidx.activity:activity", version.ref = "activity_ktx_version" }
+
 # Coroutines
 kotlinx_coroutines_core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx_coroutines_core_version" }
 kotlinx-coroutines-guava = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-guava", version.ref = "kotlinxCoroutinesGuavaVersion" }
@@ -97,6 +100,7 @@ kotlinx_serialization_json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 junit = { module = "junit:junit", version.ref = "junit_version" }
 kotlinx_coroutines_test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx_coroutines_test_version" }
 mockk_core = { module = "io.mockk:mockk", version.ref = "mockk_version" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 
 # Test (Android)
 test_ext_junit = { module = "androidx.test.ext:junit", version.ref = "test_ext_junit_version" }
@@ -116,7 +120,9 @@ androidApplication = { id = "com.android.application", version.ref = "gradle_plu
 kotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "serialization_version" }
 dropshot = { id = "com.dropbox.dropshots", version.ref = "dropshot_version" }
-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp"}
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 androidLibrary = { id = "com.android.library", version.ref = "gradle_plugin_version" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-publisher = { id ="com.vanniktech.maven.publish", version.ref = "publisher_version" }
+publisher = { id = "com.vanniktech.maven.publish", version.ref = "publisher_version" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }

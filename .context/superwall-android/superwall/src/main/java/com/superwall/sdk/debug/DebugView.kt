@@ -936,7 +936,7 @@ internal class DebugViewActivity : AppCompatActivity() {
 
     private var contentView: View? = null
 
-    override fun setContentView(view: View) {
+    override fun setContentView(view: View?) {
         super.setContentView(view)
         contentView = view
     }

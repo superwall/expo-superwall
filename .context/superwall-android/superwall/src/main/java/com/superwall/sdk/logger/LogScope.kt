@@ -4,6 +4,7 @@ enum class LogScope {
     localizationManager,
     bounceButton,
     webEntitlements,
+    customerInfo,
     coreData,
     configManager,
     identityManager,
@@ -26,6 +27,7 @@ enum class LogScope {
     paywallView,
     nativePurchaseController,
     cache,
+    deepLinks,
     all,
     ;
 

@@ -20,6 +20,13 @@ suspend fun Superwall.checkDebuggerPresentation(
     request: PresentationRequest,
     paywallStatePublisher: MutableSharedFlow<PaywallState>?,
 ) {
+    innerCheckDebuggerPresentation(request, paywallStatePublisher)
+}
+
+internal suspend fun innerCheckDebuggerPresentation(
+    request: PresentationRequest,
+    paywallStatePublisher: MutableSharedFlow<PaywallState>?,
+) {
     if (!request.flags.isDebuggerLaunched || request.presenter?.get() is DebugViewActivity) {
         return
     }

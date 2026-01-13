@@ -1,6 +1,5 @@
 package com.superwall.sdk.analytics.internal.trackable
 
-import android.net.Uri
 import com.superwall.sdk.analytics.superwall.SuperwallEvent
 import com.superwall.sdk.analytics.superwall.TransactionProduct
 import com.superwall.sdk.config.models.Survey
@@ -10,23 +9,32 @@ import com.superwall.sdk.config.options.toMap
 import com.superwall.sdk.dependencies.ComputedPropertyRequestsFactory
 import com.superwall.sdk.dependencies.FeatureFlagsFactory
 import com.superwall.sdk.dependencies.RuleAttributesFactory
+import com.superwall.sdk.logger.LogLevel
+import com.superwall.sdk.logger.LogScope
+import com.superwall.sdk.logger.Logger
+import com.superwall.sdk.models.customer.CustomerInfo
 import com.superwall.sdk.models.enrichment.Enrichment
+import com.superwall.sdk.models.entitlements.Entitlement
 import com.superwall.sdk.models.entitlements.SubscriptionStatus
 import com.superwall.sdk.models.events.EventData
 import com.superwall.sdk.models.triggers.InternalTriggerResult
+import com.superwall.sdk.network.JsonFactory
 import com.superwall.sdk.paywall.presentation.PaywallInfo
 import com.superwall.sdk.paywall.presentation.internal.PaywallPresentationRequestStatus
 import com.superwall.sdk.paywall.presentation.internal.PaywallPresentationRequestStatusReason
 import com.superwall.sdk.paywall.presentation.internal.PresentationRequestType
 import com.superwall.sdk.paywall.view.survey.SurveyPresentationResult
 import com.superwall.sdk.paywall.view.webview.WebviewError
-import com.superwall.sdk.storage.core_data.convertFromJsonElement
 import com.superwall.sdk.store.abstractions.product.StoreProduct
+import com.superwall.sdk.store.abstractions.product.StoreProductType
 import com.superwall.sdk.store.abstractions.transactions.StoreTransaction
 import com.superwall.sdk.store.abstractions.transactions.StoreTransactionType
 import com.superwall.sdk.store.transactions.RestoreType
 import com.superwall.sdk.store.transactions.TransactionError
 import com.superwall.sdk.web.WebPaywallRedeemer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import java.net.URI
 
 interface TrackableSuperwallEvent : Trackable {
     val superwallPlacement: SuperwallEvent
@@ -138,14 +146,17 @@ sealed class InternalSuperwallEvent(
     }
 
     class DeepLink(
-        val uri: Uri,
+        val uri: URI,
     ) : InternalSuperwallEvent(SuperwallEvent.DeepLink(uri)) {
         private fun extractedParams(): HashMap<String, Any> =
             hashMapOf(
                 "url" to uri.toString(),
                 "path" to (uri.path ?: ""),
-                "pathExtension" to (uri.lastPathSegment?.substringAfterLast('.') ?: ""),
-                "lastPathComponent" to (uri.lastPathSegment ?: ""),
+                "pathExtension" to (
+                    uri.path?.substringAfterLast("/")?.substringAfterLast('.')
+                        ?: ""
+                ),
+                "lastPathComponent" to (uri.path?.substringAfterLast("/") ?: ""),
                 "host" to (uri.host ?: ""),
                 "query" to (uri.query ?: ""),
                 "fragment" to (uri.fragment ?: ""),
@@ -157,32 +168,36 @@ sealed class InternalSuperwallEvent(
             HashMap(extractQueryParameters(uri).plus(extractedParams()))
 
         companion object {
-            private fun extractQueryParameters(uri: Uri): HashMap<String, Any> {
-                val queryStrings = HashMap<String, Any>()
-                uri.queryParameterNames.forEach { paramName ->
-                    val paramValue = uri.getQueryParameter(paramName) ?: return@forEach
-                    when {
-                        paramValue.equals("true", ignoreCase = true) ->
-                            queryStrings[paramName] =
-                                true
+            private fun extractQueryParameters(uri: URI): HashMap<String, Any> =
+                HashMap(
+                    (uri.query ?: "")
+                        .split("&")
+                        .associate {
+                            it.split("=").let {
+                                it[0] to it.getOrNull(1)
+                            }
+                        }.map { (paramName, paramValue) ->
+                            when {
+                                paramValue == null -> null
+                                paramValue.equals("true", ignoreCase = true) ->
+                                    paramName to true
 
-                        paramValue.equals("false", ignoreCase = true) ->
-                            queryStrings[paramName] =
-                                false
+                                paramValue.equals("false", ignoreCase = true) ->
+                                    paramName to false
 
-                        paramValue.toIntOrNull() != null ->
-                            queryStrings[paramName] =
-                                paramValue.toInt()
+                                paramValue.toIntOrNull() != null ->
+                                    paramName to
+                                        paramValue.toInt()
 
-                        paramValue.toDoubleOrNull() != null ->
-                            queryStrings[paramName] =
-                                paramValue.toDouble()
+                                paramValue.toDoubleOrNull() != null ->
+                                    paramName to
+                                        paramValue.toDouble()
 
-                        else -> queryStrings[paramName] = paramValue
-                    }
-                }
-                return queryStrings
-            }
+                                else -> paramName to paramValue
+                            }
+                        }.filterNotNull()
+                        .toMap<String, Any>(),
+                )
         }
     }
 
@@ -471,13 +486,14 @@ sealed class InternalSuperwallEvent(
     class Transaction(
         val state: State,
         val paywallInfo: PaywallInfo,
-        val product: StoreProduct?,
+        val product: StoreProductType?,
         val model: StoreTransaction?,
         val source: TransactionSource,
         val isObserved: Boolean,
         var demandScore: Int?,
         var demandTier: String?,
         var userAttributes: Map<String, Any>? = null,
+        var store: String = "PLAY_STORE",
     ) : TrackableSuperwallEvent {
         enum class TransactionSource(
             val raw: String,
@@ -489,7 +505,7 @@ sealed class InternalSuperwallEvent(
 
         sealed class State {
             class Start(
-                val product: StoreProduct,
+                val product: StoreProductType,
             ) : State()
 
             class Fail(
@@ -497,11 +513,11 @@ sealed class InternalSuperwallEvent(
             ) : State()
 
             class Abandon(
-                val product: StoreProduct,
+                val product: StoreProductType,
             ) : State()
 
             class Complete(
-                val product: StoreProduct,
+                val product: StoreProductType,
                 val transaction: StoreTransactionType?,
             ) : State()
 
@@ -565,15 +581,16 @@ sealed class InternalSuperwallEvent(
         override val canImplicitlyTriggerPaywall: Boolean
             get() = if (isObserved) false else superwallPlacement.canImplicitlyTriggerPaywall
 
-        override suspend fun getSuperwallParameters(): HashMap<String, Any> {
-            return when (state) {
+        override suspend fun getSuperwallParameters(): HashMap<String, Any> =
+            when (state) {
                 is State.Restore -> {
                     var eventParams = HashMap(paywallInfo.eventParams(product))
                     model?.toDictionary()?.let { transactionDict ->
                         eventParams.putAll(transactionDict)
                     }
+                    eventParams["store"] = store
                     eventParams["restore_via_purchase_attempt"] = model != null
-                    return eventParams
+                    eventParams
                 }
 
                 is State.Start,
@@ -591,11 +608,13 @@ sealed class InternalSuperwallEvent(
                     if (demandTier != null) {
                         eventParams["attr_demandTier"] = demandTier
                     }
+                    eventParams["store"] = store
+                    eventParams["source"] = source.raw
                     if (state is State.Complete) {
                         eventParams["user_attributes"] = userAttributes
                     }
 
-                    return eventParams
+                    eventParams
                 }
 
                 is State.Fail -> {
@@ -611,12 +630,18 @@ sealed class InternalSuperwallEvent(
                                         otherParams = mapOf("message" to message),
                                     ),
                                 )
-                            return eventParams
+                            if (demandScore != null) {
+                                eventParams["attr_demandScore"] = demandScore
+                            }
+                            if (demandTier != null) {
+                                eventParams["attr_demandTier"] = demandTier
+                            }
+                            eventParams["store"] = store
+                            eventParams
                         }
                     }
                 }
             }
-        }
     }
 
     class SubscriptionStart(
@@ -687,7 +712,9 @@ sealed class InternalSuperwallEvent(
 
             object Fallback : State()
 
-            class Timeout : State()
+            class Timeout(
+                val msg: String,
+            ) : State()
 
             class Complete : State()
         }
@@ -731,11 +758,16 @@ sealed class InternalSuperwallEvent(
                 when (state) {
                     is State.Fail ->
                         mapOf(
-                            "error_message" to state.error,
+                            "error_message" to state.error.toString(),
                             *state.urls
                                 .mapIndexed { i, it ->
                                     "url_$i" to it
                                 }.toTypedArray(),
+                        )
+
+                    is State.Timeout ->
+                        mapOf(
+                            "error_message" to state.msg,
                         )
 
                     else -> mapOf()
@@ -1034,10 +1066,8 @@ sealed class InternalSuperwallEvent(
             when (state) {
                 is State.Complete ->
                     SuperwallEvent.EnrichmentComplete(
-                        state.enrichment.user
-                            .toMap()
-                            .mapValues { it.value.convertFromJsonElement() },
-                        state.enrichment.device.mapValues { it.value.convertFromJsonElement() },
+                        state.enrichment.user,
+                        state.enrichment.device,
                     )
 
                 State.Fail -> SuperwallEvent.EnrichmentFail
@@ -1081,6 +1111,135 @@ sealed class InternalSuperwallEvent(
             hashMapOf(
                 "count" to count,
                 "type" to type,
+            )
+    }
+
+    data class CustomerInfoDidChange(
+        val fromCustomerInfo: CustomerInfo,
+        val toCustomerInfo: CustomerInfo,
+        override val audienceFilterParams: Map<String, Any> = emptyMap(),
+    ) : TrackableSuperwallEvent {
+        override val superwallPlacement: SuperwallEvent =
+            SuperwallEvent.CustomerInfoDidChange(fromCustomerInfo, toCustomerInfo)
+        override val rawName: String =
+            SuperwallEvent.CustomerInfoDidChange(fromCustomerInfo, toCustomerInfo).rawName
+
+        override val canImplicitlyTriggerPaywall: Boolean = false
+
+        @Serializable
+        private data class EntitlementsSnapshot(
+            val entitlements: List<Entitlement>,
+            val isPlaceholder: Boolean,
+        )
+
+        override suspend fun getSuperwallParameters(): Map<String, Any> {
+            val fromSnapshot =
+                EntitlementsSnapshot(
+                    entitlements = fromCustomerInfo.entitlements,
+                    isPlaceholder = fromCustomerInfo.isPlaceholder,
+                )
+            val toSnapshot =
+                EntitlementsSnapshot(
+                    entitlements = toCustomerInfo.entitlements,
+                    isPlaceholder = toCustomerInfo.isPlaceholder,
+                )
+
+            val fromJson =
+                try {
+                    JsonFactory.JSON.encodeToString(fromSnapshot)
+                } catch (e: Exception) {
+                    Logger.debug(
+                        LogLevel.error,
+                        LogScope.customerInfo,
+                        "Unable to serialize customer info \"from\" - ${e.message}",
+                    )
+                    "{}"
+                }
+
+            val toJson =
+                try {
+                    JsonFactory.JSON.encodeToString(toSnapshot)
+                } catch (e: Exception) {
+                    Logger.debug(
+                        LogLevel.error,
+                        LogScope.customerInfo,
+                        "Unable to serialize customer info \"to\" - ${e.message}",
+                    )
+                    "{}"
+                }
+
+            return mapOf(
+                "from" to fromJson,
+                "to" to toJson,
+            )
+        }
+    }
+
+    data class Permission(
+        val state: State,
+        val permissionName: String,
+        val paywallIdentifier: String,
+    ) : InternalSuperwallEvent(
+            SuperwallEvent.PermissionRequested(permissionName, paywallIdentifier),
+        ) {
+        enum class State {
+            Requested,
+            Granted,
+            Denied,
+        }
+
+        override val superwallPlacement: SuperwallEvent
+            get() =
+                when (state) {
+                    State.Requested ->
+                        SuperwallEvent.PermissionRequested(
+                            permissionName = permissionName,
+                            paywallIdentifier = paywallIdentifier,
+                        )
+                    State.Granted ->
+                        SuperwallEvent.PermissionGranted(
+                            permissionName = permissionName,
+                            paywallIdentifier = paywallIdentifier,
+                        )
+                    State.Denied ->
+                        SuperwallEvent.PermissionDenied(
+                            permissionName = permissionName,
+                            paywallIdentifier = paywallIdentifier,
+                        )
+                }
+
+        override val audienceFilterParams: Map<String, Any> = emptyMap()
+
+        override suspend fun getSuperwallParameters(): Map<String, Any> =
+            mapOf(
+                "permission_name" to permissionName,
+                "paywall_identifier" to paywallIdentifier,
+            )
+    }
+
+    data class PaywallPreload(
+        val state: State,
+        val paywallCount: Int,
+    ) : InternalSuperwallEvent(
+            SuperwallEvent.PaywallPreloadStart(paywallCount),
+        ) {
+        enum class State {
+            Start,
+            Complete,
+        }
+
+        override val superwallPlacement: SuperwallEvent
+            get() =
+                when (state) {
+                    State.Start -> SuperwallEvent.PaywallPreloadStart(paywallCount)
+                    State.Complete -> SuperwallEvent.PaywallPreloadComplete(paywallCount)
+                }
+
+        override val audienceFilterParams: Map<String, Any> = emptyMap()
+
+        override suspend fun getSuperwallParameters(): Map<String, Any> =
+            mapOf(
+                "paywall_count" to paywallCount,
             )
     }
 }

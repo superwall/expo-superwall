@@ -5,10 +5,16 @@
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
--keepclassmembers class com.superwall.sdk.paywall.vc.web_view.messaging.PaywallMessageHandler {
+# Keep JavaScript interface for WebView communication
+# CRITICAL: This must match the actual package path or JS bridge will break in release builds
+-keepclassmembers class com.superwall.sdk.paywall.view.webview.messaging.PaywallMessageHandler {
    public *;
+}
+
+# Keep the @JavascriptInterface annotation and all annotated methods
+-keepattributes JavascriptInterface
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
 }
 
 # Uncomment this to preserve the line number information for

@@ -6,8 +6,6 @@ import com.superwall.sdk.logger.LogLevel
 import com.superwall.sdk.logger.LogScope
 import com.superwall.sdk.logger.Logger
 import com.superwall.sdk.misc.MainScope
-import com.superwall.sdk.paywall.view.webview.PaywallMessage
-import com.superwall.sdk.paywall.view.webview.parseWrappedPaywallMessages
 import kotlinx.coroutines.launch
 
 interface WebEventDelegate {

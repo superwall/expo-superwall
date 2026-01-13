@@ -34,4 +34,8 @@ class TestPaywallMessageHandlerDelegate(
     ) {
         resultCallback?.invoke(null)
     }
+
+    override fun presentPaymentSheet(url: String) {
+        TODO("Not yet implemented")
+    }
 }

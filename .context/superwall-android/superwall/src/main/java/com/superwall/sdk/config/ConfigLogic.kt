@@ -8,6 +8,7 @@ import com.superwall.sdk.models.assignment.ConfirmableAssignment
 import com.superwall.sdk.models.config.Config
 import com.superwall.sdk.models.config.PreloadingDisabled
 import com.superwall.sdk.models.paywall.Paywall
+import com.superwall.sdk.models.product.CrossplatformProduct
 import com.superwall.sdk.models.product.ProductItem
 import com.superwall.sdk.models.triggers.*
 import com.superwall.sdk.paywall.presentation.rule_logic.expression_evaluator.ExpressionEvaluating
@@ -320,4 +321,11 @@ object ConfigLogic {
 
     // Returns entitlements mapped by product ID
     fun extractEntitlementsByProductId(from: List<ProductItem>) = from.associate { it.fullProductId to it.entitlements }
+
+    // Returns entitlements mapped by product ID for CrossplatformProduct
+    fun extractEntitlementsByProductIdFromCrossplatform(from: List<CrossplatformProduct>) =
+        from.associate {
+            it.fullProductId to
+                it.entitlements.toSet()
+        }
 }

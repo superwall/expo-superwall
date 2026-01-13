@@ -301,7 +301,8 @@ final class TrackingLogicTests: XCTestCase {
 
     let messageHandler = PaywallMessageHandler(
       receiptManager: dependencyContainer.receiptManager,
-      factory: dependencyContainer
+      factory: dependencyContainer,
+      permissionHandler: FakePermissionHandler()
     )
     let webView = SWWebView(
       isMac: false,
@@ -314,7 +315,9 @@ final class TrackingLogicTests: XCTestCase {
       deviceHelper: dependencyContainer.deviceHelper,
       factory: dependencyContainer,
       storage: dependencyContainer.storage,
+      network: dependencyContainer.network,
       webView: webView,
+      webEntitlementRedeemer: dependencyContainer.webEntitlementRedeemer,
       cache: nil,
       paywallArchiveManager: nil
     )

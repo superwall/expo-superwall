@@ -2,6 +2,100 @@
 
 The changelog for `Superwall`. Also see the [releases](https://github.com/superwall/Superwall-Android/releases) on GitHub.
 
+## 2.6.7
+
+### Enhancements
+- Adds permission granting and callbacks to/from paywalls
+- Adds `PaywallPreloadStart` and `PaywallPreloadComplete` events
+
+### Fixes
+- Fix handling of deep links when paywall is detached
+- Enables permission granting from paywall and callbacks
+- Fix crash when handling drawer style paywalls with 100% height
+ 
+## 2.6.6
+
+## Enhancements
+- Add dynamic notification support and scheduling enabling deeper personalization of notifications 
+- Provides a `CustomerInfo` class API, allowing you to observe the customer's purchases and subscription lifecycle via `Superwall.instance.customerInfo` flow
+- Provides a new delegate method to observe customer info changes - `fun customerInfoDidChange(from: CustomerInfo, to: CustomerInfo)`  
+- Provides a `CustomerInfoDidChange` event to track customer info changes
+- Overrides `Collection<Entitlement>.plus`and `.toSet` methods to ensure our merging methods are used.
+- Provides a `userAttributesDidChange(newAttributes: Map<String, Any>)` method in Superwall Delegate to track external (i.e. paywall) attribute changesg
+- Allows triggering a `transaction_abandon` offer on a `paywall_decline` offer and vice-versa, whereas previously it would trigger a presentation error. 
+- Add a `Superwall.teardown` method and `Superwall.instance.refreshConfiguration()` for development with hot-reload based frameworks
+
+##  ⚠️ Warning ⚠️
+If you are using a Purchase Controller and web2app or app2web purchases, you will have to update your purchase controller
+to listen to `Superwall.instance.customerInfo` which will provide you with the relevant web entitlements and call
+`setSubscriptionStatus` accordingly.
+
+## 2.6.5
+
+## Dependencies
+- Reverts `androidx.lifecycle:lifecycle-runtime-ktx` to 2.8.4 to ensure old Compose BOM compatiblity
+
+## Enhancements
+- Improves error messaging in play store errors
+
+## Fixes
+- Fixes edge case bug with wrong entitlement being matched in cases where product ID's match and base plans differentiate by suffix only
+- Fixes issue with composable paywall state updates not firing in onAttach
+
+## 2.6.4
+
+## Enhancements
+- Improves error and timeout handling
+- Hardens paywall recreation in case of render process crash
+
+## 2.6.3
+
+## Enhancements
+- Adds `productIdentifier` to RedemptionResult's `PaywallInfo` object
+
+## Fixes
+- Fixes nested scrolling issue in Modal webviews
+- Removes node removal for `com.google.android.gms.permission.AD_ID` from Manifest
+- Ensures remote entitlements in the background refresh without feature flags
+
+## 2.6.2
+
+## Enhancements
+- Adds `Superwall.instance.consume(purchaseToken)` method to help easily consume in-app purchases
+
+## Fixes
+- Fixes issue with deeplink params not being handled properly in some cases
+- Fixes issue with Drawer and Modal displays on Android 14 Samsung devices
+- Fixes selection issue with some OTP, ensures after consuming the Status is synced
+
+## 2.6.1
+
+## Enhancements
+- Enables Stripe and Paddle checkout via in-app payment sheets
+- Improves product handling and redemption for Stripe and Paddle
+
+## Fixes
+- Fixes issue with Google's Play Billing library auto-reconnection
+
+## 2.6.0 ⚠️ [Deprecated]
+
+## Notes
+- This version is deprecated due to discovery of an issue in Play Billing library which could cause runtime issues
+- Please use version 2.6.1
+
+## 2.5.8
+
+## Fixes
+- Fix lifetime purchase entitlements not being discovered in some cases on purchase
+- Fix potential ANR issues where some animations would end up looping over on main thread
+- Fix webview client not behaving properly when using a resetted paywall
+
+## 2.6.0-alpha
+
+- Add app2web support, allowing users to purchase Stripe or Paddle products without leaving your app
+- Add `PaymentSheet` purchase type enabling quick bottom sheet purchases
+- Add support for Android app links purchase redeeming
+
 ## 2.5.7
 
 ## Fixes
