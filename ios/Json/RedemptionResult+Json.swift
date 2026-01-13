@@ -139,6 +139,9 @@ extension RedemptionResult.RedemptionInfo.PaywallInfo {
     if let productIdentifier = self.productIdentifier {
       map["productIdentifier"] = productIdentifier
     }
+    if let product = self.product {
+      map["product"] = product.toJson()
+    }
 
     return map
   }

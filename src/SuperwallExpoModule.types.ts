@@ -598,6 +598,74 @@ export interface RedemptionPurchaserInfo {
 }
 
 /**
+ * Represents a product involved in a redemption transaction with comprehensive pricing and localization information.
+ */
+export interface PaywallProduct {
+  /** The unique identifier of the product */
+  identifier: string
+  /** Language code for localization */
+  languageCode: string
+  /** Locale string */
+  locale: string
+  /** Currency code (e.g., "USD") */
+  currencyCode: string
+  /** Currency symbol (e.g., "$") */
+  currencySymbol: string
+  /** Subscription period */
+  period: string
+  /** Periodly description */
+  periodly: string
+  /** Localized period description */
+  localizedPeriod: string
+  /** Alternative period description */
+  periodAlt: string
+  /** Period length in days */
+  periodDays: number
+  /** Period length in weeks */
+  periodWeeks: number
+  /** Period length in months */
+  periodMonths: number
+  /** Period length in years */
+  periodYears: number
+  /** Raw price as a number */
+  rawPrice: number
+  /** Formatted price string */
+  price: string
+  /** Daily equivalent price */
+  dailyPrice: string
+  /** Weekly equivalent price */
+  weeklyPrice: string
+  /** Monthly equivalent price */
+  monthlyPrice: string
+  /** Yearly equivalent price */
+  yearlyPrice: string
+  /** Raw trial period price */
+  rawTrialPeriodPrice: number
+  /** Formatted trial period price */
+  trialPeriodPrice: string
+  /** Trial period daily price */
+  trialPeriodDailyPrice: string
+  /** Trial period weekly price */
+  trialPeriodWeeklyPrice: string
+  /** Trial period monthly price */
+  trialPeriodMonthlyPrice: string
+  /** Trial period yearly price */
+  trialPeriodYearlyPrice: string
+  /** Trial period length in days */
+  trialPeriodDays: number
+  /** Trial period length in weeks */
+  trialPeriodWeeks: number
+  /** Trial period length in months */
+  trialPeriodMonths: number
+  /** Trial period length in years */
+  trialPeriodYears: number
+  /** Trial period description text */
+  trialPeriodText: string
+  /** Trial period end date string */
+  trialPeriodEndDate: string
+}
+
+/**
  * Information about the paywall that was involved in or led to a promotional code redemption.
  */
 export interface RedemptionPaywallInfo {
@@ -623,8 +691,13 @@ export interface RedemptionPaywallInfo {
   experimentId: string
   /**
    * The product identifier associated with the paywall, if any.
+   * @deprecated Use `product.identifier` instead. This property will be removed in a future version.
    */
   productIdentifier?: string
+  /**
+   * The product associated with the paywall, if any.
+   */
+  product?: PaywallProduct
 }
 
 /**
