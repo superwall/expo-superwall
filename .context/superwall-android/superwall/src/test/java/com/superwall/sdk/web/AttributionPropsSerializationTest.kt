@@ -55,6 +55,8 @@ class AttributionPropsSerializationTest {
                         TransactionReceipt(
                             purchaseToken = "purchase_token_abc123",
                             orderId = "order_id_def456",
+                            productId = "test_123",
+                            productType = TransactionReceipt.ProductType.SUBSCRIPTION,
                         ),
                     ),
                 externalAccountId = "external_account_xyz",
@@ -82,6 +84,8 @@ class AttributionPropsSerializationTest {
                         TransactionReceipt(
                             purchaseToken = "purchase_token_abc123",
                             orderId = "order_id_def456",
+                            productId = "test_123",
+                            productType = TransactionReceipt.ProductType.SUBSCRIPTION,
                         ),
                     ),
                 externalAccountId = "external_account_xyz",

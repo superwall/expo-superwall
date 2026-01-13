@@ -153,7 +153,7 @@ private suspend fun Superwall.internallyHandleImplicitTrigger(
             )
 
         try {
-            waitForEntitlementsAndConfig(request, null)
+            waitForEntitlementsAndConfig(request, null, dependencyContainer)
         } catch (e: Throwable) {
             logErrors(request, e)
             return@withErrorTracking

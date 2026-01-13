@@ -16,7 +16,17 @@ import com.superwall.sdk.paywall.presentation.rule_logic.RuleEvaluationOutcome
 import com.superwall.sdk.storage.LocalStorage
 import kotlinx.coroutines.flow.MutableSharedFlow
 
-// Assuming you have definitions for all the classes and functions used in the below code.
+private suspend fun Superwall.activateSession(
+    request: PresentationRequest,
+    rulesOutcome: RuleEvaluationOutcome,
+) {
+    if (request.flags.type == PresentationRequestType.GetImplicitPresentationResult ||
+        request.flags.type == PresentationRequestType.GetPresentationResult
+    ) {
+        return
+    }
+    attemptTriggerFire(request, rulesOutcome.triggerResult)
+}
 
 /**
  * Switches over the trigger result. Continues if a paywall will show.
@@ -29,13 +39,17 @@ import kotlinx.coroutines.flow.MutableSharedFlow
  *
  * @return A data class that contains info for the next operation.
  */
+
 @Throws(Throwable::class)
-internal suspend fun Superwall.getExperiment(
+internal suspend fun getExperiment(
     request: PresentationRequest,
     rulesOutcome: RuleEvaluationOutcome,
     debugInfo: Map<String, Any>,
     paywallStatePublisher: MutableSharedFlow<PaywallState>? = null,
     storage: LocalStorage,
+    activateSession: suspend (request: PresentationRequest, rulesOutcome: RuleEvaluationOutcome) -> Unit = { request, outcome ->
+        Superwall.instance.activateSession(request, outcome)
+    },
 ): Experiment {
     val errorType: PresentationPipelineError
 
@@ -43,23 +57,34 @@ internal suspend fun Superwall.getExperiment(
         is InternalTriggerResult.Paywall -> {
             return rulesOutcome.triggerResult.experiment
         }
+
         is InternalTriggerResult.Holdout -> {
             activateSession(request, rulesOutcome)
             rulesOutcome.unsavedOccurrence?.let {
                 storage.coreDataManager.save(triggerRuleOccurrence = it)
             }
-            errorType = PaywallPresentationRequestStatusReason.Holdout(rulesOutcome.triggerResult.experiment)
-            paywallStatePublisher?.emit(PaywallState.Skipped(PaywallSkippedReason.Holdout(rulesOutcome.triggerResult.experiment)))
+            errorType =
+                PaywallPresentationRequestStatusReason.Holdout(rulesOutcome.triggerResult.experiment)
+            paywallStatePublisher?.emit(
+                PaywallState.Skipped(
+                    PaywallSkippedReason.Holdout(
+                        rulesOutcome.triggerResult.experiment,
+                    ),
+                ),
+            )
         }
+
         is InternalTriggerResult.NoAudienceMatch -> {
             activateSession(request, rulesOutcome)
             errorType = PaywallPresentationRequestStatusReason.NoAudienceMatch()
             paywallStatePublisher?.emit(PaywallState.Skipped(PaywallSkippedReason.NoAudienceMatch()))
         }
+
         is InternalTriggerResult.PlacementNotFound -> {
             errorType = PaywallPresentationRequestStatusReason.PlacementNotFound()
             paywallStatePublisher?.emit(PaywallState.Skipped(PaywallSkippedReason.PlacementNotFound()))
         }
+
         is InternalTriggerResult.Error -> {
             if (request.flags.type == PresentationRequestType.GetImplicitPresentationResult ||
                 request.flags.type == PresentationRequestType.GetPresentationResult
@@ -78,16 +103,4 @@ internal suspend fun Superwall.getExperiment(
     }
 
     throw errorType
-}
-
-private suspend fun Superwall.activateSession(
-    request: PresentationRequest,
-    rulesOutcome: RuleEvaluationOutcome,
-) {
-    if (request.flags.type == PresentationRequestType.GetImplicitPresentationResult ||
-        request.flags.type == PresentationRequestType.GetPresentationResult
-    ) {
-        return
-    }
-    attemptTriggerFire(request, rulesOutcome.triggerResult)
 }

@@ -10,10 +10,7 @@ class DeepLinkHandler : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         val data: Uri? = intent?.data
         val uri = Uri.parse(data?.toString())
-        val code = uri.getQueryParameter("code")
-        if (code != null) {
-            Superwall.instance.redeem(code)
-        }
+        Superwall.handleDeepLink(uri)
         finish()
     }
 }

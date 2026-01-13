@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -163,7 +164,10 @@ fun SuperwallDebugBottomSheet(
                         item {
                             DebugSection(
                                 title = "Device Template",
-                                items = templateMap.mapValues { it.value.toString() }.filterValues { it.isNotBlank() },
+                                items =
+                                    templateMap
+                                        .mapValues { it.value.toString() }
+                                        .filterValues { it.isNotBlank() },
                             )
                         }
                     }
@@ -218,12 +222,14 @@ private fun DebugRow(
             fontWeight = FontWeight.Medium,
             modifier = Modifier.weight(1f),
         )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f),
-            textAlign = TextAlign.End,
-        )
+        SelectionContainer {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.weight(1f),
+                textAlign = TextAlign.End,
+            )
+        }
     }
 }

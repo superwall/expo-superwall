@@ -12,6 +12,7 @@ import com.superwall.sdk.billing.GoogleBillingWrapper
 import com.superwall.sdk.config.ConfigManager
 import com.superwall.sdk.config.options.SuperwallOptions
 import com.superwall.sdk.debug.DebugView
+import com.superwall.sdk.delegate.SuperwallDelegateAdapter
 import com.superwall.sdk.identity.IdentityInfo
 import com.superwall.sdk.identity.IdentityManager
 import com.superwall.sdk.misc.AppLifecycleObserver
@@ -28,10 +29,12 @@ import com.superwall.sdk.network.JsonFactory
 import com.superwall.sdk.network.device.DeviceHelper
 import com.superwall.sdk.network.device.DeviceInfo
 import com.superwall.sdk.paywall.manager.PaywallViewCache
+import com.superwall.sdk.paywall.presentation.PaywallInfo
 import com.superwall.sdk.paywall.presentation.internal.PresentationRequest
 import com.superwall.sdk.paywall.presentation.internal.PresentationRequestType
 import com.superwall.sdk.paywall.presentation.internal.request.PaywallOverrides
 import com.superwall.sdk.paywall.presentation.internal.request.PresentationInfo
+import com.superwall.sdk.paywall.presentation.internal.state.PaywallState
 import com.superwall.sdk.paywall.request.PaywallRequest
 import com.superwall.sdk.paywall.request.ResponseIdentifiers
 import com.superwall.sdk.paywall.view.PaywallView
@@ -41,6 +44,7 @@ import com.superwall.sdk.paywall.view.webview.templating.models.JsonVariables
 import com.superwall.sdk.storage.LocalStorage
 import com.superwall.sdk.storage.core_data.CoreDataManager
 import com.superwall.sdk.store.abstractions.transactions.StoreTransaction
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
 interface ApiFactory : JsonFactory {
@@ -136,6 +140,24 @@ interface EnrichmentFactory {
 
 fun interface TrackingFactory {
     suspend fun track(event: TrackableSuperwallEvent): Result<TrackingResult>
+}
+
+interface DelegateAdapterFactory {
+    fun delegate(): SuperwallDelegateAdapter
+}
+
+interface PresentationFactory {
+    fun updatePaywallInfo(paywallInfo: PaywallInfo)
+
+    suspend fun storePresentationObject(
+        request: PresentationRequest?,
+        publisher: MutableSharedFlow<PaywallState>,
+    )
+
+    suspend fun internallyGetPresentationResult(
+        event: Trackable,
+        isImplicit: Boolean,
+    )
 }
 
 interface ConfigAttributesFactory {

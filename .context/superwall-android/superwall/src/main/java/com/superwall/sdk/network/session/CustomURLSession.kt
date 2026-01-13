@@ -47,6 +47,7 @@ class CustomHttpUrlConnection(
                             ),
                         )
                     } catch (e: Throwable) {
+                        e.printStackTrace()
                         Logger.debug(
                             LogLevel.error,
                             LogScope.network,

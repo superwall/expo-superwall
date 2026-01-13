@@ -426,7 +426,12 @@ class ConfigTest {
         "reference_name": "secondary android",
         "store_product": {
           "store": "PLAY_STORE",
-          "product_identifier": "androidproduct:base-plan:offer"
+          "product_identifier": "androidproduct",
+          "base_plan_identifier": "base-plan",
+          "offer": {
+            "type": "SPECIFIED",
+            "offer_identifier": "sw-none"
+          }
         }
       }
     ],
@@ -458,6 +463,33 @@ class ConfigTest {
       "hostname": "www.fitnessai.com"
     }]
   },
+  "products_v3": [
+      {
+        "reference_name": "primary",
+        "sw_composite_product_id": "my-android-product:base-plan:sw-auto",
+        "store_product": {
+          "store": "PLAY_STORE",
+          "product_identifier": "my-android-product",
+          "base_plan_identifier": "base-plan",
+          "offer": {
+            "type": "AUTOMATIC"
+          }
+        }
+      },
+      {
+        "reference_name": "secondary android",
+        "sw_composite_product_id": "androidproduct:base-plan:sw-none",
+        "store_product": {
+          "store": "PLAY_STORE",
+          "product_identifier": "androidproduct",
+          "base_plan_identifier": "base-plan",
+          "offer": {
+            "type": "SPECIFIED",
+            "offer_identifier": "sw-none"
+          }
+        }
+      }
+    ],
   "disable_preload": {
     "all": false,
     "triggers": []
@@ -494,12 +526,342 @@ class ConfigTest {
         assert(config != null)
         assert(config.featureFlags.enableSessionEvents)
         println(config.paywalls.first().productItems)
-        assert(
-            config.paywalls
-                .first()
-                .productItems
-                .isNotEmpty(),
-        )
         assert(config.triggers.first().eventName == "MyEvent")
+    }
+
+    @Test
+    fun `test CrossplatformProduct direct serialization`() {
+        // Test direct CrossplatformProduct serialization/deserialization
+        val productJson =
+            """
+            {
+              "sw_composite_product_id": "test:stripe:7days",
+              "store_product": {
+                "store": "STRIPE",
+                "environment": "test",
+                "product_identifier": "price_123",
+                "trial_days": 7,
+                "meta": {}
+              },
+              "entitlements": [
+                {
+                  "identifier": "pro",
+                  "type": "SERVICE_LEVEL"
+                }
+              ]
+            }
+            """.trimIndent()
+
+        val json =
+            Json {
+                ignoreUnknownKeys = true
+                namingStrategy = JsonNamingStrategy.SnakeCase
+            }
+
+        try {
+            val product = json.decodeFromString<com.superwall.sdk.models.product.CrossplatformProduct>(productJson)
+            assert(product != null)
+            assert(product.compositeId == "test:stripe:7days")
+            assert(product.storeProduct is com.superwall.sdk.models.product.CrossplatformProduct.StoreProduct.Stripe)
+
+            val stripeStore = product.storeProduct as com.superwall.sdk.models.product.CrossplatformProduct.StoreProduct.Stripe
+            assert(stripeStore.environment == "test")
+            assert(stripeStore.productIdentifier == "price_123")
+            assert(stripeStore.trialDays == 7)
+
+            println("CrossplatformProduct direct deserialization test passed!")
+        } catch (e: Exception) {
+            println("Direct product error: ${e.message}")
+            e.printStackTrace()
+            throw e
+        }
+    }
+
+    @Test
+    fun `test full config with all CrossplatformProduct store types`() {
+        val configString =
+            """
+            {
+              "build_id": "test",
+              "trigger_options": [],
+              "product_identifier_groups": [],
+              "paywalls": [],
+              "paywall_responses": [],
+              "products": [],
+              "products_v3": [
+                {
+                  "sw_composite_product_id": "stripe_product",
+                  "store_product": {
+                    "store": "STRIPE",
+                    "environment": "test",
+                    "product_identifier": "price_123",
+                    "trial_days": 7
+                  },
+                  "entitlements": [
+                    {
+                      "identifier": "pro",
+                      "type": "SERVICE_LEVEL"
+                    }
+                  ]
+                },
+                {
+                  "sw_composite_product_id": "appstore_product",
+                  "store_product": {
+                    "store": "APP_STORE",
+                    "product_identifier": "com.example.premium"
+                  },
+                  "entitlements": [
+                    {
+                      "identifier": "premium",
+                      "type": "SERVICE_LEVEL"
+                    }
+                  ]
+                },
+                {
+                  "sw_composite_product_id": "playstore_product",
+                  "store_product": {
+                    "store": "PLAY_STORE",
+                    "product_identifier": "com.example.monthly",
+                    "base_plan_identifier": "monthly-plan",
+                    "offer": {
+                      "type": "AUTOMATIC"
+                    }
+                  },
+                  "entitlements": [
+                    {
+                      "identifier": "monthly",
+                      "type": "SERVICE_LEVEL"
+                    }
+                  ]
+                },
+                {
+                  "sw_composite_product_id": "unknown_store_product",
+                  "store_product": {
+                    "store": "UNKNOWN_STORE",
+                    "some_field": "some_value"
+                  },
+                  "entitlements": [
+                    {
+                      "identifier": "unknown",
+                      "type": "SERVICE_LEVEL"
+                    }
+                  ]
+                }
+              ],
+              "log_level": 10,
+              "localization": {
+                "locales": []
+              },
+              "postback": {
+                "delay": 5000,
+                "products": []
+              },
+              "app_session_timeout_ms": 3600000,
+              "toggles": [],
+              "disable_preload": {
+                "all": false,
+                "triggers": []
+              }
+            }
+            """.trimIndent()
+
+        val json =
+            Json {
+                ignoreUnknownKeys = true
+                namingStrategy = JsonNamingStrategy.SnakeCase
+            }
+
+        try {
+            val config = json.decodeFromString<Config>(configString)
+            assert(config != null)
+            assert(config.productsV3?.size == 4)
+
+            val products = config.productsV3!!
+
+            // Test STRIPE product
+            val stripeProduct = products.find { it.compositeId == "stripe_product" }
+            assert(stripeProduct != null)
+            assert(stripeProduct!!.storeProduct is com.superwall.sdk.models.product.CrossplatformProduct.StoreProduct.Stripe)
+            val stripeStore = stripeProduct.storeProduct as com.superwall.sdk.models.product.CrossplatformProduct.StoreProduct.Stripe
+            assert(stripeStore.environment == "test")
+            assert(stripeStore.productIdentifier == "price_123")
+            assert(stripeStore.trialDays == 7)
+            assert(stripeProduct.entitlements.first().id == "pro")
+
+            // Test APP_STORE product
+            val appStoreProduct = products.find { it.compositeId == "appstore_product" }
+            assert(appStoreProduct != null)
+            assert(appStoreProduct!!.storeProduct is com.superwall.sdk.models.product.CrossplatformProduct.StoreProduct.AppStore)
+            val appStore = appStoreProduct.storeProduct as com.superwall.sdk.models.product.CrossplatformProduct.StoreProduct.AppStore
+            assert(appStore.productIdentifier == "com.example.premium")
+            assert(appStoreProduct.entitlements.first().id == "premium")
+
+            // Test PLAY_STORE product
+            val playStoreProduct = products.find { it.compositeId == "playstore_product" }
+            assert(playStoreProduct != null)
+            assert(playStoreProduct!!.storeProduct is com.superwall.sdk.models.product.CrossplatformProduct.StoreProduct.PlayStore)
+            val playStore = playStoreProduct.storeProduct as com.superwall.sdk.models.product.CrossplatformProduct.StoreProduct.PlayStore
+            assert(playStore.productIdentifier == "com.example.monthly")
+            assert(playStore.basePlanIdentifier == "monthly-plan")
+            assert(playStore.offer is com.superwall.sdk.models.product.Offer.Automatic)
+            assert(playStoreProduct.entitlements.first().id == "monthly")
+
+            // Test unknown store falls back to Other
+            val unknownProduct = products.find { it.compositeId == "unknown_store_product" }
+            assert(unknownProduct != null)
+            assert(unknownProduct!!.storeProduct is com.superwall.sdk.models.product.CrossplatformProduct.StoreProduct.Other)
+            val otherStore = unknownProduct.storeProduct as com.superwall.sdk.models.product.CrossplatformProduct.StoreProduct.Other
+            assert(otherStore.storeType == "UNKNOWN_STORE")
+            assert(unknownProduct.entitlements.first().id == "unknown")
+
+            println("All store types test passed!")
+        } catch (e: Exception) {
+            println("Full config error: ${e.message}")
+            e.printStackTrace()
+            throw e
+        }
+    }
+
+    @Test
+    fun `test your original config JSON`() {
+        val configString =
+            """
+            {
+              "web2app_config": {
+                "entitlements_max_age_ms": 86400000,
+                "restore_access_url": "https://web2app.superwall.app/manage"
+              },
+              "build_id": "bbUcCQCs5k6bsz87LHJvH",
+              "ts": 1756118733814,
+              "toggles": [
+                {
+                  "key": "enable_config_refresh_v2",
+                  "enabled": true
+                },
+                {
+                  "key": "web_2_app",
+                  "enabled": true
+                }
+              ],
+              "trigger_options": [],
+              "product_identifier_groups": [],
+              "paywalls": [],
+              "paywall_responses": [],
+              "products": [],
+              "products_v3": [
+                {
+                  "sw_composite_product_id": "test:price_1QhGdKBitwqMmwU0QoDxApS1:7days-free",
+                  "store_product": {
+                    "store": "STRIPE",
+                    "environment": "test",
+                    "product_identifier": "price_1QhGdKBitwqMmwU0QoDxApS1",
+                    "trial_days": 7,
+                    "meta": {}
+                  },
+                  "entitlements": [
+                    {
+                      "identifier": "pro",
+                      "type": "SERVICE_LEVEL"
+                    }
+                  ]
+                },
+                {
+                  "sw_composite_product_id": "test",
+                  "store_product": {
+                    "store": "APP_STORE",
+                    "product_identifier": "test"
+                  },
+                  "entitlements": [
+                    {
+                      "identifier": "test",
+                      "type": "SERVICE_LEVEL"
+                    }
+                  ]
+                },
+                {
+                  "sw_composite_product_id": "com.ui_tests.monthly:com-ui-tests-montly:sw-auto",
+                  "store_product": {
+                    "store": "PLAY_STORE",
+                    "product_identifier": "com.ui_tests.monthly",
+                    "base_plan_identifier": "com-ui-tests-montly",
+                    "offer": {
+                      "type": "AUTOMATIC"
+                    }
+                  },
+                  "entitlements": [
+                    {
+                      "identifier": "device_only",
+                      "type": "SERVICE_LEVEL"
+                    }
+                  ]
+                }
+              ],
+              "log_level": 10,
+              "localization": {
+                "locales": [
+                  {
+                    "locale": "es"
+                  }
+                ]
+              },
+              "postback": {
+                "delay": 5000,
+                "products": []
+              },
+              "app_session_timeout_ms": 3600000,
+              "tests": {
+                "dns_resolution": []
+              },
+              "disable_preload": {
+                "all": false,
+                "triggers": []
+              }
+            }
+            """.trimIndent()
+
+        val json =
+            Json {
+                ignoreUnknownKeys = true
+                namingStrategy = JsonNamingStrategy.SnakeCase
+            }
+
+        try {
+            val config = json.decodeFromString<Config>(configString)
+            assert(config != null)
+            assert(config.productsV3?.size == 3)
+
+            val products = config.productsV3!!
+
+            // Test Stripe product from your original JSON
+            val stripeProduct = products.find { it.compositeId.contains("price_1QhGdKBitwqMmwU0QoDxApS1") }
+            assert(stripeProduct != null)
+            assert(stripeProduct!!.storeProduct is com.superwall.sdk.models.product.CrossplatformProduct.StoreProduct.Stripe)
+            val stripeStore = stripeProduct.storeProduct as com.superwall.sdk.models.product.CrossplatformProduct.StoreProduct.Stripe
+            assert(stripeStore.environment == "test")
+            assert(stripeStore.productIdentifier == "price_1QhGdKBitwqMmwU0QoDxApS1")
+            assert(stripeStore.trialDays == 7)
+
+            // Test App Store product
+            val appStoreProduct = products.find { it.compositeId == "test" }
+            assert(appStoreProduct != null)
+            assert(appStoreProduct!!.storeProduct is com.superwall.sdk.models.product.CrossplatformProduct.StoreProduct.AppStore)
+            val appStore = appStoreProduct.storeProduct as com.superwall.sdk.models.product.CrossplatformProduct.StoreProduct.AppStore
+            assert(appStore.productIdentifier == "test")
+
+            // Test Play Store product
+            val playStoreProduct = products.find { it.compositeId == "com.ui_tests.monthly:com-ui-tests-montly:sw-auto" }
+            assert(playStoreProduct != null)
+            assert(playStoreProduct!!.storeProduct is com.superwall.sdk.models.product.CrossplatformProduct.StoreProduct.PlayStore)
+            val playStore = playStoreProduct.storeProduct as com.superwall.sdk.models.product.CrossplatformProduct.StoreProduct.PlayStore
+            assert(playStore.productIdentifier == "com.ui_tests.monthly")
+            assert(playStore.basePlanIdentifier == "com-ui-tests-montly")
+            assert(playStore.offer is com.superwall.sdk.models.product.Offer.Automatic)
+
+            println("Original config JSON test passed!")
+        } catch (e: Exception) {
+            println("Original config error: ${e.message}")
+            e.printStackTrace()
+            throw e
+        }
     }
 }

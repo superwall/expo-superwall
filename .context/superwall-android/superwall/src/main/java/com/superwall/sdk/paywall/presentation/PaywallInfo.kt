@@ -14,7 +14,7 @@ import com.superwall.sdk.models.paywall.PaywallPresentationStyle
 import com.superwall.sdk.models.paywall.PaywallURL
 import com.superwall.sdk.models.product.ProductItem
 import com.superwall.sdk.models.triggers.Experiment
-import com.superwall.sdk.store.abstractions.product.StoreProduct
+import com.superwall.sdk.store.abstractions.product.StoreProductType
 import com.superwall.sdk.utilities.DateFormatterUtil
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -181,7 +181,7 @@ data class PaywallInfo(
     )
 
     fun eventParams(
-        product: StoreProduct? = null,
+        product: StoreProductType? = null,
         otherParams: Map<String, Any?>? = null,
     ): Map<String, Any> {
         var output = audienceFilterParams()
@@ -199,6 +199,7 @@ data class PaywallInfo(
                 "paywall_response_load_duration" to responseLoadDuration,
                 "paywall_webview_load_start_time" to webViewLoadStartTime,
                 "paywall_webview_load_complete_time" to webViewLoadCompleteTime,
+                "paywall_webview_load_fail_time" to webViewLoadFailTime,
                 "paywall_webview_load_duration" to webViewLoadDuration,
                 "paywall_products_load_start_time" to productsLoadStartTime,
                 "paywall_products_load_complete_time" to productsLoadCompleteTime,

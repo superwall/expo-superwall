@@ -18,19 +18,47 @@ concurrency:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
+    - name: Free Disk Space
+      uses: jlumbroso/free-disk-space@main
+      with:
+        tool-cache: false
+        android: false  # Keep Android SDK
+        dotnet: true
+        haskell: true
+        large-packages: true
+        docker-images: true
+        swap-storage: true
+
     - uses: actions/checkout@v3
       with:
         fetch-depth: 0
+        ref: ${{ github.head_ref }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Enable KVM
+      run: |
+        echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+        sudo udevadm control --reload-rules
+        sudo udevadm trigger --name-match=kvm
+
     - name: Set Up JDK
       uses: actions/setup-java@v3
       with:
         distribution: 'zulu' # See 'Supported distributions' for available options
         java-version: '17'
         cache: 'gradle'
+
+    - name: AVD cache
+      uses: actions/cache@v4
+      id: avd-cache
+      with:
+        path: |
+          ~/.android/avd/*
+          ~/.android/adb*
+        key: avd-33
 
     # Allow us to run the command
     - name: Change wrapper permissions
@@ -40,8 +68,76 @@ jobs:
     - name: Build gradle project
       run: ./gradlew build
 
+    - name: Create AVD and generate snapshot for caching
+      if: steps.avd-cache.outputs.cache-hit != 'true'
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: 33
+        target: google_apis
+        arch: x86_64
+        profile: pixel_7_pro
+        emulator-boot-timeout: 1800
+        force-avd-creation: false
+        emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+        disable-animations: false
+        script: echo "Generated AVD snapshot for caching."
+
+    - name: Run unit and instrumentation tests with coverage
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: 33
+        target: google_apis
+        arch: x86_64
+        profile: pixel_7_pro
+        emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+        emulator-boot-timeout: 1800
+        disable-animations: true
+        script: ./gradlew :superwall:jacocoFullReport
+
     - name: Build test project
       run: ./gradlew :app:assembleAndroidTest -DtestBuildType=debug
+
+    - name: Upload test reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-reports
+        path: |
+          **/build/reports/tests/
+          **/build/test-results/
+          **/build/reports/androidTests/connected/
+          **/build/outputs/code_coverage/
+
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: jacoco-coverage
+        path: |
+          superwall/build/reports/jacoco/
+
+    - name: Generate JaCoCo Badge
+      id: jacoco
+      uses: cicirello/jacoco-badge-generator@v2
+      with:
+        jacoco-csv-file: superwall/build/reports/jacoco/jacocoTestReport/jacocoTestReport.csv
+        badges-directory: .github/badges
+        generate-branches-badge: true
+        generate-coverage-badge: true
+
+    - name: Commit coverage badge
+      if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+      run: |
+        cd ${{ github.workspace }}
+        git config --global user.name 'github-actions[bot]'
+        git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+        git add .github/badges/
+        if git diff --staged --quiet; then
+          echo "No changes to badge"
+        else
+          git commit -m "Update coverage badge [skip ci]"
+          git push origin HEAD:${{ github.head_ref }}
+        fi
 
     - name: Run tests on Firebase Test Lab
       uses: asadmansr/Firebase-Test-Lab-Action@v1.0
@@ -49,4 +145,3 @@ jobs:
         arg-spec: '.github/firebase-tests.yml:android-pixel-7'
       env:
         SERVICE_ACCOUNT: ${{ secrets.SERVICE_ACCOUNT }}
-

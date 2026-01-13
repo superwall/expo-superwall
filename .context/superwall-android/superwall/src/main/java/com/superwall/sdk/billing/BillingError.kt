@@ -12,4 +12,9 @@ sealed class BillingError(
     class BillingNotAvailable(
         description: String,
     ) : BillingError(2, description)
+
+    class WithCode(
+        code: Int,
+        description: String,
+    ) : BillingError(code, "Google Billing error: $code - $description")
 }

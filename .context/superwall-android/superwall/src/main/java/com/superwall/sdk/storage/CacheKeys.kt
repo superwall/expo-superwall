@@ -2,6 +2,7 @@ package com.superwall.sdk.storage
 
 import android.content.Context
 import com.superwall.sdk.models.config.Config
+import com.superwall.sdk.models.customer.CustomerInfo
 import com.superwall.sdk.models.enrichment.Enrichment
 import com.superwall.sdk.models.entitlements.Entitlement
 import com.superwall.sdk.models.entitlements.SubscriptionStatus
@@ -335,6 +336,53 @@ object ReviewData : Storable<ReviewCount> {
         get() = SearchPathDirectory.USER_SPECIFIC_DOCUMENTS
     override val serializer: KSerializer<ReviewCount>
         get() = ReviewCount.serializer()
+}
+
+internal object LatestCustomerInfo : Storable<CustomerInfo> {
+    override val key: String
+        get() = "store.latestCustomerInfo"
+    override val directory: SearchPathDirectory
+        get() = SearchPathDirectory.USER_SPECIFIC_DOCUMENTS
+    override val serializer: KSerializer<CustomerInfo>
+        get() = CustomerInfo.serializer()
+}
+
+internal object LatestDeviceCustomerInfo : Storable<CustomerInfo> {
+    override val key: String
+        get() = "store.latestDeviceCustomerInfo"
+    override val directory: SearchPathDirectory
+        get() = SearchPathDirectory.USER_SPECIFIC_DOCUMENTS
+    override val serializer: KSerializer<CustomerInfo>
+        get() = CustomerInfo.serializer()
+}
+
+internal object LatestWebCustomerInfo : Storable<CustomerInfo> {
+    override val key: String
+        get() = "store.latestWebCustomerInfo"
+    override val directory: SearchPathDirectory
+        get() = SearchPathDirectory.APP_SPECIFIC_DOCUMENTS
+    override val serializer: KSerializer<CustomerInfo>
+        get() = CustomerInfo.serializer()
+}
+
+internal object LastWebEntitlementsFetchDate : Storable<Long> {
+    override val key: String
+        get() = "store.lastWebEntitlementsFetchDate"
+    override val directory: SearchPathDirectory
+        get() = SearchPathDirectory.USER_SPECIFIC_DOCUMENTS
+    override val serializer: KSerializer<Long>
+        get() = Long.serializer()
+}
+
+internal object StoredTransactionHistory : Storable<com.superwall.sdk.store.abstractions.product.receipt.UserTransactionHistory> {
+    override val key: String
+        get() = "store.userTransactionHistory"
+    override val directory: SearchPathDirectory
+        get() = SearchPathDirectory.USER_SPECIFIC_DOCUMENTS
+    override val serializer: KSerializer<com.superwall.sdk.store.abstractions.product.receipt.UserTransactionHistory>
+        get() =
+            com.superwall.sdk.store.abstractions.product.receipt.UserTransactionHistory
+                .serializer()
 }
 
 //endregion

@@ -2,6 +2,7 @@ package com.superwall.sdk.delegate
 
 import android.net.Uri
 import com.superwall.sdk.analytics.superwall.SuperwallEventInfo
+import com.superwall.sdk.models.customer.CustomerInfo
 import com.superwall.sdk.models.internal.RedemptionResult
 import com.superwall.sdk.paywall.presentation.PaywallInfo
 import java.net.URI
@@ -88,6 +89,21 @@ class SuperwallDelegateAdapter {
             message = message,
             info = info,
             error = error,
+        )
+    }
+
+    fun userAttributesDidChange(newAttributes: Map<String, Any>) {
+        kotlinDelegate?.userAttributesDidChange(newAttributes)
+            ?: javaDelegate?.userAttributesDidChange(newAttributes)
+    }
+
+    fun customerInfoDidChange(
+        from: CustomerInfo,
+        to: CustomerInfo,
+    ) {
+        kotlinDelegate?.customerInfoDidChange(from, to) ?: javaDelegate?.customerInfoDidChange(
+            from,
+            to,
         )
     }
 }

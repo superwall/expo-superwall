@@ -1,6 +1,5 @@
 package com.superwall.sdk.paywall.presentation.internal.operators
 
-import com.superwall.sdk.Superwall
 import com.superwall.sdk.logger.LogLevel
 import com.superwall.sdk.logger.LogScope
 import com.superwall.sdk.logger.Logger
@@ -10,7 +9,7 @@ import com.superwall.sdk.paywall.presentation.internal.PresentationRequest
 import com.superwall.sdk.paywall.presentation.internal.state.PaywallState
 import kotlinx.coroutines.flow.MutableSharedFlow
 
-internal suspend fun Superwall.checkNoPaywallAlreadyPresented(
+internal suspend fun checkNoPaywallAlreadyPresented(
     request: PresentationRequest,
     paywallStatePublisher: MutableSharedFlow<PaywallState>,
 ) {

@@ -45,7 +45,6 @@ import com.superwall.sdk.storage.LocalStorage
 import com.superwall.sdk.storage.ReviewCount
 import com.superwall.sdk.storage.ReviewData
 import com.superwall.sdk.storage.TotalPaywallViews
-import com.superwall.sdk.storage.core_data.convertFromJsonElement
 import com.superwall.sdk.storage.core_data.convertToJsonElement
 import com.superwall.sdk.utilities.DateUtils
 import com.superwall.sdk.utilities.dateFormat
@@ -213,15 +212,14 @@ class DeviceHelper(
     internal val demandTier: String?
         get() =
             lastEnrichment
-                ?.value
+                .value
                 ?.device
                 ?.get("demandTier")
-                ?.convertFromJsonElement()
                 ?.toString()
 
     internal val demandScore: Int?
         get() =
-            lastEnrichment?.value?.device?.get("demandScore")?.convertFromJsonElement()?.let {
+            lastEnrichment.value?.device?.get("demandScore")?.let {
                 when (it) {
                     is Double -> it.toInt()
                     is Float -> it.toInt()
@@ -588,13 +586,8 @@ class DeviceHelper(
                 it.toDictionary(json)
             }.map {
                 val enriched =
-                    (
-                        enrichment
-                            ?.device
-                            ?.filterValues { it != null }
-                            ?.mapValues { it.value.convertFromJsonElement() }
-                            as Map<String, Any>?
-                    )
+                    enrichment
+                        ?.device
                         ?: emptyMap()
                 enriched
                     .plus(it)
@@ -647,7 +640,10 @@ class DeviceHelper(
             }.then {
                 storage.write(LatestEnrichment, it)
                 it.user.let {
-                    Superwall.instance.setUserAttributes(it)
+                    Superwall.instance.setUserAttributes(it.toMap())
+                }
+                it.device.let {
+                    Superwall.instance.setUserAttributes(it.toMap())
                 }
             }
     }

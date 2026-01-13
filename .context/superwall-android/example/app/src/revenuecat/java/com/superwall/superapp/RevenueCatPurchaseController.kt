@@ -28,6 +28,10 @@ import com.superwall.sdk.delegate.subscription_controller.PurchaseController
 import com.superwall.sdk.models.entitlements.Entitlement
 import com.superwall.sdk.models.entitlements.SubscriptionStatus
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 suspend fun Purchases.awaitProducts(productIds: List<String>): List<StoreProduct> {
     val deferred = CompletableDeferred<List<StoreProduct>>()
@@ -107,6 +111,9 @@ class RevenueCatPurchaseController(
     val context: Context,
 ) : PurchaseController,
     UpdatedCustomerInfoListener {
+    private var superwallCustomerInfoJob: Job? = null
+    private val scope = CoroutineScope(Dispatchers.Main)
+
     init {
         Purchases.logLevel = LogLevel.DEBUG
         Purchases.configure(
@@ -122,36 +129,54 @@ class RevenueCatPurchaseController(
     }
 
     fun syncSubscriptionStatus() {
+        // Cancel any existing listener to avoid duplicates
+        superwallCustomerInfoJob?.cancel()
+
         // Refetch the customer info on load
-        Purchases.sharedInstance.getCustomerInfoWith {
-            if (hasAnyActiveEntitlements(it)) {
-                setSubscriptionStatus(
-                    SubscriptionStatus.Active(
-                        it.entitlements.active
-                            .map {
-                                Entitlement(it.key, Entitlement.Type.SERVICE_LEVEL)
-                            }.toSet(),
-                    ),
-                )
-            } else {
-                setSubscriptionStatus(SubscriptionStatus.Inactive)
-            }
+        Purchases.sharedInstance.getCustomerInfoWith { rcCustomerInfo ->
+            updateSubscriptionStatus(rcCustomerInfo)
         }
+
+        // Listen to Superwall customerInfo changes (for web entitlements)
+        superwallCustomerInfoJob =
+            scope.launch {
+                Superwall.instance.customerInfo.collect {
+                    // When Superwall's customerInfo changes, re-fetch RC state and merge
+                    Purchases.sharedInstance.getCustomerInfoWith { rcCustomerInfo ->
+                        updateSubscriptionStatus(rcCustomerInfo)
+                    }
+                }
+            }
     }
 
     /**
-     * Callback for rc customer updated info
+     * Callback for RC customer updated info
      */
     override fun onReceived(customerInfo: CustomerInfo) {
-        if (hasAnyActiveEntitlements(customerInfo)) {
-            setSubscriptionStatus(
-                SubscriptionStatus.Active(
-                    customerInfo.entitlements.active
-                        .map {
-                            Entitlement(it.key, Entitlement.Type.SERVICE_LEVEL)
-                        }.toSet(),
-                ),
-            )
+        updateSubscriptionStatus(customerInfo)
+    }
+
+    /**
+     * Merges RevenueCat entitlements with Superwall web entitlements and updates subscription status
+     */
+    private fun updateSubscriptionStatus(rcCustomerInfo: CustomerInfo) {
+        val rcEntitlements =
+            rcCustomerInfo.entitlements.active
+                .map { Entitlement(it.key, Entitlement.Type.SERVICE_LEVEL) }
+                .toSet()
+
+        // Merge with web entitlements from Superwall
+        val webEntitlements =
+            if (Superwall.initialized) {
+                Superwall.instance.entitlements.web
+            } else {
+                emptySet()
+            }
+
+        val allEntitlements = rcEntitlements + webEntitlements
+
+        if (allEntitlements.isNotEmpty()) {
+            setSubscriptionStatus(SubscriptionStatus.Active(allEntitlements))
         } else {
             setSubscriptionStatus(SubscriptionStatus.Inactive)
         }

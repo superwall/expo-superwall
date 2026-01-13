@@ -4,6 +4,7 @@ import android.content.Context
 import com.superwall.sdk.logger.LogLevel
 import com.superwall.sdk.logger.LogScope
 import com.superwall.sdk.logger.Logger
+import com.superwall.sdk.misc.onError
 import com.superwall.sdk.storage.memory.LRUCache
 import com.superwall.sdk.storage.memory.PerpetualCache
 import com.superwall.sdk.utilities.withErrorTracking
@@ -111,7 +112,23 @@ class Cache(
     }
 
     private fun cleanDiskCache() {
-        // TODO:
+        launch {
+            withErrorTracking {
+                val cacheDir = context.cacheDir
+                if (cacheDir.exists()) {
+                    cacheDir.listFiles()?.forEach { file ->
+                        file.delete()
+                    }
+                }
+            }.onError { error ->
+                Logger.debug(
+                    logLevel = LogLevel.error,
+                    LogScope.cache,
+                    message = "Unable to clean disk cache",
+                    error = error,
+                )
+            }
+        }
     }
 
     //endregion

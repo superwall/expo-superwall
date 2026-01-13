@@ -1,8 +1,8 @@
 package com.superwall.sdk.paywall.view.webview.messaging
 
 import TemplateLogic
+import android.app.Activity
 import android.webkit.JavascriptInterface
-import com.superwall.sdk.analytics.internal.track
 import com.superwall.sdk.analytics.internal.trackable.InternalSuperwallEvent
 import com.superwall.sdk.analytics.internal.trackable.TrackableSuperwallEvent
 import com.superwall.sdk.analytics.superwall.SuperwallEvents
@@ -12,20 +12,22 @@ import com.superwall.sdk.logger.LogLevel
 import com.superwall.sdk.logger.LogScope
 import com.superwall.sdk.logger.Logger
 import com.superwall.sdk.misc.MainScope
+import com.superwall.sdk.models.paywall.LocalNotification
 import com.superwall.sdk.models.paywall.Paywall
 import com.superwall.sdk.paywall.view.PaywallView
 import com.superwall.sdk.paywall.view.PaywallViewState
 import com.superwall.sdk.paywall.view.delegate.PaywallLoadingState
-import com.superwall.sdk.paywall.view.webview.PaywallMessage
 import com.superwall.sdk.paywall.view.webview.SendPaywallMessages
-import com.superwall.sdk.paywall.view.webview.parseWrappedPaywallMessages
+import com.superwall.sdk.permissions.PermissionStatus
+import com.superwall.sdk.permissions.UserPermissions
+import com.superwall.sdk.storage.core_data.convertToJsonElement
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
-import org.json.JSONObject
+import kotlinx.serialization.json.JsonObject
 import java.net.URI
 import java.util.Date
 import java.util.LinkedList
@@ -50,17 +52,22 @@ interface PaywallMessageHandlerDelegate : PaywallStateDelegate {
         code: String,
         resultCallback: ((String?) -> Unit)?,
     )
+
+    fun presentPaymentSheet(url: String)
 }
 
 class PaywallMessageHandler(
     private val factory: VariablesFactory,
     private val options: OptionsFactory,
     private val track: suspend (TrackableSuperwallEvent) -> Unit,
+    private val setAttributes: (Map<String, Any>) -> Unit,
     private val getView: () -> PaywallView?,
     private val mainScope: MainScope,
     private val ioScope: CoroutineScope,
     private val json: Json = Json { encodeDefaults = true },
     private val encodeToB64: (String) -> String,
+    private val userPermissions: UserPermissions,
+    private val getActivity: () -> Activity?,
 ) : SendPaywallMessages {
     private companion object {
         val selectionString =
@@ -100,6 +107,7 @@ class PaywallMessageHandler(
                     handle(paywallMessage)
                 }
             }, {
+                it.printStackTrace()
                 Logger.debug(
                     LogLevel.debug,
                     LogScope.superwallCore,
@@ -143,8 +151,15 @@ class PaywallMessageHandler(
                 messageHandler?.eventDidOccur(PaywallWebEvent.Closed)
             }
 
-            is PaywallMessage.OpenUrl -> openUrl(message.url)
-            is PaywallMessage.OpenUrlInBrowser -> openUrlInBrowser(message.url)
+            is PaywallMessage.OpenUrl ->
+                openUrl(
+                    message.url,
+                    message.browserType == PaywallMessage.OpenUrl.BrowserType.PAYMENT_SHEET,
+                )
+
+            is PaywallMessage.OpenUrlInBrowser ->
+                openUrlInBrowser(message.url)
+
             is PaywallMessage.OpenDeepLink -> openDeepLink(message.url.toString())
             is PaywallMessage.Restore -> restorePurchases()
             is PaywallMessage.Purchase -> purchaseProduct(withId = message.productId)
@@ -178,6 +193,46 @@ class PaywallMessageHandler(
 
             is PaywallMessage.RequestReview -> handleRequestReview(message)
 
+            is PaywallMessage.TransactionStart -> {
+                ioScope.launch {
+                    pass(eventName = SuperwallEvents.TransactionStart.rawName, paywall = paywall)
+                }
+            }
+
+            is PaywallMessage.UserAttributesUpdated -> {
+                setAttributes(message.data)
+            }
+
+            is PaywallMessage.TrialStarted -> {
+                ioScope.launch {
+                    pass(
+                        eventName = SuperwallEvents.FreeTrialStart.rawName,
+                        paywall = paywall,
+                        payload =
+                            buildMap {
+                                message.trialEndDate?.let { put("trial_end_date", it) }
+                                put("product_identifier", message.productIdentifier)
+                            },
+                    )
+                }
+            }
+
+            is PaywallMessage.ScheduleNotification ->
+                messageHandler?.eventDidOccur(
+                    PaywallWebEvent.ScheduleNotification(
+                        LocalNotification(
+                            id = message.id,
+                            type = message.type,
+                            title = message.title,
+                            subtitle = message.subtitle,
+                            body = message.body,
+                            delay = message.delay,
+                        ),
+                    ),
+                )
+
+            is PaywallMessage.RequestPermission -> handleRequestPermission(message)
+
             else -> {
                 Logger.debug(
                     LogLevel.error,
@@ -192,6 +247,7 @@ class PaywallMessageHandler(
     private suspend fun pass(
         eventName: String,
         paywall: Paywall,
+        payload: Map<String, Any> = emptyMap(),
     ) {
         val eventList =
             listOf(
@@ -199,9 +255,15 @@ class PaywallMessageHandler(
                     "event_name" to eventName,
                     "paywall_id" to paywall.databaseId,
                     "paywall_identifier" to paywall.identifier,
-                ),
+                ) + payload,
             )
-        val jsonString = json.encodeToString(eventList)
+        val jsonString =
+            try {
+                json.encodeToString(eventList.convertToJsonElement())
+            } catch (e: Throwable) {
+                e.printStackTrace()
+                "{\"event_name\":\"$eventName\"}"
+            }
         passMessageToWebView(base64String = encodeToB64(jsonString))
     }
 
@@ -329,10 +391,7 @@ class PaywallMessageHandler(
             messageHandler?.evaluate(preventZoom, null)
             ioScope.launch {
                 mainScope.launch {
-                    while (queue.isNotEmpty()) {
-                        val item = queue.remove()
-                        handle(item)
-                    }
+                    flushPendingMessagesInternal()
                     messageHandler?.updateState(
                         PaywallViewState.Updates.SetLoadingState(
                             PaywallLoadingState.Ready,
@@ -343,14 +402,37 @@ class PaywallMessageHandler(
         }
     }
 
-    private fun openUrl(url: URI) {
+    fun flushPendingMessages() {
+        ioScope.launch {
+            mainScope.launch {
+                flushPendingMessagesInternal()
+            }
+        }
+    }
+
+    private fun flushPendingMessagesInternal() {
+        if (queue.isEmpty()) return
+
+        val pending = queue.toList()
+        queue.clear()
+        pending.forEach { handle(it) }
+    }
+
+    private fun openUrl(
+        url: URI,
+        isPaymentSheet: Boolean,
+    ) {
         detectHiddenPaywallEvent(
             "openUrl",
             mapOf("url" to url.toString()),
         )
         hapticFeedback()
         messageHandler?.eventDidOccur(PaywallWebEvent.OpenedURL(url))
-        messageHandler?.presentBrowserInApp(url.toString())
+        if (isPaymentSheet) {
+            messageHandler?.presentPaymentSheet(url.toString())
+        } else {
+            messageHandler?.presentBrowserInApp(url.toString())
+        }
     }
 
     private fun openUrlInBrowser(url: URI) {
@@ -394,7 +476,7 @@ class PaywallMessageHandler(
 
     private fun handleCustomPlacement(
         name: String,
-        params: JSONObject,
+        params: JsonObject,
     ) {
         messageHandler?.eventDidOccur(PaywallWebEvent.CustomPlacement(name, params))
     }
@@ -410,6 +492,130 @@ class PaywallMessageHandler(
                 },
             ),
         )
+    }
+
+    private fun handleRequestPermission(request: PaywallMessage.RequestPermission) {
+        val activity = getActivity()
+        val paywallIdentifier = messageHandler?.state?.paywall?.identifier ?: ""
+        val permissionName = request.permissionType.rawValue
+
+        messageHandler?.eventDidOccur(
+            PaywallWebEvent.RequestPermission(
+                permissionType = request.permissionType,
+                requestId = request.requestId,
+            ),
+        )
+
+        // Track permission requested event
+        ioScope.launch {
+            track(
+                InternalSuperwallEvent.Permission(
+                    state = InternalSuperwallEvent.Permission.State.Requested,
+                    permissionName = permissionName,
+                    paywallIdentifier = paywallIdentifier,
+                ),
+            )
+        }
+
+        if (activity == null) {
+            Logger.debug(
+                LogLevel.error,
+                LogScope.superwallCore,
+                "Cannot request permission - no activity available",
+            )
+            // Send unsupported status back to webview since we can't request
+            ioScope.launch {
+                sendPermissionResult(
+                    requestId = request.requestId,
+                    permissionType = request.permissionType,
+                    status = PermissionStatus.UNSUPPORTED,
+                )
+            }
+            return
+        }
+
+        ioScope.launch {
+            val status =
+                try {
+                    userPermissions.requestPermission(activity, request.permissionType)
+                } catch (e: Exception) {
+                    Logger.debug(
+                        LogLevel.error,
+                        LogScope.superwallCore,
+                        "Error requesting permission: ${e.message}",
+                        error = e,
+                    )
+                    PermissionStatus.UNSUPPORTED
+                }
+
+            // Track permission result event
+            when (status) {
+                PermissionStatus.GRANTED -> {
+                    track(
+                        InternalSuperwallEvent.Permission(
+                            state = InternalSuperwallEvent.Permission.State.Granted,
+                            permissionName = permissionName,
+                            paywallIdentifier = paywallIdentifier,
+                        ),
+                    )
+                }
+                PermissionStatus.DENIED, PermissionStatus.UNSUPPORTED -> {
+                    track(
+                        InternalSuperwallEvent.Permission(
+                            state = InternalSuperwallEvent.Permission.State.Denied,
+                            permissionName = permissionName,
+                            paywallIdentifier = paywallIdentifier,
+                        ),
+                    )
+                }
+            }
+
+            sendPermissionResult(
+                requestId = request.requestId,
+                permissionType = request.permissionType,
+                status = status,
+            )
+        }
+    }
+
+    /**
+     * Send a permission_result message back to the webview
+     */
+    private suspend fun sendPermissionResult(
+        requestId: String,
+        permissionType: com.superwall.sdk.permissions.PermissionType,
+        status: PermissionStatus,
+    ) {
+        val eventList =
+            listOf(
+                mapOf(
+                    "event_name" to "permission_result",
+                    "permission_type" to permissionType.rawValue,
+                    "request_id" to requestId,
+                    "status" to status.rawValue,
+                ),
+            )
+
+        val jsonString =
+            try {
+                json.encodeToString(eventList.convertToJsonElement())
+            } catch (e: Throwable) {
+                Logger.debug(
+                    LogLevel.error,
+                    LogScope.superwallCore,
+                    "Error encoding permission result: ${e.message}",
+                    error = e,
+                )
+                return
+            }
+
+        Logger.debug(
+            LogLevel.debug,
+            LogScope.superwallCore,
+            "Sending permission_result: $jsonString",
+        )
+
+        passMessageToWebView(base64String = encodeToB64(jsonString))
     }
 
     private fun detectHiddenPaywallEvent(

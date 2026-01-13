@@ -1,0 +1,131 @@
+appId: com.superwall.superapp
+name: delegate
+---
+# Initialize the app and configure
+- runFlow:
+    file: "../login.yaml"
+    optional: true
+- launchApp: com.superwall.superapp
+- tapOn: "Configuration test"
+- tapOn: "Just configure"
+- tapOn: "OK"
+- runFlow: "../util/back.yaml"
+
+# Navigate to Delegate Test screen
+- tapOn: "Delegate Test"
+
+- runFlow:
+    when:
+      visible: 'Subscription Status is Active'
+    commands:
+      - tapOn: 'Set Status Inactive'
+
+# Set up delegate and test basic paywall flow
+- tapOn: "Set Test Delegate"
+
+- tapOn: "Show Paywall"
+- waitForAnimationToEnd:
+    timeout: 4000
+- extendedWaitUntil: # This is just to add a 2 second delay so focus is properly taken
+    visible: randText
+    optional: true
+    timeout: 3000
+- assertVisible: '.*CONTINUE.*'
+- runFlow: "../util/back.yaml"
+
+
+# Verify basic delegate events (presentation and dismissal)
+- tapOn: "Show Delegate Events without log"
+- assertVisible: "Event 1: WillPresentPaywall"
+- assertVisible: "Event 2: DidPresentPaywall"
+- assertVisible: "Event 3: WillDismissPaywall"
+- assertVisible: "Event 4: DidDismissPaywall"
+- tapOn: "OK"
+
+# Check that log events are captured
+- tapOn: "Show Delegate Events with log"
+- assertVisible: "Event 1: HandleLog"
+- tapOn:
+    text: "OK"
+    optional: true
+    waitToSettleTimeoutMs: 1000
+
+# Test subscription status change events
+- tapOn: "Clear Delegate Events"
+- tapOn: "Change Subscription Status"
+- tapOn: "Show Delegate Events without log"
+- assertVisible: "Event 1: SubscriptionStatusDidChange"
+- tapOn: "OK"
+
+# Reset delegate and set up for advanced events
+- tapOn: "Clear Delegate and Change Status"
+- tapOn: "Set Test Delegate"
+
+# Test various interaction events (deep link, URL, custom action)
+- tapOn: "Show Paywall"
+- waitForAnimationToEnd:
+    timeout: 1000
+- tapOn: "Open DL"
+- waitForAnimationToEnd:
+    timeout: 1000
+- runFlow:
+    when:
+      platform: iOS
+      visible: "Return to Superwallkit Flutter"
+    commands:
+      - tapOn: "Return to Superwallkit Flutter"
+      - tapOn: "Show Paywall"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - runFlow: "../util/back.yaml"
+- waitForAnimationToEnd:
+    timeout: 3000
+- tapOn: "Open URL"
+- waitForAnimationToEnd:
+    timeout: 3000
+- extendedWaitUntil: # This is just to add a 2 second delay so focus is properly taken
+    visible: randText
+    optional: true
+    timeout: 3000
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - tapOn: "Done"
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - runFlow: "../util/back.yaml"
+- extendedWaitUntil: # This is just to add a 2 second delay so focus is properly taken
+    visible: randText
+    optional: true
+    timeout: 3000
+- runFlow:
+    when:
+      notVisible: "CUSTOM ACTION"
+    commands:
+      - runFlow: "../util/back.yaml"
+
+- extendedWaitUntil: # This is just to add a 2 second delay so focus is properly taken
+    visible: randText
+    optional: true
+    timeout: 1000
+- tapOn: "CUSTOM ACTION"
+- waitForAnimationToEnd:
+    timeout: 1000
+- runFlow: "../util/back.yaml"
+
+
+# Verify advanced interaction events
+- tapOn: "Events without log and presentation"
+- assertVisible: "Event 1: PaywallWillOpenDeepLink"
+- assertVisible: "Event 2: PaywallWillOpenURL"
+- assertVisible: "Event 3: HandleCustomPaywallAction"
+- tapOn: "OK"
+
+# Clean up and end test
+- tapOn: "Clear Delegate and Change Status"
+- stopApp

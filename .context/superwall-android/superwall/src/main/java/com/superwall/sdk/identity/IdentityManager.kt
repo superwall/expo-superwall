@@ -37,6 +37,7 @@ class IdentityManager(
     private val configManager: ConfigManager,
     private val ioScope: IOScope,
     private val stringToSha: (String) -> String = { it },
+    private val notifyUserChange: (change: Map<String, Any>) -> Unit,
 ) {
     private var _appUserId: String? = storage.read(AppUserId)
 
@@ -272,10 +273,24 @@ class IdentityManager(
         }
     }
 
+    internal fun mergeAndNotify(
+        newUserAttributes: Map<String, Any?>,
+        shouldTrackMerge: Boolean = true,
+    ) {
+        scope.launch {
+            _mergeUserAttributes(
+                newUserAttributes = newUserAttributes,
+                shouldTrackMerge = shouldTrackMerge,
+                shouldNotify = true,
+            )
+        }
+    }
+
     @Suppress("ktlint:standard:function-naming")
     private fun _mergeUserAttributes(
         newUserAttributes: Map<String, Any?>,
         shouldTrackMerge: Boolean = true,
+        shouldNotify: Boolean = false,
     ) {
         withErrorTracking {
             val mergedAttributes =
@@ -297,6 +312,9 @@ class IdentityManager(
             }
             storage.write(UserAttributes, mergedAttributes)
             _userAttributes = mergedAttributes
+            if (shouldNotify) {
+                notifyUserChange(mergedAttributes)
+            }
         }
     }
 }

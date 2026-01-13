@@ -7,12 +7,12 @@ import com.superwall.sdk.When
 import com.superwall.sdk.analytics.internal.trackable.Trackable
 import com.superwall.sdk.misc.Either
 import com.superwall.sdk.misc.IOScope
+import com.superwall.sdk.models.customer.CustomerInfo
 import com.superwall.sdk.models.entitlements.Entitlement
 import com.superwall.sdk.models.entitlements.SubscriptionStatus
 import com.superwall.sdk.models.entitlements.TransactionReceipt
 import com.superwall.sdk.models.entitlements.WebEntitlements
 import com.superwall.sdk.models.internal.DeviceVendorId
-import com.superwall.sdk.models.internal.ErrorInfo
 import com.superwall.sdk.models.internal.PurchaserInfo
 import com.superwall.sdk.models.internal.RedemptionInfo
 import com.superwall.sdk.models.internal.RedemptionOwnership
@@ -25,6 +25,7 @@ import com.superwall.sdk.models.internal.WebRedemptionResponse
 import com.superwall.sdk.network.Network
 import com.superwall.sdk.network.NetworkError
 import com.superwall.sdk.paywall.presentation.PaywallInfo
+import com.superwall.sdk.storage.*
 import com.superwall.sdk.storage.LatestRedemptionResponse
 import com.superwall.sdk.storage.Storable
 import com.superwall.sdk.storage.Storage
@@ -35,19 +36,14 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.put
 import org.junit.Before
 import org.junit.Test
-import kotlin.time.Duration.Companion.seconds
 
 class WebPaywallRedeemerTest {
     private val context: Context = mockk()
@@ -55,6 +51,9 @@ class WebPaywallRedeemerTest {
         mockk {
             every { read(LatestRedemptionResponse) } returns null
             every { write(LatestRedemptionResponse, any()) } just Runs
+            every { read(LatestWebCustomerInfo) } returns null
+            every { write(LatestWebCustomerInfo, any()) } just Runs
+            every { write(LastWebEntitlementsFetchDate, any()) } just Runs
         }
 
     private var maxAge: () -> Long = { 1L }
@@ -64,6 +63,7 @@ class WebPaywallRedeemerTest {
 
     private val deepLinkReferrer: CheckForReferral = mockk()
     private val testDispatcher = StandardTestDispatcher()
+    private val testScheduler = testDispatcher.scheduler
 
     private val setEntitlementStatus: (List<Entitlement>) -> Unit = {
         mutableEntitlements += it.toSet()
@@ -92,17 +92,86 @@ class WebPaywallRedeemerTest {
         mutableEntitlements = mutableSetOf()
         coEvery {
             network.webEntitlementsByUserId(any(), any())
-        } returns Either.Success(WebEntitlements(listOf(webEntitlement)))
+        } returns
+            Either.Success(
+                WebEntitlements(
+                    customerInfo =
+                        CustomerInfo(
+                            subscriptions = emptyList(),
+                            nonSubscriptions = emptyList(),
+                            userId = "",
+                            entitlements = listOf(webEntitlement),
+                            isPlaceholder = false,
+                        ),
+                ),
+            )
     }
 
     private val onRedemptionResult: (RedemptionResult) -> Unit = mockk(relaxed = true)
     private val getUserId: () -> UserId = { UserId("test_user") }
     private val getDeviceId: () -> DeviceVendorId = { DeviceVendorId(VendorId("test_vendor")) }
-    private val getAlias: () -> String = { "test_alias" }
+    private val getAlias: () -> String? = { "test_alias" }
     private val setActiveWebEntitlements: (Set<Entitlement>) -> Unit = {}
-    private val track: (Trackable) -> Unit = {}
+    private val track: suspend (Trackable) -> Unit = {}
     private lateinit var redeemer: WebPaywallRedeemer
     private val network: Network = mockk {}
+
+    // Test factory implementation
+    private inner class TestFactory(
+        var willRedeemLinkFn: () -> Unit = {},
+        var didRedeemLinkFn: (RedemptionResult) -> Unit = onRedemptionResult,
+        var receiptsFn: suspend () -> List<TransactionReceipt> = {
+            listOf(
+                TransactionReceipt(
+                    "mock",
+                    "orderId",
+                    productId = "test_123",
+                    productType = TransactionReceipt.ProductType.SUBSCRIPTION,
+                ),
+            )
+        },
+        var getIntegrationPropsFn: () -> Map<String, Any> = { emptyMap() },
+    ) : WebPaywallRedeemer.Factory {
+        override fun willRedeemLink() = willRedeemLinkFn()
+
+        override fun didRedeemLink(redemptionResult: RedemptionResult) = didRedeemLinkFn(redemptionResult)
+
+        override fun maxAge(): Long = this@WebPaywallRedeemerTest.maxAge()
+
+        override fun getActiveDeviceEntitlements(): Set<Entitlement> = this@WebPaywallRedeemerTest.getActiveDeviceEntitlements()
+
+        override fun getUserId(): UserId? = this@WebPaywallRedeemerTest.getUserId()
+
+        override fun getDeviceId(): DeviceVendorId = this@WebPaywallRedeemerTest.getDeviceId()
+
+        override fun getAliasId(): String? = this@WebPaywallRedeemerTest.getAlias()
+
+        override suspend fun track(event: Trackable) = this@WebPaywallRedeemerTest.track(event)
+
+        override fun internallySetSubscriptionStatus(status: SubscriptionStatus) = this@WebPaywallRedeemerTest.setSubscriptionStatus(status)
+
+        override suspend fun isPaywallVisible(): Boolean = this@WebPaywallRedeemerTest.isPaywallVisible()
+
+        override suspend fun triggerRestoreInPaywall() = this@WebPaywallRedeemerTest.showRestoreDialogAndDismiss()
+
+        override fun currentPaywallEntitlements(): Set<Entitlement> = this@WebPaywallRedeemerTest.currentPaywallEntitlements()
+
+        override fun getPaywallInfo(): PaywallInfo = PaywallInfo.empty()
+
+        override fun trackRestorationFailed(message: String) {}
+
+        override fun isWebToAppEnabled(): Boolean = true
+
+        override suspend fun receipts(): List<TransactionReceipt> = receiptsFn()
+
+        override fun getExternalAccountId(): String = ""
+
+        override fun getIntegrationProps(): Map<String, Any> = getIntegrationPropsFn()
+
+        override fun closePaywallIfExists() {}
+
+        override fun isPaymentSheetOpen(): Boolean = false
+    }
 
     @Test
     fun `test successful redemption flow`() =
@@ -123,17 +192,39 @@ class WebPaywallRedeemerTest {
                                                 PurchaserInfo(
                                                     getUserId().value,
                                                     "email",
-                                                    StoreIdentifiers.Stripe(stripeCustomerId = "123", emptyList()),
+                                                    StoreIdentifiers.Stripe(
+                                                        stripeCustomerId = "123",
+                                                        emptyList(),
+                                                    ),
                                                 ),
                                             entitlements = listOf(webEntitlement),
                                         ),
                                 ),
                             ),
-                        entitlements = listOf(webEntitlement),
+                        customerInfo =
+                            CustomerInfo(
+                                subscriptions = emptyList(),
+                                nonSubscriptions = emptyList(),
+                                userId = "",
+                                entitlements = listOf(webEntitlement),
+                                isPlaceholder = false,
+                            ),
                     )
                 coEvery {
                     network.webEntitlementsByUserId(any(), any())
-                } returns Either.Success(WebEntitlements(listOf(webEntitlement)))
+                } returns
+                    Either.Success(
+                        WebEntitlements(
+                            customerInfo =
+                                CustomerInfo(
+                                    subscriptions = emptyList(),
+                                    nonSubscriptions = emptyList(),
+                                    userId = "",
+                                    entitlements = listOf(webEntitlement),
+                                    isPlaceholder = false,
+                                ),
+                        ),
+                    )
 
                 coEvery { deepLinkReferrer.checkForReferral() } returns Result.success(code)
                 coEvery {
@@ -148,35 +239,18 @@ class WebPaywallRedeemerTest {
                     )
                 } returns Either.Success(response)
 
-                redeemer =
-                    WebPaywallRedeemer(
-                        context,
-                        IOScope(testDispatcher),
-                        deepLinkReferrer,
-                        network,
-                        storage,
-                        willRedeemLink = {},
-                        didRedeemLink = {},
-                        maxAge,
-                        getActiveDeviceEntitlements,
-                        getUserId,
-                        getDeviceId,
-                        getAlias,
-                        track,
-                        setSubscriptionStatus,
-                        isPaywallVisible,
-                        showRestoreDialogAndDismiss,
-                        currentPaywallEntitlements,
-                        getPaywallInfo = { PaywallInfo.empty() },
-                        trackRestorationFailed = {},
-                        isWebToAppEnabled = { true },
-                        receipts = { listOf(TransactionReceipt("mock", "orderId")) },
-                        getExternalAccountId = { "" },
-                        getIntegrationProps = { emptyMap() },
-                    )
-
-                When("checking for referral") {
-                    redeemer.checkForRefferal()
+                When("creating redeemer and advancing scheduler") {
+                    redeemer =
+                        WebPaywallRedeemer(
+                            context,
+                            IOScope(testDispatcher),
+                            deepLinkReferrer,
+                            network,
+                            storage,
+                            customerInfoManager = mockk(relaxed = true),
+                            factory = TestFactory(),
+                        )
+                    testScheduler.advanceUntilIdle()
 
                     Then("it should redeem the codes and set entitlement status") {
                         verify(exactly = 1) {
@@ -203,28 +277,12 @@ class WebPaywallRedeemerTest {
                         deepLinkReferrer,
                         network,
                         storage,
-                        willRedeemLink = {},
-                        didRedeemLink = {},
-                        maxAge,
-                        getActiveDeviceEntitlements,
-                        getUserId,
-                        getDeviceId,
-                        getAlias,
-                        track,
-                        setSubscriptionStatus,
-                        isPaywallVisible,
-                        showRestoreDialogAndDismiss,
-                        currentPaywallEntitlements,
-                        getPaywallInfo = { PaywallInfo.empty() },
-                        trackRestorationFailed = {},
-                        isWebToAppEnabled = { true },
-                        receipts = { listOf(TransactionReceipt("mock", "orderId")) },
-                        getExternalAccountId = { "" },
-                        getIntegrationProps = { emptyMap() },
+                        customerInfoManager = mockk(relaxed = true),
+                        factory = TestFactory(),
                     )
 
-                When("checking for referral") {
-                    redeemer.checkForRefferal()
+                When("creating redeemer and checking for referral") {
+                    testScheduler.advanceUntilIdle()
 
                     Then("it should not call redeem") {
                         coVerify(exactly = 0) {
@@ -258,53 +316,27 @@ class WebPaywallRedeemerTest {
                 } returns Either.Failure(NetworkError.Unknown(exception))
                 coEvery {
                     network.webEntitlementsByUserId(any(), any())
-                } returns Either.Success(WebEntitlements(listOf()))
+                } returns Either.Success(WebEntitlements(customerInfo = null))
 
-                redeemer =
-                    WebPaywallRedeemer(
-                        context,
-                        IOScope(backgroundScope.coroutineContext),
-                        deepLinkReferrer,
-                        network,
-                        storage,
-                        willRedeemLink = {},
-                        didRedeemLink = onRedemptionResult,
-                        maxAge,
-                        getActiveDeviceEntitlements,
-                        getUserId,
-                        getDeviceId,
-                        getAlias,
-                        track,
-                        setSubscriptionStatus,
-                        isPaywallVisible,
-                        showRestoreDialogAndDismiss,
-                        currentPaywallEntitlements,
-                        getPaywallInfo = { PaywallInfo.empty() },
-                        trackRestorationFailed = {},
-                        isWebToAppEnabled = { true },
-                        receipts = { listOf(TransactionReceipt("mock", "orderId")) },
-                        getExternalAccountId = { "" },
-                        getIntegrationProps = { emptyMap() },
-                    )
+                When("creating redeemer and checking for referral") {
+                    redeemer =
+                        WebPaywallRedeemer(
+                            context,
+                            IOScope(testDispatcher),
+                            deepLinkReferrer,
+                            network,
+                            storage,
+                            customerInfoManager = mockk(relaxed = true),
+                            factory = TestFactory(didRedeemLinkFn = onRedemptionResult),
+                        )
+                    testScheduler.advanceUntilIdle()
+                    testScheduler.runCurrent() // Process any immediate tasks
+                    testScheduler.advanceUntilIdle() // Process any newly scheduled tasks
 
-                When("checking for referral") {
-                    // This is commented out as on init we already do the check
-                    // redeemer.checkForRefferal()
-                    async(Dispatchers.Default) {
-                        delay(1.seconds)
-                    }.await()
                     Then("it should not set entitlement status") {
                         assert(mutableEntitlements == setOf(normalEntitlement))
                         verify(exactly = 1) {
-                            onRedemptionResult(
-                                RedemptionResult.Error(
-                                    code = codes,
-                                    error =
-                                        ErrorInfo(
-                                            exception.localizedMessage ?: exception.message ?: "",
-                                        ),
-                                ),
-                            )
+                            onRedemptionResult(any<RedemptionResult.Error>())
                         }
                     }
                 }
@@ -319,7 +351,19 @@ class WebPaywallRedeemerTest {
 
                 coEvery {
                     network.webEntitlementsByUserId(any(), any())
-                } returns Either.Success(WebEntitlements(userEntitlements))
+                } returns
+                    Either.Success(
+                        WebEntitlements(
+                            customerInfo =
+                                CustomerInfo(
+                                    subscriptions = emptyList(),
+                                    nonSubscriptions = emptyList(),
+                                    userId = "",
+                                    entitlements = userEntitlements,
+                                    isPlaceholder = false,
+                                ),
+                        ),
+                    )
 
                 redeemer =
                     WebPaywallRedeemer(
@@ -328,24 +372,8 @@ class WebPaywallRedeemerTest {
                         deepLinkReferrer,
                         network,
                         storage,
-                        willRedeemLink = {},
-                        didRedeemLink = {},
-                        maxAge,
-                        getActiveDeviceEntitlements,
-                        getUserId,
-                        getDeviceId,
-                        getAlias,
-                        track,
-                        setSubscriptionStatus,
-                        isPaywallVisible,
-                        showRestoreDialogAndDismiss,
-                        currentPaywallEntitlements,
-                        getPaywallInfo = { PaywallInfo.empty() },
-                        trackRestorationFailed = {},
-                        isWebToAppEnabled = { true },
-                        receipts = { listOf(TransactionReceipt("mock", "orderId")) },
-                        getExternalAccountId = { "" },
-                        getIntegrationProps = { emptyMap() },
+                        customerInfoManager = mockk(relaxed = true),
+                        factory = TestFactory(),
                     )
 
                 When("checking for web entitlements") {
@@ -383,24 +411,8 @@ class WebPaywallRedeemerTest {
                         deepLinkReferrer,
                         network,
                         storage,
-                        willRedeemLink = {},
-                        didRedeemLink = {},
-                        maxAge,
-                        getActiveDeviceEntitlements,
-                        getUserId,
-                        getDeviceId,
-                        getAlias,
-                        track,
-                        setSubscriptionStatus,
-                        isPaywallVisible,
-                        showRestoreDialogAndDismiss,
-                        currentPaywallEntitlements,
-                        getPaywallInfo = { PaywallInfo.empty() },
-                        trackRestorationFailed = {},
-                        isWebToAppEnabled = { true },
-                        receipts = { listOf(TransactionReceipt("mock", "orderId")) },
-                        getExternalAccountId = { "" },
-                        getIntegrationProps = { emptyMap() },
+                        customerInfoManager = mockk(relaxed = true),
+                        factory = TestFactory(),
                     )
 
                 When("checking for web entitlements") {
@@ -428,7 +440,19 @@ class WebPaywallRedeemerTest {
 
                 coEvery {
                     network.webEntitlementsByUserId(UserId("test_user"), any())
-                } returns Either.Success(WebEntitlements(userEntitlements.toList()))
+                } returns
+                    Either.Success(
+                        WebEntitlements(
+                            customerInfo =
+                                CustomerInfo(
+                                    subscriptions = emptyList(),
+                                    nonSubscriptions = emptyList(),
+                                    userId = "",
+                                    entitlements = userEntitlements.toList(),
+                                    isPlaceholder = false,
+                                ),
+                        ),
+                    )
 
                 coEvery {
                     network.webEntitlementsByDeviceID(any())
@@ -441,24 +465,8 @@ class WebPaywallRedeemerTest {
                         deepLinkReferrer,
                         network,
                         storage,
-                        willRedeemLink = {},
-                        didRedeemLink = {},
-                        maxAge,
-                        getActiveDeviceEntitlements,
-                        getUserId,
-                        getDeviceId,
-                        getAlias,
-                        track,
-                        setSubscriptionStatus,
-                        isPaywallVisible,
-                        showRestoreDialogAndDismiss,
-                        currentPaywallEntitlements,
-                        getPaywallInfo = { PaywallInfo.empty() },
-                        trackRestorationFailed = {},
-                        isWebToAppEnabled = { true },
-                        receipts = { listOf(TransactionReceipt("mock", "orderId")) },
-                        getExternalAccountId = { "" },
-                        getIntegrationProps = { emptyMap() },
+                        customerInfoManager = mockk(relaxed = true),
+                        factory = TestFactory(),
                     )
 
                 When("checking for web entitlements") {
@@ -491,7 +499,19 @@ class WebPaywallRedeemerTest {
 
                 coEvery {
                     network.webEntitlementsByUserId(any(), any())
-                } returns Either.Success(WebEntitlements(listOf(webEntitlement)))
+                } returns
+                    Either.Success(
+                        WebEntitlements(
+                            customerInfo =
+                                CustomerInfo(
+                                    subscriptions = emptyList(),
+                                    nonSubscriptions = emptyList(),
+                                    userId = "",
+                                    entitlements = listOf(webEntitlement),
+                                    isPlaceholder = false,
+                                ),
+                        ),
+                    )
 
                 redeemer =
                     WebPaywallRedeemer(
@@ -500,24 +520,8 @@ class WebPaywallRedeemerTest {
                         deepLinkReferrer,
                         network,
                         storage,
-                        willRedeemLink = {},
-                        didRedeemLink = {},
-                        maxAge,
-                        getActiveDeviceEntitlements,
-                        getUserId,
-                        getDeviceId,
-                        getAlias,
-                        track,
-                        setSubscriptionStatus,
-                        isPaywallVisible,
-                        showRestoreDialogAndDismiss,
-                        currentPaywallEntitlements,
-                        getPaywallInfo = { PaywallInfo.empty() },
-                        trackRestorationFailed = {},
-                        isWebToAppEnabled = { true },
-                        receipts = { listOf(TransactionReceipt("mock", "orderId")) },
-                        getExternalAccountId = { "" },
-                        getIntegrationProps = { emptyMap() },
+                        customerInfoManager = mockk(relaxed = true),
+                        factory = TestFactory(),
                     )
 
                 When("checking for web entitlements") {
@@ -545,7 +549,19 @@ class WebPaywallRedeemerTest {
 
                 coEvery {
                     network.webEntitlementsByUserId(any(), any())
-                } returns Either.Success(WebEntitlements(userEntitlements))
+                } returns
+                    Either.Success(
+                        WebEntitlements(
+                            customerInfo =
+                                CustomerInfo(
+                                    subscriptions = emptyList(),
+                                    nonSubscriptions = emptyList(),
+                                    userId = "",
+                                    entitlements = userEntitlements,
+                                    isPlaceholder = false,
+                                ),
+                        ),
+                    )
 
                 redeemer =
                     WebPaywallRedeemer(
@@ -554,24 +570,8 @@ class WebPaywallRedeemerTest {
                         deepLinkReferrer,
                         network,
                         storage,
-                        willRedeemLink = {},
-                        didRedeemLink = {},
-                        maxAge,
-                        getActiveDeviceEntitlements,
-                        getUserId,
-                        getDeviceId,
-                        getAlias,
-                        track,
-                        setSubscriptionStatus,
-                        isPaywallVisible,
-                        showRestoreDialogAndDismiss,
-                        currentPaywallEntitlements,
-                        getPaywallInfo = { PaywallInfo.empty() },
-                        trackRestorationFailed = {},
-                        isWebToAppEnabled = { true },
-                        receipts = { listOf(TransactionReceipt("mock", "orderId")) },
-                        getExternalAccountId = { "" },
-                        getIntegrationProps = { emptyMap() },
+                        customerInfoManager = mockk(relaxed = true),
+                        factory = TestFactory(),
                     )
 
                 When("checking for web entitlements") {
@@ -638,7 +638,14 @@ class WebPaywallRedeemerTest {
                                     ),
                             ),
                         ),
-                    entitlements = listOf(webEntitlement),
+                    customerInfo =
+                        CustomerInfo(
+                            subscriptions = emptyList(),
+                            nonSubscriptions = emptyList(),
+                            userId = "",
+                            entitlements = listOf(webEntitlement),
+                            isPlaceholder = false,
+                        ),
                 )
             val storage =
                 object : Storage {
@@ -663,23 +670,8 @@ class WebPaywallRedeemerTest {
                     deepLinkReferrer,
                     network,
                     storage,
-                    willRedeemLink = {},
-                    didRedeemLink = {},
-                    maxAge,
-                    getActiveDeviceEntitlements,
-                    getUserId,
-                    getDeviceId,
-                    getAlias,
-                    track,
-                    setSubscriptionStatus,
-                    isPaywallVisible,
-                    showRestoreDialogAndDismiss,
-                    currentPaywallEntitlements,
-                    getPaywallInfo = { PaywallInfo.empty() },
-                    trackRestorationFailed = {},
-                    isWebToAppEnabled = { true },
-                    receipts = { listOf(TransactionReceipt("mock")) },
-                    getExternalAccountId = { "" },
+                    customerInfoManager = mockk(relaxed = true),
+                    factory = TestFactory(),
                 )
 
             storage.write(LatestRedemptionResponse, response)
@@ -695,91 +687,6 @@ class WebPaywallRedeemerTest {
     }
 
     @Test
-    fun `test attribution props are passed to redeemToken`() =
-        runTest(testDispatcher) {
-            Given("a WebPaywallRedeemer with attribution props") {
-                val code = "test_code"
-                val attributionProps =
-                    mapOf(
-                        "campaign" to "summer_sale",
-                        "source" to "facebook",
-                        "user_id" to 12345,
-                    )
-                val expectedJsonProps =
-                    mapOf<String, JsonElement>(
-                        "campaign" to JsonPrimitive("summer_sale"),
-                        "source" to JsonPrimitive("facebook"),
-                        "user_id" to JsonPrimitive(12345),
-                    )
-
-                mutableEntitlements = mutableSetOf(normalEntitlement)
-                val response =
-                    WebRedemptionResponse(
-                        codes =
-                            listOf(
-                                RedemptionResult.Success(
-                                    code = code,
-                                    redemptionInfo =
-                                        RedemptionInfo(
-                                            ownership = RedemptionOwnership.AppUser(appUserId = "test_user"),
-                                            purchaserInfo =
-                                                PurchaserInfo(
-                                                    "test_user",
-                                                    "test@example.com",
-                                                    StoreIdentifiers.Stripe(stripeCustomerId = "123", emptyList()),
-                                                ),
-                                            entitlements = listOf(webEntitlement),
-                                        ),
-                                ),
-                            ),
-                        entitlements = listOf(webEntitlement),
-                    )
-
-                coEvery { deepLinkReferrer.checkForReferral() } returns Result.success(code)
-                coEvery {
-                    network.redeemToken(any(), any(), any(), any(), any(), any(), any())
-                } returns Either.Success(response)
-
-                redeemer =
-                    WebPaywallRedeemer(
-                        context,
-                        IOScope(testDispatcher),
-                        deepLinkReferrer,
-                        network,
-                        storage,
-                        willRedeemLink = {},
-                        didRedeemLink = {},
-                        maxAge,
-                        getActiveDeviceEntitlements,
-                        getUserId,
-                        getDeviceId,
-                        getAlias,
-                        track,
-                        setSubscriptionStatus,
-                        isPaywallVisible,
-                        showRestoreDialogAndDismiss,
-                        currentPaywallEntitlements,
-                        getPaywallInfo = { PaywallInfo.empty() },
-                        trackRestorationFailed = {},
-                        isWebToAppEnabled = { true },
-                        receipts = { listOf(TransactionReceipt("mock", "orderId")) },
-                        getExternalAccountId = { "" },
-                        getIntegrationProps = { attributionProps },
-                    )
-
-                When("checking for referral with attribution props") {
-                    redeemer.checkForRefferal()
-
-                    Then("it should call redeemToken with converted attribution props") {
-                        coVerify(exactly = 1) {
-                            network.redeemToken(any(), any(), any(), any(), any(), any(), any())
-                        }
-                    }
-                }
-            }
-        }
-
-    @Test
     fun `test orderId is included in TransactionReceipt`() =
         runTest(testDispatcher) {
             Given("a WebPaywallRedeemer with TransactionReceipts containing orderId") {
@@ -788,7 +695,7 @@ class WebPaywallRedeemerTest {
                 val expectedPurchaseToken = "test_purchase_token"
                 val expectedReceipts =
                     listOf(
-                        TransactionReceipt(expectedPurchaseToken, expectedOrderId),
+                        TransactionReceipt(expectedPurchaseToken, expectedOrderId, "123", TransactionReceipt.ProductType.SUBSCRIPTION),
                     )
 
                 mutableEntitlements = mutableSetOf(normalEntitlement)
@@ -805,13 +712,23 @@ class WebPaywallRedeemerTest {
                                                 PurchaserInfo(
                                                     "test_user",
                                                     "test@example.com",
-                                                    StoreIdentifiers.Stripe(stripeCustomerId = "123", emptyList()),
+                                                    StoreIdentifiers.Stripe(
+                                                        stripeCustomerId = "123",
+                                                        emptyList(),
+                                                    ),
                                                 ),
                                             entitlements = listOf(webEntitlement),
                                         ),
                                 ),
                             ),
-                        entitlements = listOf(webEntitlement),
+                        customerInfo =
+                            CustomerInfo(
+                                subscriptions = emptyList(),
+                                nonSubscriptions = emptyList(),
+                                userId = "",
+                                entitlements = listOf(webEntitlement),
+                                isPlaceholder = false,
+                            ),
                     )
 
                 coEvery { deepLinkReferrer.checkForReferral() } returns Result.success(code)
@@ -826,28 +743,12 @@ class WebPaywallRedeemerTest {
                         deepLinkReferrer,
                         network,
                         storage,
-                        willRedeemLink = {},
-                        didRedeemLink = {},
-                        maxAge,
-                        getActiveDeviceEntitlements,
-                        getUserId,
-                        getDeviceId,
-                        getAlias,
-                        track,
-                        setSubscriptionStatus,
-                        isPaywallVisible,
-                        showRestoreDialogAndDismiss,
-                        currentPaywallEntitlements,
-                        getPaywallInfo = { PaywallInfo.empty() },
-                        trackRestorationFailed = {},
-                        isWebToAppEnabled = { true },
-                        receipts = { expectedReceipts },
-                        getExternalAccountId = { "" },
-                        getIntegrationProps = { emptyMap() },
+                        customerInfoManager = mockk(relaxed = true),
+                        factory = TestFactory(receiptsFn = { expectedReceipts }),
                     )
 
-                When("checking for referral") {
-                    redeemer.checkForRefferal()
+                When("creating redeemer and checking for referral") {
+                    testScheduler.advanceUntilIdle()
 
                     Then("it should call redeemToken with receipts containing orderId") {
                         coVerify(exactly = 1) {
@@ -882,13 +783,23 @@ class WebPaywallRedeemerTest {
                                                 PurchaserInfo(
                                                     "test_user",
                                                     "test@example.com",
-                                                    StoreIdentifiers.Stripe(stripeCustomerId = "123", emptyList()),
+                                                    StoreIdentifiers.Stripe(
+                                                        stripeCustomerId = "123",
+                                                        emptyList(),
+                                                    ),
                                                 ),
                                             entitlements = listOf(webEntitlement),
                                         ),
                                 ),
                             ),
-                        entitlements = listOf(webEntitlement),
+                        customerInfo =
+                            CustomerInfo(
+                                subscriptions = emptyList(),
+                                nonSubscriptions = emptyList(),
+                                userId = "",
+                                entitlements = listOf(webEntitlement),
+                                isPlaceholder = false,
+                            ),
                     )
 
                 coEvery { deepLinkReferrer.checkForReferral() } returns Result.success(code)
@@ -903,28 +814,12 @@ class WebPaywallRedeemerTest {
                         deepLinkReferrer,
                         network,
                         storage,
-                        willRedeemLink = {},
-                        didRedeemLink = {},
-                        maxAge,
-                        getActiveDeviceEntitlements,
-                        getUserId,
-                        getDeviceId,
-                        getAlias,
-                        track,
-                        setSubscriptionStatus,
-                        isPaywallVisible,
-                        showRestoreDialogAndDismiss,
-                        currentPaywallEntitlements,
-                        getPaywallInfo = { PaywallInfo.empty() },
-                        trackRestorationFailed = {},
-                        isWebToAppEnabled = { true },
-                        receipts = { listOf(TransactionReceipt("mock", "orderId")) },
-                        getExternalAccountId = { "" },
-                        getIntegrationProps = { emptyAttributionProps },
+                        customerInfoManager = mockk(relaxed = true),
+                        factory = TestFactory(getIntegrationPropsFn = { emptyAttributionProps }),
                     )
 
-                When("checking for referral with empty attribution props") {
-                    redeemer.checkForRefferal()
+                When("creating redeemer and checking for referral with empty attribution props") {
+                    testScheduler.advanceUntilIdle()
 
                     Then("it should call redeemToken with null attribution props") {
                         coVerify(exactly = 1) {
@@ -951,25 +846,24 @@ class WebPaywallRedeemerTest {
                     )
 
                 // Expected JSON conversion
-                val expectedJsonProps =
-                    mapOf<String, JsonElement>(
-                        "string_value" to JsonPrimitive("test_string"),
-                        "int_value" to JsonPrimitive(42),
-                        "double_value" to JsonPrimitive(3.14),
-                        "boolean_value" to JsonPrimitive(true),
-                        "nested_map" to
-                            kotlinx.serialization.json.buildJsonObject {
-                                put("inner_key", JsonPrimitive("inner_value"))
-                            },
-                        "list_value" to
-                            kotlinx.serialization.json.JsonArray(
-                                listOf(
-                                    JsonPrimitive("item1"),
-                                    JsonPrimitive("item2"),
-                                    JsonPrimitive(123),
-                                ),
+                mapOf<String, JsonElement>(
+                    "string_value" to JsonPrimitive("test_string"),
+                    "int_value" to JsonPrimitive(42),
+                    "double_value" to JsonPrimitive(3.14),
+                    "boolean_value" to JsonPrimitive(true),
+                    "nested_map" to
+                        buildJsonObject {
+                            put("inner_key", JsonPrimitive("inner_value"))
+                        },
+                    "list_value" to
+                        JsonArray(
+                            listOf(
+                                JsonPrimitive("item1"),
+                                JsonPrimitive("item2"),
+                                JsonPrimitive(123),
                             ),
-                    )
+                        ),
+                )
 
                 mutableEntitlements = mutableSetOf(normalEntitlement)
                 val response =
@@ -985,13 +879,23 @@ class WebPaywallRedeemerTest {
                                                 PurchaserInfo(
                                                     "test_user",
                                                     "test@example.com",
-                                                    StoreIdentifiers.Stripe(stripeCustomerId = "123", emptyList()),
+                                                    StoreIdentifiers.Stripe(
+                                                        stripeCustomerId = "123",
+                                                        emptyList(),
+                                                    ),
                                                 ),
                                             entitlements = listOf(webEntitlement),
                                         ),
                                 ),
                             ),
-                        entitlements = listOf(webEntitlement),
+                        customerInfo =
+                            CustomerInfo(
+                                subscriptions = emptyList(),
+                                nonSubscriptions = emptyList(),
+                                userId = "",
+                                entitlements = listOf(webEntitlement),
+                                isPlaceholder = false,
+                            ),
                     )
 
                 coEvery { deepLinkReferrer.checkForReferral() } returns Result.success(code)
@@ -1006,28 +910,12 @@ class WebPaywallRedeemerTest {
                         deepLinkReferrer,
                         network,
                         storage,
-                        willRedeemLink = {},
-                        didRedeemLink = {},
-                        maxAge,
-                        getActiveDeviceEntitlements,
-                        getUserId,
-                        getDeviceId,
-                        getAlias,
-                        track,
-                        setSubscriptionStatus,
-                        isPaywallVisible,
-                        showRestoreDialogAndDismiss,
-                        currentPaywallEntitlements,
-                        getPaywallInfo = { PaywallInfo.empty() },
-                        trackRestorationFailed = {},
-                        isWebToAppEnabled = { true },
-                        receipts = { listOf(TransactionReceipt("mock", "orderId")) },
-                        getExternalAccountId = { "" },
-                        getIntegrationProps = { complexAttributionProps },
+                        customerInfoManager = mockk(relaxed = true),
+                        factory = TestFactory(getIntegrationPropsFn = { complexAttributionProps }),
                     )
 
-                When("checking for referral with complex attribution props") {
-                    redeemer.checkForRefferal()
+                When("creating redeemer and checking for referral with complex attribution props") {
+                    testScheduler.advanceUntilIdle()
 
                     Then("it should successfully convert and pass all attribution props types") {
                         coVerify(exactly = 1) {

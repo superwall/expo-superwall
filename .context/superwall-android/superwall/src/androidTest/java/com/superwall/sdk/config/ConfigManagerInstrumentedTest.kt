@@ -55,14 +55,13 @@ import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
 import org.junit.After
@@ -159,8 +158,8 @@ class ConfigManagerTests {
                 val dependencyContainer =
                     DependencyContainer(context, null, null, activityProvider = null)
                 val network = NetworkMock()
-                val storage = StorageMock(context = context, coroutineScope = this@runTest)
-                val assignments = Assignments(storage, network, this@runTest)
+                val storage = StorageMock(context = context, coroutineScope = backgroundScope)
+                val assignments = Assignments(storage, network, backgroundScope)
                 val preload =
                     mockk<PaywallPreload> {
                         coEvery { preloadAllPaywalls(any(), any()) } just Runs
@@ -179,7 +178,7 @@ class ConfigManagerTests {
                         deviceHelper = mockDeviceHelper,
                         assignments = assignments,
                         paywallPreload = preload,
-                        ioScope = this@runTest,
+                        ioScope = backgroundScope,
                     )
 
                 When("we confirm the assignment") {
@@ -204,8 +203,8 @@ class ConfigManagerTests {
                 val dependencyContainer =
                     DependencyContainer(context, null, null, activityProvider = null)
                 val network = NetworkMock()
-                val storage = StorageMock(context = context, coroutineScope = this@runTest)
-                val assignments = Assignments(storage, network, this@runTest)
+                val storage = StorageMock(context = context, coroutineScope = backgroundScope)
+                val assignments = Assignments(storage, network, backgroundScope)
                 val preload =
                     mockk<PaywallPreload> {
                         coEvery { preloadAllPaywalls(any(), any()) } just Runs
@@ -224,7 +223,7 @@ class ConfigManagerTests {
                         deviceHelper = mockDeviceHelper,
                         assignments = assignments,
                         paywallPreload = preload,
-                        ioScope = this@runTest,
+                        ioScope = backgroundScope,
                     )
 
                 Log.e("test", "test_loadAssignments_noConfig")
@@ -258,8 +257,8 @@ class ConfigManagerTests {
                 val dependencyContainer =
                     DependencyContainer(context, null, null, activityProvider = null)
                 val network = NetworkMock()
-                val storage = StorageMock(context = context, coroutineScope = this@runTest)
-                val assignments = Assignments(storage, network, this@runTest)
+                val storage = StorageMock(context = context, coroutineScope = backgroundScope)
+                val assignments = Assignments(storage, network, backgroundScope)
                 val configManager =
                     ConfigManagerUnderTest(
                         context = context,
@@ -271,7 +270,7 @@ class ConfigManagerTests {
                         deviceHelper = mockDeviceHelper,
                         assignments = assignments,
                         paywallPreload = preload,
-                        ioScope = this@runTest,
+                        ioScope = backgroundScope,
                     )
                 configManager.setConfig(
                     Config.stub().apply { this.triggers = emptySet() },
@@ -298,8 +297,8 @@ class ConfigManagerTests {
                 val dependencyContainer =
                     DependencyContainer(context, null, null, activityProvider = null)
                 val network = NetworkMock()
-                val storage = StorageMock(context = context, coroutineScope = this@runTest)
-                val assignmentStore = Assignments(storage, network, this@runTest)
+                val storage = StorageMock(context = context, coroutineScope = backgroundScope)
+                val assignmentStore = Assignments(storage, network, backgroundScope)
                 val preload =
                     mockk<PaywallPreload> {
                         coEvery { preloadAllPaywalls(any(), any()) } just Runs
@@ -317,7 +316,7 @@ class ConfigManagerTests {
                         deviceHelper = mockDeviceHelper,
                         assignments = assignmentStore,
                         paywallPreload = preload,
-                        ioScope = this@runTest,
+                        ioScope = backgroundScope,
                     )
 
                 val variantId = "variantId"
@@ -384,7 +383,7 @@ class ConfigManagerTests {
                 val context = InstrumentationRegistry.getInstrumentation().targetContext
                 val dependencyContainer =
                     DependencyContainer(context, null, null, activityProvider = null)
-                val storage = StorageMock(context = context, coroutineScope = this@runTest)
+                val storage = StorageMock(context = context, coroutineScope = backgroundScope)
                 val oldConfig =
                     Config.stub().copy(
                         rawFeatureFlags =
@@ -404,7 +403,7 @@ class ConfigManagerTests {
                         every { deviceHelper } returns mockDeviceHelper
                         every { paywallManager } returns mockPaywallManager
                     }
-                val assignments = Assignments(storage, mockNetwork, this@runTest)
+                val assignments = Assignments(storage, mockNetwork, backgroundScope)
 
                 val testId = "123"
                 val configManager =
@@ -419,7 +418,7 @@ class ConfigManagerTests {
                             mockDeviceHelper,
                             assignments = assignments,
                             paywallPreload = preload,
-                            ioScope = this@runTest,
+                            ioScope = backgroundScope,
                         ),
                     ) {
                         every { config } returns oldConfig.copy(requestId = testId)
@@ -457,7 +456,7 @@ class ConfigManagerTests {
                     }
                 val dependencyContainer =
                     DependencyContainer(context, null, null, activityProvider = null)
-                val storage = StorageMock(context = context, coroutineScope = this@runTest)
+                val storage = StorageMock(context = context, coroutineScope = backgroundScope)
                 val oldConfig =
                     Config.stub().copy(
                         rawFeatureFlags =
@@ -477,7 +476,7 @@ class ConfigManagerTests {
                         every { deviceHelper } returns mockDeviceHelper
                         every { paywallManager } returns mockPaywallManager
                     }
-                val assignments = Assignments(storage, mockNetwork, this@runTest)
+                val assignments = Assignments(storage, mockNetwork, backgroundScope)
 
                 val testId = "123"
                 val configManager =
@@ -492,7 +491,7 @@ class ConfigManagerTests {
                             mockDeviceHelper,
                             assignments = assignments,
                             paywallPreload = preload,
-                            ioScope = this@runTest,
+                            ioScope = backgroundScope,
                         ),
                     ) {
                         every { config } returns oldConfig.copy(requestId = testId)
@@ -529,7 +528,7 @@ class ConfigManagerTests {
     private val storeKit =
         mockk<StoreManager> {
             coEvery { products(any()) } returns emptySet()
-            coEvery { loadPurchasedProducts() } just Runs
+            coEvery { loadPurchasedProducts(any()) } just Runs
         }
     private val preload =
         mockk<PaywallPreload> {
@@ -589,7 +588,7 @@ class ConfigManagerTests {
                         every { paywallManager } returns manager
                     }
 
-                val assignmentStore = Assignments(localStorage, mockNetwork, this@runTest)
+                val assignmentStore = Assignments(localStorage, mockNetwork, backgroundScope)
                 val configManager =
                     ConfigManagerUnderTest(
                         context = context,
@@ -601,7 +600,7 @@ class ConfigManagerTests {
                         deviceHelper = mockDeviceHelper,
                         assignments = assignmentStore,
                         paywallPreload = preload,
-                        ioScope = this@runTest,
+                        ioScope = backgroundScope,
                     )
 
                 When("we fetch the configuration") {
@@ -611,6 +610,7 @@ class ConfigManagerTests {
                         coVerify(exactly = 1) { storage.read(LatestConfig) }
                         configManager.configState.first { it is ConfigState.Retrieved }
                         assertEquals("cached", configManager.config?.buildId)
+                        advanceUntilIdle()
                     }
                 }
             }
@@ -639,7 +639,7 @@ class ConfigManagerTests {
 
                 val context = InstrumentationRegistry.getInstrumentation().targetContext
 
-                val assignmentStore = Assignments(localStorage, mockNetwork, this@runTest)
+                val assignmentStore = Assignments(localStorage, mockNetwork, backgroundScope)
                 val configManager =
                     ConfigManagerUnderTest(
                         context = context,
@@ -651,7 +651,7 @@ class ConfigManagerTests {
                         deviceHelper = mockDeviceHelper,
                         assignments = assignmentStore,
                         paywallPreload = preload,
-                        ioScope = this@runTest,
+                        ioScope = backgroundScope,
                     )
 
                 When("we fetch the configuration") {
@@ -699,7 +699,7 @@ class ConfigManagerTests {
 
                 val context = InstrumentationRegistry.getInstrumentation().targetContext
 
-                val assignmentStore = Assignments(localStorage, mockNetwork, this@runTest)
+                val assignmentStore = Assignments(localStorage, mockNetwork, backgroundScope)
                 val configManager =
                     ConfigManagerUnderTest(
                         context = context,
@@ -711,7 +711,7 @@ class ConfigManagerTests {
                         deviceHelper = mockDeviceHelper,
                         assignments = assignmentStore,
                         paywallPreload = preload,
-                        ioScope = this@runTest,
+                        ioScope = backgroundScope,
                     )
 
                 When("we fetch the configuration") {
@@ -770,7 +770,7 @@ class ConfigManagerTests {
 
                 val context = InstrumentationRegistry.getInstrumentation().targetContext
 
-                val assignmentStore = Assignments(localStorage, mockNetwork, this@runTest)
+                val assignmentStore = Assignments(localStorage, mockNetwork, backgroundScope)
                 val preload =
                     mockk<PaywallPreload> {
                         coEvery { preloadAllPaywalls(any(), any()) } just Runs
@@ -789,7 +789,7 @@ class ConfigManagerTests {
                         deviceHelper = mockDeviceHelper,
                         assignments = assignmentStore,
                         paywallPreload = preload,
-                        ioScope = this@runTest,
+                        ioScope = backgroundScope,
                     )
 
                 When("we fetch the configuration") {
@@ -814,7 +814,7 @@ class ConfigManagerTests {
                     )
                 val newConfig = Config.stub().copy(buildId = "not")
                 val cachedGeo = Enrichment.stub().copy()
-                val newGeo = Enrichment.stub().copy(device = JsonObject(mapOf("demandTier" to "gold".convertToJsonElement())))
+                val newGeo = Enrichment.stub().copy(_device = JsonObject(mapOf("demandTier" to "gold".convertToJsonElement())))
 
                 coEvery { preload.preloadAllPaywalls(any(), any()) } just Runs
                 coEvery { storage.read(LatestRedemptionResponse) } returns null
@@ -828,18 +828,22 @@ class ConfigManagerTests {
                 var callCount = 0
                 coEvery { mockNetwork.getConfig(any()) } coAnswers {
                     if (callCount == 0) {
-                        async(Dispatchers.IO) {
-                            callCount += 1
-                            delay(5000)
-                        }.await()
+                        callCount += 1
+                        delay(5000)
                     }
                     Either.Success(newConfig)
                 }
+                var enrichmentCallCount = 0
+                every { mockDeviceHelper.setEnrichment(any()) } just Runs
                 coEvery { mockDeviceHelper.getEnrichment(any(), any()) } coAnswers {
-                    async(Dispatchers.IO) {
+                    enrichmentCallCount += 1
+                    if (enrichmentCallCount == 1) {
                         delay(5000)
-                    }.await()
-                    Either.Success(newGeo)
+                        Either.Failure(NetworkError.Timeout)
+                    } else {
+                        delay(100)
+                        Either.Success(newGeo)
+                    }
                 }
                 coEvery { mockDeviceHelper.getTemplateDevice() } returns emptyMap()
 
@@ -854,7 +858,7 @@ class ConfigManagerTests {
                         every { paywallManager } returns manager
                     }
 
-                val assignmentStore = Assignments(localStorage, mockNetwork, this@runTest)
+                val assignmentStore = Assignments(localStorage, mockNetwork, backgroundScope)
                 val configManager =
                     ConfigManagerUnderTest(
                         context = context,
@@ -866,7 +870,7 @@ class ConfigManagerTests {
                         deviceHelper = mockDeviceHelper,
                         assignments = assignmentStore,
                         paywallPreload = preload,
-                        ioScope = this@runTest,
+                        ioScope = backgroundScope,
                     )
 
                 When("we fetch the configuration") {
@@ -877,9 +881,7 @@ class ConfigManagerTests {
                             assertEquals("cached", it.getConfig()?.buildId)
                         }
                         coEvery { mockNetwork.getConfig(any()) } coAnswers {
-                            async(Dispatchers.IO) {
-                                delay(100)
-                            }.await()
+                            delay(100)
                             Either.Success(newConfig)
                         }
 
@@ -888,6 +890,7 @@ class ConfigManagerTests {
 
                             Then("the new config and geo info should be fetched and used") {
                                 assertEquals("not", configManager.config?.buildId)
+                                advanceUntilIdle()
                             }
                         }
                     }
