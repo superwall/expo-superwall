@@ -1,5 +1,7 @@
 package com.superwall.sdk.paywall.view.webview
 
+import android.app.Activity
+import android.app.AlertDialog
 import android.content.Context
 import android.graphics.Color
 import android.net.Uri
@@ -7,19 +9,25 @@ import android.os.Build
 import android.view.GestureDetector
 import android.view.KeyEvent
 import android.view.MotionEvent
+import android.view.View
+import android.view.ViewGroup
 import android.view.inputmethod.BaseInputConnection
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.webkit.ConsoleMessage
 import android.webkit.CookieManager
-import android.webkit.RenderProcessGoneDetail
+import android.webkit.JsPromptResult
+import android.webkit.JsResult
 import android.webkit.WebChromeClient
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.EditText
 import com.superwall.sdk.Superwall
 import com.superwall.sdk.analytics.internal.track
 import com.superwall.sdk.analytics.internal.trackable.InternalSuperwallEvent
 import com.superwall.sdk.analytics.internal.trackable.TrackableSuperwallEvent
+import com.superwall.sdk.config.models.OnDeviceCaching
 import com.superwall.sdk.config.options.PaywallOptions
 import com.superwall.sdk.game.dispatchKeyEvent
 import com.superwall.sdk.game.dispatchMotionEvent
@@ -28,16 +36,18 @@ import com.superwall.sdk.logger.LogScope
 import com.superwall.sdk.logger.Logger
 import com.superwall.sdk.misc.IOScope
 import com.superwall.sdk.misc.MainScope
+import com.superwall.sdk.misc.asEither
 import com.superwall.sdk.models.paywall.Paywall
+import com.superwall.sdk.models.paywall.PaywallURL
 import com.superwall.sdk.paywall.presentation.PaywallInfo
 import com.superwall.sdk.paywall.view.PaywallViewState
 import com.superwall.sdk.paywall.view.delegate.PaywallLoadingState
+import com.superwall.sdk.paywall.view.webview.messaging.PaywallMessage
 import com.superwall.sdk.paywall.view.webview.messaging.PaywallMessageHandler
 import com.superwall.sdk.paywall.view.webview.messaging.PaywallMessageHandlerDelegate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
 
@@ -46,7 +56,7 @@ interface PaywallInfoDelegate {
     val info: PaywallInfo
 }
 
-interface SWWebViewDelegate :
+interface PaywallUIDelegate :
     PaywallInfoDelegate,
     PaywallMessageHandlerDelegate
 
@@ -56,37 +66,103 @@ interface SendPaywallMessages {
 
 class SWWebView(
     context: Context,
-    val messageHandler: PaywallMessageHandler,
+    override val messageHandler: PaywallMessageHandler,
     private val onFinishedLoading: ((url: String) -> Unit)? = null,
     private val options: () -> PaywallOptions,
     private val track: suspend (TrackableSuperwallEvent) -> Unit = { Superwall.instance.track(it) },
-) : WebView(context) {
-    var delegate: SWWebViewDelegate? = null
+) : WebView(context),
+    PaywallWebUI {
+    override var delegate: PaywallUIDelegate? = null
     private val mainScope = MainScope()
     private val ioScope = IOScope()
-
+    val activity: Activity?
+        get() =
+            Superwall.instance.dependencyContainer.activityProvider
+                ?.getCurrentActivity()
     private val gestureDetector: GestureDetector by lazy {
         GestureDetector(
             context,
             ScrollDisabledListener(),
         )
     }
-    var onScrollChangeListener: OnScrollChangeListener? = null
-    var scrollEnabled = true
-    var onRenderProcessCrashed: ((RenderProcessGoneDetail) -> Unit) = {
-        Logger.debug(
-            LogLevel.error,
-            LogScope.paywallView,
-            "WebView crashed: $it",
-        )
+    override var onScrollChangeListener: PaywallWebUI.OnScrollChangeListener? = null
+
+    override fun detach(fromView: ViewGroup) {
+        fromView.removeView(this)
     }
 
-    var onTimeout: ((WebviewError) -> Unit)? = null
+    override fun attach(toView: ViewGroup) {
+        if (parent == null) {
+            toView.addView(this)
+        }
+        if (layoutParams.height != LayoutParams.MATCH_PARENT &&
+            layoutParams.width != LayoutParams.MATCH_PARENT
+        ) {
+            layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+        }
+    }
+
+    var scrollEnabled = true
+
+    var onRenderCrashed: (didCrash: Boolean, priority: Int) -> Unit =
+        { i, e -> }
 
     private companion object ChromeClient : WebChromeClient() {
-        override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
-            // Don't log anything
-            return true
+        private class ChromeClient(
+            val activity: () -> Activity?,
+        ) : WebChromeClient() {
+            override fun onConsoleMessage(consoleMessage: ConsoleMessage): Boolean {
+                // Don't log anything
+                return true
+            }
+
+            override fun onJsAlert(
+                view: WebView,
+                url: String,
+                message: String,
+                result: JsResult,
+            ): Boolean {
+                AlertDialog
+                    .Builder(activity() ?: return false)
+                    .setMessage(message)
+                    .setPositiveButton(android.R.string.ok) { _, _ -> result.confirm() }
+                    .setOnCancelListener { result.cancel() }
+                    .show()
+                return true
+            }
+
+            override fun onJsConfirm(
+                view: WebView,
+                url: String,
+                message: String,
+                result: JsResult,
+            ): Boolean {
+                AlertDialog
+                    .Builder(activity() ?: return false)
+                    .setMessage(message)
+                    .setPositiveButton(android.R.string.ok) { _, _ -> result.confirm() }
+                    .setNegativeButton(android.R.string.cancel) { _, _ -> result.cancel() }
+                    .show()
+                return true
+            }
+
+            override fun onJsPrompt(
+                view: WebView,
+                url: String,
+                message: String,
+                defaultValue: String?,
+                result: JsPromptResult,
+            ): Boolean {
+                val input = EditText(activity()).apply { setText(defaultValue ?: "") }
+                AlertDialog
+                    .Builder(activity() ?: return false)
+                    .setMessage(message)
+                    .setView(input)
+                    .setPositiveButton(android.R.string.ok) { _, _ -> result.confirm(input.text.toString()) }
+                    .setNegativeButton(android.R.string.cancel) { _, _ -> result.cancel() }
+                    .show()
+                return true
+            }
         }
     }
 
@@ -97,6 +173,7 @@ class SWWebView(
         addJavascriptInterface(messageHandler, "SWAndroid")
 
         val webSettings = this.settings
+        setWebContentsDebuggingEnabled(true)
         webSettings.javaScriptEnabled = true
         webSettings.setSupportZoom(false)
         webSettings.builtInZoomControls = false
@@ -108,14 +185,8 @@ class SWWebView(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
             webSettings.mediaPlaybackRequiresUserGesture = false
         }
-        val vc =
-            DefaultWebviewClient("", ioScope, {
-                onRenderProcessCrashed(it)
-            })
-        this.webViewClient = vc
-        this.lastWebViewClient = vc
         this.setBackgroundColor(Color.TRANSPARENT)
-        this.webChromeClient = ChromeClient
+        this.webChromeClient = ChromeClient({ activity })
     }
 
     internal fun loadPaywallWithFallbackUrl(paywall: Paywall) {
@@ -141,7 +212,18 @@ class SWWebView(
                 stopLoading = {
                     stopLoading()
                 },
-                onCrashed = onRenderProcessCrashed,
+                onCrashed = { view, detail ->
+                    if (view == this) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            onRenderCrashed(
+                                detail.didCrash(),
+                                detail.rendererPriorityAtExit(),
+                            )
+                        } else {
+                            onRenderCrashed(true, -1)
+                        }
+                    }
+                },
             )
         this.webViewClient = client
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
@@ -151,7 +233,7 @@ class SWWebView(
         client.loadWithFallback()
     }
 
-    fun enableOffscreenRender() {
+    override fun enableBackgroundRendering() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             // Temporary disabled
             //     settings.offscreenPreRaster = true
@@ -185,7 +267,18 @@ class SWWebView(
             DefaultWebviewClient(
                 forUrl = url,
                 ioScope = CoroutineScope(Dispatchers.IO),
-                onWebViewCrash = onRenderProcessCrashed,
+                onWebViewCrash = { v, detail ->
+                    if (v == this) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            onRenderCrashed(
+                                detail.didCrash(),
+                                detail.rendererPriorityAtExit(),
+                            )
+                        } else {
+                            onRenderCrashed(true, -1)
+                        }
+                    }
+                },
             )
         this.webViewClient = client
 
@@ -221,17 +314,6 @@ class SWWebView(
 
     private fun listenToWebviewClientEvents(client: DefaultWebviewClient) {
         ioScope.launch {
-            val timeout = options().timeoutAfter
-            if (timeout != null) {
-                ioScope.launch {
-                    delay(timeout)
-                    if (delegate?.state?.loadingState !is PaywallLoadingState.Ready) {
-                        trackPaywallError(WebviewError.Timeout, listOfNotNull(lastLoadedUrl))
-                        onTimeout?.invoke(WebviewError.Timeout)
-                    }
-                }
-            }
-
             client.webviewClientEvents
                 .takeWhile {
                     mainScope
@@ -243,29 +325,66 @@ class SWWebView(
                             }
                         }.await()
                 }.collect {
+                    fun log(
+                        message: String,
+                        info: Map<String, Any> = emptyMap(),
+                    ) {
+                        Logger.debug(
+                            LogLevel.error,
+                            LogScope.paywallView,
+                            message,
+                            info = info,
+                        )
+                    }
                     mainScope.launch {
                         when (it) {
                             is WebviewClientEvent.OnError -> {
                                 trackPaywallError(
                                     it.webviewError,
                                     when (val e = it.webviewError) {
-                                        is WebviewError.NetworkError ->
+                                        is WebviewError.NetworkError -> {
+                                            log(
+                                                "Paywall loading failed due to network error - ${e.code} - ${e.description}",
+                                            )
                                             listOf(e.url)
+                                        }
 
-                                        is WebviewError.NoUrls ->
+                                        is WebviewError.NoUrls -> {
+                                            log(
+                                                "Paywall loading failed - no URL's to load",
+                                            )
                                             emptyList()
+                                        }
 
-                                        is WebviewError.MaxAttemptsReached ->
+                                        is WebviewError.MaxAttemptsReached -> {
+                                            log(
+                                                "Paywall loading failed - maximum attempts reached.",
+                                            )
                                             e.urls
+                                        }
 
-                                        is WebviewError.AllUrlsFailed -> e.urls
-                                        is WebviewError.Timeout -> listOfNotNull(lastLoadedUrl)
+                                        is WebviewError.AllUrlsFailed -> {
+                                            log(
+                                                "Paywall loading failed - ${e.urls.size}/${e.urls.size} tried",
+                                            )
+                                            e.urls
+                                        }
+
+                                        is WebviewError.Timeout -> {
+                                            log(
+                                                "Paywall loading reached user defined timeout - the paywall might still display",
+                                            )
+                                            listOfNotNull(lastLoadedUrl)
+                                        }
                                     },
                                 )
                                 if (lastLoadedUrl != null) {
                                     when (lastWebViewClient) {
                                         is WebviewFallbackClient -> {}
                                         is DefaultWebviewClient -> {
+                                            log(
+                                                "Paywall loading failed - retrying $lastLoadedUrl",
+                                            )
                                             loadUrl(lastLoadedUrl!!)
                                         }
 
@@ -296,6 +415,11 @@ class SWWebView(
                             }
 
                             is WebviewClientEvent.OnPageFinished -> {
+                                asEither {
+                                    mainScope.launch {
+                                        this@SWWebView.scrollTo(0, 0)
+                                    }
+                                }
                                 if (options().optimisticLoading) {
                                     delegate?.updateState(
                                         PaywallViewState.Updates.SetLoadingState(
@@ -394,18 +518,44 @@ class SWWebView(
         )
     }
 
+    override fun destroyView() {
+        onScrollChangeListener = null
+        destroy()
+    }
+
     override fun destroy() {
         onScrollChangeListener = null
         super.destroy()
     }
 
-    interface OnScrollChangeListener {
-        fun onScrollChanged(
-            currentHorizontalScroll: Int,
-            currentVerticalScroll: Int,
-            oldHorizontalScroll: Int,
-            oldcurrentVerticalScroll: Int,
-        )
+    override fun onView(perform: View.() -> Unit) = perform(this)
+
+    override fun evaluate(
+        code: String,
+        resultCallback: ((String?) -> Unit)?,
+    ) {
+        evaluateJavascript(code, resultCallback)
+    }
+
+    override fun setup(
+        url: PaywallURL,
+        onRenderCrashed: (Boolean, Int) -> Unit,
+    ) {
+        this.onRenderCrashed = onRenderCrashed
+        scrollEnabled = delegate?.state?.paywall?.isScrollEnabled ?: true
+        mainScope.launch {
+            val state = delegate?.state ?: return@launch
+            if (state.paywall.onDeviceCache is OnDeviceCaching.Enabled) {
+                settings.cacheMode = WebSettings.LOAD_CACHE_ELSE_NETWORK
+            } else {
+                settings.cacheMode = WebSettings.LOAD_DEFAULT
+            }
+            if (state.useMultipleUrls) {
+                loadPaywallWithFallbackUrl(state.paywall)
+            } else {
+                loadUrl(url.value)
+            }
+        }
     }
 }
 

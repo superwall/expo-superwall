@@ -193,21 +193,25 @@ sealed class TrackingLogic {
                 return ImplicitTriggerOutcome.DontTriggerPaywall
             }
 
-            val notAllowedReferringEventNames: Set<String> =
-                setOf(
-                    SuperwallEvents.TransactionAbandon.rawName,
-                    SuperwallEvents.TransactionFail.rawName,
-                    SuperwallEvents.PaywallDecline.rawName,
-                    SuperwallEvents.CustomPlacement.rawName,
-                )
-
+            // Check if we're trying to trigger the same exit offer event again to prevent infinite loops
+            // Allow different exit offer events to chain (e.g., transaction_abandon -> paywall_decline)
             val referringEventName = paywallView?.info?.presentedByEventWithName
-            if (referringEventName != null) {
-                if (notAllowedReferringEventNames.contains(referringEventName)) {
+            if (referringEventName != null && event is TrackableSuperwallEvent) {
+                val currentEventName = event.superwallPlacement.backingEvent.rawName
+                val exitOfferEvents =
+                    setOf(
+                        SuperwallEvents.TransactionAbandon.rawName,
+                        SuperwallEvents.TransactionFail.rawName,
+                        SuperwallEvents.PaywallDecline.rawName,
+                        SuperwallEvents.CustomPlacement.rawName,
+                    )
+
+                // Only block if the current event matches the referring event (same exit offer type)
+                if (exitOfferEvents.contains(referringEventName) && referringEventName == currentEventName) {
                     Logger.debug(
                         LogLevel.debug,
                         LogScope.all,
-                        "!! canTriggerPaywall: notAllowedReferringEventNames.contains(referringEventName) $referringEventName",
+                        "!! canTriggerPaywall: Blocking duplicate exit offer event: $currentEventName",
                     )
                     return ImplicitTriggerOutcome.DontTriggerPaywall
                 }

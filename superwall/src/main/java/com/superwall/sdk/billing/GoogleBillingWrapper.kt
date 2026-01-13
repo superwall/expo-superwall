@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
+import kotlin.math.min
 
 internal const val RECONNECT_TIMER_START_MILLISECONDS = 1L * 1000L
 internal const val RECONNECT_TIMER_MAX_TIME_MILLISECONDS = 16L * 1000L
@@ -130,6 +131,26 @@ class GoogleBillingWrapper(
         return apps + subs
     }
 
+    override suspend fun consume(purchaseToken: String): Result<String> =
+        suspendCoroutine { cont ->
+            val useCase =
+                ConsumePurchaseUseCase(
+                    ConsumePurchaseUseCaseParams(
+                        purchaseToken = purchaseToken,
+                        appInBackground = appLifecycleObserver.isInBackground.value,
+                    ),
+                    onReceive = { consumedToken ->
+                        cont.resume(Result.success(consumedToken))
+                    },
+                    onError = { error ->
+                        cont.resume(Result.failure(error))
+                    },
+                    withConnectedClient = ::withConnectedClient,
+                    executeRequestOnUIThread = ::executeRequestOnUIThread,
+                )
+            useCase.run()
+        }
+
     fun startConnectionOnMainThread(delayMilliseconds: Long = 0) {
         threadHandler.postDelayed(
             { startConnection() },
@@ -144,10 +165,12 @@ class GoogleBillingWrapper(
                     BillingClient
                         .newBuilder(context)
                         .setListener(this@GoogleBillingWrapper)
-                        .enableAutoServiceReconnection()
-                        .enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimeProducts().build())
-                        .build()
+                        .enablePendingPurchases(
+                            PendingPurchasesParams.newBuilder().enableOneTimeProducts().build(),
+                        ).build()
             }
+
+            reconnectionAlreadyScheduled = false
 
             billingClient?.let {
                 if (!it.isReady) {
@@ -359,8 +382,39 @@ class GoogleBillingWrapper(
         request: (BillingError?) -> Unit,
     ) {
         serviceRequests.add(request to delayMilliseconds)
-        if (billingClient?.isReady == true) {
+        if (billingClient?.isReady == false) {
+            startConnectionOnMainThread()
+        } else {
             executePendingRequests()
+        }
+    }
+
+    /**
+     * Retries the billing service connection with exponential backoff, maxing out at the time
+     * specified by RECONNECT_TIMER_MAX_TIME_MILLISECONDS.
+     *
+     * This prevents ANRs, see https://github.com/android/play-billing-samples/issues/310
+     */
+    private fun retryBillingServiceConnectionWithExponentialBackoff() {
+        if (reconnectionAlreadyScheduled) {
+            Logger.debug(
+                LogLevel.error,
+                LogScope.productsManager,
+                "Billing client retry already scheduled.",
+            )
+        } else {
+            Logger.debug(
+                LogLevel.error,
+                LogScope.productsManager,
+                "Billing client disconnected, retrying in $reconnectMilliseconds milliseconds",
+            )
+            reconnectionAlreadyScheduled = true
+            startConnectionOnMainThread(reconnectMilliseconds)
+            reconnectMilliseconds =
+                min(
+                    reconnectMilliseconds * 2,
+                    RECONNECT_TIMER_MAX_TIME_MILLISECONDS,
+                )
         }
     }
 
@@ -441,6 +495,7 @@ class GoogleBillingWrapper(
                         LogScope.productsManager,
                         "Billing client error, retrying: ${billingResult.responseCode}",
                     )
+                    retryBillingServiceConnectionWithExponentialBackoff()
                 }
 
                 BillingClient.BillingResponseCode.ITEM_UNAVAILABLE,

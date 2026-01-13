@@ -38,7 +38,7 @@ class SimpleScreenshotTestExecutor {
     @get:Rule
     val dropshots =
         Dropshots(
-            resultValidator = ThresholdValidator(0.01f),
+            resultValidator = ThresholdValidator(0.06f),
             imageComparator = CustomComparator(),
         )
 

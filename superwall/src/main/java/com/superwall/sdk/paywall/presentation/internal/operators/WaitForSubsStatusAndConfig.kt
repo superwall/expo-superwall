@@ -23,13 +23,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import kotlin.time.Duration.Companion.seconds
 
-internal suspend fun Superwall.waitForEntitlementsAndConfig(
+internal suspend fun waitForEntitlementsAndConfig(
     request: PresentationRequest,
     paywallStatePublisher: MutableSharedFlow<PaywallState>? = null,
     dependencyContainer: DependencyContainer? = null,
 ) {
     @Suppress("NAME_SHADOWING")
-    val dependencyContainer = dependencyContainer ?: this.dependencyContainer
+    val dependencyContainer = dependencyContainer ?: Superwall.instance.dependencyContainer
 
     try {
         withTimeout(5.seconds) {
@@ -39,7 +39,7 @@ internal suspend fun Superwall.waitForEntitlementsAndConfig(
         }
     } catch (e: TimeoutCancellationException) {
         // Handle exception, cancel the task, and log timeout and fail the request
-        ioScope.launch {
+        dependencyContainer.ioScope().launch {
             val trackedEvent =
                 InternalSuperwallEvent.PresentationRequest(
                     eventData = request.presentationInfo.eventData,
@@ -48,7 +48,7 @@ internal suspend fun Superwall.waitForEntitlementsAndConfig(
                     statusReason = PaywallPresentationRequestStatusReason.SubscriptionStatusTimeout(),
                     factory = dependencyContainer,
                 )
-            track(trackedEvent)
+            dependencyContainer.track(trackedEvent)
         }
         Logger.debug(
             logLevel = LogLevel.info,
@@ -92,7 +92,7 @@ internal suspend fun Superwall.waitForEntitlementsAndConfig(
                     configState.configOrThrow()
                 } catch (e: Exception) {
                     e.printStackTrace()
-                    ioScope.launch {
+                    dependencyContainer.ioScope().launch {
                         val trackedEvent =
                             InternalSuperwallEvent.PresentationRequest(
                                 eventData = request.presentationInfo.eventData,
@@ -101,7 +101,7 @@ internal suspend fun Superwall.waitForEntitlementsAndConfig(
                                 statusReason = PaywallPresentationRequestStatusReason.NoConfig(),
                                 factory = dependencyContainer,
                             )
-                        track(trackedEvent)
+                        dependencyContainer.track(trackedEvent)
                     }
                     Logger.debug(
                         logLevel = LogLevel.info,

@@ -28,7 +28,6 @@ internal suspend fun Superwall.internallyPresent(
     try {
         checkNoPaywallAlreadyPresented(request, publisher)
 
-        // Print a log here to indicate that the paywall is being presented.
         val paywallComponents = getPaywallComponents(request, publisher).getOrThrow()
 
         val presenter =
@@ -55,7 +54,16 @@ internal suspend fun Superwall.internallyPresent(
     }
 }
 
-internal suspend fun Superwall.dismiss(
+internal suspend fun dismiss(
+    paywallView: PaywallView,
+    result: PaywallResult,
+    closeReason: PaywallCloseReason = PaywallCloseReason.SystemLogic,
+    completion: (() -> Unit)? = null,
+) = withContext(Dispatchers.Main) {
+    paywallView.dismiss(result, closeReason, completion)
+}
+
+internal suspend fun Superwall.dismissAfterPaymentSheet(
     paywallView: PaywallView,
     result: PaywallResult,
     closeReason: PaywallCloseReason = PaywallCloseReason.SystemLogic,

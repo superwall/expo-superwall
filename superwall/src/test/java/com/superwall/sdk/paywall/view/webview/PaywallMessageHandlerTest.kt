@@ -1,5 +1,6 @@
 package com.superwall.sdk.paywall.view.webview
 
+import android.app.Activity
 import com.superwall.sdk.Given
 import com.superwall.sdk.Then
 import com.superwall.sdk.When
@@ -14,11 +15,17 @@ import com.superwall.sdk.models.paywall.Paywall
 import com.superwall.sdk.models.product.ProductVariable
 import com.superwall.sdk.paywall.view.PaywallViewState
 import com.superwall.sdk.paywall.view.delegate.PaywallLoadingState
+import com.superwall.sdk.paywall.view.webview.messaging.PaywallMessage
 import com.superwall.sdk.paywall.view.webview.messaging.PaywallMessageHandler
 import com.superwall.sdk.paywall.view.webview.messaging.PaywallMessageHandlerDelegate
 import com.superwall.sdk.paywall.view.webview.messaging.PaywallWebEvent
+import com.superwall.sdk.paywall.view.webview.messaging.parseWrappedPaywallMessages
 import com.superwall.sdk.paywall.view.webview.templating.models.JsonVariables
 import com.superwall.sdk.paywall.view.webview.templating.models.Variables
+import com.superwall.sdk.permissions.PermissionStatus
+import com.superwall.sdk.permissions.PermissionType
+import com.superwall.sdk.permissions.UserPermissions
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -71,6 +78,9 @@ class PaywallMessageHandlerTest {
         ) {
             resultCallback?.invoke(null)
         }
+
+        override fun presentPaymentSheet(url: String) {
+        }
     }
 
     private class FakeVariablesFactory : VariablesFactory {
@@ -81,6 +91,37 @@ class PaywallMessageHandlerTest {
         ): JsonVariables = JsonVariables("template_variables", Variables(emptyMap(), emptyMap(), emptyMap()))
     }
 
+    private class FakeUserPermissions : UserPermissions {
+        override fun hasPermission(permission: PermissionType): PermissionStatus = PermissionStatus.GRANTED
+
+        override suspend fun requestPermission(
+            activity: Activity,
+            permission: PermissionType,
+        ): PermissionStatus = PermissionStatus.GRANTED
+    }
+
+    private fun createHandler(
+        track: suspend (com.superwall.sdk.analytics.internal.trackable.TrackableSuperwallEvent) -> Unit = { _ -> },
+        setAttributes: (Map<String, Any>) -> Unit = { _ -> },
+        ioScope: CoroutineScope = IOScope(Dispatchers.Unconfined),
+        encodeToB64: (String) -> String = { it },
+    ): PaywallMessageHandler =
+        PaywallMessageHandler(
+            factory = FakeVariablesFactory(),
+            options =
+                object : OptionsFactory {
+                    override fun makeSuperwallOptions(): SuperwallOptions = SuperwallOptions()
+                },
+            track = track,
+            setAttributes = setAttributes,
+            getView = { null },
+            mainScope = MainScope(Dispatchers.Unconfined),
+            ioScope = ioScope,
+            encodeToB64 = encodeToB64,
+            userPermissions = FakeUserPermissions(),
+            getActivity = { null },
+        )
+
     @Test
     fun onReady_setsVersion_via_updateState() =
         runTest {
@@ -89,22 +130,12 @@ class PaywallMessageHandlerTest {
                 val state = PaywallViewState(paywall = paywall, locale = "en-US")
                 val delegate = FakeDelegate(state)
                 // Use a cancelled IO scope so didLoadWebView doesn't run (avoids tracking).
-                val cancelledIoScope = IOScope(Dispatchers.Unconfined)
                 val handler =
-                    PaywallMessageHandler(
-                        factory = FakeVariablesFactory(),
-                        options =
-                            object : OptionsFactory {
-                                override fun makeSuperwallOptions(): SuperwallOptions = SuperwallOptions()
-                            },
-                        track = { _ -> },
-                        getView = { null },
-                        mainScope = MainScope(Dispatchers.Unconfined),
+                    createHandler(
                         ioScope =
-                            object : kotlinx.coroutines.CoroutineScope {
+                            object : CoroutineScope {
                                 override val coroutineContext = kotlinx.coroutines.Job().apply { cancel() } + Dispatchers.Unconfined
                             },
-                        encodeToB64 = { it },
                     )
                 handler.messageHandler = delegate
 
@@ -128,19 +159,7 @@ class PaywallMessageHandlerTest {
                 val paywall = Paywall.stub()
                 val state = PaywallViewState(paywall = paywall, locale = "en-US")
                 val delegate = FakeDelegate(state)
-                val handler =
-                    PaywallMessageHandler(
-                        factory = FakeVariablesFactory(),
-                        options =
-                            object : OptionsFactory {
-                                override fun makeSuperwallOptions(): SuperwallOptions = SuperwallOptions()
-                            },
-                        track = { _ -> },
-                        getView = { null },
-                        mainScope = MainScope(Dispatchers.Unconfined),
-                        ioScope = IOScope(Dispatchers.Unconfined),
-                        encodeToB64 = { it },
-                    )
+                val handler = createHandler()
                 handler.messageHandler = delegate
 
                 When("OnReady is handled and async flows complete") {
@@ -198,19 +217,7 @@ class PaywallMessageHandlerTest {
                     }
 
                 val tracked = mutableListOf<String>()
-                val handler =
-                    PaywallMessageHandler(
-                        factory = FakeVariablesFactory(),
-                        options =
-                            object : OptionsFactory {
-                                override fun makeSuperwallOptions(): SuperwallOptions = SuperwallOptions()
-                            },
-                        track = { evt -> tracked.add(evt.superwallPlacement.rawName) },
-                        getView = { null },
-                        mainScope = MainScope(Dispatchers.Unconfined),
-                        ioScope = IOScope(Dispatchers.Unconfined),
-                        encodeToB64 = { it },
-                    )
+                val handler = createHandler(track = { evt -> tracked.add(evt.superwallPlacement.rawName) })
                 handler.messageHandler = delegate
 
                 When("messages are handled before readiness (queue), then after ready") {
@@ -224,7 +231,7 @@ class PaywallMessageHandlerTest {
 
                     // Now send additional messages post-ready
                     handler.handle(PaywallMessage.TemplateParamsAndUserAttributes)
-                    handler.handle(PaywallMessage.OpenUrl(URI("https://example.com")))
+                    handler.handle(PaywallMessage.OpenUrl(URI("https://example.com"), null))
                     handler.handle(PaywallMessage.OpenUrlInBrowser(URI("https://example.com/ext")))
                     handler.handle(PaywallMessage.OpenDeepLink(URI("myapp://path")))
                     handler.handle(PaywallMessage.Restore)
@@ -308,19 +315,7 @@ class PaywallMessageHandlerTest {
                             resultCallback?.invoke(null)
                         }
                     }
-                val handler =
-                    PaywallMessageHandler(
-                        factory = FakeVariablesFactory(),
-                        options =
-                            object : OptionsFactory {
-                                override fun makeSuperwallOptions(): SuperwallOptions = SuperwallOptions()
-                            },
-                        track = { _ -> },
-                        getView = { null },
-                        mainScope = MainScope(Dispatchers.Unconfined),
-                        ioScope = IOScope(Dispatchers.Unconfined),
-                        encodeToB64 = { it },
-                    )
+                val handler = createHandler()
                 handler.messageHandler = delegate
 
                 When("OnReady is handled then RestoreFailed arrives") {
@@ -357,19 +352,7 @@ class PaywallMessageHandlerTest {
                             deepLinks.add(url)
                         }
                     }
-                val handler =
-                    PaywallMessageHandler(
-                        factory = FakeVariablesFactory(),
-                        options =
-                            object : OptionsFactory {
-                                override fun makeSuperwallOptions(): SuperwallOptions = SuperwallOptions()
-                            },
-                        track = { _ -> },
-                        getView = { null },
-                        mainScope = MainScope(Dispatchers.Unconfined),
-                        ioScope = IOScope(Dispatchers.Unconfined),
-                        encodeToB64 = { it },
-                    )
+                val handler = createHandler()
                 handler.messageHandler = delegate
 
                 When("Custom message arrives") {
@@ -400,19 +383,7 @@ class PaywallMessageHandlerTest {
                             resultCallback?.invoke(null)
                         }
                     }
-                val handler =
-                    PaywallMessageHandler(
-                        factory = FakeVariablesFactory(),
-                        options =
-                            object : OptionsFactory {
-                                override fun makeSuperwallOptions(): SuperwallOptions = SuperwallOptions()
-                            },
-                        track = { _ -> },
-                        getView = { null },
-                        mainScope = MainScope(Dispatchers.Unconfined),
-                        ioScope = IOScope(Dispatchers.Unconfined),
-                        encodeToB64 = { it },
-                    )
+                val handler = createHandler()
                 handler.messageHandler = delegate
 
                 When("OnReady then PaywallOpen/PaywallClose are handled") {
@@ -448,23 +419,11 @@ class PaywallMessageHandlerTest {
                             events.add(paywallWebEvent)
                         }
                     }
-                val handler =
-                    PaywallMessageHandler(
-                        factory = FakeVariablesFactory(),
-                        options =
-                            object : OptionsFactory {
-                                override fun makeSuperwallOptions(): SuperwallOptions = SuperwallOptions()
-                            },
-                        track = { _ -> },
-                        getView = { null },
-                        mainScope = MainScope(Dispatchers.Unconfined),
-                        ioScope = IOScope(Dispatchers.Unconfined),
-                        encodeToB64 = { it },
-                    )
+                val handler = createHandler()
                 handler.messageHandler = delegate
 
                 When("OpenUrl, OpenUrlInBrowser, OpenDeepLink arrive") {
-                    handler.handle(PaywallMessage.OpenUrl(URI("https://example.org")))
+                    handler.handle(PaywallMessage.OpenUrl(URI("https://example.org"), PaywallMessage.OpenUrl.BrowserType.PAYMENT_SHEET))
                     handler.handle(PaywallMessage.OpenUrlInBrowser(URI("https://example.org/e")))
                     val deep = URI("myapp://abc/path?x=1&y=2")
                     handler.handle(PaywallMessage.OpenDeepLink(deep))
@@ -493,19 +452,7 @@ class PaywallMessageHandlerTest {
                             events.add(paywallWebEvent)
                         }
                     }
-                val handler =
-                    PaywallMessageHandler(
-                        factory = FakeVariablesFactory(),
-                        options =
-                            object : OptionsFactory {
-                                override fun makeSuperwallOptions(): SuperwallOptions = SuperwallOptions()
-                            },
-                        track = { _ -> },
-                        getView = { null },
-                        mainScope = MainScope(Dispatchers.Unconfined),
-                        ioScope = IOScope(Dispatchers.Unconfined),
-                        encodeToB64 = { it },
-                    )
+                val handler = createHandler()
                 handler.messageHandler = delegate
 
                 When("RequestReview external arrives") {
@@ -521,4 +468,80 @@ class PaywallMessageHandlerTest {
                 }
             }
         }
+
+    @Test
+    fun userAttributesUpdated_calls_setAttributes() =
+        runTest {
+            Given("a handler with a setAttributes callback") {
+                val paywall = Paywall.stub()
+                val state = PaywallViewState(paywall = paywall, locale = "en-US")
+                val delegate = FakeDelegate(state)
+                val capturedAttributes = mutableListOf<Map<String, Any>>()
+                val handler = createHandler(setAttributes = { attrs -> capturedAttributes.add(attrs) })
+                handler.messageHandler = delegate
+
+                When("UserAttributesUpdated message is handled") {
+                    val attributes =
+                        mapOf<String, Any>(
+                            "name" to "John",
+                            "age" to 30,
+                            "premium" to true,
+                        )
+                    handler.handle(PaywallMessage.UserAttributesUpdated(attributes))
+
+                    Then("setAttributes is called with the provided attributes") {
+                        assertEquals(1, capturedAttributes.size)
+                        assertEquals("John", capturedAttributes[0]["name"])
+                        assertEquals(30, capturedAttributes[0]["age"])
+                        assertEquals(true, capturedAttributes[0]["premium"])
+                    }
+                }
+            }
+        }
+
+    @Test
+    fun parseWrappedPaywallMessages_parses_user_attribute_updated() {
+        Given("a JSON string with user_attribute_updated event") {
+            // The attributes field is an array of {key, value} objects
+            val json =
+                """
+                {
+                    "version": 1,
+                    "payload": {
+                        "events": [
+                            {
+                                "event_name": "user_attribute_updated",
+                                "attributes": [
+                                    {"key": "email", "value": "test@example.com"},
+                                    {"key": "subscription_tier", "value": "pro"},
+                                    {"key": "login_count", "value": 42}
+                                ]
+                            }
+                        ]
+                    }
+                }
+                """.trimIndent()
+
+            When("the message is parsed") {
+                val result =
+                    parseWrappedPaywallMessages(json).onFailure {
+                        it.printStackTrace()
+                        println("Failed with ${it.message} -${it.stackTraceToString()}")
+                    }
+
+                Then("it returns a UserAttributesUpdated message with correct data") {
+                    assert(result.isSuccess)
+                    val wrapped = result.getOrThrow()
+                    assertEquals(1, wrapped.payload.messages.size)
+                    val message = wrapped.payload.messages[0]
+                    assert(message is PaywallMessage.UserAttributesUpdated)
+                    val userAttributesMessage = message as PaywallMessage.UserAttributesUpdated
+                    assertEquals("test@example.com", userAttributesMessage.data["email"])
+                    assertEquals("pro", userAttributesMessage.data["subscription_tier"])
+                    // Note: JSON numbers are converted to Double by convertFromJsonElement
+                    assertEquals(42.0, userAttributesMessage.data["login_count"])
+                }
+            }
+        }
+    }
 }

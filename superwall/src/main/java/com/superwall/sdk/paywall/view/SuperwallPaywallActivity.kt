@@ -6,6 +6,7 @@ import android.animation.ArgbEvaluator
 import android.animation.ObjectAnimator
 import android.animation.ValueAnimator
 import android.app.Activity
+import android.app.ComponentCaller
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -55,7 +56,7 @@ import com.superwall.sdk.models.paywall.PaywallPresentationStyle
 import com.superwall.sdk.network.JsonFactory
 import com.superwall.sdk.paywall.presentation.PaywallCloseReason
 import com.superwall.sdk.paywall.presentation.internal.state.PaywallResult
-import com.superwall.sdk.paywall.view.webview.SWWebView
+import com.superwall.sdk.paywall.view.webview.PaywallWebUI
 import com.superwall.sdk.store.transactions.notifications.NotificationScheduler
 import com.superwall.sdk.utilities.withErrorTracking
 import kotlinx.coroutines.CoroutineScope
@@ -110,10 +111,8 @@ class SuperwallPaywallActivity : AppCompatActivity() {
         }
 
         private fun PaywallView.prepareViewForDisplay(key: String) {
-            if (webView.parent == null) {
-                webView.enableOffscreenRender()
-                addView(webView)
-            }
+            webView.enableBackgroundRendering()
+            webView.attach(this)
             val viewStorageViewModel = Superwall.instance.dependencyContainer.makeViewStore()
             // If we started it directly and the view does not have shimmer and loading attached
             // We set them up for this PaywallView
@@ -148,7 +147,7 @@ class SuperwallPaywallActivity : AppCompatActivity() {
     private val isPopupView
         get() = contentView is androidx.constraintlayout.widget.ConstraintLayout && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
 
-    override fun setContentView(view: View) {
+    override fun setContentView(view: View?) {
         super.setContentView(view)
         contentView = view
     }
@@ -260,11 +259,22 @@ class SuperwallPaywallActivity : AppCompatActivity() {
         setupActivityWithView(view, presentationStyle)
     }
 
+    override fun onNewIntent(
+        intent: Intent,
+        caller: ComponentCaller,
+    ) {
+        super.onNewIntent(intent, caller)
+        intent.data?.let {
+            Superwall.handleDeepLink(it)
+        }
+    }
+
     private fun setupActivityWithView(
         view: PaywallView,
         presentationStyle: PaywallPresentationStyle?,
     ) {
         window.decorView.setBackgroundColor(view.backgroundColor)
+        view.registerIntent(this, this)
 
         val isBottomSheetStyle =
             presentationStyle is PaywallPresentationStyle.Drawer || presentationStyle is PaywallPresentationStyle.Modal
@@ -291,7 +301,6 @@ class SuperwallPaywallActivity : AppCompatActivity() {
         } else {
             setContentView(view)
         }
-
         onBackPressedDispatcher.addCallback(
             this,
             object : OnBackPressedCallback(true) {
@@ -313,7 +322,6 @@ class SuperwallPaywallActivity : AppCompatActivity() {
                 }
             },
         )
-
         try {
             supportActionBar?.hide()
         } catch (e: Throwable) {
@@ -358,13 +366,15 @@ class SuperwallPaywallActivity : AppCompatActivity() {
                 )
 
                 // Set the bottom margin of the webview to the height of the system bars
-                ViewCompat.setOnApplyWindowInsetsListener(view.webView) { v, windowInsets ->
-                    val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
-                    v.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-                        bottomMargin = insets.bottom
-                    }
+                view.webView.onView {
+                    ViewCompat.setOnApplyWindowInsetsListener(this) { v, windowInsets ->
+                        val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+                        v.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                            bottomMargin = insets.bottom
+                        }
 
-                    WindowInsetsCompat.CONSUMED
+                        WindowInsetsCompat.CONSUMED
+                    }
                 }
             }
 
@@ -510,23 +520,47 @@ class SuperwallPaywallActivity : AppCompatActivity() {
         val content = contentView as ViewGroup
         val bottomSheetBehavior = BottomSheetBehavior.from(content.getChildAt(0))
         if (!isModal) {
-            bottomSheetBehavior.halfExpandedRatio = height.toFloat()
-            // Expanded by default
-            bottomSheetBehavior.state = BottomSheetBehavior.STATE_HALF_EXPANDED
+            val normalizedHeight = (if (height > 1.0) height / 100 else height).toFloat()
+            // Clamp to (0, 1) since 0.0 = STATE_COLLAPSED and 1.0 = STATE_EXPANDED
+            bottomSheetBehavior.halfExpandedRatio = normalizedHeight.coerceIn(0.01f, 0.99f)
         } else {
             // If it's a Modal, we want it to cover only 95% of the screen when expanded
             content.updateLayoutParams {
                 (this as FrameLayout.LayoutParams).topMargin =
                     (Resources.getSystem().displayMetrics.heightPixels * 0.05).toInt()
             }
-            bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+        }
+        bottomSheetBehavior.skipCollapsed = true
+
+        val setState = {
+            if (!isModal) {
+                // Expanded by default
+                bottomSheetBehavior.state = BottomSheetBehavior.STATE_HALF_EXPANDED
+            } else {
+                bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
+            }
+        }
+
+        // Check if we need to delay state change for Samsung devices on Android 14
+        val isSamsungAndroid14 =
+            Build.VERSION.SDK_INT == Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+                (
+                    Build.MANUFACTURER.equals("samsung", ignoreCase = true) ||
+                        Build.BRAND.equals("samsung", ignoreCase = true)
+                )
+
+        if (isSamsungAndroid14) {
+            // Post state change to next frame after layout is complete
+            // This fixes timing issues on Samsung devices with Android 14
+            content.post { setState() }
+        } else {
+            setState()
         }
         content.invalidate()
-        bottomSheetBehavior.skipCollapsed = true
         var currentWebViewScroll = 0
         if (isModal) {
             paywallView()?.webView?.onScrollChangeListener =
-                object : SWWebView.OnScrollChangeListener {
+                object : PaywallWebUI.OnScrollChangeListener {
                     override fun onScrollChanged(
                         currentHorizontalScroll: Int,
                         currentVerticalScroll: Int,
@@ -562,6 +596,12 @@ class SuperwallPaywallActivity : AppCompatActivity() {
                     bottomSheet: View,
                     slideOffset: Float,
                 ) {
+                    val webView = paywallView()?.webView
+                    if (webView != null) {
+                        webView.onView {
+                            bottomSheetBehavior.isDraggable = !canScrollVertically(-1)
+                        }
+                    }
                 }
             }
         bottomSheetCallback?.let {
@@ -627,7 +667,9 @@ class SuperwallPaywallActivity : AppCompatActivity() {
             setTransparentBackground()
         }
         paywallVc.onViewCreated()
-        paywallVc.webView.requestFocus()
+        paywallVc.webView.onView {
+            requestFocus()
+        }
     }
 
     override fun onPause() {
@@ -733,6 +775,7 @@ class SuperwallPaywallActivity : AppCompatActivity() {
     suspend fun attemptToScheduleNotifications(
         notifications: List<LocalNotification>,
         factory: DeviceHelperFactory,
+        cancelExisting: Boolean = false,
     ) = suspendCoroutine { continuation ->
         if (notifications.isEmpty()) {
             continuation.resume(Unit) // Resume immediately as there's nothing to schedule
@@ -749,6 +792,7 @@ class SuperwallPaywallActivity : AppCompatActivity() {
                             notifications = notifications,
                             factory = factory,
                             context = this@SuperwallPaywallActivity,
+                            cancelExisting = cancelExisting,
                         )
                     }
                     continuation.resume(Unit) // Resume coroutine after processing

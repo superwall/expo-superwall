@@ -1,6 +1,5 @@
 package com.superwall.sdk.paywall.presentation.internal.operators
 
-import com.superwall.sdk.Superwall
 import com.superwall.sdk.dependencies.DependencyContainer
 import com.superwall.sdk.logger.LogLevel
 import com.superwall.sdk.logger.LogScope
@@ -17,7 +16,7 @@ import com.superwall.sdk.paywall.view.PaywallView
 import com.superwall.sdk.paywall.view.webview.webViewExists
 import kotlinx.coroutines.flow.MutableSharedFlow
 
-internal suspend fun Superwall.getPaywallView(
+internal suspend fun getPaywallView(
     request: PresentationRequest,
     rulesOutcome: RuleEvaluationOutcome,
     debugInfo: Map<String, Any>,

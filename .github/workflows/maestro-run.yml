@@ -1,0 +1,75 @@
+name: Run Maestro tests
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        sdk-version: ['2.1.2', '2.2.3','2.3.0','2.4.0','2.5.3']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+      
+    - name: Cache Gradle packages
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+          
+    - name: Change wrapper permissions
+      run: chmod +x ./gradlew
+
+    - name: Build test app
+      run: ./gradlew :test_app:buildForMaestro -Psdk-version=${{ matrix.sdk-version }} -Penv=dev
+
+    - name: Install DeviceCloud CLI
+      run: npm install -g @devicecloud.dev/dcd
+
+    - name: Run tests on DeviceCloud with Google Play
+      run: |
+        dcd cloud \
+          --app-file test_app/build/outputs/apk/debug/test_app-debug.apk \
+          --flows test_app/maestro/ \
+          --google-play \
+          --android-device pixel-6 \
+          --android-api-level 35 \
+          --name "SDK-${{ matrix.sdk-version }}-tests" \
+          --retry 1\
+          -q \
+          -e TEST_USER=${{ secrets.TEST_USER }} \
+          -e TEST_PW=${{ secrets.TEST_PW }}
+          -e PLATFORM_ID=com.superwall.superapp
+
+      env:
+        DEVICE_CLOUD_API_KEY: ${{ secrets.DCD_API_KEY }}
+
+    - name: Upload test reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-reports-${{ matrix.sdk-version }}
+        path: |
+          **/build/reports/tests/
+          **/build/test-results/

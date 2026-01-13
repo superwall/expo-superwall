@@ -1,6 +1,7 @@
 package com.superwall.sdk.config
 
 import android.content.Context
+import com.superwall.sdk.analytics.internal.trackable.InternalSuperwallEvent
 import com.superwall.sdk.dependencies.RequestFactory
 import com.superwall.sdk.dependencies.RuleAttributesFactory
 import com.superwall.sdk.misc.IOScope
@@ -25,6 +26,7 @@ class PaywallPreload(
     val storage: LocalStorage,
     val assignments: Assignments,
     val paywallManager: PaywallManager,
+    private val track: suspend (InternalSuperwallEvent) -> Unit,
 ) {
     interface Factory :
         RequestFactory,
@@ -57,8 +59,8 @@ class PaywallPreload(
                         unconfirmedAssignments = assignments.unconfirmedAssignments,
                         expressionEvaluator = expressionEvaluator,
                     )
-                preloadPaywalls(paywallIdentifiers = paywallIds)
 
+                preloadPaywalls(paywallIdentifiers = paywallIds)
                 currentPreloadingTask = null
             }
     }
@@ -79,8 +81,15 @@ class PaywallPreload(
 
     // Preloads paywalls referenced by triggers.
     private suspend fun preloadPaywalls(paywallIdentifiers: Set<String>) {
-        val webviewExists = webViewExists()
+        val paywallCount = paywallIdentifiers.size
+        track(
+            InternalSuperwallEvent.PaywallPreload(
+                state = InternalSuperwallEvent.PaywallPreload.State.Start,
+                paywallCount = paywallCount,
+            ),
+        )
 
+        val webviewExists = webViewExists()
         if (webviewExists) {
             scope.launchWithTracking {
                 // List to hold all the Deferred objects
@@ -117,6 +126,12 @@ class PaywallPreload(
                 }
                 // Await all tasks
                 tasks.awaitAll()
+                track(
+                    InternalSuperwallEvent.PaywallPreload(
+                        state = InternalSuperwallEvent.PaywallPreload.State.Complete,
+                        paywallCount = paywallCount,
+                    ),
+                )
             }
         }
     }

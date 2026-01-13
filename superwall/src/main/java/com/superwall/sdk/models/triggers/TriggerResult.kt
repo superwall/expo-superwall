@@ -1,5 +1,8 @@
+@file:SuppressLint("UnsafeOptInUsageError")
+
 package com.superwall.sdk.models.triggers
 
+import android.annotation.SuppressLint
 import com.superwall.sdk.models.serialization.ExceptionSerializer
 import kotlinx.serialization.Serializable
 

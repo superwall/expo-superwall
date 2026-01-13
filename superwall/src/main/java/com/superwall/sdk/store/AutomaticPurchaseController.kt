@@ -13,6 +13,8 @@ import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
 import com.android.billingclient.api.QueryPurchasesParams
 import com.superwall.sdk.Superwall
+import com.superwall.sdk.billing.RECONNECT_TIMER_MAX_TIME_MILLISECONDS
+import com.superwall.sdk.billing.RECONNECT_TIMER_START_MILLISECONDS
 import com.superwall.sdk.config.models.ConfigurationStatus
 import com.superwall.sdk.delegate.PurchaseResult
 import com.superwall.sdk.delegate.RestorationResult
@@ -21,30 +23,57 @@ import com.superwall.sdk.logger.LogLevel
 import com.superwall.sdk.logger.LogScope
 import com.superwall.sdk.logger.Logger
 import com.superwall.sdk.misc.IOScope
+import com.superwall.sdk.models.customer.toSet
 import com.superwall.sdk.models.entitlements.SubscriptionStatus
 import com.superwall.sdk.store.abstractions.product.OfferType
 import com.superwall.sdk.store.abstractions.product.RawStoreProduct
+import com.superwall.sdk.store.transactions.PlayBillingErrors
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlin.math.min
+
+private val BILLING_INSANTIATION_ERROR =
+    """Cannot create Google Play Billing Client. This can be caused by:
+    - Play store client not existing on this device
+    - User not being signed in into the play store
+    - Mismatching Google Play Billing versions"""
 
 class AutomaticPurchaseController(
     var context: Context,
     val scope: IOScope,
     val entitlementsInfo: Entitlements,
+    val getBilling: (Context, PurchasesUpdatedListener) -> BillingClient = { ctx, listener ->
+        try {
+            BillingClient
+                .newBuilder(ctx)
+                .setListener(listener)
+                .enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimeProducts().build())
+                .build()
+        } catch (e: Throwable) {
+            Logger.debug(
+                logLevel = LogLevel.error,
+                scope = LogScope.nativePurchaseController,
+                message = BILLING_INSANTIATION_ERROR,
+                info = mapOf("error_message" to (e.message ?: "Unknown message")),
+                error = e,
+            )
+            throw e
+        }
+    },
 ) : PurchaseController,
     PurchasesUpdatedListener {
-    private var billingClient: BillingClient =
-        BillingClient
-            .newBuilder(context)
-            .setListener(this)
-            .enableAutoServiceReconnection()
-            .enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimeProducts().build())
-            .build()
+    private var billingClient: BillingClient = getBilling(context, this)
 
     private val isConnected = MutableStateFlow(false)
     private val purchaseResults = MutableStateFlow<PurchaseResult?>(null)
+
+    // how long before the data source tries to reconnect to Google play
+    private var reconnectMilliseconds = RECONNECT_TIMER_START_MILLISECONDS
 
     //region Initialization
 
@@ -71,8 +100,19 @@ class AutomaticPurchaseController(
                             LogLevel.error,
                             LogScope.nativePurchaseController,
                             "ExternalNativePurchaseController billing client disconnected, " +
-                                "autoretrying.",
+                                "retrying in $reconnectMilliseconds milliseconds",
                         )
+
+                        CoroutineScope(Dispatchers.IO).launch {
+                            delay(reconnectMilliseconds)
+                            startConnection()
+                        }
+
+                        reconnectMilliseconds =
+                            min(
+                                reconnectMilliseconds * 2,
+                                RECONNECT_TIMER_MAX_TIME_MILLISECONDS,
+                            )
                     }
                 },
             )
@@ -237,7 +277,9 @@ class AutomaticPurchaseController(
 
                 // For all other response codes, create a Failed result with an exception
                 else -> {
-                    PurchaseResult.Failed(billingResult.responseCode.toString())
+                    PurchaseResult.Failed(
+                        PlayBillingErrors.fromCode(billingResult.responseCode)?.message ?: "Unknown error ${billingResult.responseCode}",
+                    )
                 }
             }
 
@@ -260,12 +302,11 @@ class AutomaticPurchaseController(
         val subscriptionPurchases = queryPurchasesOfType(BillingClient.ProductType.SUBS)
         val inAppPurchases = queryPurchasesOfType(BillingClient.ProductType.INAPP)
         val allPurchases = subscriptionPurchases + inAppPurchases
-
         val hasActivePurchaseOrSubscription =
             allPurchases.any { it.purchaseState == Purchase.PurchaseState.PURCHASED }
         val status: SubscriptionStatus =
             if (hasActivePurchaseOrSubscription) {
-                subscriptionPurchases
+                allPurchases
                     .flatMap {
                         it.products
                     }.toSet()
@@ -276,7 +317,7 @@ class AutomaticPurchaseController(
                     .let { entitlements ->
                         entitlementsInfo.activeDeviceEntitlements = entitlements
                         if (entitlements.isNotEmpty()) {
-                            SubscriptionStatus.Active(entitlements)
+                            SubscriptionStatus.Active(entitlements.map { it.copy(isActive = true) }.toSet())
                         } else {
                             SubscriptionStatus.Inactive
                         }

@@ -21,20 +21,22 @@ plugins {
     alias(libs.plugins.serialization) // Maven publishing
     id("signing")
     alias(libs.plugins.publisher)
+    id("jacoco")
+    alias(libs.plugins.dokka)
 }
 
-version = "2.5.7"
+version = rootProject.extra["superwallVersion"] as String
 
 android {
     compileSdk = 35
     namespace = "com.superwall.sdk"
 
     defaultConfig {
-        minSdkVersion(22)
+        minSdkVersion(21)
         targetSdkVersion(33)
 
         aarMetadata {
-            minCompileSdk = 26
+            minCompileSdk = 21
         }
 
         ndk {
@@ -61,6 +63,7 @@ android {
 
     buildTypes {
         debug {
+            enableAndroidTestCoverage = true
             consumerProguardFile("proguard-rules.pro")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
@@ -84,9 +87,23 @@ android {
         jvmTarget = "17"
     }
 
+    lint {
+        disable.addAll(listOf("UnsafeOptInUsageError", "UnsafeOptInUsageWarning"))
+    }
+
     packaging {
-        resources.excludes += "META-INF/LICENSE.md"
-        resources.excludes += "META-INF/LICENSE-notice.md"
+        resources {
+            excludes +=
+                listOf(
+                    "META-INF/LICENSE.md",
+                    "META-INF/LICENSE-notice.md",
+                )
+        }
+    }
+
+    tasks.withType<AbstractArchiveTask> {
+        exclude("META-INF/LICENSE.md")
+        exclude("META-INF/LICENSE-notice.md")
     }
 }
 
@@ -139,6 +156,9 @@ dependencies {
     ksp(libs.room.compiler)
     implementation(libs.kotlinx.coroutines.guava)
     implementation(libs.threetenbp)
+    implementation(libs.lifecycle.runtime.ktx)
+    implementation(libs.activity)
+    implementation(libs.activity.ktx)
     // Billing
     implementation(libs.billing)
     implementation(libs.supercel)
@@ -162,14 +182,13 @@ dependencies {
     // Google Play Review
     implementation(libs.play.review.ktx)
 
-    // Google Ads identifiers
-    implementation(libs.play.services.appset)
-    implementation(libs.play.services.ads.identifier)
-
     // Test
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk.core)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.test.core)
+    testImplementation(kotlin("test"))
 
     // Test (Android)
     androidTestImplementation(libs.test.ext.junit)
@@ -177,4 +196,26 @@ dependencies {
     androidTestImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.mockk.android)
     androidTestImplementation(libs.lifecycle.testing)
+}
+
+// Apply JaCoCo configuration
+apply(from = "${rootProject.rootDir}/gradle/jacoco-combined.gradle")
+
+// Dokka configuration
+dokka {
+    moduleName.set("Superwall Android SDK")
+    dokkaSourceSets.configureEach {
+        sourceLink {
+            localDirectory.set(file("src/main/java"))
+            remoteUrl("https://github.com/superwall/Superwall-Android/tree/main/superwall/src/main/java")
+            remoteLineSuffix.set("#L")
+        }
+        perPackageOption {
+            matchingRegex.set(".*\\.internal.*")
+            suppress.set(true)
+        }
+    }
+    pluginsConfiguration.html {
+        footerMessage.set("© Superwall Inc.")
+    }
 }

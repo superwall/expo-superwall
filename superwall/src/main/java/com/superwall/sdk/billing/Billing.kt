@@ -15,4 +15,6 @@ interface Billing {
     suspend fun getLatestTransaction(factory: StoreTransactionFactory): StoreTransaction?
 
     suspend fun queryAllPurchases(): List<Purchase>
+
+    suspend fun consume(purchaseToken: String): Result<String>
 }

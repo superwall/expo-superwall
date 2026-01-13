@@ -14,5 +14,7 @@ class DeviceVendorId(
 ) {
     val value = "\$SuperwallDevice:${UUID.nameUUIDFromBytes(vendorId.value.toByteArray())}"
 
+    val noPrefix = UUID.nameUUIDFromBytes(vendorId.value.toByteArray())
+
     override fun toString(): String = value
 }

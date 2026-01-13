@@ -40,12 +40,17 @@ class WebRedemptionResultTest {
       }
     }
   ],
-  "entitlements": [
-    {
-      "identifier": "pro",
-      "type": "SERVICE_LEVEL"
-    }
-  ]
+  "customerInfo": {
+    "subscriptions": [],
+    "nonSubscriptions": [],
+    "userId": "",
+    "entitlements": [
+      {
+        "identifier": "pro",
+        "type": "SERVICE_LEVEL"
+      }
+    ]
+  }
 }
             """.trimIndent()
 
@@ -74,11 +79,10 @@ class WebRedemptionResultTest {
         "obfuscatedEmail": null
       }
     }
-  ],
-  "entitlements": []
+  ]
 }"""
 
-        val result = Json {}.decodeFromString<WebRedemptionResponse>(json)
+        val result = Json { ignoreUnknownKeys = true }.decodeFromString<WebRedemptionResponse>(json)
         assert(result != null)
     }
 }

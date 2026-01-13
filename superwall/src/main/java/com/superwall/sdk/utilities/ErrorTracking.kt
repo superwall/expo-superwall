@@ -143,6 +143,16 @@ internal inline fun <T> withErrorTracking(block: () -> T): Either<T, Throwable> 
         Either.Failure(e)
     }
 
+internal inline fun <R> Result<Result<R>>.flatten() =
+    when {
+        isSuccess ->
+            getOrElse {
+                return Result.failure<R>(exceptionOrNull() ?: IllegalStateException("Unknown error"))
+            }
+        isFailure -> Result.failure(exceptionOrNull() ?: IllegalStateException("Unknown error"))
+        else -> Result.failure(exceptionOrNull() ?: IllegalStateException("Unknown error"))
+    }
+
 private fun Throwable.shouldLog() =
     this !is CancellationException &&
         this !is InterruptedException &&

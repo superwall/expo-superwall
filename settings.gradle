@@ -18,3 +18,4 @@ include ':superwall'
 include 'example:app'
 project(':example:app').projectDir = new File('example/app')
 include ':superwall-compose'
+include ':test_app'

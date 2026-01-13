@@ -48,7 +48,12 @@ interface ClassifierDataFactory {
                 activityManager.getMemoryInfo(memoryInfo)
             }.let {
                 return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                    val ratio = ((it.advertisedMem - it.totalMem) * 100) / it.advertisedMem
+                    val ratio =
+                        if (it.advertisedMem != 0L) {
+                            ((it.advertisedMem - it.totalMem) * 100) / it.advertisedMem
+                        } else {
+                            31L
+                        }
                     if (ratio > 30) {
                         it.totalMem
                     } else {

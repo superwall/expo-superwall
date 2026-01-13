@@ -34,10 +34,11 @@ class SWWebViewInterface(
         try {
             wrappedPaywallMessages = parseWrappedPaywallMessages(message)
         } catch (e: Throwable) {
+            e.printStackTrace()
             Logger.debug(
                 LogLevel.error,
                 LogScope.superwallCore,
-                "SWWebViewInterface: Error parsing message$e",
+                "SWWebViewInterface: Error parsing message$e - ${e.stackTraceToString()}",
             )
             return
         }

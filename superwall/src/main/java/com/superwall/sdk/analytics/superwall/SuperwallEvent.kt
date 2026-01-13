@@ -1,17 +1,19 @@
 package com.superwall.sdk.analytics.superwall
 
-import android.net.Uri
 import com.superwall.sdk.config.models.Survey
 import com.superwall.sdk.config.models.SurveyOption
+import com.superwall.sdk.models.customer.CustomerInfo
 import com.superwall.sdk.models.triggers.TriggerResult
 import com.superwall.sdk.paywall.presentation.PaywallInfo
 import com.superwall.sdk.paywall.presentation.internal.PaywallPresentationRequestStatus
 import com.superwall.sdk.paywall.presentation.internal.PaywallPresentationRequestStatusReason
 import com.superwall.sdk.paywall.view.webview.WebviewError
 import com.superwall.sdk.store.abstractions.product.StoreProduct
+import com.superwall.sdk.store.abstractions.product.StoreProductType
 import com.superwall.sdk.store.abstractions.transactions.StoreTransactionType
 import com.superwall.sdk.store.transactions.RestoreType
 import com.superwall.sdk.store.transactions.TransactionError
+import java.net.URI
 
 internal interface IsInternalEvent {
     val rawName: String
@@ -111,7 +113,7 @@ sealed class SuperwallEvent {
     // /
     // / The raw value of this event can be added to a campaign to trigger a paywall.
     data class DeepLink(
-        val uri: Uri,
+        val uri: URI,
     ) : SuperwallEvent() {
         override val rawName: String
             get() = "deepLink_open"
@@ -154,7 +156,7 @@ sealed class SuperwallEvent {
 
     // / When the payment sheet is displayed to the user.
     data class TransactionStart(
-        val product: StoreProduct,
+        val product: StoreProductType,
         val paywallInfo: PaywallInfo,
     ) : SuperwallEvent() {
         override val rawName: String
@@ -174,7 +176,7 @@ sealed class SuperwallEvent {
 
     // / When the user cancels a transaction.
     data class TransactionAbandon(
-        val product: StoreProduct,
+        val product: StoreProductType,
         val paywallInfo: PaywallInfo,
     ) : SuperwallEvent() {
         override val rawName: String
@@ -189,7 +191,7 @@ sealed class SuperwallEvent {
 //    data class TransactionComplete(val transaction: StoreTransaction?, val product: StoreProduct, val paywallInfo: PaywallInfo) : SuperwallEvent()
     data class TransactionComplete(
         val transaction: StoreTransactionType?,
-        val product: StoreProduct,
+        val product: StoreProductType,
         val paywallInfo: PaywallInfo,
     ) : SuperwallEvent() {
         override val rawName: String
@@ -509,6 +511,57 @@ sealed class SuperwallEvent {
     ) : SuperwallEvent() {
         override val rawName: String
             get() = "review_denied"
+    }
+
+    data class CustomerInfoDidChange(
+        val from: CustomerInfo,
+        val to: CustomerInfo,
+    ) : SuperwallEvent() {
+        override val rawName: String
+            get() = SuperwallEvents.CustomerInfoDidChange.rawName
+    }
+
+    // / When a permission is requested from a paywall.
+    data class PermissionRequested(
+        val permissionName: String,
+        val paywallIdentifier: String,
+    ) : SuperwallEvent() {
+        override val rawName: String
+            get() = SuperwallEvents.PermissionRequested.rawName
+    }
+
+    // / When a permission is granted after being requested from a paywall.
+    data class PermissionGranted(
+        val permissionName: String,
+        val paywallIdentifier: String,
+    ) : SuperwallEvent() {
+        override val rawName: String
+            get() = SuperwallEvents.PermissionGranted.rawName
+    }
+
+    // / When a permission is denied after being requested from a paywall.
+    data class PermissionDenied(
+        val permissionName: String,
+        val paywallIdentifier: String,
+    ) : SuperwallEvent() {
+        override val rawName: String
+            get() = SuperwallEvents.PermissionDenied.rawName
+    }
+
+    // / When paywall preloading starts.
+    data class PaywallPreloadStart(
+        val paywallCount: Int,
+    ) : SuperwallEvent() {
+        override val rawName: String
+            get() = SuperwallEvents.PaywallPreloadStart.rawName
+    }
+
+    // / When paywall preloading completes.
+    data class PaywallPreloadComplete(
+        val paywallCount: Int,
+    ) : SuperwallEvent() {
+        override val rawName: String
+            get() = SuperwallEvents.PaywallPreloadComplete.rawName
     }
 
     open val rawName: String

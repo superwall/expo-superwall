@@ -10,4 +10,7 @@ class WebToAppConfig {
 
     @SerialName("restore_access_url")
     var restoreAccesUrl: String? = null
+
+    @SerialName("url_schema")
+    var urlSchema: String? = null
 }

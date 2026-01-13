@@ -1,0 +1,67 @@
+appId: com.superwall.superapp
+name: handler
+---
+- runFlow: "../login.yaml"
+- launchApp: com.superwall.superapp
+- tapOn: "Configuration test"
+- tapOn: "Just configure"
+- tapOn: "OK"
+- runFlow: "../util/back.yaml"
+
+- tapOn: "Handler Test"
+
+# Test non-gated paywall
+- tapOn: "Test Non-Gated Paywall"
+- waitForAnimationToEnd:
+    timeout: 2000
+- extendedWaitUntil: # This is just to add a 2 second delay so focus is properly taken
+    visible: randText
+    optional: true
+    timeout: 2000
+- assertVisible: '.*Open DL.*'
+- runFlow: "../util/back.yaml"
+
+- assertVisible: "Feature Block Executed: Yes"
+
+# Check events for non-gated
+- tapOn: "Show Handler Events"
+- assertVisible: "Event 1: OnPresent"
+- assertVisible: "Event 2: OnDismiss"
+- tapOn: "OK"
+
+# Clear events
+- tapOn: "Clear Handler Events"
+- assertVisible: "Feature Block Executed: No"
+
+# Test gated paywall
+- tapOn: "Test Gated Paywall"
+- waitForAnimationToEnd:
+    timeout: 1000
+- extendedWaitUntil: # This is just to add a 2 second delay so focus is properly taken
+    visible: randText
+    optional: true
+    timeout: 2000
+- assertVisible: '.*Open DL.*'
+- runFlow: "../util/back.yaml"
+
+- assertVisible: "Feature Block Executed: No"
+
+# Check events for gated
+- tapOn: "Show Handler Events"
+- assertVisible: "Event 1: OnPresent"
+- assertVisible: "Event 2: OnDismiss"
+- tapOn: "OK"
+
+# Clear events
+- tapOn: "Clear Handler Events"
+- assertVisible: "Feature Block Executed: No"
+
+# Test skip audience
+- tapOn: "Test Skip Audience"
+- assertVisible: "Feature Block Executed: Yes"
+
+# Check events for skip
+- tapOn: "Show Handler Events"
+- assertVisible: "Event 1: OnSkip"
+- tapOn: "OK"
+- stopApp

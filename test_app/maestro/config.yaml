@@ -1,0 +1,19 @@
+appId: com.superwall.superapp
+env:
+  PLATFORM_ID: com.superwall.superapp
+  TEST_USER: ${TEST_USER}
+  TEST_PW: ${TEST_PW}
+disableAnimations: true
+flows:
+  - flow.yaml
+  - delegate/*
+  - handler/*
+  - purchasecontroller/*
+executionOrder:
+  flowsOrder:
+    - config
+    - delegate
+    - handler
+    - pc_test
+    - no_pc_test
+

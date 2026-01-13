@@ -36,7 +36,20 @@ data class TransactionReceipt(
     val purchaseToken: String,
     @SerialName("orderId")
     val orderId: String? = null,
+    @SerialName("productId")
+    val productId: String,
+    @SerialName("productType")
+    val productType: ProductType,
 ) {
+    @Serializable
+    enum class ProductType {
+        @SerialName("iap")
+        IAP,
+
+        @SerialName("subscription")
+        SUBSCRIPTION,
+    }
+
     @SerialName("type")
     val type: String = "Android"
 }

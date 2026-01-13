@@ -21,6 +21,7 @@ internal data class QueryProductDetailsUseCaseParams(
 /**
  * This class is used to construct a query to get `ProductsDetails` from a list of product ids.
  */
+
 internal class QueryProductDetailsUseCase(
     private val useCaseParams: QueryProductDetailsUseCaseParams,
     val onReceive: (List<StoreProduct>) -> Unit,

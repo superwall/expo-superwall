@@ -21,6 +21,9 @@
   <a href="https://superwall.com/">
     <img src="https://img.shields.io/github/v/tag/superwall/Superwall-Android" alt="Version Number">
   </a>
+  <a href="https://github.com/superwall/Superwall-Android/actions">
+    <img src=".github/badges/jacoco.svg" alt="Code Coverage">
+  </a>
 </p>
 
 ----------------
