@@ -4,6 +4,7 @@
 //
 //  Created by brian on 7/27/21.
 //
+// swiftlint:disable function_body_length
 
 import Foundation
 
@@ -53,7 +54,10 @@ enum PaywallMessage: Decodable, Equatable {
   case purchase(productId: String)
   case custom(data: String)
   case customPlacement(name: String, params: JSON)
+  case userAttributesUpdated(attributes: JSON)
+  case initiateWebCheckout(contextId: String)
   case requestStoreReview(ReviewType)
+  case requestPermission(permissionType: PermissionType, requestId: String)
 
   // All cases below here are sent from device to paywall
   case paywallClose
@@ -65,10 +69,19 @@ enum PaywallMessage: Decodable, Equatable {
 
   case transactionRestore
   case transactionStart
-  case transactionComplete
+  case transactionComplete(trialEndDate: Date?, productIdentifier: String)
   case transactionFail
   case transactionAbandon
   case transactionTimeout
+
+  // swiftlint:disable:next enum_case_associated_values_count
+  case scheduleNotification(
+    type: LocalNotificationType,
+    title: String,
+    subtitle: String?,
+    body: String,
+    delay: Milliseconds
+  )
 
   private enum MessageTypes: String, Decodable {
     case onReady = "ping"
@@ -80,7 +93,11 @@ enum PaywallMessage: Decodable, Equatable {
     case purchase
     case custom
     case customPlacement = "custom_placement"
+    case userAttributesUpdated = "user_attribute_updated"
+    case initiateWebCheckout = "initiate_web_checkout"
     case requestStoreReview = "request_store_review"
+    case scheduleNotification = "schedule_notification"
+    case requestPermission = "request_permission"
   }
 
   // Everyone write to eventName, other may use the remaining keys
@@ -93,14 +110,24 @@ enum PaywallMessage: Decodable, Equatable {
     case version
     case name
     case params
+    case attributes
     case reviewType
     case browserType
+    case checkoutContextId
+    case type
+    case title
+    case subtitle
+    case body
+    case delay
+    case permissionType
+    case requestId
   }
 
   enum PaywallMessageError: Error {
     case decoding(String)
   }
 
+  // swiftlint:disable:next function_body_length cyclomatic_complexity
   init(from decoder: Decoder) throws {
     let values = try decoder.container(keyedBy: CodingKeys.self)
     if let messageType = try? values.decode(MessageTypes.self, forKey: .messageType) {
@@ -124,7 +151,12 @@ enum PaywallMessage: Decodable, Equatable {
         if let urlString = try? values.decode(String.self, forKey: .url),
           let url = URL(string: urlString) {
           let browserType = try? values.decode(String.self, forKey: .browserType)
-          self = browserType == "payment_sheet" ? .openPaymentSheet(url) : .openUrl(url)
+          #if os(visionOS)
+            // On visionOS, always use openUrl instead of payment sheet
+            self = .openUrl(url)
+          #else
+            self = browserType == "payment_sheet" ? .openPaymentSheet(url) : .openUrl(url)
+          #endif
           return
         }
       case .openUrlInSafari:
@@ -150,9 +182,40 @@ enum PaywallMessage: Decodable, Equatable {
           self = .customPlacement(name: name, params: params)
           return
         }
+      case .userAttributesUpdated:
+        if let attributes = try? values.decode(JSON.self, forKey: .attributes) {
+          self = .userAttributesUpdated(attributes: attributes)
+          return
+        }
+      case .initiateWebCheckout:
+        if let checkoutContextId = try? values.decode(String.self, forKey: .checkoutContextId) {
+          self = .initiateWebCheckout(contextId: checkoutContextId)
+          return
+        }
       case .requestStoreReview:
         if let reviewType = try? values.decode(ReviewType.self, forKey: .reviewType) {
           self = .requestStoreReview(reviewType)
+          return
+        }
+      case .scheduleNotification:
+        if let type = try? values.decode(LocalNotificationType.self, forKey: .type),
+          let title = try? values.decode(String.self, forKey: .title),
+          let body = try? values.decode(String.self, forKey: .body),
+          let delay = try? values.decode(Milliseconds.self, forKey: .delay) {
+          let subtitle = try values.decodeIfPresent(String.self, forKey: .subtitle)
+          self = .scheduleNotification(
+            type: type,
+            title: title,
+            subtitle: subtitle,
+            body: body,
+            delay: delay
+          )
+          return
+        }
+      case .requestPermission:
+        if let permissionType = try? values.decode(PermissionType.self, forKey: .permissionType),
+          let requestId = try? values.decode(String.self, forKey: .requestId) {
+          self = .requestPermission(permissionType: permissionType, requestId: requestId)
           return
         }
       }

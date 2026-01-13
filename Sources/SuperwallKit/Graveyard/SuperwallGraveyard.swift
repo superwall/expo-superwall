@@ -93,15 +93,18 @@ extension Superwall {
       deviceHelper: dependencyContainer.deviceHelper,
       factory: dependencyContainer,
       storage: dependencyContainer.storage,
+      network: dependencyContainer.network,
       webView: SWWebView(
         isMac: false,
         messageHandler: .init(
           receiptManager: dependencyContainer.receiptManager,
-          factory: dependencyContainer
+          factory: dependencyContainer,
+          permissionHandler: dependencyContainer.permissionHandler
         ),
         isOnDeviceCacheEnabled: false,
         factory: dependencyContainer
       ),
+      webEntitlementRedeemer: dependencyContainer.webEntitlementRedeemer,
       cache: dependencyContainer.makeCache(),
       paywallArchiveManager: dependencyContainer.paywallArchiveManager
     )

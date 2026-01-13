@@ -41,6 +41,7 @@ final class DependencyContainer {
   var webEntitlementRedeemer: WebEntitlementRedeemer!
   var deepLinkRouter: DeepLinkRouter!
   var attributionFetcher: AttributionFetcher!
+  let permissionHandler = PermissionHandler()
   // swiftlint:enable implicitly_unwrapped_optional
   let paywallArchiveManager = PaywallArchiveManager()
 
@@ -71,7 +72,9 @@ final class DependencyContainer {
       storeKitVersion: options.storeKitVersion,
       shouldBypassAppTransactionCheck: options.shouldBypassAppTransactionCheck,
       productsManager: productsManager,
-      receiptDelegate: purchaseController as? ReceiptDelegate
+      receiptDelegate: purchaseController as? ReceiptDelegate,
+      factory: self,
+      storage: storage
     )
 
     webEntitlementRedeemer = WebEntitlementRedeemer(
@@ -140,7 +143,11 @@ final class DependencyContainer {
       storage: storage,
       configManager: configManager,
       webEntitlementRedeemer: webEntitlementRedeemer
-    )
+    ) { [weak self] newAttributes in
+      Task { @MainActor in
+        self?.delegateAdapter.userAttributesDidChange(newAttributes: newAttributes)
+      }
+    }
 
     appSessionManager = AppSessionManager(
       configManager: configManager,
@@ -258,7 +265,8 @@ extension DependencyContainer: ViewControllerFactory {
   ) -> PaywallViewController {
     let messageHandler = PaywallMessageHandler(
       receiptManager: receiptManager,
-      factory: self
+      factory: self,
+      permissionHandler: permissionHandler
     )
     let webView = SWWebView(
       isMac: deviceHelper.isMac,
@@ -273,7 +281,9 @@ extension DependencyContainer: ViewControllerFactory {
       deviceHelper: deviceHelper,
       factory: self,
       storage: storage,
+      network: network,
       webView: webView,
+      webEntitlementRedeemer: webEntitlementRedeemer,
       cache: cache,
       paywallArchiveManager: paywallArchiveManager
     )
@@ -539,8 +549,8 @@ extension DependencyContainer: UserAttributesPlacementFactory {
 
 // MARK: - Receipt Factory
 extension DependencyContainer: ReceiptFactory {
-  func loadPurchasedProducts() async {
-    await receiptManager.loadPurchasedProducts()
+  func loadPurchasedProducts(config: Config? = nil) async {
+    await receiptManager.loadPurchasedProducts(config: config)
   }
 
   func refreshSK1Receipt() async {

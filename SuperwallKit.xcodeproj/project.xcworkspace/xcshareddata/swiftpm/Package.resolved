@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/superwall/Superscript-iOS",
       "state" : {
-        "revision" : "f02ecb3129f99e6ed6ecdf8f01908444e49956a4",
-        "version" : "1.0.4"
+        "revision" : "ce546d7ad70b5ce5f66ea0caffefb0d97be49f34",
+        "version" : "1.0.12"
       }
     }
   ],
