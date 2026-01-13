@@ -9,10 +9,13 @@
 import UIKit
 import WebKit
 
+#if !os(visionOS)
 final class CheckoutWebViewController: UIViewController {
   private let webView: WKWebView
   private let url: URL
   var onDismiss: (() -> Void)?
+  @DispatchQueueBacked
+  var hasHandledRedemption = false
 
   deinit {
     NotificationCenter.default.removeObserver(self)
@@ -207,22 +210,28 @@ final class CheckoutWebViewController: UIViewController {
 extension CheckoutWebViewController: WKNavigationDelegate {
   func webView(
     _ webView: WKWebView,
-    decidePolicyFor navigationAction: WKNavigationAction
-  ) async -> WKNavigationActionPolicy {
+    decidePolicyFor navigationAction: WKNavigationAction,
+    decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
+  ) {
     guard let url = navigationAction.request.url else {
-      return .allow
+      decisionHandler(.allow)
+      return
     }
 
-    // Check if this should be opened externally (deep links or universal links)
+    // Block Superwall deep links from checkout to prevent duplicate redemptions
     if url.isSuperwallDeepLink {
-      await MainActor.run {
-        _ = Superwall.shared.dependencyContainer.deepLinkRouter.route(url: url)
+      if $hasHandledRedemption.testAndSetTrue() {
+        decisionHandler(.cancel)
+        return
       }
-      return .cancel
+
+      _ = Superwall.shared.dependencyContainer.deepLinkRouter.route(url: url)
+      decisionHandler(.cancel)
+      return
     }
 
     // Allow all other navigation types for payment flows and SSO authentication
-    return .allow
+    decisionHandler(.allow)
   }
 
   func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -260,3 +269,4 @@ extension CheckoutWebViewController: WKScriptMessageHandler {
     }
   }
 }
+#endif

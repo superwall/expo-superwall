@@ -216,15 +216,17 @@ final class TransactionManager {
         Superwall.shared.options.paywalls.shouldShowWebRestorationAlert,
         hasRestored,
         let paywallViewController = paywallViewController {
-        // Get entitlements of products from paywall.
-        var paywallEntitlements: Set<Entitlement> = []
+        // Get entitlement IDs of products from paywall.
+        var paywallEntitlementIds: Set<String> = []
         for id in paywallViewController.info.productIds {
-          paywallEntitlements.formUnion(Superwall.shared.entitlements.byProductId(id))
+          let entitlements = Superwall.shared.entitlements.byProductId(id)
+          paywallEntitlementIds.formUnion(entitlements.map { $0.id })
         }
 
         // If the restored entitlements cover the paywall entitlements,
         // track successful restore.
-        if paywallEntitlements.subtracting(Superwall.shared.entitlements.active).isEmpty {
+        let activeEntitlementIds = Set(Superwall.shared.entitlements.active.map { $0.id })
+        if paywallEntitlementIds.subtracting(activeEntitlementIds).isEmpty {
           await logAndTrack(
             state: .complete,
             message: "Transactions Restored",
@@ -243,15 +245,13 @@ final class TransactionManager {
             title: hasEntitlements ? "Restore via the web?" : "No Subscription Found",
             message: hasEntitlements ? hasSubsText : noSubsText,
             actionTitle: "Yes",
-            closeActionTitle: "Cancel",
-            // swiftlint:disable:next trailing_closure
-            action: {
-              guard let sharedApplication = UIApplication.sharedApplication else {
-                return
-              }
-              sharedApplication.open(restoreUrl)
+            closeActionTitle: "Cancel"
+          ) {
+            guard let sharedApplication = UIApplication.sharedApplication else {
+              return
             }
-          )
+            sharedApplication.open(restoreUrl)
+          }
           return .webRestore
         }
       }
@@ -654,7 +654,7 @@ final class TransactionManager {
         factory: factory
       )
 
-      await receiptManager.loadPurchasedProducts()
+      await receiptManager.loadPurchasedProducts(config: nil)
       await trackTransactionDidSucceed(transaction)
 
       let superwallOptions = factory.makeSuperwallOptions()
@@ -682,7 +682,7 @@ final class TransactionManager {
         factory: factory
       )
 
-      await receiptManager.loadPurchasedProducts()
+      await receiptManager.loadPurchasedProducts(config: nil)
 
       await trackTransactionDidSucceed(transaction)
     }
@@ -892,11 +892,13 @@ final class TransactionManager {
 
     let paywallInfo: PaywallInfo
     let eventSource: InternalSuperwallEvent.Transaction.Source
+    let trialEndDate = product.trialPeriodEndDate
     switch source {
     case .internal(_, let paywallViewController):
       paywallInfo = await paywallViewController.info
       eventSource = .internal
-      await paywallViewController.webView.messageHandler.handle(.transactionComplete)
+      await paywallViewController.webView.messageHandler
+        .handle(.transactionComplete(trialEndDate: trialEndDate, productIdentifier: product.productIdentifier))
     case .purchaseFunc,
       .observeFunc:
       paywallInfo = .empty()
@@ -938,7 +940,11 @@ final class TransactionManager {
       let notifications = paywallInfo.localNotifications.filter {
         $0.type == .trialStarted
       }
-      await NotificationScheduler.scheduleNotifications(notifications, factory: factory)
+      await NotificationScheduler.shared.scheduleNotifications(
+        notifications,
+        fromPaywallId: paywallInfo.identifier,
+        factory: factory
+      )
     case .subscriptionStart:
       await Superwall.shared.track(
         InternalSuperwallEvent.SubscriptionStart(

@@ -214,11 +214,29 @@ public enum SuperwallEventObjc: Int, CaseIterable {
   /// When a response from the network fails to decode.
   case networkDecodingFail
 
+  /// When the customer info did change.
+  case customerInfoDidChange
+
   /// When the integration attributes are set.
   case integrationAttributes
 
   /// When a review is requested from the user.
   case reviewRequested
+
+  /// When a permission is requested from a paywall.
+  case permissionRequested
+
+  /// When a permission is granted after being requested from a paywall.
+  case permissionGranted
+
+  /// When a permission is denied after being requested from a paywall.
+  case permissionDenied
+
+  /// When paywall preloading starts.
+  case paywallPreloadStart
+
+  /// When paywall preloading completes.
+  case paywallPreloadComplete
 
   public init(event: SuperwallEvent) {
     self = event.backingData.objcEvent
@@ -354,10 +372,22 @@ public enum SuperwallEventObjc: Int, CaseIterable {
       return "enrichment_complete"
     case .networkDecodingFail:
       return "networkDecoding_fail"
+    case .customerInfoDidChange:
+      return "customerInfo_didChange"
     case .integrationAttributes:
       return "integration_attributes"
     case .reviewRequested:
       return "review_requested"
+    case .permissionRequested:
+      return "permission_requested"
+    case .permissionGranted:
+      return "permission_granted"
+    case .permissionDenied:
+      return "permission_denied"
+    case .paywallPreloadStart:
+      return "paywallPreload_start"
+    case .paywallPreloadComplete:
+      return "paywallPreload_complete"
     }
   }
 }

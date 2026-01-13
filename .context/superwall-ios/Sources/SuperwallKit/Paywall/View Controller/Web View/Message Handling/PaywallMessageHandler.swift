@@ -18,7 +18,7 @@ protocol PaywallMessageHandlerDelegate: AnyObject {
   var isActive: Bool { get }
 
   func eventDidOccur(_ paywallWebEvent: PaywallWebEvent)
-  func openDeepLink(_ url: URL)
+  func openDeepLink(_ url: URL, shouldDismiss: Bool)
   func presentSafariInApp(_ url: URL)
   func presentSafariExternal(_ url: URL)
   func requestReview(type: ReviewType)
@@ -30,6 +30,7 @@ final class PaywallMessageHandler: WebEventDelegate {
   weak var delegate: PaywallMessageHandlerDelegate?
   private unowned let receiptManager: ReceiptManager
   private let factory: VariablesFactory
+  private let permissionHandler: PermissionHandling
 
   struct EnqueuedMessage {
     let name: String
@@ -40,10 +41,12 @@ final class PaywallMessageHandler: WebEventDelegate {
 
   init(
     receiptManager: ReceiptManager,
-    factory: VariablesFactory
+    factory: VariablesFactory,
+    permissionHandler: PermissionHandling
   ) {
     self.receiptManager = receiptManager
     self.factory = factory
+    self.permissionHandler = permissionHandler
   }
 
   func handle(_ message: PaywallMessage) {
@@ -122,10 +125,18 @@ final class PaywallMessageHandler: WebEventDelegate {
       Task {
         await self.pass(placement: transactionStart, from: paywall)
       }
-    case .transactionComplete:
-      let transactionComplete = SuperwallEventObjc.transactionComplete.description
+    case let .transactionComplete(trialEndDate, productIdentifier):
+      let freeTrialStart = SuperwallEventObjc.freeTrialStart.description
       Task {
-        await self.pass(placement: transactionComplete, from: paywall)
+        var payload: [String: Any] = ["product_identifier": productIdentifier]
+        if let trialEndDate {
+          payload["trial_end_date"] = Int(trialEndDate.timeIntervalSince1970 * 1000)
+        }
+        await self.pass(
+          placement: freeTrialStart,
+          from: paywall,
+          payload: payload
+        )
       }
     case .transactionFail:
       let transactionFail = SuperwallEventObjc.transactionFail.description
@@ -158,24 +169,48 @@ final class PaywallMessageHandler: WebEventDelegate {
       handleCustomEvent(name)
     case let .customPlacement(name: name, params: params):
       handleCustomPlacement(name: name, params: params)
+    case let .userAttributesUpdated(attributes: attributes):
+      handleUserAttributesUpdated(attributes: attributes)
+    case .initiateWebCheckout:
+      // No-op: This is only here for backwards compatibility so that we don't log
+      // and error when decoding the message.
+      break
     case .requestStoreReview(let reviewType):
       requestReview(type: reviewType)
+    case let .scheduleNotification(type, title, subtitle, body, delay):
+      let notification = LocalNotification(
+        type: type,
+        title: title,
+        subtitle: subtitle,
+        body: body,
+        delay: delay
+      )
+      delegate?.eventDidOccur(.scheduleNotification(notification: notification))
+    case let .requestPermission(permissionType, requestId):
+      handleRequestPermission(
+        permissionType: permissionType,
+        requestId: requestId,
+        paywall: paywall
+      )
     }
   }
 
   nonisolated private func pass(
     placement: String,
-    from paywall: Paywall
+    from paywall: Paywall,
+    payload: [String: Any] = [:]
   ) async {
-    let event = [
+    var event: [String: Any] = [
       "event_name": placement,
       "paywall_id": paywall.databaseId,
       "paywall_identifier": paywall.identifier
     ]
-    guard let jsonEncodedEvent = try? JSONEncoder().encode([event]) else {
+    event.merge(payload) { _, new in new }
+
+    guard let jsonData = try? JSONSerialization.data(withJSONObject: [event]) else {
       return
     }
-    let base64Event = jsonEncodedEvent.base64EncodedString()
+    let base64Event = jsonData.base64EncodedString()
     await passMessageToWebView(base64Event)
   }
 
@@ -381,7 +416,9 @@ final class PaywallMessageHandler: WebEventDelegate {
       userInfo: ["url": url]
     )
     hapticFeedback()
-    delegate?.openDeepLink(url)
+    // Don't dismiss paywall for redemption links
+    let shouldDismiss = url.redeemableCode == nil
+    delegate?.openDeepLink(url, shouldDismiss: shouldDismiss)
   }
 
   private func requestReview(type: ReviewType) {
@@ -410,6 +447,10 @@ final class PaywallMessageHandler: WebEventDelegate {
 
   private func handleCustomPlacement(name: String, params: JSON) {
     delegate?.eventDidOccur(.customPlacement(name: name, params: params))
+  }
+
+  private func handleUserAttributesUpdated(attributes: JSON) {
+    delegate?.eventDidOccur(.userAttributesUpdated(attributes: attributes))
   }
 
   private func detectHiddenPaywallEvent(
@@ -446,5 +487,46 @@ final class PaywallMessageHandler: WebEventDelegate {
     #if !os(visionOS)
       UIImpactFeedbackGenerator().impactOccurred(intensity: 0.7)
     #endif
+  }
+
+  // MARK: - Permission Handling
+
+  private func handleRequestPermission(
+    permissionType: PermissionType,
+    requestId: String,
+    paywall: Paywall
+  ) {
+    let permissionName = permissionType.rawValue
+
+    Task {
+      // Track permission requested event
+      let requestedEvent = InternalSuperwallEvent.Permission(
+        state: .requested,
+        permissionName: permissionName,
+        paywallIdentifier: paywall.identifier
+      )
+      await Superwall.shared.track(requestedEvent)
+
+      let status = await permissionHandler.requestPermission(permissionType)
+
+      // Track permission result event
+      let resultState: InternalSuperwallEvent.PermissionState = status == .granted ? .granted : .denied
+      let resultEvent = InternalSuperwallEvent.Permission(
+        state: resultState,
+        permissionName: permissionName,
+        paywallIdentifier: paywall.identifier
+      )
+      await Superwall.shared.track(resultEvent)
+
+      await pass(
+        placement: "permission_result",
+        from: paywall,
+        payload: [
+          "permission_type": permissionType.rawValue,
+          "request_id": requestId,
+          "status": status.rawValue
+        ]
+      )
+    }
   }
 }

@@ -334,16 +334,31 @@ class Network {
     )
   }
 
-  func redeemEntitlements(
+  func getEntitlements(
     appUserId: String?,
     deviceId: String
-  ) async throws -> Set<Entitlement> {
+  ) async throws -> EntitlementsResponse {
     return try await urlSession.request(
-      .redeem(
+      .entitlements(
         appUserId: appUserId,
         deviceId: deviceId
       ),
       data: SuperwallRequestData(factory: factory)
-    ).entitlements
+    )
+  }
+
+  func getIntroOfferToken(
+    productIds: [String],
+    appTransactionId: String,
+    allowIntroductoryOffer: Bool
+  ) async throws -> [String: IntroOfferToken] {
+    return try await urlSession.request(
+      .getIntroOfferToken(
+        productIds: productIds,
+        appTransactionId: appTransactionId,
+        allowIntroductoryOffer: allowIntroductoryOffer
+      ),
+      data: SuperwallRequestData(factory: factory)
+    ).tokensByProductId
   }
 }

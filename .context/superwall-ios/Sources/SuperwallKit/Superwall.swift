@@ -180,6 +180,48 @@ public final class Superwall: NSObject, ObservableObject {
         }
       }
       entitlements.subscriptionStatusDidSet(subscriptionStatus)
+
+      // When using an external purchase controller, update CustomerInfo.entitlements
+      // to reflect the entitlements from the purchase controller
+      if dependencyContainer.makeHasExternalPurchaseController() {
+        customerInfo = CustomerInfo.forExternalPurchaseController(
+          storage: dependencyContainer.storage,
+          subscriptionStatus: subscriptionStatus
+        )
+      }
+    }
+  }
+
+  /// Contains the latest information about all of the customer's purchase and subscription data.
+  ///
+  /// This is a published property, so you can subscribe to it to receive updates when it changes. Alternatively,
+  /// you can use the delegate method ``SuperwallDelegate/customerInfoDidChange(from:to:)``
+  /// or await an `AsyncStream` of changes via ``Superwall/customerInfoStream``.
+  @Published
+  public var customerInfo: CustomerInfo = .blank()
+
+  /// An `AsyncStream` of ``customerInfo`` changes, starting from the last known value.
+  ///
+  /// Alternatively, you can subscribe to the published variable ``customerInfo`` or use the delegate
+  /// method ``SuperwallDelegate/customerInfoDidChange(from:to:)``.
+  @available(iOS 15.0, *)
+  public var customerInfoStream: AsyncStream<CustomerInfo> {
+    AsyncStream<CustomerInfo>(bufferingPolicy: .bufferingNewest(1)) { continuation in
+      if !customerInfo.isPlaceholder {
+        continuation.yield(customerInfo)
+      }
+
+      // Subscribe to all future non-nil updates
+      let cancellable = $customerInfo
+        .removeDuplicates()
+        .sink { newInfo in
+          continuation.yield(newInfo)
+        }
+
+      // Clean up when the stream finishes/cancels
+      continuation.onTermination = { @Sendable _ in
+        cancellable.cancel()
+      }
     }
   }
 
@@ -198,21 +240,24 @@ public final class Superwall: NSObject, ObservableObject {
     if dependencyContainer.makeHasExternalPurchaseController() {
       return
     }
-    let webEntitlements = dependencyContainer.entitlementsInfo.web
+    let activeWebEntitlements = dependencyContainer.entitlementsInfo.web
     let superwall = superwall ?? Superwall.shared
     switch status {
     case .active(let entitlements):
-      let allEntitlements = entitlements.union(webEntitlements)
-      if allEntitlements.isEmpty {
+      // Use mergePrioritized to intelligently merge device and web entitlements
+      // This ensures the highest priority version is kept for each entitlement ID
+      let combinedEntitlements = Array(entitlements) + Array(activeWebEntitlements)
+      let mergedEntitlements = Entitlement.mergePrioritized(combinedEntitlements)
+      if mergedEntitlements.isEmpty {
         superwall.subscriptionStatus = .inactive
       } else {
-        superwall.subscriptionStatus = .active(allEntitlements)
+        superwall.subscriptionStatus = .active(mergedEntitlements)
       }
     case .inactive:
-      if webEntitlements.isEmpty {
+      if activeWebEntitlements.isEmpty {
         superwall.subscriptionStatus = .inactive
       } else {
-        superwall.subscriptionStatus = .active(webEntitlements)
+        superwall.subscriptionStatus = .active(activeWebEntitlements)
       }
     case .unknown:
       superwall.subscriptionStatus = .unknown
@@ -343,6 +388,8 @@ public final class Superwall: NSObject, ObservableObject {
     )
     self.init(dependencyContainer: dependencyContainer)
 
+    customerInfo = dependencyContainer.storage.get(LatestCustomerInfo.self) ?? .blank()
+
     subscriptionStatus = dependencyContainer.storage.get(SubscriptionStatusKey.self) ?? .unknown
     dependencyContainer.entitlementsInfo.subscriptionStatusDidSet(subscriptionStatus)
 
@@ -385,6 +432,12 @@ public final class Superwall: NSObject, ObservableObject {
 
   /// Listens to config.
   private func addListeners() {
+    listenToConfig()
+    listenToSubscriptionStatus()
+    listenToCustomerInfo()
+  }
+
+  private func listenToConfig() {
     dependencyContainer.configManager.configState
       .receive(on: DispatchQueue.main)
       .subscribe(
@@ -403,7 +456,9 @@ public final class Superwall: NSObject, ObservableObject {
             }
           }
         ))
+  }
 
+  private func listenToSubscriptionStatus() {
     $subscriptionStatus
       .removeDuplicates()
       .dropFirst()
@@ -435,6 +490,44 @@ public final class Superwall: NSObject, ObservableObject {
               let deviceAttributesPlacement = InternalSuperwallEvent.DeviceAttributes(
                 deviceAttributes: deviceAttributes)
               await self.track(deviceAttributesPlacement)
+            }
+          }
+        )
+      )
+  }
+
+  private func listenToCustomerInfo() {
+    $customerInfo
+      .removeDuplicates()
+      .dropFirst()
+      .scan((previous: customerInfo, current: customerInfo)) { previousPair, newStatus in
+        // Shift the current value to previous, and set the new status as the current value
+        (previous: previousPair.current, current: newStatus)
+      }
+      .receive(on: DispatchQueue.main)
+      .subscribe(
+        Subscribers.Sink(
+          receiveCompletion: { _ in },
+          receiveValue: { [weak self] statusPair in
+            guard let self = self else {
+              return
+            }
+            let oldValue = statusPair.previous
+            let newValue = statusPair.current
+
+            self.dependencyContainer.storage.save(newValue, forType: LatestCustomerInfo.self)
+
+            Task {
+              await self.dependencyContainer.delegateAdapter.customerInfoDidChange(
+                from: oldValue,
+                to: newValue
+              )
+
+              let event = InternalSuperwallEvent.CustomerInfoDidChange(
+                fromCustomerInfo: oldValue,
+                toCustomerInfo: newValue
+              )
+              await self.track(event)
             }
           }
         )
@@ -561,6 +654,10 @@ public final class Superwall: NSObject, ObservableObject {
   ///
   /// - Returns: An array of ``Assignment`` objects.
   public func confirmAllAssignments() async -> [Assignment] {
+    _ = try? await dependencyContainer.configManager.configState
+      .compactMap { $0.getConfig() }
+      .throwableAsync()
+
     let confirmAllAssignments = InternalSuperwallEvent.ConfirmAllAssignments()
     await track(confirmAllAssignments)
 
@@ -714,6 +811,30 @@ public final class Superwall: NSObject, ObservableObject {
     }
   }
 
+  /// Refreshes the configuration from the Superwall dashboard.
+  ///
+  /// This fetches the latest configuration from the server and updates any paywalls that have changed.
+  /// Paywalls that have been removed or modified will be reloaded on next presentation.
+  ///
+  /// - Note: This is intended for development use only.
+  public func refreshConfiguration() async {
+    await dependencyContainer.configManager.refreshConfiguration(isUserInitiated: true)
+  }
+
+  /// Refreshes the configuration from the Superwall dashboard.
+  ///
+  /// This fetches the latest configuration from the server and updates any paywalls that have changed.
+  /// Paywalls that have been removed or modified will be reloaded on next presentation.
+  ///
+  /// - Parameter completion: An optional completion block called when the refresh completes.
+  /// - Note: This is intended for development use only.
+  public func refreshConfiguration(completion: (() -> Void)? = nil) {
+    Task {
+      await refreshConfiguration()
+      completion?()
+    }
+  }
+
   /// **For internal use only. Do not use this.**
   public func setPlatformWrapper(
     _ platformWrapper: String,
@@ -816,16 +937,25 @@ public final class Superwall: NSObject, ObservableObject {
     return dependencyContainer.deepLinkRouter.route(url: url)
   }
 
-  /// Handles a deep link sent to your app to open a preview of your paywall.
+  /// Handles a deep link sent to your app.
   ///
-  /// You can preview your paywall on-device before going live by utilizing paywall previews. This uses a deep link to render a
-  /// preview of a paywall you've configured on the Superwall dashboard on your device. See
-  /// [In-App Previews](https://docs.superwall.com/docs/in-app-paywall-previews) for
-  /// more.
+  /// This method handles several types of deep links:
+  /// - **Paywall previews**: Preview paywalls on-device before going live. See
+  ///   [In-App Previews](https://docs.superwall.com/docs/in-app-paywall-previews).
+  /// - **Redemption codes**: Redeem web checkout codes via deep link.
+  /// - **Superwall universal links**: Links in the format `*.superwall.app/app-link/*`.
+  /// - **`deepLink_open` trigger**: Any deep link can trigger a paywall if you've configured
+  ///   a `deepLink_open` trigger in your Superwall dashboard.
   ///
-  /// - Parameters:
-  ///   - url: The URL of the deep link.
-  /// - Returns: A `Bool` that is `true` if the deep link was handled. If called before ``Superwall/configure(apiKey:purchaseController:options:completion:)`` completes then it'll always return `true`.
+  /// This method is designed to work in a handler chain pattern where multiple handlers
+  /// process deep links. It returns `true` only for URLs that Superwall will handle,
+  /// allowing other handlers to process non-Superwall URLs.
+  ///
+  /// - Parameter url: The URL of the deep link.
+  /// - Returns: `true` if Superwall will handle this deep link, `false` otherwise.
+  ///   When called before ``Superwall/configure(apiKey:purchaseController:options:completion:)``
+  ///   completes, returns `true` only for recognized Superwall URL formats or if cached
+  ///   config contains a `deepLink_open` trigger.
   @discardableResult
   public static func handleDeepLink(_ url: URL) -> Bool {
     if Superwall.isInitialized,
@@ -1120,6 +1250,40 @@ public final class Superwall: NSObject, ObservableObject {
       completion(result.toObjc())
     }
   }
+
+  // MARK: - CustomerInfo
+
+  /// Gets the latest ``CustomerInfo``.
+  ///
+  /// - Returns: A ``CustomerInfo`` object.
+  public func getCustomerInfo() async -> CustomerInfo {
+    // If we already have a non-placeholder customerInfo, return it immediately
+    if !customerInfo.isPlaceholder {
+      return customerInfo
+    }
+
+    // Otherwise, await the first non-placeholder emission from the publisher
+    return await withCheckedContinuation { continuation in
+      var cancellable: AnyCancellable?
+      cancellable = $customerInfo
+        .removeDuplicates()
+        .filter { !$0.isPlaceholder }
+        .sink { newInfo in
+          continuation.resume(returning: newInfo)
+          cancellable?.cancel()
+        }
+    }
+  }
+
+  /// Gets the latest ``CustomerInfo``.
+  ///
+  /// - Parameter completion: A ``CustomerInfo`` object.
+  public func getCustomerInfo(completion: @escaping (CustomerInfo) -> Void) {
+    Task {
+      let customerInfo = await getCustomerInfo()
+      completion(customerInfo)
+    }
+  }
 }
 
 // MARK: - PaywallViewControllerDelegate
@@ -1174,6 +1338,21 @@ extension Superwall: PaywallViewControllerEventDelegate {
         )
         await Superwall.shared.track(customPlacement)
       }
+    case .scheduleNotification(let notification):
+      await NotificationScheduler.shared.scheduleNotifications(
+        [notification],
+        fromPaywallId: paywallViewController.paywall.identifier,
+        factory: dependencyContainer
+      )
+    case let .userAttributesUpdated(attributes: attributes):
+      // Attributes is an array of {key, value} objects, convert to dictionary
+      var attributesDict: [String: Any] = [:]
+      for attribute in attributes.arrayValue {
+        if let key = attribute["key"].string {
+          attributesDict[key] = attribute["value"].object
+        }
+      }
+      dependencyContainer.identityManager.mergeUserAttributesAndNotify(attributesDict)
     }
   }
 }
