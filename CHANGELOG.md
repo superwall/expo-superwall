@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.1
+
+### Patch Changes
+
+- a165d76: Bump superwall-android to 2.6.7
+- a165d76: Bump SuperwallKit iOS to 4.12.3
+- d96b449: Bridged android back button reroute handler
+
 ## 1.0.0
 
 ### Major Changes
