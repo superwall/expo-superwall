@@ -99,12 +99,12 @@ class SuperwallEvent {
           map["attributes"] = superwallPlacement.attributes
         }
         is SuperwallEvent.IntegrationProps -> {
-          map["event"] = "integration_attributes"
-          map["audienceFilterParams"] = superwallPlacement.audienceFilterParams
+          map["event"] = "integrationAttributes"
+          map["attributes"] = superwallPlacement.audienceFilterParams
         }
         is SuperwallEvent.IntegrationAttributes -> {
-          map["event"] = "integration_attributes"
-          map["audienceFilterParams"] = superwallPlacement.audienceFilterParams
+          map["event"] = "integrationAttributes"
+          map["attributes"] = superwallPlacement.audienceFilterParams
         }
         is SuperwallEvent.NonRecurringProductPurchase -> {
           map["event"] = "nonRecurringProductPurchase"
@@ -235,6 +235,32 @@ class SuperwallEvent {
         is SuperwallEvent.ReviewRequested -> {
           map["event"] = "reviewRequested"
           map["count"] = superwallPlacement.count
+        }
+        is SuperwallEvent.CustomerInfoDidChange -> {
+          map["event"] = "customerInfoDidChange"
+        }
+        is SuperwallEvent.PermissionRequested -> {
+          map["event"] = "permissionRequested"
+          map["permissionName"] = superwallPlacement.permissionName
+          map["paywallIdentifier"] = superwallPlacement.paywallIdentifier
+        }
+        is SuperwallEvent.PermissionGranted -> {
+          map["event"] = "permissionGranted"
+          map["permissionName"] = superwallPlacement.permissionName
+          map["paywallIdentifier"] = superwallPlacement.paywallIdentifier
+        }
+        is SuperwallEvent.PermissionDenied -> {
+          map["event"] = "permissionDenied"
+          map["permissionName"] = superwallPlacement.permissionName
+          map["paywallIdentifier"] = superwallPlacement.paywallIdentifier
+        }
+        is SuperwallEvent.PaywallPreloadStart -> {
+          map["event"] = "paywallPreloadStart"
+          map["paywallCount"] = superwallPlacement.paywallCount
+        }
+        is SuperwallEvent.PaywallPreloadComplete -> {
+          map["event"] = "paywallPreloadComplete"
+          map["paywallCount"] = superwallPlacement.paywallCount
         }
         else -> {}
       }

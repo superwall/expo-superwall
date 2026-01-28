@@ -124,6 +124,8 @@ extension SuperwallEvent {
       return ["event": "paywallWebviewLoadTimeout", "paywallInfo": paywallInfo.toJson()]
     case .paywallWebviewLoadFallback(let paywallInfo):
       return ["event": "paywallWebviewLoadFallback", "paywallInfo": paywallInfo.toJson()]
+    case .paywallWebviewProcessTerminated(let paywallInfo):
+      return ["event": "paywallWebviewProcessTerminated", "paywallInfo": paywallInfo.toJson()]
     case .paywallProductsLoadStart(let triggeredEventName, let paywallInfo):
       return [
         "event": "paywallProductsLoadStart", "triggeredEventName": triggeredEventName ?? "",
@@ -225,6 +227,30 @@ extension SuperwallEvent {
       return ["event": "integrationAttributes", "attributes": attributes]
     case .reviewRequested(let count):
       return ["event": "reviewRequested", "count": count]
+    case .permissionRequested(let permissionName, let paywallIdentifier):
+      return [
+        "event": "permissionRequested",
+        "permissionName": permissionName,
+        "paywallIdentifier": paywallIdentifier
+      ]
+    case .permissionGranted(let permissionName, let paywallIdentifier):
+      return [
+        "event": "permissionGranted",
+        "permissionName": permissionName,
+        "paywallIdentifier": paywallIdentifier
+      ]
+    case .permissionDenied(let permissionName, let paywallIdentifier):
+      return [
+        "event": "permissionDenied",
+        "permissionName": permissionName,
+        "paywallIdentifier": paywallIdentifier
+      ]
+    case .paywallPreloadStart(let paywallCount):
+      return ["event": "paywallPreloadStart", "paywallCount": paywallCount]
+    case .paywallPreloadComplete(let paywallCount):
+      return ["event": "paywallPreloadComplete", "paywallCount": paywallCount]
+    case .customerInfoDidChange:
+      return ["event": "customerInfoDidChange"]
     default:
       return ["event": "unknown"]
     }

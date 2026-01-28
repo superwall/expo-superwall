@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.2
+
+### Patch Changes
+
+- Bump SuperwallKit iOS to 4.12.9
+- Bump Superwall Android SDK to 2.6.8
+- Add `introOfferToken` property to `StoreProduct`.
+- Add missing SuperwallEvents: `paywallWebviewProcessTerminated`, `paywallProductsLoadMissingProducts`, `networkDecodingFail`, `customerInfoDidChange`, `integrationAttributes`, `reviewRequested`, `permissionRequested`, `permissionGranted`, `permissionDenied`, `paywallPreloadStart`, `paywallPreloadComplete`.
+
 ## 1.0.1
 
 ### Patch Changes

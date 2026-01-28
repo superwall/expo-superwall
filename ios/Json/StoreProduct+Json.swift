@@ -46,6 +46,8 @@ extension StoreProduct {
       json["isFamilyShareable"] = isFamilyShareable
     }
 
+    json["introOfferToken"] = introOfferToken
+
     if let trialPeriodEndDate = trialPeriodEndDate {
       let dateFormatter = ISO8601DateFormatter()
       json["trialPeriodEndDate"] = dateFormatter.string(from: trialPeriodEndDate)
