@@ -982,6 +982,9 @@ export interface TransactionProductIdentifier {
   /** Whether this product can be shared with family members. */
   isFamilyShareable?: boolean
 
+  /** The token for the introductory offer (iOS 18+, Android). Used for purchase verification. */
+  introOfferToken?: string | null
+
   /** Additional attributes and metadata associated with the product. */
   attributes: Record<string, any>
 }
@@ -1857,6 +1860,128 @@ export interface CustomPlacementEvent {
 }
 
 /**
+ * The paywall's web view content process was terminated.
+ */
+export interface PaywallWebviewProcessTerminatedEvent {
+  /** The paywall's web view content process was terminated. */
+  event: "paywallWebviewProcessTerminated"
+  /**
+   * Information about the paywall whose web view process was terminated.
+   * See {@link PaywallInfo}.
+   */
+  paywallInfo: PaywallInfo
+}
+
+/**
+ * Products for the paywall are missing from the store.
+ */
+export interface PaywallProductsLoadMissingProductsEvent {
+  /** Products for the paywall are missing from the store. */
+  event: "paywallProductsLoadMissingProducts"
+  /** The name of the event or placement that triggered this load. */
+  triggeredEventName: string
+  /**
+   * Information about the paywall with missing products.
+   * See {@link PaywallInfo}.
+   */
+  paywallInfo: PaywallInfo
+  /** The product identifiers that are missing. */
+  identifiers: string[]
+}
+
+/**
+ * A network response failed to decode.
+ */
+export interface NetworkDecodingFailEvent {
+  /** A network response failed to decode. */
+  event: "networkDecodingFail"
+}
+
+/**
+ * The customer info did change.
+ */
+export interface CustomerInfoDidChangeEvent {
+  /** The customer info did change. */
+  event: "customerInfoDidChange"
+}
+
+/**
+ * Integration attributes were set.
+ */
+export interface IntegrationAttributesEvent {
+  /** Integration attributes were set. */
+  event: "integrationAttributes"
+  /** The integration attributes. */
+  attributes: Record<string, any>
+}
+
+/**
+ * A review was requested from the user.
+ */
+export interface ReviewRequestedEvent {
+  /** A review was requested from the user. */
+  event: "reviewRequested"
+  /** The number of times a review has been requested. */
+  count: number
+}
+
+/**
+ * A permission was requested from a paywall.
+ */
+export interface PermissionRequestedEvent {
+  /** A permission was requested from a paywall. */
+  event: "permissionRequested"
+  /** The name of the permission that was requested. */
+  permissionName: string
+  /** The identifier of the paywall that requested the permission. */
+  paywallIdentifier: string
+}
+
+/**
+ * A permission was granted after being requested from a paywall.
+ */
+export interface PermissionGrantedEvent {
+  /** A permission was granted after being requested from a paywall. */
+  event: "permissionGranted"
+  /** The name of the permission that was granted. */
+  permissionName: string
+  /** The identifier of the paywall that requested the permission. */
+  paywallIdentifier: string
+}
+
+/**
+ * A permission was denied after being requested from a paywall.
+ */
+export interface PermissionDeniedEvent {
+  /** A permission was denied after being requested from a paywall. */
+  event: "permissionDenied"
+  /** The name of the permission that was denied. */
+  permissionName: string
+  /** The identifier of the paywall that requested the permission. */
+  paywallIdentifier: string
+}
+
+/**
+ * Paywall preloading has started.
+ */
+export interface PaywallPreloadStartEvent {
+  /** Paywall preloading has started. */
+  event: "paywallPreloadStart"
+  /** The number of paywalls being preloaded. */
+  paywallCount: number
+}
+
+/**
+ * Paywall preloading has completed.
+ */
+export interface PaywallPreloadCompleteEvent {
+  /** Paywall preloading has completed. */
+  event: "paywallPreloadComplete"
+  /** The number of paywalls that were preloaded. */
+  paywallCount: number
+}
+
+/**
  * A union of all possible string literal values for the `event` property from all specific Superwall event types.
  * This type can be used when you need to refer to an event type name itself.
  */
@@ -1923,6 +2048,17 @@ export type SuperwallEventType =
   | SurveyResponseEvent["event"]
   | PaywallPresentationRequestEvent["event"]
   | CustomPlacementEvent["event"]
+  | PaywallWebviewProcessTerminatedEvent["event"]
+  | PaywallProductsLoadMissingProductsEvent["event"]
+  | NetworkDecodingFailEvent["event"]
+  | CustomerInfoDidChangeEvent["event"]
+  | IntegrationAttributesEvent["event"]
+  | ReviewRequestedEvent["event"]
+  | PermissionRequestedEvent["event"]
+  | PermissionGrantedEvent["event"]
+  | PermissionDeniedEvent["event"]
+  | PaywallPreloadStartEvent["event"]
+  | PaywallPreloadCompleteEvent["event"]
 
 /**
  * Represents a Superwall event that can be tracked by the SDK.
@@ -1992,6 +2128,17 @@ export type SuperwallEvent =
   | SurveyResponseEvent
   | PaywallPresentationRequestEvent
   | CustomPlacementEvent
+  | PaywallWebviewProcessTerminatedEvent
+  | PaywallProductsLoadMissingProductsEvent
+  | NetworkDecodingFailEvent
+  | CustomerInfoDidChangeEvent
+  | IntegrationAttributesEvent
+  | ReviewRequestedEvent
+  | PermissionRequestedEvent
+  | PermissionGrantedEvent
+  | PermissionDeniedEvent
+  | PaywallPreloadStartEvent
+  | PaywallPreloadCompleteEvent
 
 /**
  * Contains information about a Superwall event, including the specific {@link SuperwallEvent}
