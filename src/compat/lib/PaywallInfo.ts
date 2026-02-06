@@ -42,6 +42,7 @@ export class PaywallInfo {
   localNotifications: LocalNotification[] // Assuming LocalNotification is defined elsewhere
   computedPropertyRequests: ComputedPropertyRequest[] // Assuming ComputedPropertyRequest is defined elsewhere
   surveys: Survey[] // Assuming Survey is defined elsewhere
+  state: Record<string, any>
 
   constructor({
     identifier,
@@ -74,6 +75,7 @@ export class PaywallInfo {
     localNotifications,
     computedPropertyRequests,
     surveys,
+    state,
   }: {
     identifier: string
     name: string
@@ -105,6 +107,7 @@ export class PaywallInfo {
     localNotifications: LocalNotification[]
     computedPropertyRequests: ComputedPropertyRequest[]
     surveys: Survey[]
+    state: Record<string, any>
   }) {
     this.identifier = identifier
     this.name = name
@@ -136,6 +139,7 @@ export class PaywallInfo {
     this.localNotifications = localNotifications
     this.computedPropertyRequests = computedPropertyRequests
     this.surveys = surveys
+    this.state = state
   }
 
   static fromJson(json: any): PaywallInfo {
@@ -172,6 +176,7 @@ export class PaywallInfo {
         ComputedPropertyRequest.fromJson(r),
       ),
       surveys: json.surveys?.map((s: any) => Survey.fromJson(s)),
+      state: json.state ?? {},
     })
   }
 }

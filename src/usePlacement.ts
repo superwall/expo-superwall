@@ -1,6 +1,12 @@
 import { useCallback, useId, useState } from "react"
 
-import type { PaywallInfo, PaywallResult, PaywallSkippedReason } from "./SuperwallExpoModule.types"
+import type {
+  CustomCallback,
+  CustomCallbackResult,
+  PaywallInfo,
+  PaywallResult,
+  PaywallSkippedReason,
+} from "./SuperwallExpoModule.types"
 import { useSuperwall } from "./useSuperwall"
 import { useSuperwallEvents } from "./useSuperwallEvents"
 
@@ -30,6 +36,11 @@ export interface usePlacementCallbacks {
   onSkip?: (reason: PaywallSkippedReason) => void
   /** Called when a paywall fails to present or another SDK error occurs. */
   onError?: (error: string) => void
+  /**
+   * Called when a custom callback is invoked from a paywall.
+   * Return a result to send back to the paywall.
+   */
+  onCustomCallback?: (callback: CustomCallback) => Promise<CustomCallbackResult> | CustomCallbackResult
 }
 
 /**
@@ -118,6 +129,7 @@ export function usePlacement(callbacks: usePlacementCallbacks = {}) {
       setState({ status: "presented", paywallInfo: info })
       callbacks.onPresent?.(info)
     },
+    onCustomCallback: callbacks.onCustomCallback,
   })
 
   const { registerPlacement: storeRegisterPlacement } = useSuperwall((state) => ({

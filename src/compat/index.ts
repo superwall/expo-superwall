@@ -195,6 +195,28 @@ export default class Superwall {
       handler.onPresentHandler(info)
     })
 
+    SuperwallExpoModule.addListener("onCustomCallback", (data) => {
+      const handler = this.presentationHandlers.get(data.handlerId)
+
+      // Only respond if this handlerId belongs to the compat layer.
+      // If not, another listener (e.g. hooks SDK) will handle it.
+      if (!handler) return
+
+      if (!handler.onCustomCallbackHandler) {
+        SuperwallExpoModule.didHandleCustomCallback(data.callbackId, "failure", undefined)
+        return
+      }
+
+      Promise.resolve(handler.onCustomCallbackHandler({ name: data.name, variables: data.variables })).then(
+        (result) => {
+          SuperwallExpoModule.didHandleCustomCallback(data.callbackId, result.status, result.data)
+        },
+        () => {
+          SuperwallExpoModule.didHandleCustomCallback(data.callbackId, "failure", undefined)
+        },
+      )
+    })
+
     // MARK: - SuperwallDelegate Listeners
     SuperwallExpoModule.addListener("subscriptionStatusDidChange", async (data) => {
       Superwall.delegate?.subscriptionStatusDidChange(data.from, data.to)

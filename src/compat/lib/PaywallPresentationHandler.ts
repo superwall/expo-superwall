@@ -1,3 +1,4 @@
+import type { CustomCallback, CustomCallbackResult } from "../../SuperwallExpoModule.types"
 import type { PaywallInfo } from "./PaywallInfo"
 import type { PaywallResult } from "./PaywallResult"
 import type { PaywallSkippedReason } from "./PaywallSkippedReason"
@@ -13,6 +14,7 @@ export class PaywallPresentationHandler {
   onDismissHandler?: (info: PaywallInfo, result: PaywallResult) => void
   onErrorHandler?: (error: string) => void
   onSkipHandler?: (reason: PaywallSkippedReason) => void
+  onCustomCallbackHandler?: (callback: CustomCallback) => Promise<CustomCallbackResult> | CustomCallbackResult
 
   // Setters for the handlers
   onPresent(handler: (info: PaywallInfo) => void): void {
@@ -29,5 +31,9 @@ export class PaywallPresentationHandler {
 
   onSkip(handler: (reason: PaywallSkippedReason) => void): void {
     this.onSkipHandler = handler
+  }
+
+  onCustomCallback(handler: (callback: CustomCallback) => Promise<CustomCallbackResult> | CustomCallbackResult): void {
+    this.onCustomCallbackHandler = handler
   }
 }

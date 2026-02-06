@@ -484,6 +484,41 @@ export interface PaywallInfo {
    * See {@link LocalNotification}.
    */
   localNotifications: LocalNotification[]
+  /**
+   * The state of the paywall, updated on paywall dismiss.
+   * Contains key-value pairs representing the paywall's current state.
+   */
+  state: Record<string, any>
+}
+
+/**
+ * Represents a custom callback invoked from a paywall.
+ * Custom callbacks allow paywalls to communicate with the app to perform
+ * operations like validation, data fetching, etc.
+ */
+export interface CustomCallback {
+  /** The name of the callback as defined in the paywall. */
+  name: string
+  /** Optional variables passed from the paywall. */
+  variables?: Record<string, any>
+}
+
+/**
+ * The status of a custom callback result.
+ * - `success`: The callback completed successfully.
+ * - `failure`: The callback failed.
+ */
+export type CustomCallbackResultStatus = "success" | "failure"
+
+/**
+ * The result to return from a custom callback handler.
+ * Determines which branch (onSuccess/onFailure) executes in the paywall.
+ */
+export interface CustomCallbackResult {
+  /** Whether the callback succeeded or failed. */
+  status: CustomCallbackResultStatus
+  /** Optional key-value pairs to return to the paywall. */
+  data?: Record<string, any>
 }
 
 /**
@@ -2377,4 +2412,19 @@ export type SuperwallExpoModuleEvents = {
    * @platform Android
    */
   onBackPressed: (params: { paywallInfo: PaywallInfo }) => void
+  /**
+   * Emitted when a custom callback is invoked from a paywall.
+   * The handler should process the callback and return a result via `didHandleCustomCallback`.
+   * @param params - Event parameters.
+   * @param params.callbackId - Unique identifier for this callback invocation, used to return the result.
+   * @param params.name - The name of the custom callback.
+   * @param params.variables - Optional variables passed from the paywall.
+   * @param params.handlerId - Identifier for the handler associated with this callback.
+   */
+  onCustomCallback: (params: {
+    callbackId: string
+    name: string
+    variables?: Record<string, any>
+    handlerId: string
+  }) => void
 }
