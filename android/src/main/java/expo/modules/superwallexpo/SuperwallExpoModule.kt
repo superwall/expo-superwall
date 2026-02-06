@@ -61,7 +61,7 @@ class SuperwallExpoModule : Module() {
   private val onPaywallSkip = "onPaywallSkip"
   private val onCustomCallback = "onCustomCallback"
 
-  val customCallbackFutures = mutableMapOf<String, CompletableFuture<CustomCallbackResult>>()
+  val customCallbackFutures = java.util.concurrent.ConcurrentHashMap<String, CompletableFuture<CustomCallbackResult>>()
 
   // Purchase Events
   private val onPurchase = "onPurchase"
@@ -395,14 +395,19 @@ class SuperwallExpoModule : Module() {
       backPressedPromise?.complete(shouldConsume)
     }
 
-    Function("didHandleCustomCallback") { callbackId: String, status: String, data: Map<String, Any>? ->
-      val future = customCallbackFutures.remove(callbackId) ?: return@Function
+    AsyncFunction("didHandleCustomCallback") { callbackId: String, status: String, data: Map<String, Any>?, promise: Promise ->
+      val future = customCallbackFutures.remove(callbackId)
+      if (future == null) {
+        promise.resolve(null)
+        return@AsyncFunction
+      }
       val result = if (status == "success") {
         CustomCallbackResult.success(data)
       } else {
         CustomCallbackResult.failure(data)
       }
       future.complete(result)
+      promise.resolve(null)
     }
 
     AsyncFunction("dismiss") { promise: Promise ->

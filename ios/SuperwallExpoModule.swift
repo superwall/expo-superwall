@@ -15,6 +15,7 @@ public class SuperwallExpoModule: Module {
   private let onCustomCallback = "onCustomCallback"
 
   // Custom callback continuations keyed by callbackId
+  private let callbackLock = NSLock()
   private var customCallbackContinuations: [String: CheckedContinuation<CustomCallbackResult, Never>] = [:]
 
   // Purchase Events
@@ -184,7 +185,9 @@ public class SuperwallExpoModule: Module {
             "handlerId": handlerId,
           ]
           return await withCheckedContinuation { continuation in
+            self.callbackLock.lock()
             self.customCallbackContinuations[callbackId] = continuation
+            self.callbackLock.unlock()
             self.sendEvent(self.onCustomCallback, data)
           }
         }
@@ -305,8 +308,12 @@ public class SuperwallExpoModule: Module {
       purchaseController.restoreCompletion?(restorationResult)
     }
 
-    Function("didHandleCustomCallback") { (callbackId: String, status: String, data: [String: Any]?) in
-      guard let continuation = self.customCallbackContinuations.removeValue(forKey: callbackId) else {
+    AsyncFunction("didHandleCustomCallback") { (callbackId: String, status: String, data: [String: Any]?, promise: Promise) in
+      self.callbackLock.lock()
+      let continuation = self.customCallbackContinuations.removeValue(forKey: callbackId)
+      self.callbackLock.unlock()
+      guard let continuation = continuation else {
+        promise.resolve(nil)
         return
       }
       let result: CustomCallbackResult
@@ -316,6 +323,7 @@ public class SuperwallExpoModule: Module {
         result = .failure(data: data)
       }
       continuation.resume(returning: result)
+      promise.resolve(nil)
     }
 
     AsyncFunction("dismiss") { (promise: Promise) in

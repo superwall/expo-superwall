@@ -333,9 +333,9 @@ export function useSuperwallEvents({
       SuperwallExpoModule.addListener(
         "onCustomCallback",
         ({ callbackId, name, variables, handlerId }) => {
-          // Custom callbacks always have a handlerId — only the matching handler should respond,
-          // otherwise unscoped listeners will send back "failure" before the right handler runs.
-          if (handlerId && trackedHandlerId !== handlerId) return
+          // Custom callbacks are always scoped to a specific handler (from usePlacement).
+          // Only the matching scoped listener should respond — unscoped listeners must ignore.
+          if (!trackedHandlerId || trackedHandlerId !== handlerId) return
 
           const handler = callbacksRef.current.onCustomCallback
           if (!handler) {
