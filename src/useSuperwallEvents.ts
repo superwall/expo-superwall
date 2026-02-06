@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react"
 import SuperwallExpoModule from "./SuperwallExpoModule"
 import type {
+  CustomCallback,
+  CustomCallbackResult,
   LogLevel,
   LogScope,
   PaywallInfo,
@@ -139,6 +141,16 @@ export interface SuperwallEventCallbacks {
    * @internal This is used internally by SuperwallProvider and should not be called directly.
    */
   onBackPressed?: (paywallInfo: PaywallInfo) => boolean
+
+  /**
+   * Called when a custom callback is invoked from a paywall.
+   * Custom callbacks allow paywalls to communicate with the app to perform
+   * operations like validation, data fetching, etc.
+   *
+   * @param callback - The custom callback info containing name and optional variables.
+   * @returns A promise or value with the result to send back to the paywall.
+   */
+  onCustomCallback?: (callback: CustomCallback) => Promise<CustomCallbackResult> | CustomCallbackResult
 
   /**
    * An optional identifier used to scope certain events (like `onPaywallPresent`, `onPaywallDismiss`, `onPaywallSkip`)
@@ -314,6 +326,33 @@ export function useSuperwallEvents({
         const shouldConsume = callbacksRef.current.onBackPressed?.(paywallInfo) ?? false
         SuperwallExpoModule.didHandleBackPressed(shouldConsume)
       }),
+    )
+
+    /* ---------------- Custom Callbacks ---------------- */
+    subs.push(
+      SuperwallExpoModule.addListener(
+        "onCustomCallback",
+        ({ callbackId, name, variables, handlerId }) => {
+          // Custom callbacks are always scoped to a specific handler (from usePlacement).
+          // Only the matching scoped listener should respond — unscoped listeners must ignore.
+          if (!trackedHandlerId || trackedHandlerId !== handlerId) return
+
+          const handler = callbacksRef.current.onCustomCallback
+          if (!handler) {
+            SuperwallExpoModule.didHandleCustomCallback(callbackId, "failure", undefined)
+            return
+          }
+
+          Promise.resolve(handler({ name, variables })).then(
+            (result) => {
+              SuperwallExpoModule.didHandleCustomCallback(callbackId, result.status, result.data)
+            },
+            () => {
+              SuperwallExpoModule.didHandleCustomCallback(callbackId, "failure", undefined)
+            },
+          )
+        },
+      ),
     )
 
     // biome-ignore lint/suspicious/useIterableCallbackReturn: <explanation>

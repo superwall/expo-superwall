@@ -90,5 +90,7 @@ fun PaywallInfo.toJson(): Map<String, Any?> {
   }
   map["localNotifications"] = localNotifications
 
+  map["state"] = this.state
+
   return map
 }

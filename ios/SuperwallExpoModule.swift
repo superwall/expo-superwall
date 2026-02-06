@@ -12,6 +12,11 @@ public class SuperwallExpoModule: Module {
   private let onPaywallDismiss = "onPaywallDismiss"
   private let onPaywallError = "onPaywallError"
   private let onPaywallSkip = "onPaywallSkip"
+  private let onCustomCallback = "onCustomCallback"
+
+  // Custom callback continuations keyed by callbackId
+  private let callbackLock = NSLock()
+  private var customCallbackContinuations: [String: CheckedContinuation<CustomCallbackResult, Never>] = [:]
 
   // Purchase Events
   private let onPurchase = "onPurchase"
@@ -48,6 +53,7 @@ public class SuperwallExpoModule: Module {
       onPaywallDismiss,
       onPaywallError,
       onPaywallSkip,
+      onCustomCallback,
       onPurchase,
       onPurchaseRestore,
 
@@ -168,6 +174,23 @@ public class SuperwallExpoModule: Module {
             ] as [String: Any]
           self.sendEvent(self.onPaywallSkip, data)
         }
+
+        handler?.onCustomCallback { [weak self] callback async -> CustomCallbackResult in
+          guard let self = self else { return .failure() }
+          let callbackId = UUID().uuidString
+          let data: [String: Any] = [
+            "callbackId": callbackId,
+            "name": callback.name,
+            "variables": callback.variables as Any,
+            "handlerId": handlerId,
+          ]
+          return await withCheckedContinuation { continuation in
+            self.callbackLock.lock()
+            self.customCallbackContinuations[callbackId] = continuation
+            self.callbackLock.unlock()
+            self.sendEvent(self.onCustomCallback, data)
+          }
+        }
       }
 
       Superwall.shared.register(
@@ -283,6 +306,24 @@ public class SuperwallExpoModule: Module {
         return
       }
       purchaseController.restoreCompletion?(restorationResult)
+    }
+
+    AsyncFunction("didHandleCustomCallback") { (callbackId: String, status: String, data: [String: Any]?, promise: Promise) in
+      self.callbackLock.lock()
+      let continuation = self.customCallbackContinuations.removeValue(forKey: callbackId)
+      self.callbackLock.unlock()
+      guard let continuation = continuation else {
+        promise.resolve(nil)
+        return
+      }
+      let result: CustomCallbackResult
+      if status == "success" {
+        result = .success(data: data)
+      } else {
+        result = .failure(data: data)
+      }
+      continuation.resume(returning: result)
+      promise.resolve(nil)
     }
 
     AsyncFunction("dismiss") { (promise: Promise) in

@@ -136,6 +136,8 @@ extension PaywallInfo {
     }
     map["localNotifications"] = localNotificationsArray
 
+    map["state"] = self.state
+
     return map
   }
 }

@@ -49,6 +49,7 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
   ): void
   didRestore(result: Record<string, any>): void
   didHandleBackPressed(shouldConsume: boolean): void
+  didHandleCustomCallback(callbackId: string, status: string, data?: Record<string, any>): Promise<void>
 
   dismiss(): Promise<void>
   confirmAllAssignments(): Promise<any[]>

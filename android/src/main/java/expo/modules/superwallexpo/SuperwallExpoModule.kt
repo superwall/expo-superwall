@@ -23,6 +23,7 @@ import com.superwall.sdk.config.options.SuperwallOptions
 import com.superwall.sdk.logger.LogLevel
 import com.superwall.sdk.network.device.InterfaceStyle
 import com.superwall.sdk.paywall.presentation.PaywallPresentationHandler
+import com.superwall.sdk.paywall.presentation.CustomCallbackResult
 import com.superwall.sdk.paywall.presentation.result.PresentationResult
 import com.superwall.sdk.config.models.ConfigurationStatus
 import com.superwall.sdk.paywall.presentation.register
@@ -58,6 +59,9 @@ class SuperwallExpoModule : Module() {
   private val onPaywallDismiss = "onPaywallDismiss"
   private val onPaywallError = "onPaywallError"
   private val onPaywallSkip = "onPaywallSkip"
+  private val onCustomCallback = "onCustomCallback"
+
+  val customCallbackFutures = java.util.concurrent.ConcurrentHashMap<String, CompletableFuture<CustomCallbackResult>>()
 
   // Purchase Events
   private val onPurchase = "onPurchase"
@@ -91,6 +95,7 @@ class SuperwallExpoModule : Module() {
       onPaywallDismiss,
       onPaywallError,
       onPaywallSkip,
+      onCustomCallback,
       onPurchase,
       onPurchaseRestore,
       onBackPressed,
@@ -239,6 +244,23 @@ class SuperwallExpoModule : Module() {
           sendEvent(onPaywallSkip, data)
         }
 
+        handler?.onCustomCallback { callback ->
+          val callbackId = java.util.UUID.randomUUID().toString()
+          val future = CompletableFuture<CustomCallbackResult>()
+          customCallbackFutures[callbackId] = future
+
+          val data = mutableMapOf<String, Any?>(
+            "callbackId" to callbackId,
+            "name" to callback.name,
+            "handlerId" to handlerId,
+          )
+          callback.variables?.let { data["variables"] = it }
+
+          sendEvent(onCustomCallback, data)
+
+          future.await()
+        }
+
       Superwall.instance.register(
         placement = placement,
         params = params,
@@ -371,6 +393,21 @@ class SuperwallExpoModule : Module() {
 
     Function("didHandleBackPressed") { shouldConsume: Boolean ->
       backPressedPromise?.complete(shouldConsume)
+    }
+
+    AsyncFunction("didHandleCustomCallback") { callbackId: String, status: String, data: Map<String, Any>?, promise: Promise ->
+      val future = customCallbackFutures.remove(callbackId)
+      if (future == null) {
+        promise.resolve(null)
+        return@AsyncFunction
+      }
+      val result = if (status == "success") {
+        CustomCallbackResult.success(data)
+      } else {
+        CustomCallbackResult.failure(data)
+      }
+      future.complete(result)
+      promise.resolve(null)
     }
 
     AsyncFunction("dismiss") { promise: Promise ->
