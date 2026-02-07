@@ -164,6 +164,15 @@ export interface SuperwallStore {
   setLogLevel: (level: string) => Promise<void>
 
   /**
+   * Sets the locale identifier for the Superwall SDK.
+   * This determines the language used when presenting paywalls.
+   * Can be changed at runtime without needing to reconfigure.
+   * @param localeIdentifier - The locale identifier (e.g., "en", "es", "fr"), or `null` to reset to the device locale.
+   * @returns A promise that resolves when the locale identifier is set.
+   */
+  setLocaleIdentifier: (localeIdentifier: string | null) => Promise<void>
+
+  /**
    * Sets attributes for third-party integrations.
    * @param attributes - Object mapping IntegrationAttribute string values to their IDs
    * @returns A promise that resolves when attributes are set
@@ -319,6 +328,9 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   },
   setLogLevel: async (level) => {
     SuperwallExpoModule.setLogLevel(level)
+  },
+  setLocaleIdentifier: async (localeIdentifier) => {
+    SuperwallExpoModule.setLocaleIdentifier(localeIdentifier)
   },
 
   setIntegrationAttributes: async (attributes) => {

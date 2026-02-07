@@ -721,6 +721,17 @@ export default class Superwall {
   }
 
   /**
+   * Sets the locale identifier for the Superwall SDK.
+   * This determines the language used when presenting paywalls.
+   * Can be changed at runtime without needing to reconfigure.
+   *
+   * @param localeIdentifier - The locale identifier (e.g., "en_US", "es_ES"), or `null` to reset to the device locale.
+   */
+  async setLocaleIdentifier(localeIdentifier: string | null): Promise<void> {
+    SuperwallExpoModule.setLocaleIdentifier(localeIdentifier)
+  }
+
+  /**
    * Sets attributes for third-party integrations.
    * @param attributes - Object mapping IntegrationAttribute string values to their IDs
    */
