@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.3
+
+### Patch Changes
+
+- aa03f4e: Update Android & iOS SDK's, add Custom callbacks
+- 2ac9da1: Update Android to 2.7.2, fixing experimental properties option
+
 ## 1.0.2
 
 ### Patch Changes
