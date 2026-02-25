@@ -243,11 +243,22 @@ export class SuperwallEvent {
       case EventType.paywallWebviewLoadTimeout:
       case EventType.paywallWebviewLoadFallback:
       case EventType.paywallWebviewProcessTerminated:
-      case EventType.paywallProductsLoadMissingProducts:
-      case EventType.paywallPreloadComplete:
         return new SuperwallEvent({
           type: eventType,
           paywallInfo: PaywallInfo.fromJson(json.paywallInfo),
+        })
+      case EventType.paywallProductsLoadMissingProducts:
+        return new SuperwallEvent({
+          type: eventType,
+          triggeredEventName: json.triggeredEventName,
+          paywallInfo: PaywallInfo.fromJson(json.paywallInfo),
+          identifiers: json.identifiers,
+        })
+      case EventType.paywallPreloadComplete:
+        return new SuperwallEvent({
+          type: eventType,
+          paywallCount: json.paywallCount,
+        })
         })
       case EventType.paywallWebviewLoadFail:
         return new SuperwallEvent({
