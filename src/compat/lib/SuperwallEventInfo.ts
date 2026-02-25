@@ -73,6 +73,9 @@ export enum EventType {
   paywallProductsLoadStart = "paywallProductsLoadStart",
   paywallProductsLoadFail = "paywallProductsLoadFail",
   paywallProductsLoadComplete = "paywallProductsLoadComplete",
+  paywallWebviewProcessTerminated = "paywallWebviewProcessTerminated",
+  paywallProductsLoadMissingProducts = "paywallProductsLoadMissingProducts",
+  paywallPreloadComplete = "paywallPreloadComplete",
   paywallProductsLoadRetry = "paywallProductsLoadRetry",
   surveyResponse = "surveyResponse",
   paywallPresentationRequest = "paywallPresentationRequest",
@@ -239,6 +242,9 @@ export class SuperwallEvent {
       case EventType.paywallWebviewLoadComplete:
       case EventType.paywallWebviewLoadTimeout:
       case EventType.paywallWebviewLoadFallback:
+      case EventType.paywallWebviewProcessTerminated:
+      case EventType.paywallProductsLoadMissingProducts:
+      case EventType.paywallPreloadComplete:
         return new SuperwallEvent({
           type: eventType,
           paywallInfo: PaywallInfo.fromJson(json.paywallInfo),
