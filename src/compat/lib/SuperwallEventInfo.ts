@@ -136,6 +136,8 @@ export class SuperwallEvent {
   restoreType?: RestoreType
   userAttributes?: Record<string, any>
   audienceFilterParams?: Record<string, any>
+  identifiers?: string[]
+  paywallCount?: number
   count?: number
   duration?: number
   url?: string
@@ -169,6 +171,8 @@ export class SuperwallEvent {
     from?: { status: SubscriptionStatus; entitlements: Entitlement[] }
     to?: { status: SubscriptionStatus; entitlements: Entitlement[] }
     audienceFilterParams?: Record<string, any>
+    identifiers?: string[]
+    paywallCount?: number
     count?: number
     duration?: number
     url?: string
@@ -258,7 +262,6 @@ export class SuperwallEvent {
         return new SuperwallEvent({
           type: eventType,
           paywallCount: json.paywallCount,
-        })
         })
       case EventType.paywallWebviewLoadFail:
         return new SuperwallEvent({
