@@ -9,6 +9,7 @@ import type {
   SubscriptionStatus,
 } from "./SuperwallExpoModule.types"
 import { DefaultSuperwallOptions, type PartialSuperwallOptions } from "./SuperwallOptions"
+import { filterUndefined } from "./utils/filterUndefined"
 
 /**
  * @category Models
@@ -307,7 +308,7 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     SuperwallExpoModule.preloadPaywalls(placements)
   },
   setUserAttributes: async (attrs) => {
-    await SuperwallExpoModule.setUserAttributes(attrs)
+    await SuperwallExpoModule.setUserAttributes(filterUndefined(attrs))
 
     const currentUser = await SuperwallExpoModule.getUserAttributes()
     set({ user: currentUser as UserAttributes })

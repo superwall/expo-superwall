@@ -251,6 +251,18 @@ extension SuperwallEvent {
       return ["event": "paywallPreloadComplete", "paywallCount": paywallCount]
     case .customerInfoDidChange:
       return ["event": "customerInfoDidChange"]
+    case .testModeModalOpen:
+      return ["event": "testModeModalOpen"]
+    case .testModeModalClose:
+      return ["event": "testModeModalClose"]
+    case .stripeCheckoutStart(let paywallInfo):
+      return ["event": "stripeCheckoutStart", "paywallInfo": paywallInfo.toJson()]
+    case .stripeCheckoutSubmit(let paywallInfo):
+      return ["event": "stripeCheckoutSubmit", "paywallInfo": paywallInfo.toJson()]
+    case .stripeCheckoutComplete(let paywallInfo):
+      return ["event": "stripeCheckoutComplete", "paywallInfo": paywallInfo.toJson()]
+    case .stripeCheckoutFail(let paywallInfo):
+      return ["event": "stripeCheckoutFail", "paywallInfo": paywallInfo.toJson()]
     default:
       return ["event": "unknown"]
     }

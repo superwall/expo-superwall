@@ -51,6 +51,13 @@ export type NetworkEnvironment = "release" | "releaseCandidate" | "developer"
 export type TransactionBackgroundView = "spinner" | "none"
 
 /**
+ * @category Types
+ * @since 0.3.0
+ * Controls when the SDK enters test mode.
+ */
+export type TestModeBehavior = "automatic" | "whenEnabledForUser" | "never" | "always"
+
+/**
  * @category Models
  * @since 0.0.15
  * Defines the messaging of the alert presented to the user when restoring a transaction fails.
@@ -125,6 +132,11 @@ export interface SuperwallOptions {
    * @platform Android only
    */
   useMockReviews: boolean
+  /**
+   * Controls when the SDK enters test mode. Defaults to "automatic".
+   * @platform iOS and Android
+   */
+  testModeBehavior: TestModeBehavior
 }
 
 /**
@@ -167,6 +179,11 @@ export interface PartialSuperwallOptions {
    * @platform Android only
    */
   useMockReviews?: boolean
+  /**
+   * Controls when the SDK enters test mode. Defaults to "automatic".
+   * @platform iOS and Android
+   */
+  testModeBehavior?: TestModeBehavior
 }
 
 /**
@@ -202,4 +219,5 @@ export const DefaultSuperwallOptions: SuperwallOptions = {
   shouldBypassAppTransactionCheck: false,
   maxConfigRetryCount: 6,
   useMockReviews: false,
+  testModeBehavior: "automatic",
 }

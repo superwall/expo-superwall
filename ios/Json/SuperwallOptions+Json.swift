@@ -22,6 +22,8 @@ extension SuperwallOptions {
     let shouldObservePurchases = dictionary["shouldObservePurchases"] as? Bool ?? false
     let shouldBypassAppTransactionCheck = dictionary["shouldBypassAppTransactionCheck"] as? Bool ?? false
     let maxConfigRetryCount = dictionary["maxConfigRetryCount"] as? Int ?? 6
+    let testModeBehavior = (dictionary["testModeBehavior"] as? String)
+      .flatMap { TestModeBehavior.fromJson($0) } ?? .automatic
 
     let superwallOptions = SuperwallOptions()
     superwallOptions.paywalls = paywalls
@@ -37,8 +39,26 @@ extension SuperwallOptions {
     superwallOptions.shouldObservePurchases = shouldObservePurchases
     superwallOptions.shouldBypassAppTransactionCheck = shouldBypassAppTransactionCheck
     superwallOptions.maxConfigRetryCount = maxConfigRetryCount
+    superwallOptions.testModeBehavior = testModeBehavior
 
     return superwallOptions
+  }
+}
+
+extension TestModeBehavior {
+  static func fromJson(_ json: String) -> TestModeBehavior? {
+    switch json {
+    case "automatic":
+      return .automatic
+    case "whenEnabledForUser":
+      return .whenEnabledForUser
+    case "never":
+      return .never
+    case "always":
+      return .always
+    default:
+      return nil
+    }
   }
 }
 

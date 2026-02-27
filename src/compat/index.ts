@@ -22,6 +22,7 @@ export { PaywallResult } from "./lib/PaywallResult"
 import { EventEmitter } from "expo"
 import { version } from "../../package.json"
 import SuperwallExpoModule from "../SuperwallExpoModule"
+import { filterUndefined } from "../utils/filterUndefined"
 
 export { ComputedPropertyRequest } from "./lib/ComputedPropertyRequest"
 export { ConfigurationStatus } from "./lib/ConfigurationStatus"
@@ -65,7 +66,7 @@ export { StoreTransaction } from "./lib/StoreTransaction"
 export { SubscriptionStatus } from "./lib/SubscriptionStatus"
 export { SuperwallDelegate } from "./lib/SuperwallDelegate"
 export { EventType, SuperwallEventInfo } from "./lib/SuperwallEventInfo"
-export { type PartialSuperwallOptions, SuperwallOptions } from "./lib/SuperwallOptions"
+export { type PartialSuperwallOptions, SuperwallOptions, TestModeBehavior } from "./lib/SuperwallOptions"
 export { Survey } from "./lib/Survey"
 export { TriggerResult } from "./lib/TriggerResult"
 
@@ -703,7 +704,7 @@ export default class Superwall {
    */
   async setUserAttributes(userAttributes: UserAttributes): Promise<void> {
     await this.awaitConfig()
-    await SuperwallExpoModule.setUserAttributes(userAttributes)
+    await SuperwallExpoModule.setUserAttributes(filterUndefined(userAttributes))
   }
 
   /**

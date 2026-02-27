@@ -2017,6 +2017,62 @@ export interface PaywallPreloadCompleteEvent {
 }
 
 /**
+ * The test mode modal was opened.
+ */
+export interface TestModeModalOpenEvent {
+  /** The test mode modal was opened. */
+  event: "testModeModalOpen"
+}
+
+/**
+ * The test mode modal was closed.
+ */
+export interface TestModeModalCloseEvent {
+  /** The test mode modal was closed. */
+  event: "testModeModalClose"
+}
+
+/**
+ * A Stripe checkout session started.
+ */
+export interface StripeCheckoutStartEvent {
+  /** A Stripe checkout session started. */
+  event: "stripeCheckoutStart"
+  /** Information about the paywall associated with this checkout. */
+  paywallInfo: PaywallInfo
+}
+
+/**
+ * A Stripe checkout form was submitted.
+ */
+export interface StripeCheckoutSubmitEvent {
+  /** A Stripe checkout form was submitted. */
+  event: "stripeCheckoutSubmit"
+  /** Information about the paywall associated with this checkout. */
+  paywallInfo: PaywallInfo
+}
+
+/**
+ * A Stripe checkout session completed.
+ */
+export interface StripeCheckoutCompleteEvent {
+  /** A Stripe checkout session completed. */
+  event: "stripeCheckoutComplete"
+  /** Information about the paywall associated with this checkout. */
+  paywallInfo: PaywallInfo
+}
+
+/**
+ * A Stripe checkout session failed.
+ */
+export interface StripeCheckoutFailEvent {
+  /** A Stripe checkout session failed. */
+  event: "stripeCheckoutFail"
+  /** Information about the paywall associated with this checkout. */
+  paywallInfo: PaywallInfo
+}
+
+/**
  * A union of all possible string literal values for the `event` property from all specific Superwall event types.
  * This type can be used when you need to refer to an event type name itself.
  */
@@ -2094,6 +2150,12 @@ export type SuperwallEventType =
   | PermissionDeniedEvent["event"]
   | PaywallPreloadStartEvent["event"]
   | PaywallPreloadCompleteEvent["event"]
+  | TestModeModalOpenEvent["event"]
+  | TestModeModalCloseEvent["event"]
+  | StripeCheckoutStartEvent["event"]
+  | StripeCheckoutSubmitEvent["event"]
+  | StripeCheckoutCompleteEvent["event"]
+  | StripeCheckoutFailEvent["event"]
 
 /**
  * Represents a Superwall event that can be tracked by the SDK.
@@ -2174,6 +2236,12 @@ export type SuperwallEvent =
   | PermissionDeniedEvent
   | PaywallPreloadStartEvent
   | PaywallPreloadCompleteEvent
+  | TestModeModalOpenEvent
+  | TestModeModalCloseEvent
+  | StripeCheckoutStartEvent
+  | StripeCheckoutSubmitEvent
+  | StripeCheckoutCompleteEvent
+  | StripeCheckoutFailEvent
 
 /**
  * Contains information about a Superwall event, including the specific {@link SuperwallEvent}
