@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.4
+
+### Patch Changes
+
+- 7d5cbe5: Update Android & iOS SDK, add TestMode support, fix undefined in attributes
+
 ## 1.0.3
 
 ### Patch Changes
