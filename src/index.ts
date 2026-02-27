@@ -11,6 +11,7 @@ export type {
   PaywallOptions,
   RestoreFailed,
   SuperwallOptions,
+  TestModeBehavior,
   TransactionBackgroundView,
 } from "./SuperwallOptions"
 export { DefaultSuperwallOptions } from "./SuperwallOptions"

@@ -3,6 +3,7 @@ package expo.modules.superwallexpo.json
 
 import com.superwall.sdk.config.options.PaywallOptions
 import com.superwall.sdk.config.options.SuperwallOptions
+import com.superwall.sdk.store.testmode.TestModeBehavior
 import com.superwall.sdk.logger.LogLevel
 import com.superwall.sdk.logger.LogScope
 import java.util.EnumSet
@@ -16,6 +17,13 @@ fun superwallOptionsFromJson(json: Map<String, Any?>): SuperwallOptions {
   options.enableExperimentalDeviceVariables = (json["enableExperimentalDeviceVariables"] as Boolean?)?:false
   options.shouldObservePurchases = (json["shouldObservePurchases"] as Boolean?)?:false
   options.useMockReviews = (json["useMockReviews"] as Boolean?)?:false
+  options.testModeBehavior = when ((json["testModeBehavior"] as String?)?.lowercase()) {
+    "automatic" -> TestModeBehavior.AUTOMATIC
+    "whenenabledforuser" -> TestModeBehavior.WHEN_ENABLED_FOR_USER
+    "never" -> TestModeBehavior.NEVER
+    "always" -> TestModeBehavior.ALWAYS
+    else -> TestModeBehavior.AUTOMATIC
+  }
 
       val networkEnvironment = when (json["networkEnvironment"] as String?) {
         "release" -> SuperwallOptions.NetworkEnvironment.Release()

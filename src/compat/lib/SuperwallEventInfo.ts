@@ -106,6 +106,12 @@ export enum EventType {
   paywallResourceLoadFail = "paywallResourceLoadFail",
   networkDecodingFail = "networkDecodingFail",
   handleLog = "handleLog",
+  testModeModalOpen = "testModeModalOpen",
+  testModeModalClose = "testModeModalClose",
+  stripeCheckoutStart = "stripeCheckoutStart",
+  stripeCheckoutSubmit = "stripeCheckoutSubmit",
+  stripeCheckoutComplete = "stripeCheckoutComplete",
+  stripeCheckoutFail = "stripeCheckoutFail",
 }
 
 /**
@@ -204,6 +210,8 @@ export class SuperwallEvent {
       case EventType.enrichmentFail:
       case EventType.networkDecodingFail:
       case EventType.expressionResult:
+      case EventType.testModeModalOpen:
+      case EventType.testModeModalClose:
         return new SuperwallEvent({ type: eventType })
       case EventType.shimmerViewComplete:
         return new SuperwallEvent({
@@ -383,6 +391,14 @@ export class SuperwallEvent {
           type: eventType,
           url: json.url,
           error: json.error,
+        })
+      case EventType.stripeCheckoutStart:
+      case EventType.stripeCheckoutSubmit:
+      case EventType.stripeCheckoutComplete:
+      case EventType.stripeCheckoutFail:
+        return new SuperwallEvent({
+          type: eventType,
+          paywallInfo: PaywallInfo.fromJson(json.paywallInfo),
         })
       default:
         console.warn(`[Superwall] Unhandled event type in SuperwallEvent.fromJson: ${json.event}`)
