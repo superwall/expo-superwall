@@ -278,7 +278,7 @@ public class SuperwallExpoModule: Module {
       return await Superwall.shared.getDeviceAttributes()
     }
 
-    AsyncFunction("setUserAttributes") { (userAttributes: [String: Any], promise: Promise) in
+    AsyncFunction("setUserAttributes") { (userAttributes: [String: Any?], promise: Promise) in
       DispatchQueue.main.async {
         Superwall.shared.setUserAttributes(userAttributes)
         promise.resolve(nil)

@@ -24,6 +24,13 @@ function ScreenContent() {
     onError: (err) => console.error(err),
     onPresent: (info) => console.log("Paywall presented", info),
     onDismiss: (info, result) => console.log("Paywall dismissed", info, result),
+    onCustomCallback: (callback) => {
+      console.log("Custom callback:", callback)
+      return {
+        status: "success",
+        data: { message: "Custom callback executed" },
+      }
+    },
   })
 
   const triggerPlacement = async () => {

@@ -364,7 +364,7 @@ class SuperwallExpoModule : Module() {
     }
 
 
-    AsyncFunction("setUserAttributes") { userAttributes: Map<String, Any>, promise: Promise ->
+    AsyncFunction("setUserAttributes") { userAttributes: Map<String, Any?>, promise: Promise ->
       scope.launch {
         try {
           Superwall.instance.setUserAttributes(userAttributes)

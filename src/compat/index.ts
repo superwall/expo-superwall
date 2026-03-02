@@ -71,7 +71,7 @@ export { Survey } from "./lib/Survey"
 export { TriggerResult } from "./lib/TriggerResult"
 
 interface UserAttributes {
-  [key: string]: any
+  [key: string]: any | null
 }
 
 export default class Superwall {

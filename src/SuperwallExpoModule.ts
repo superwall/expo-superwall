@@ -35,7 +35,7 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
   setInterfaceStyle(style?: string): void
 
   getUserAttributes(): Promise<Record<string, any>>
-  setUserAttributes(userAttributes: Record<string, any>): Promise<void>
+  setUserAttributes(userAttributes: Record<string, any | null>): Promise<void>
 
   handleDeepLink(url: string): Promise<boolean>
 
