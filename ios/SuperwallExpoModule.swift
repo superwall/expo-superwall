@@ -360,6 +360,10 @@ public class SuperwallExpoModule: Module {
       }
     }
 
+    Function("setLocaleIdentifier") { (localeIdentifier: String?) in
+      Superwall.shared.localeIdentifier = localeIdentifier
+    }
+
     AsyncFunction("setIntegrationAttributes") { (attributes: [String: String], promise: Promise) in
       var converted: [IntegrationAttribute: String] = [:]
 
