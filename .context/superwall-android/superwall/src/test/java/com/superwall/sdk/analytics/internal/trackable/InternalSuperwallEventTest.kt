@@ -295,7 +295,7 @@ class InternalSuperwallEventTest {
                     val params = event.getSuperwallParameters()
 
                     Then("only non-null metadata is included") {
-                        assertEquals(mapOf("paywall_id" to "pw123", "preloading_enabled" to true), params)
+                        assertEquals(mapOf("paywall_id" to "pw123", "preloading_enabled" to true, "unit" to "ms"), params)
                     }
                 }
             }
@@ -540,7 +540,7 @@ class InternalSuperwallEventTest {
         runTest {
             Given("an abandoned transaction") {
                 val paywallInfo = stubPaywallInfo()
-                val product = stubStoreProduct(productId = "prod_1")
+                val product = stubStoreProduct(productId = "prod_1", fullId = "prod_1:option:offer")
                 val event =
                     InternalSuperwallEvent.Transaction(
                         state = InternalSuperwallEvent.Transaction.State.Abandon(product),
@@ -556,8 +556,8 @@ class InternalSuperwallEventTest {
                 When("audience filters are requested") {
                     val filters = event.audienceFilterParams
 
-                    Then("the abandoned product identifier is included") {
-                        assertEquals("prod_1", filters["abandoned_product_id"])
+                    Then("the abandoned product full identifier is included") {
+                        assertEquals("prod_1:option:offer", filters["abandoned_product_id"])
                     }
                 }
             }
@@ -806,6 +806,48 @@ class InternalSuperwallEventTest {
                     Then("type and code are surfaced") {
                         assertEquals("CODE", params["type"])
                         assertEquals("SW123", params["code"])
+                    }
+                }
+            }
+        }
+
+    @Test
+    fun redemptions_existingTypeHasNoCode() =
+        runTest {
+            Given("a redemption start with existing type") {
+                val event =
+                    InternalSuperwallEvent.Redemptions(
+                        state = InternalSuperwallEvent.Redemptions.RedemptionState.Start,
+                        type = WebPaywallRedeemer.RedeemType.Existing,
+                    )
+
+                When("parameters are requested") {
+                    val params = event.getSuperwallParameters()
+
+                    Then("type is EXISTING_CODES and no code is present") {
+                        assertEquals("EXISTING_CODES", params["type"])
+                        assertFalse(params.containsKey("code"))
+                    }
+                }
+            }
+        }
+
+    @Test
+    fun redemptions_integrationAttributesTypeHasNoCode() =
+        runTest {
+            Given("a redemption start with integration attributes type") {
+                val event =
+                    InternalSuperwallEvent.Redemptions(
+                        state = InternalSuperwallEvent.Redemptions.RedemptionState.Start,
+                        type = WebPaywallRedeemer.RedeemType.IntegrationAttributes,
+                    )
+
+                When("parameters are requested") {
+                    val params = event.getSuperwallParameters()
+
+                    Then("type is INTEGRATION_ATTRIBUTES and no code is present") {
+                        assertEquals("INTEGRATION_ATTRIBUTES", params["type"])
+                        assertFalse(params.containsKey("code"))
                     }
                 }
             }

@@ -9,6 +9,7 @@ import com.superwall.sdk.models.internal.DeviceVendorId
 import com.superwall.sdk.models.internal.UserId
 import com.superwall.sdk.models.internal.WebRedemptionResponse
 import com.superwall.sdk.network.session.CustomHttpUrlConnection
+import com.superwall.sdk.store.testmode.models.SuperwallProductsResponse
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
@@ -71,4 +72,6 @@ class SubscriptionService(
             "users/${deviceId.value}/entitlements",
             queryItems = listOf(URLQueryItem("deviceId", deviceId.value)),
         )
+
+    suspend fun getProducts() = get<SuperwallProductsResponse>("products")
 }

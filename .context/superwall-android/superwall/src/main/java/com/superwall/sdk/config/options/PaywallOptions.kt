@@ -4,7 +4,11 @@ import com.superwall.sdk.paywall.presentation.PaywallInfo
 import kotlin.time.Duration
 
 // Options for configuring the appearance and behavior of paywalls.
-class PaywallOptions {
+class PaywallOptions() {
+    constructor(definition: PaywallOptions.() -> Unit) : this() {
+        definition()
+    }
+
     // Determines whether the paywall should use haptic feedback. Defaults to true.
     //
     // Haptic feedback occurs when a user purchases or restores a product, opens a URL
@@ -12,7 +16,11 @@ class PaywallOptions {
     var isHapticFeedbackEnabled: Boolean = true
 
     // Defines the messaging of the alert presented to the user when restoring a transaction fails.
-    class RestoreFailed {
+    class RestoreFailed() {
+        constructor(definition: RestoreFailed.() -> Unit) : this() {
+            definition()
+        }
+
         // The title of the alert presented to the user when restoring a transaction fails. Defaults to
         // `No Subscription Found`.
         var title: String = "No Subscription Found"

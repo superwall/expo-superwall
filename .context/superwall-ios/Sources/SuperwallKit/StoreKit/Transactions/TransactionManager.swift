@@ -25,6 +25,7 @@ final class TransactionManager {
     & DeviceHelperFactory
     & HasExternalPurchaseControllerFactory
     & RestoreAccessFactory
+    & TestModeManagerFactory
   enum State {
     case observing
     case purchasing(PurchaseSource)
@@ -61,7 +62,7 @@ final class TransactionManager {
     let product: StoreProduct
 
     switch purchaseSource {
-    case .internal(let productId, _):
+    case .internal(let productId, _, _):
       guard let storeProduct = await storeKitManager.productsById[productId] else {
         Logger.debug(
           logLevel: .error,
@@ -126,7 +127,7 @@ final class TransactionManager {
         case .observing:
           break
         case .purchasing(let purchaseSource):
-          if case let .internal(_, paywallViewController) = purchaseSource {
+          if case let .internal(_, paywallViewController, _) = purchaseSource {
             await paywallViewController.togglePaywallSpinner(isHidden: true)
           }
         }
@@ -141,8 +142,13 @@ final class TransactionManager {
         case .observing:
           break
         case .purchasing(let purchaseSource):
+          let bundle = LocalizationLogic.localizedBundle()
           await presentAlert(
-            title: "An error occurred",
+            title: bundle.localizedString(
+              forKey: "purchase_error_title",
+              value: nil,
+              table: nil
+            ),
             message: error.safeLocalizedDescription,
             source: purchaseSource.toGenericSource()
           )
@@ -237,21 +243,42 @@ final class TransactionManager {
         } else {
           // Otherwise ask whether they'd like to try restoring from the web.
           let hasEntitlements = !Superwall.shared.entitlements.active.isEmpty
+          let bundle = LocalizationLogic.localizedBundle()
 
-          let hasSubsText = "Your App Store subscriptions were restored. Would you like to check for more on the web?"
-          let noSubsText = "No App Store subscription found, would you like to check on the web?"
+          let title = bundle.localizedString(
+            forKey: hasEntitlements ? "restore_web_has_subs_title" : "restore_web_no_subs_title",
+            value: nil,
+            table: nil
+          )
+          let message = bundle.localizedString(
+            forKey: hasEntitlements ? "restore_web_has_subs_message" : "restore_web_no_subs_message",
+            value: nil,
+            table: nil
+          )
+          let actionTitle = bundle.localizedString(
+            forKey: "restore_web_action_yes",
+            value: nil,
+            table: nil
+          )
+          let closeActionTitle = bundle.localizedString(
+            forKey: "restore_web_action_cancel",
+            value: nil,
+            table: nil
+          )
 
           paywallViewController.presentAlert(
-            title: hasEntitlements ? "Restore via the web?" : "No Subscription Found",
-            message: hasEntitlements ? hasSubsText : noSubsText,
-            actionTitle: "Yes",
-            closeActionTitle: "Cancel"
-          ) {
-            guard let sharedApplication = UIApplication.sharedApplication else {
-              return
+            title: title,
+            message: message,
+            actionTitle: actionTitle,
+            closeActionTitle: closeActionTitle,
+            // swiftlint:disable:next trailing_closure
+            action: {
+              guard let sharedApplication = UIApplication.sharedApplication else {
+                return
+              }
+              sharedApplication.open(restoreUrl)
             }
-            sharedApplication.open(restoreUrl)
-          }
+          )
           return .webRestore
         }
       }
@@ -269,8 +296,9 @@ final class TransactionManager {
       } else {
         var message = "Transactions Failed to Restore."
         if !hasActiveEntitlements && hasRestored {
-          message +=
-            " The restoration result is \"restored\" but there are no active entitlements. Ensure the active entitlements are set before confirming successful restoration."
+          message += " The restoration result is \"restored\" but there are no active "
+            + "entitlements. Ensure the active entitlements are set before confirming "
+            + "successful restoration."
         }
         if case .failed(let error) = restorationResult,
           let error = error {
@@ -286,6 +314,27 @@ final class TransactionManager {
         }
         return .failure
       }
+    }
+
+    // In test mode, show entitlement picker instead of StoreKit restore
+    let testModeManager = factory.makeTestModeManager()
+    if testModeManager.isTestMode {
+      let handler = TestModeTransactionHandler(testModeManager: testModeManager)
+      let restorationResult = await handler.handleRestore()
+
+      switch restorationResult {
+      case .restored:
+        await didRestore(restoreSource: restoreSource)
+      case .failed:
+        if case .internal(let paywallViewController) = restoreSource {
+          paywallViewController.presentAlert(
+            title: Superwall.shared.options.paywalls.restoreFailed.title,
+            message: Superwall.shared.options.paywalls.restoreFailed.message,
+            closeActionTitle: Superwall.shared.options.paywalls.restoreFailed.closeButtonTitle
+          )
+        }
+      }
+      return restorationResult
     }
 
     switch restoreSource {
@@ -427,6 +476,23 @@ final class TransactionManager {
     _ product: StoreProduct,
     purchaseSource: PurchaseSource
   ) async -> PurchaseResult {
+    // In test mode, show the test mode drawer instead of calling StoreKit
+    let testModeManager = factory.makeTestModeManager()
+    if testModeManager.isTestMode {
+      let handler = TestModeTransactionHandler(testModeManager: testModeManager)
+      return await handler.handlePurchase(
+        product: product,
+        purchaseSource: purchaseSource
+      )
+    }
+
+    // Attach intro offer token if available from the paywall
+    if case .internal(_, let paywallViewController, _) = purchaseSource {
+      product.introOfferToken = await paywallViewController
+        .introOfferTokenManager
+        .getValidToken(for: product.productIdentifier)
+    }
+
     switch purchaseSource {
     case .internal:
       return await purchaseController.purchase(product: product)
@@ -459,7 +525,7 @@ final class TransactionManager {
     }
 
     switch source {
-    case .internal(_, let paywallViewController):
+    case .internal(_, let paywallViewController, _):
       Logger.debug(
         logLevel: .debug,
         scope: .transactions,
@@ -559,7 +625,7 @@ final class TransactionManager {
     let shouldTrackTransactionStart = !(purchaseManager.isUsingSK2 && isObserved)
 
     switch purchaseSource {
-    case .internal(_, let paywallViewController):
+    case .internal(_, let paywallViewController, _):
       Logger.debug(
         logLevel: .debug,
         scope: .transactions,
@@ -633,7 +699,7 @@ final class TransactionManager {
     }
 
     switch source {
-    case .internal(_, let paywallViewController):
+    case let .internal(_, paywallViewController, shouldDismiss):
       guard let product = await coordinator.product else {
         return
       }
@@ -654,15 +720,25 @@ final class TransactionManager {
         factory: factory
       )
 
-      await receiptManager.loadPurchasedProducts(config: nil)
+      // Skip receipt loading in test mode - we've already set the subscription status
+      let testModeManager = factory.makeTestModeManager()
+      if !testModeManager.isTestMode {
+        await receiptManager.loadPurchasedProducts(config: nil)
+      }
       await trackTransactionDidSucceed(transaction)
 
       let superwallOptions = factory.makeSuperwallOptions()
-      if superwallOptions.paywalls.automaticallyDismiss {
+      let shouldDismissPaywall = superwallOptions.paywalls.automaticallyDismiss && shouldDismiss
+      if shouldDismissPaywall {
         await Superwall.shared.dismiss(
           paywallViewController,
           result: .purchased(product)
         )
+      }
+      if !shouldDismissPaywall {
+        await MainActor.run {
+          paywallViewController.togglePaywallSpinner(isHidden: true)
+        }
       }
     case .purchaseFunc,
       .observeFunc:
@@ -704,7 +780,7 @@ final class TransactionManager {
     }
 
     switch source {
-    case .internal(_, let paywallViewController):
+    case .internal(_, let paywallViewController, _):
       Logger.debug(
         logLevel: .debug,
         scope: .transactions,
@@ -764,7 +840,7 @@ final class TransactionManager {
     }
 
     switch source {
-    case .internal(_, let paywallViewController):
+    case .internal(_, let paywallViewController, _):
       Logger.debug(
         logLevel: .debug,
         scope: .transactions,
@@ -807,10 +883,18 @@ final class TransactionManager {
       await Superwall.shared.track(trackedEvent)
     }
 
+    let bundle = LocalizationLogic.localizedBundle()
     await presentAlert(
-      title: "Waiting for Approval",
-      message:
-        "Thank you! This purchase is pending approval from your parent. Please try again once it is approved.",
+      title: bundle.localizedString(
+        forKey: "purchase_pending_title",
+        value: nil,
+        table: nil
+      ),
+      message: bundle.localizedString(
+        forKey: "purchase_pending_message",
+        value: nil,
+        table: nil
+      ),
       source: source.toGenericSource()
     )
   }
@@ -821,12 +905,17 @@ final class TransactionManager {
     closeActionTitle: String? = nil,
     source: GenericSource
   ) async {
+    let resolvedCloseTitle = closeActionTitle ?? LocalizationLogic.localizedBundle().localizedString(
+      forKey: "alert_action_done",
+      value: nil,
+      table: nil
+    )
     switch source {
     case .internal(let paywallViewController):
       await paywallViewController.presentAlert(
         title: title,
         message: message,
-        closeActionTitle: closeActionTitle ?? "Done"
+        closeActionTitle: resolvedCloseTitle
       )
     case .external:
       guard let topMostViewController = await UIViewController.topMostViewController else {
@@ -841,7 +930,7 @@ final class TransactionManager {
       let alertController = await AlertControllerFactory.make(
         title: title,
         message: message,
-        closeActionTitle: closeActionTitle ?? "Done",
+        closeActionTitle: resolvedCloseTitle,
         sourceView: topMostViewController.view
       )
       await topMostViewController.present(alertController, animated: true)
@@ -894,7 +983,7 @@ final class TransactionManager {
     let eventSource: InternalSuperwallEvent.Transaction.Source
     let trialEndDate = product.trialPeriodEndDate
     switch source {
-    case .internal(_, let paywallViewController):
+    case .internal(_, let paywallViewController, _):
       paywallInfo = await paywallViewController.info
       eventSource = .internal
       await paywallViewController.webView.messageHandler

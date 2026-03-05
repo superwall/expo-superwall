@@ -592,11 +592,13 @@ class DeviceHelper(
                 enriched
                     .plus(it)
                     .let {
-                        if (factory.makeSuperwallOptions().enableExperimentalDeviceVariables) {
-                            it.plus(latestExperimentalDeviceProperties())
-                        } else {
-                            it
-                        }
+                        withErrorTracking {
+                            if (factory.makeSuperwallOptions().enableExperimentalDeviceVariables) {
+                                it.plus(latestExperimentalDeviceProperties())
+                            } else {
+                                it
+                            }
+                        }.getSuccess() ?: it
                     }
             }.fold(
                 onSuccess = { deviceTemplate ->

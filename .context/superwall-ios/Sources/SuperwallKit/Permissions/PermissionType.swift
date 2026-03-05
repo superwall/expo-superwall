@@ -16,4 +16,6 @@ enum PermissionType: String, Decodable {
   case readImages = "read_images"
   case contacts
   case camera
+  case tracking
+  case microphone
 }

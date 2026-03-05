@@ -2,4 +2,6 @@
 <resources>
     <color name="darkBackgroundColor">#0D0F12</color>
     <color name="lightBackgroundColor">#181A1E</color>
+    <color name="sw_grey">#0D0F12</color>
+    <color name="sw_cyan">#75FFF1</color>
 </resources>

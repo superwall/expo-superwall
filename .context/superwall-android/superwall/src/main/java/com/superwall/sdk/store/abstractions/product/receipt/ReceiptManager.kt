@@ -298,7 +298,7 @@ class ReceiptManager(
         buildMap {
             determinePeriodType()?.let { put("latestSubscriptionPeriodType", it) }
             latestSubscriptionWillAutoRenew?.let { put("latestSubscriptionWillAutoRenew", it) }
-            put("latestSubscriptionState", latestSubscriptionState.value)
+            put("latestSubscriptionState", latestSubscriptionState.value.name)
         }
 
     /**

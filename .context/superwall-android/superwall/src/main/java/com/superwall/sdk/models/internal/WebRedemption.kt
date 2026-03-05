@@ -287,7 +287,11 @@ object DirectSuccessSerializer : KSerializer<RedemptionResult.Success> {
         val jsonDecoder =
             decoder as? JsonDecoder
                 ?: throw SerializationException("Expected JSON decoder")
-
+        val json =
+            Json {
+                encodeDefaults = true
+                ignoreUnknownKeys = true
+            }
         // Get the input JSON object directly
         val jsonObject = jsonDecoder.decodeJsonElement().jsonObject
 
@@ -303,7 +307,7 @@ object DirectSuccessSerializer : KSerializer<RedemptionResult.Success> {
 
         // Then parse it with the RedemptionInfo serializer
         val redemptionInfo =
-            Json.decodeFromJsonElement(
+            json.decodeFromJsonElement(
                 RedemptionInfo.serializer(),
                 redemptionInfoJson,
             )

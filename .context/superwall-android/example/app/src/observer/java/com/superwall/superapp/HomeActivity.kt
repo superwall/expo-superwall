@@ -162,10 +162,7 @@ fun HomeScreen(
                                         SuperwallBillingFlowParams.ProductDetailsParams
                                             .newBuilder()
                                             .setProductDetails(product.rawStoreProduct.underlyingProductDetails)
-                                            .setOfferToken(
-                                                product.rawStoreProduct.selectedOffer?.offerToken
-                                                    ?: "",
-                                            ).build(),
+                                            .build(),
                                     ),
                                 ).build(),
                         )

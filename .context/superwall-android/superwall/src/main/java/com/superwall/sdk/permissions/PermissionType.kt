@@ -17,6 +17,7 @@ enum class PermissionType(
     CONTACTS("contacts"),
     READ_VIDEO("read_video"),
     CAMERA("camera"),
+    MICROPHONE("microphone"),
     ;
 
     /**
@@ -52,6 +53,7 @@ enum class PermissionType(
                     Manifest.permission.READ_EXTERNAL_STORAGE
                 }
             CAMERA -> Manifest.permission.CAMERA
+            MICROPHONE -> Manifest.permission.RECORD_AUDIO
         }
 
     companion object {

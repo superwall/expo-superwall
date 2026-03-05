@@ -81,7 +81,8 @@ interface StoreProductType {
             attributes["languageCode"] = languageCode ?: "n/a"
             attributes["currencyCode"] = currencyCode ?: "n/a"
             attributes["currencySymbol"] = currencySymbol ?: "n/a"
-            attributes["identifier"] = productIdentifier
+            attributes["identifier"] = fullIdentifier
+            attributes["productIdentifier"] = productIdentifier
 
             return attributes
         }

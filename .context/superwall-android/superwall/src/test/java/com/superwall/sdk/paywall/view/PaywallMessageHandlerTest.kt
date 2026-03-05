@@ -124,7 +124,7 @@ class PaywallMessageHandlerTest {
 
                     When("purchase message is handled") {
                         val productId = "com.example.product"
-                        harness.handler.handle(PaywallMessage.Purchase("Monthly Plan", productId))
+                        harness.handler.handle(PaywallMessage.Purchase("Monthly Plan", productId, shouldDismiss = true))
                         latch.await(500, TimeUnit.MILLISECONDS)
 
                         Then("InitiatePurchase event is delivered with product id") {
@@ -311,6 +311,9 @@ class PaywallMessageHandlerTest {
                 encodeToB64 = { it },
                 userPermissions = fakeUserPermissions,
                 getActivity = { null },
+                customCallbackRegistry =
+                    com.superwall.sdk.paywall.presentation
+                        .CustomCallbackRegistry(),
             )
 
         val state =

@@ -16,6 +16,8 @@ import kotlinx.serialization.json.int
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.long
 import kotlinx.serialization.json.longOrNull
+import org.json.JSONArray
+import org.json.JSONObject
 import java.util.Date
 
 class Converters {
@@ -78,6 +80,14 @@ fun Any?.convertToJsonElement(): JsonElement =
         is String -> JsonPrimitive(this)
         is Number -> JsonPrimitive(this)
         is Boolean -> JsonPrimitive(this)
+        is Date -> JsonPrimitive(this.time)
+        is JSONArray -> JsonArray((0 until this.length()).map { this.get(it).convertToJsonElement() })
+        is JSONObject ->
+            JsonObject(
+                this.keys().asSequence().associateWith { key ->
+                    this.get(key).convertToJsonElement()
+                },
+            )
         is List<*> -> JsonArray(this.map { it.convertToJsonElement() })
         is Array<*> -> JsonArray(this.map { it.convertToJsonElement() })
         is Map<*, *> ->

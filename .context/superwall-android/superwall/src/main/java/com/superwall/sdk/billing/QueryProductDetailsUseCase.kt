@@ -75,11 +75,12 @@ internal class QueryProductDetailsUseCase(
                         val rawStoreProduct =
                             RawStoreProduct(
                                 underlyingProductDetails = productDetails,
-                                fullIdentifier = productId.fullId ?: "",
-                                basePlanId = productId.basePlanId,
+                                fullIdentifier = productId.fullId,
+                                basePlanType = productId.basePlanType,
                                 offerType = productId.offerType,
                             )
-                        StoreProduct(rawStoreProduct)
+                        val storeProduct = StoreProduct(rawStoreProduct)
+                        storeProduct
                     } ?: emptyList()
                 }
 

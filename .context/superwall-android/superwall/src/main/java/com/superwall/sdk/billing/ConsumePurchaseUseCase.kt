@@ -15,7 +15,7 @@ internal class ConsumePurchaseUseCase(
     private val useCaseParams: ConsumePurchaseUseCaseParams,
     private val onReceive: (String) -> Unit,
     onError: (BillingError) -> Unit,
-    private val withConnectedClient: (BillingClient.() -> Unit) -> Unit,
+    private val withConnectedClient: (BillingClient.() -> Unit) -> Unit?,
     executeRequestOnUIThread: ExecuteRequestOnUIThreadFunction,
 ) : BillingClientUseCase<String>(useCaseParams, onError, executeRequestOnUIThread) {
     override fun executeAsync() {

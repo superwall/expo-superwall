@@ -55,6 +55,7 @@ import com.superwall.sdk.paywall.presentation.internal.state.PaywallResult.*
 import com.superwall.sdk.paywall.view.PaywallView
 import com.superwall.sdk.paywall.view.PaywallViewState
 import com.superwall.sdk.paywall.view.SuperwallPaywallActivity
+import com.superwall.sdk.paywall.view.delegate.PaywallLoadingState
 import com.superwall.sdk.paywall.view.delegate.PaywallViewEventCallback
 import com.superwall.sdk.paywall.view.webview.messaging.PaywallWebEvent
 import com.superwall.sdk.paywall.view.webview.messaging.PaywallWebEvent.Closed
@@ -274,6 +275,14 @@ class Superwall(
      * @param subscriptionStatus The entitlement status of the user.
      */
     fun setSubscriptionStatus(subscriptionStatus: SubscriptionStatus) {
+        if (dependencyContainer.testModeManager.isTestMode) {
+            Logger.debug(
+                LogLevel.warn,
+                LogScope.superwallCore,
+                "setSubscriptionStatus ignored: test mode is active",
+            )
+            return
+        }
         entitlements.setSubscriptionStatus(subscriptionStatus)
     }
 
@@ -288,6 +297,14 @@ class Superwall(
      * @param entitlements A list of entitlements.
      * */
     fun setSubscriptionStatus(vararg entitlements: String) {
+        if (dependencyContainer.testModeManager.isTestMode) {
+            Logger.debug(
+                LogLevel.warn,
+                LogScope.superwallCore,
+                "setSubscriptionStatus ignored: test mode is active",
+            )
+            return
+        }
         if (entitlements.isEmpty()) {
             this@Superwall.entitlements.setSubscriptionStatus(SubscriptionStatus.Inactive)
         } else {
@@ -306,6 +323,9 @@ class Superwall(
 
     internal fun internallySetSubscriptionStatus(toStatus: SubscriptionStatus) {
         if (dependencyContainer.makeHasExternalPurchaseController()) {
+            return
+        }
+        if (dependencyContainer.testModeManager.isTestMode) {
             return
         }
         val webEntitlements = dependencyContainer.entitlements.web
@@ -614,7 +634,9 @@ class Superwall(
                             purchaseController = purchaseController,
                             options = _options,
                             activityProvider = activityProvider,
+                            apiKey = apiKey,
                         )
+                    dependencyContainer.storage.configure(apiKey = apiKey)
                 } catch (e: Exception) {
                     e.printStackTrace()
                     throw e
@@ -635,7 +657,6 @@ class Superwall(
 
                 ioScope.launch {
                     withErrorTracking {
-                        dependencyContainer.storage.configure(apiKey = apiKey)
                         dependencyContainer.storage.recordAppInstall {
                             track(event = it)
                         }
@@ -990,6 +1011,7 @@ class Superwall(
                 TransactionManager.PurchaseSource.ExternalPurchase(
                     StoreProduct(RawStoreProduct.from(product)),
                 ),
+                shouldDismiss = true,
             )
         }.toResult()
 
@@ -1012,6 +1034,7 @@ class Superwall(
                 TransactionManager.PurchaseSource.ExternalPurchase(
                     product,
                 ),
+                shouldDismiss = true,
             )
         }.toResult()
 
@@ -1035,6 +1058,7 @@ class Superwall(
                     TransactionManager.PurchaseSource.ExternalPurchase(
                         it,
                     ),
+                    shouldDismiss = true,
                 )
             } ?: throw IllegalArgumentException("Product with id $productId not found")
         }.toResult()
@@ -1273,6 +1297,9 @@ class Superwall(
                         // If a purchase is already in progress, do not start another
                         return@launchWithTracking
                     }
+                    paywallView.updateState(
+                        PaywallViewState.Updates.SetLoadingState(PaywallLoadingState.LoadingPurchase),
+                    )
                     purchaseTask =
                         launch {
                             try {
@@ -1281,6 +1308,7 @@ class Superwall(
                                         paywallEvent.productId,
                                         paywallView.controller.state,
                                     ),
+                                    shouldDismiss = paywallEvent.shouldDismiss,
                                 )
                             } finally {
                                 // Ensure the task is cleared once the purchase is complete or if an error occurs
@@ -1394,7 +1422,6 @@ class Superwall(
                                     .activityProvider
                                     ?.getCurrentActivity()
                         ) as SuperwallPaywallActivity?
-
                     // Cancel any existing fallback notification of the same type before scheduling
                     // the dynamic notification from the paywall
                     paywallActivity?.attemptToScheduleNotifications(
@@ -1415,6 +1442,14 @@ class Superwall(
                         LogLevel.debug,
                         LogScope.paywallView,
                         message = "Permission requested: ${paywallEvent.permissionType.rawValue}",
+                    )
+                }
+
+                is PaywallWebEvent.RequestCallback -> {
+                    Logger.debug(
+                        LogLevel.debug,
+                        LogScope.paywallView,
+                        message = "Custom callback requested: ${paywallEvent.name}",
                     )
                 }
             }

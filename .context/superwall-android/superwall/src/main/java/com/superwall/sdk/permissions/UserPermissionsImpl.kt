@@ -27,6 +27,7 @@ internal class UserPermissionsImpl(
             PermissionType.CONTACTS,
             PermissionType.READ_VIDEO,
             PermissionType.CAMERA,
+            PermissionType.MICROPHONE,
             -> checkRuntimePermission(permission)
             PermissionType.BACKGROUND_LOCATION -> checkBackgroundLocationPermission()
         }
@@ -103,6 +104,7 @@ internal class UserPermissionsImpl(
             PermissionType.CONTACTS,
             PermissionType.READ_VIDEO,
             PermissionType.CAMERA,
+            PermissionType.MICROPHONE,
             -> requestStandardPermission(activity, permission)
         }
 

@@ -63,9 +63,9 @@ class PlayStorePurchaseAdapter(
     private fun calculateExpirationDate(): Date? {
         if (product == null) return null
 
-        return when (product.rawStoreProduct.underlyingProductDetails.productType) {
+        return when (product.rawStoreProduct?.underlyingProductDetails?.productType) {
             ProductType.SUBS -> {
-                val subscriptionPeriod = product.rawStoreProduct.subscriptionPeriod
+                val subscriptionPeriod = product.rawStoreProduct?.subscriptionPeriod
                 if (subscriptionPeriod != null) {
                     val periodMillis = subscriptionPeriod.toMillis
                     Date(purchase.purchaseTime + periodMillis)
@@ -78,19 +78,13 @@ class PlayStorePurchaseAdapter(
         }
     }
 
-    private fun calculateIsActive(): Boolean {
-        val now = System.currentTimeMillis()
-
-        return when (purchase.purchaseState) {
+    private fun calculateIsActive(): Boolean =
+        when (purchase.purchaseState) {
+            PurchaseState.PURCHASED -> true
             PurchaseState.PENDING -> false
-            PurchaseState.PURCHASED -> {
-                val expiration = expirationDate
-                expiration == null || expiration.time > now
-            }
             PurchaseState.UNSPECIFIED_STATE -> false
             else -> false
         }
-    }
 
     companion object {
         /**

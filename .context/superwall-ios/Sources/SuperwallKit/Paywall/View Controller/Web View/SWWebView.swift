@@ -45,6 +45,14 @@ class SWWebView: WKWebView {
   private var completion: ((Error?) -> Void)?
   private let enableIframeNavigation: Bool
 
+  /// Tracks the number of times the WebView process has terminated and been reloaded.
+  /// Used to prevent infinite reload loops on memory-constrained devices.
+  private var processTerminationRetryCount = 0
+
+  /// Maximum number of automatic reloads after process termination.
+  /// After this limit, the WebView will be reloaded when presented instead.
+  private let maxProcessTerminationRetries = 1
+
   init(
     isMac: Bool,
     messageHandler: PaywallMessageHandler,
@@ -66,6 +74,9 @@ class SWWebView: WKWebView {
     config.allowsAirPlayForMediaPlayback = true
     config.allowsPictureInPictureMediaPlayback = true
     config.mediaTypesRequiringUserActionForPlayback = []
+
+    // Register custom URL scheme handler for local files (videos, images, etc.)
+    config.setURLSchemeHandler(LocalFileSchemeHandler(), forURLScheme: LocalFileSchemeHandler.scheme)
 
     if featureFlags?.enableSuppressesIncrementalRendering == true {
       config.suppressesIncrementalRendering = true
@@ -231,6 +242,8 @@ extension SWWebView: WKNavigationDelegate {
   }
 
   func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+    // Reset retry count on successful load
+    processTerminationRetryCount = 0
     completion?(nil)
   }
 
@@ -251,7 +264,17 @@ extension SWWebView: WKNavigationDelegate {
   }
 
   func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
-    webView.reload()
+    // Only reload if we haven't exceeded the retry limit.
+    // This prevents infinite reload loops on memory-constrained devices
+    // where iOS keeps terminating the WebView process.
+    if processTerminationRetryCount < maxProcessTerminationRetries {
+      processTerminationRetryCount += 1
+      webView.reload()
+    } else {
+      // Mark as failed so the WebView will be reloaded when presented again
+      // via PaywallViewController.viewWillAppear checking didFailToLoad.
+      loadingHandler.didFailToLoad = true
+    }
 
     Task {
       guard let paywallInfo = delegate?.info else {
