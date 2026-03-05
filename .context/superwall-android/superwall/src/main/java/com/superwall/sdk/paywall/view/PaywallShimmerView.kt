@@ -2,10 +2,10 @@ package com.superwall.sdk.paywall.view
 
 import android.graphics.Color
 import android.view.View
+import android.view.View.GONE
+import android.view.View.VISIBLE
 import android.view.ViewGroup
 import android.widget.FrameLayout.LayoutParams
-import androidx.appcompat.widget.AppCompatImageView.GONE
-import androidx.appcompat.widget.AppCompatImageView.VISIBLE
 import androidx.core.graphics.BlendModeColorFilterCompat
 import androidx.core.graphics.BlendModeCompat
 import com.superwall.sdk.misc.isDarkColor

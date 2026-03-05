@@ -25,8 +25,11 @@ import com.superwall.sdk.paywall.presentation.internal.PaywallPresentationReques
 import com.superwall.sdk.paywall.presentation.internal.PresentationRequestType
 import com.superwall.sdk.paywall.view.survey.SurveyPresentationResult
 import com.superwall.sdk.paywall.view.webview.WebviewError
+import com.superwall.sdk.store.abstractions.product.RawStoreProduct
 import com.superwall.sdk.store.abstractions.product.StoreProduct
 import com.superwall.sdk.store.abstractions.product.StoreProductType
+import com.superwall.sdk.store.abstractions.product.SubscriptionPeriod
+import com.superwall.sdk.store.abstractions.transactions.GoogleBillingPurchaseTransaction
 import com.superwall.sdk.store.abstractions.transactions.StoreTransaction
 import com.superwall.sdk.store.abstractions.transactions.StoreTransactionType
 import com.superwall.sdk.store.transactions.RestoreType
@@ -35,6 +38,7 @@ import com.superwall.sdk.web.WebPaywallRedeemer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import java.net.URI
+import java.util.Calendar
 
 interface TrackableSuperwallEvent : Trackable {
     val superwallPlacement: SuperwallEvent
@@ -285,14 +289,21 @@ sealed class InternalSuperwallEvent(
         override var audienceFilterParams: HashMap<String, Any> = HashMap(),
     ) : InternalSuperwallEvent(SuperwallEvent.SubscriptionStatusDidChange()) {
         override suspend fun getSuperwallParameters(): HashMap<String, Any> =
-            hashMapOf(
+            hashMapOf<String, Any>(
                 "subscription_status" to
                     when (subscriptionStatus) {
                         is SubscriptionStatus.Active -> "active"
                         is SubscriptionStatus.Inactive -> "inactive"
                         is SubscriptionStatus.Unknown -> "unknown"
                     },
-            )
+            ).apply {
+                if (subscriptionStatus is SubscriptionStatus.Active) {
+                    put(
+                        "active_entitlement_ids",
+                        subscriptionStatus.entitlements.joinToString(",") { it.id },
+                    )
+                }
+            }
     }
 
     class SessionStart(
@@ -518,8 +529,60 @@ sealed class InternalSuperwallEvent(
 
             class Complete(
                 val product: StoreProductType,
-                val transaction: StoreTransactionType?,
-            ) : State()
+                transaction: StoreTransactionType?,
+            ) : State() {
+                val transaction =
+                    when (transaction) {
+                        is GoogleBillingPurchaseTransaction -> {
+                            val rawProduct = product as? RawStoreProduct
+                            if (rawProduct == null) {
+                                transaction
+                            } else {
+                                transaction.copy(
+                                    expirationDate =
+                                        transaction.transactionDate?.let { date ->
+                                            product.subscriptionPeriod?.let { period ->
+                                                Calendar
+                                                    .getInstance()
+                                                    .apply {
+                                                        time = date
+                                                        when (period.unit) {
+                                                            SubscriptionPeriod.Unit.day ->
+                                                                add(
+                                                                    Calendar.DAY_OF_YEAR,
+                                                                    period.value,
+                                                                )
+
+                                                            SubscriptionPeriod.Unit.week ->
+                                                                add(
+                                                                    Calendar.WEEK_OF_YEAR,
+                                                                    period.value,
+                                                                )
+
+                                                            SubscriptionPeriod.Unit.month ->
+                                                                add(
+                                                                    Calendar.MONTH,
+                                                                    period.value,
+                                                                )
+
+                                                            SubscriptionPeriod.Unit.year ->
+                                                                add(
+                                                                    Calendar.YEAR,
+                                                                    period.value,
+                                                                )
+                                                        }
+                                                    }.time
+                                            }
+                                        },
+                                    subscriptionGroupId = rawProduct?.basePlanId,
+                                    offerId = rawProduct?.offerId,
+                                )
+                            }
+                        }
+
+                        else -> transaction
+                    }
+            }
 
             class Restore(
                 val restoreType: RestoreType,
@@ -532,7 +595,7 @@ sealed class InternalSuperwallEvent(
             get() {
                 return paywallInfo.audienceFilterParams().let {
                     if (superwallPlacement is SuperwallEvent.TransactionAbandon) {
-                        it.plus("abandoned_product_id" to (product?.productIdentifier ?: ""))
+                        it.plus("abandoned_product_id" to (product?.fullIdentifier ?: ""))
                     } else {
                         it
                     }
@@ -560,12 +623,13 @@ sealed class InternalSuperwallEvent(
                             paywallInfo = paywallInfo,
                         )
 
-                    is State.Complete ->
+                    is State.Complete -> {
                         SuperwallEvent.TransactionComplete(
                             transaction = state.transaction,
                             product = state.product,
                             paywallInfo = paywallInfo,
                         )
+                    }
 
                     is State.Restore ->
                         SuperwallEvent.TransactionRestore(
@@ -712,10 +776,6 @@ sealed class InternalSuperwallEvent(
 
             object Fallback : State()
 
-            class Timeout(
-                val msg: String,
-            ) : State()
-
             class Complete : State()
         }
 
@@ -724,11 +784,6 @@ sealed class InternalSuperwallEvent(
                 when (state) {
                     is PaywallWebviewLoad.State.Start ->
                         SuperwallEvent.PaywallWebviewLoadStart(
-                            paywallInfo,
-                        )
-
-                    is PaywallWebviewLoad.State.Timeout ->
-                        SuperwallEvent.PaywallWebviewLoadTimeout(
                             paywallInfo,
                         )
 
@@ -763,11 +818,6 @@ sealed class InternalSuperwallEvent(
                                 .mapIndexed { i, it ->
                                     "url_$i" to it
                                 }.toTypedArray(),
-                        )
-
-                    is State.Timeout ->
-                        mapOf(
-                            "error_message" to state.msg,
                         )
 
                     else -> mapOf()
@@ -973,6 +1023,7 @@ sealed class InternalSuperwallEvent(
                 "paywall_id" to paywallId,
                 "preloading_enabled" to preloadingEnabled,
                 "visible_duration" to visibleDuration,
+                "unit" to "ms",
             ).map { (key, value) -> if (value != null) key to value else null }
                 .filterNotNull()
                 .toMap()
@@ -1196,11 +1247,13 @@ sealed class InternalSuperwallEvent(
                             permissionName = permissionName,
                             paywallIdentifier = paywallIdentifier,
                         )
+
                     State.Granted ->
                         SuperwallEvent.PermissionGranted(
                             permissionName = permissionName,
                             paywallIdentifier = paywallIdentifier,
                         )
+
                     State.Denied ->
                         SuperwallEvent.PermissionDenied(
                             permissionName = permissionName,
@@ -1241,5 +1294,27 @@ sealed class InternalSuperwallEvent(
             mapOf(
                 "paywall_count" to paywallCount,
             )
+    }
+
+    data class TestModeModal(
+        val state: State,
+    ) : InternalSuperwallEvent(
+            SuperwallEvent.TestModeModalOpen(),
+        ) {
+        enum class State {
+            Open,
+            Close,
+        }
+
+        override val superwallPlacement: SuperwallEvent
+            get() =
+                when (state) {
+                    State.Open -> SuperwallEvent.TestModeModalOpen()
+                    State.Close -> SuperwallEvent.TestModeModalClose()
+                }
+
+        override val audienceFilterParams: Map<String, Any> = emptyMap()
+
+        override suspend fun getSuperwallParameters(): Map<String, Any> = emptyMap()
     }
 }

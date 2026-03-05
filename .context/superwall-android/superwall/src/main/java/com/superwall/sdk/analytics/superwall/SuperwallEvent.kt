@@ -327,7 +327,7 @@ sealed class SuperwallEvent {
             get() = "paywallWebviewLoad_complete"
     }
 
-    // / When the loading of a paywall's website times out.
+    @Deprecated("Due to confusion this event was causing we're deprecating it's usage")
     data class PaywallWebviewLoadTimeout(
         val paywallInfo: PaywallInfo,
     ) : SuperwallEvent() {
@@ -457,6 +457,16 @@ sealed class SuperwallEvent {
     internal object ExpressionResult : SuperwallEvent(), IsInternalEvent {
         override val rawName: String
             get() = "cel_expression_result"
+    }
+
+    class TestModeModalOpen : SuperwallEvent() {
+        override val rawName: String
+            get() = SuperwallEvents.TestModeModalOpen.rawName
+    }
+
+    class TestModeModalClose : SuperwallEvent() {
+        override val rawName: String
+            get() = SuperwallEvents.TestModeModalClose.rawName
     }
 
     object RedemptionComplete : SuperwallPlacement() {

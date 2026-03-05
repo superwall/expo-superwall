@@ -100,11 +100,14 @@ enum class AttributionProvider(
     @SerialName("mixpanel")
     MIXPANEL("mixpanel"),
 
-    @SerialName("google_ads")
-    GOOGLE_ADS("google_ads"),
+    @SerialName("googleAds")
+    GOOGLE_ADS("googleAds"),
 
-    @SerialName("google_app_set_id")
-    GOOGLE_APP_SET("google_app_set_id"),
+    @SerialName("googleAppSetId")
+    GOOGLE_APP_SET("googleAppSetId"),
+
+    @SerialName("appstackId")
+    APPSTACK("appstackId"),
 
     @SerialName("custom")
     CUSTOM("custom"),

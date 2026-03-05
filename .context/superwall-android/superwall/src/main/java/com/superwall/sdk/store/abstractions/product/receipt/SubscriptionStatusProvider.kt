@@ -3,6 +3,7 @@ package com.superwall.sdk.store.abstractions.product.receipt
 import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.Purchase.PurchaseState
 import com.superwall.sdk.billing.Billing
+import com.superwall.sdk.store.abstractions.product.RawStoreProduct
 import com.superwall.sdk.store.abstractions.product.StoreProduct
 
 /**
@@ -95,10 +96,14 @@ class PlayBillingSubscriptionStatusProvider(
         if (product == null) return null
 
         val phasesWithoutTrial =
-            product.rawStoreProduct.selectedOffer
-                ?.pricingPhases
-                ?.pricingPhaseList
-                ?.dropWhile { it.priceAmountMicros == 0L } ?: emptyList()
+            when (val offer = product.rawStoreProduct?.selectedOffer) {
+                is RawStoreProduct.SelectedOfferDetails.Subscription -> {
+                    offer.underlying.pricingPhases.pricingPhaseList
+                        .dropWhile { it.priceAmountMicros == 0L }
+                }
+                is RawStoreProduct.SelectedOfferDetails.OneTime -> emptyList() // One-time products don't have pricing phases
+                null -> emptyList()
+            }
 
         return when {
             // If we are in a trial period
@@ -131,13 +136,13 @@ class PlayBillingSubscriptionStatusProvider(
             PurchaseState.PURCHASED -> {
                 if (product == null) return false
 
-                when (product.rawStoreProduct.underlyingProductDetails.productType) {
+                when (product.rawStoreProduct?.underlyingProductDetails?.productType) {
                     com.android.billingclient.api.BillingClient.ProductType.INAPP -> {
                         // Non-consumable is always active if purchased
                         true
                     }
                     com.android.billingclient.api.BillingClient.ProductType.SUBS -> {
-                        val subscriptionPeriod = product.rawStoreProduct.subscriptionPeriod
+                        val subscriptionPeriod = product.rawStoreProduct?.subscriptionPeriod
                         if (subscriptionPeriod != null) {
                             val periodMillis = subscriptionPeriod.toMillis
                             val expirationTime = purchase.purchaseTime + periodMillis

@@ -64,6 +64,7 @@ data class CrossplatformProduct(
                 get() =
                     when (offer) {
                         is Offer.Automatic -> "$productIdentifier:$basePlanIdentifier:sw-auto"
+                        is Offer.NoOffer -> "$productIdentifier:$basePlanIdentifier:sw-none"
                         is Offer.Specified -> "$productIdentifier:$basePlanIdentifier:${offer.offerIdentifier}"
                     }
 
@@ -171,6 +172,7 @@ object PlayStoreSerializer : KSerializer<CrossplatformProduct.StoreProduct.PlayS
                 val offer =
                     when (val offer = value.offer) {
                         is Offer.Automatic -> JsonObject(mapOf("type" to JsonPrimitive(offer.type)))
+                        is Offer.NoOffer -> JsonObject(mapOf("type" to JsonPrimitive(Offer.NoOffer.TYPE)))
                         is Offer.Specified ->
                             JsonObject(
                                 mapOf(
@@ -205,13 +207,14 @@ object PlayStoreSerializer : KSerializer<CrossplatformProduct.StoreProduct.PlayS
         val offer =
             when (type) {
                 "AUTOMATIC" -> Offer.Automatic()
+                "NO_OFFER" -> Offer.NoOffer
                 "SPECIFIED" -> {
                     val offerIdentifier =
                         offerJsonObject["offer_identifier"]?.jsonPrimitive?.content
                             ?: throw SerializationException("offer_identifier is missing")
                     Offer.Specified(offerIdentifier = offerIdentifier)
                 }
-                else -> Offer.Specified(offerIdentifier = "sw-none")
+                else -> Offer.NoOffer
             }
 
         return CrossplatformProduct.StoreProduct.PlayStore(productIdentifier, basePlanIdentifier, offer)

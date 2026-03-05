@@ -15,18 +15,21 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.view.Window
-import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.activity.SystemBarStyle
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import com.superwall.sdk.BuildConfig
 import com.superwall.sdk.R
 import com.superwall.sdk.Superwall
@@ -942,6 +945,13 @@ internal class DebugViewActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Dark style matching the debug background color (#181A1E)
+        val darkScrim = Color.parseColor("#181A1E")
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.dark(darkScrim),
+            navigationBarStyle = SystemBarStyle.dark(darkScrim),
+        )
+
         super.onCreate(savedInstanceState)
         AppCompatDelegate.setCompatVectorFromResourcesEnabled(true)
 
@@ -963,10 +973,13 @@ internal class DebugViewActivity : AppCompatActivity() {
         }
 
         requestWindowFeature(Window.FEATURE_NO_TITLE)
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_FULLSCREEN,
-            WindowManager.LayoutParams.FLAG_FULLSCREEN,
-        )
+
+        // Apply system bar insets as padding so content clears status bar and nav bar
+        ViewCompat.setOnApplyWindowInsetsListener(view) { v, windowInsets ->
+            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(insets.left, insets.top, insets.right, insets.bottom)
+            WindowInsetsCompat.CONSUMED
+        }
 
         // Now add
         setContentView(view)

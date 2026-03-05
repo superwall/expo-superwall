@@ -35,9 +35,6 @@ export default function Compat() {
     const configurePlatform = async () => {
       await Superwall.configure({
         apiKey: apiKey,
-        options: {
-          testModeBehavior: TestModeBehavior.Always,
-        }
       })
 
       console.log("Configured")

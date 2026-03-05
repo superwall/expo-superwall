@@ -1,6 +1,7 @@
 package com.superwall.sdk.paywall.view
 
 import android.animation.ValueAnimator
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.drawable.VectorDrawable
@@ -8,14 +9,18 @@ import android.util.AttributeSet
 import android.view.View
 import android.view.ViewTreeObserver
 import android.view.animation.PathInterpolator
-import androidx.appcompat.widget.AppCompatImageView
+import android.widget.ImageView
 import androidx.core.content.ContextCompat
 import com.superwall.sdk.R
 
+// Using ImageView instead of AppCompatImageView intentionally —
+// this view is created with applicationContext to avoid activity leaks,
+// and AppCompatImageView requires a Theme.AppCompat context.
+@SuppressLint("AppCompatCustomView")
 class ShimmerView(
     context: Context,
     attrs: AttributeSet? = null,
-) : AppCompatImageView(context.applicationContext, attrs),
+) : ImageView(context.applicationContext, attrs),
     PaywallShimmerView {
     private var animator: ValueAnimator? = null
     private var vectorDrawable: VectorDrawable? = null
@@ -27,10 +32,10 @@ class ShimmerView(
     private var currentOrientation: Int = Configuration.ORIENTATION_UNDEFINED
 
     private val portraitDrawable: VectorDrawable? by lazy {
-        ContextCompat.getDrawable(context.applicationContext, R.drawable.portrait_shimmer_skeleton) as? VectorDrawable
+        ContextCompat.getDrawable(getContext(), R.drawable.portrait_shimmer_skeleton) as? VectorDrawable
     }
     private val landscapeDrawable: VectorDrawable? by lazy {
-        ContextCompat.getDrawable(context.applicationContext, R.drawable.landscape_shimmer_skeleton) as? VectorDrawable
+        ContextCompat.getDrawable(getContext(), R.drawable.landscape_shimmer_skeleton) as? VectorDrawable
     }
     var tintColorFilter: android.graphics.ColorFilter? = null
 

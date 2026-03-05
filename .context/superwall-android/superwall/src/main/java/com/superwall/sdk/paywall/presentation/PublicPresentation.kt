@@ -118,6 +118,8 @@ internal data class RegisterContext(
     val collectionScope: CoroutineScope,
     val serialTaskManager: SerialTaskManager,
     val trackAndPresentContext: TrackAndPresentContext,
+    val registerCustomCallback: ((String, suspend (CustomCallback) -> CustomCallbackResult) -> Unit)? = null,
+    val unregisterCustomCallback: ((String) -> Unit)? = null,
 )
 
 internal data class RegisterRequest(
@@ -142,11 +144,20 @@ internal fun registerPaywall(
             withErrorTracking {
                 when (state) {
                     is PaywallState.Presented -> {
+                        // Register custom callback handler if provided
+                        request.handler?.onCustomCallbackHandler?.let { callbackHandler ->
+                            context.registerCustomCallback?.invoke(
+                                state.paywallInfo.identifier,
+                                callbackHandler,
+                            )
+                        }
                         request.handler?.onPresentHandler?.invoke(state.paywallInfo)
                     }
 
                     is PaywallState.Dismissed -> {
                         val (paywallInfo, paywallResult) = state
+                        // Unregister custom callback handler
+                        context.unregisterCustomCallback?.invoke(paywallInfo.identifier)
                         request.handler?.onDismissHandler?.invoke(paywallInfo, paywallResult)
                         when (paywallResult) {
                             is Purchased, is Restored -> {
@@ -313,6 +324,12 @@ private fun Superwall.internallyRegister(
                     isPaywallPresented = { isPaywallPresented },
                     present = { request, publisher -> internallyPresent(request, publisher) },
                 ),
+            registerCustomCallback = { paywallId, callbackHandler ->
+                dependencyContainer.customCallbackRegistry.register(paywallId, callbackHandler)
+            },
+            unregisterCustomCallback = { paywallId ->
+                dependencyContainer.customCallbackRegistry.unregister(paywallId)
+            },
         )
 
     val registerRequest =

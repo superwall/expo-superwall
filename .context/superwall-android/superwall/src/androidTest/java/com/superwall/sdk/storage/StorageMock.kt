@@ -36,6 +36,7 @@ class StorageMock(
                 namingStrategy = JsonNamingStrategy.SnakeCase
                 ignoreUnknownKeys = true
             },
+        _apiKey = "",
     ) {
     var didClearCachedSessionEvents = false
 

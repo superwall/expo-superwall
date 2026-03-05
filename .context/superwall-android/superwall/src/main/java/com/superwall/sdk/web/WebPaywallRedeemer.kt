@@ -157,17 +157,24 @@ class WebPaywallRedeemer(
             override val description: String = "EXISTING_CODES"
             override val code: String? = null
         }
+
+        object IntegrationAttributes : RedeemType {
+            override val code: String?
+                get() = null
+            override val description: String = "INTEGRATION_ATTRIBUTES"
+        }
     }
 
     suspend fun redeem(redemption: RedeemType) {
         //     delay(10.seconds)
         Logger.debug(
-            LogLevel.error,
+            LogLevel.debug,
             LogScope.webEntitlements,
             "Starting redemption of type ${
                 when (redemption) {
                     is RedeemType.Existing -> "Existing"
                     is RedeemType.Code -> "Code: ${redemption.code}"
+                    is RedeemType.IntegrationAttributes -> "Integration attributes"
                 }
             }",
         )
@@ -260,7 +267,7 @@ class WebPaywallRedeemer(
                             }
                         }
 
-                        RedeemType.Existing -> {
+                        RedeemType.Existing, RedeemType.IntegrationAttributes -> {
                             // NO-OP
                         }
                     }
@@ -418,6 +425,14 @@ class WebPaywallRedeemer(
                                 it.printStackTrace()
                             },
                             onSuccess = { newEntitlements ->
+                                Logger.debug(
+                                    logLevel = LogLevel.debug,
+                                    scope = LogScope.webEntitlements,
+                                    message = "Discovered web entitlements",
+                                    info =
+                                        mapOf("entitlements" to newEntitlements.map { it.id }.joinToString(",")),
+                                )
+
                                 val latestRedeemResponse =
                                     storage.read(LatestRedemptionResponse)
                                 val existingWebEntitlements =

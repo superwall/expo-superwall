@@ -50,22 +50,12 @@ class PaywallManager(
 
     fun resetCache() {
         factory.mainScope().launchWithTracking {
-            for (view in cache.getAllPaywallViews()) {
-                view.destroyWebview()
-                val inactivePaywalls =
-                    cache.entries
-                        .filter {
-                            it.value is PaywallView &&
-                                it.key != cache.activePaywallVcKey
-                        }.values
-                        .map { it as PaywallView }
-                for (paywallView in inactivePaywalls) {
-                    if (paywallView.state.paywall.identifier != cache.activePaywallVcKey) {
-                        paywallView.destroyWebview()
-                    }
-                }
-                cache.removeAll()
-            }
+            val activeKey = cache.activePaywallVcKey
+            cache
+                .getAllPaywallViews()
+                .filter { it.state.cacheKey != activeKey }
+                .forEach { it.destroyWebview() }
+            cache.removeAll()
         }
     }
 

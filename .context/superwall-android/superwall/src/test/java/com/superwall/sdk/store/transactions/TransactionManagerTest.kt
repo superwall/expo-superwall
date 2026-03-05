@@ -19,6 +19,7 @@ import com.superwall.sdk.models.entitlements.Entitlement
 import com.superwall.sdk.models.entitlements.SubscriptionStatus
 import com.superwall.sdk.paywall.presentation.internal.state.PaywallResult
 import com.superwall.sdk.paywall.view.PaywallViewState
+import com.superwall.sdk.products.mockProductDetails
 import com.superwall.sdk.storage.EventsQueue
 import com.superwall.sdk.storage.PurchasingProductdIds
 import com.superwall.sdk.storage.Storage
@@ -188,7 +189,7 @@ class TransactionManagerTest {
         runTest {
             Given("a transaction in progress that completes successfully") {
                 val productId = "product1"
-                val productDetails = mockk<ProductDetails>(relaxed = true)
+                val productDetails = mockProductDetails(productId = productId)
                 val storeProduct = mockStoreProduct(productId = productId)
                 productsByFullId[productId] = storeProduct
                 addTransactionInProgress(productId, productDetails)
@@ -223,7 +224,7 @@ class TransactionManagerTest {
         runTest {
             Given("a pending transaction that gets cancelled") {
                 val productId = "product2"
-                val productDetails = mockk<ProductDetails>(relaxed = true)
+                val productDetails = mockProductDetails(productId = productId)
                 val rawProduct = mockk<RawStoreProduct>(relaxed = true)
                 mockkObject(RawStoreProduct.Companion)
                 try {
@@ -262,7 +263,7 @@ class TransactionManagerTest {
         runTest {
             Given("a transaction that fails with an error") {
                 val productId = "product3"
-                val productDetails = mockk<ProductDetails>(relaxed = true)
+                val productDetails = mockProductDetails(productId = productId)
                 val rawProduct = mockk<RawStoreProduct>(relaxed = true)
                 mockkObject(RawStoreProduct.Companion)
                 try {
@@ -302,7 +303,7 @@ class TransactionManagerTest {
         runTest {
             Given("a transaction that becomes pending") {
                 val productId = "product4"
-                val productDetails = mockk<ProductDetails>(relaxed = true)
+                val productDetails = mockProductDetails(productId = productId)
                 val storeProduct = mockStoreProduct(productId = productId)
                 productsByFullId[productId] = storeProduct
                 addTransactionInProgress(productId, productDetails)
@@ -342,7 +343,7 @@ class TransactionManagerTest {
         runTest {
             Given("a transaction that is restored") {
                 val productId = "product5"
-                val productDetails = mockk<ProductDetails>(relaxed = true)
+                val productDetails = mockProductDetails(productId = productId)
                 val storeProduct = mockStoreProduct(productId = productId)
                 productsByFullId[productId] = storeProduct
                 addTransactionInProgress(productId, productDetails)

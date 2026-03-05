@@ -35,7 +35,20 @@ class Cache(
     // TODO: clear expired entries from disk cache when backgrounding/terminating
 
     fun <T> read(storable: Storable<T>): T? {
-        var data = memCache[storable.key] as? T
+        var data: T? = null
+        try {
+            @Suppress("UNCHECKED_CAST")
+            data = memCache[storable.key] as? T
+        } catch (e: ClassCastException) {
+            // Corrupted cache entry - remove it
+            memCache.remove(storable.key)
+            Logger.debug(
+                logLevel = LogLevel.error,
+                LogScope.cache,
+                message = "ClassCastException reading from memory cache for key: ${storable.key}",
+                error = e,
+            )
+        }
         if (data == null) {
             val file = storable.file(context = context)
             if (file.exists()) {

@@ -120,6 +120,9 @@ class PaywallMessageHandlerTest {
             encodeToB64 = encodeToB64,
             userPermissions = FakeUserPermissions(),
             getActivity = { null },
+            customCallbackRegistry =
+                com.superwall.sdk.paywall.presentation
+                    .CustomCallbackRegistry(),
         )
 
     @Test
@@ -235,7 +238,7 @@ class PaywallMessageHandlerTest {
                     handler.handle(PaywallMessage.OpenUrlInBrowser(URI("https://example.com/ext")))
                     handler.handle(PaywallMessage.OpenDeepLink(URI("myapp://path")))
                     handler.handle(PaywallMessage.Restore)
-                    handler.handle(PaywallMessage.Purchase(product = "primary", productId = "p1"))
+                    handler.handle(PaywallMessage.Purchase(product = "primary", productId = "p1", shouldDismiss = true))
                     handler.handle(PaywallMessage.RequestReview(PaywallMessage.RequestReview.Type.INAPP))
                     handler.handle(PaywallMessage.Close)
                     advanceUntilIdle()
@@ -494,6 +497,103 @@ class PaywallMessageHandlerTest {
                         assertEquals("John", capturedAttributes[0]["name"])
                         assertEquals(30, capturedAttributes[0]["age"])
                         assertEquals(true, capturedAttributes[0]["premium"])
+                    }
+                }
+            }
+        }
+
+    @Test
+    fun purchase_with_shouldDismiss_true_emits_InitiatePurchase_with_shouldDismiss_true() =
+        runTest {
+            Given("a handler and recording events delegate") {
+                val paywall = Paywall.stub()
+                val state = PaywallViewState(paywall = paywall, locale = "en-US")
+                val delegate =
+                    object : FakeDelegate(state) {
+                        val events = mutableListOf<PaywallWebEvent>()
+
+                        override fun eventDidOccur(paywallWebEvent: PaywallWebEvent) {
+                            events.add(paywallWebEvent)
+                        }
+                    }
+                val handler = createHandler()
+                handler.messageHandler = delegate
+
+                When("Purchase message with shouldDismiss=true arrives") {
+                    handler.handle(PaywallMessage.Purchase(product = "primary", productId = "product123", shouldDismiss = true))
+
+                    Then("delegate receives InitiatePurchase event with shouldDismiss=true") {
+                        val purchaseEvent = delegate.events.filterIsInstance<PaywallWebEvent.InitiatePurchase>().firstOrNull()
+                        assertNotNull(purchaseEvent)
+                        assertEquals("product123", purchaseEvent!!.productId)
+                        assertEquals(true, purchaseEvent.shouldDismiss)
+                    }
+                }
+            }
+        }
+
+    @Test
+    fun purchase_with_shouldDismiss_false_emits_InitiatePurchase_with_shouldDismiss_false() =
+        runTest {
+            Given("a handler and recording events delegate") {
+                val paywall = Paywall.stub()
+                val state = PaywallViewState(paywall = paywall, locale = "en-US")
+                val delegate =
+                    object : FakeDelegate(state) {
+                        val events = mutableListOf<PaywallWebEvent>()
+
+                        override fun eventDidOccur(paywallWebEvent: PaywallWebEvent) {
+                            events.add(paywallWebEvent)
+                        }
+                    }
+                val handler = createHandler()
+                handler.messageHandler = delegate
+
+                When("Purchase message with shouldDismiss=false arrives") {
+                    handler.handle(PaywallMessage.Purchase(product = "secondary", productId = "product456", shouldDismiss = false))
+
+                    Then("delegate receives InitiatePurchase event with shouldDismiss=false") {
+                        val purchaseEvent = delegate.events.filterIsInstance<PaywallWebEvent.InitiatePurchase>().firstOrNull()
+                        assertNotNull(purchaseEvent)
+                        assertEquals("product456", purchaseEvent!!.productId)
+                        assertEquals(false, purchaseEvent.shouldDismiss)
+                    }
+                }
+            }
+        }
+
+    @Test
+    fun transactionComplete_emits_event_to_webview() =
+        runTest {
+            Given("a ready handler and delegate") {
+                val paywall = Paywall.stub()
+                val state = PaywallViewState(paywall = paywall, locale = "en-US")
+                val delegate =
+                    object : FakeDelegate(state) {
+                        val evals = mutableListOf<String>()
+
+                        override fun evaluate(
+                            code: String,
+                            resultCallback: ((String?) -> Unit)?,
+                        ) {
+                            evals.add(code)
+                            resultCallback?.invoke(null)
+                        }
+                    }
+                val handler = createHandler()
+                handler.messageHandler = delegate
+
+                When("OnReady is handled then TransactionComplete arrives") {
+                    handler.handle(PaywallMessage.OnReady("5.0.0"))
+                    advanceUntilIdle()
+                    handler.handle(PaywallMessage.TransactionComplete("com.app.product.monthly"))
+                    advanceUntilIdle()
+
+                    Then("webview receives a transaction_complete event JSON with product_identifier") {
+                        val anyTransactionComplete = delegate.evals.any { it.contains("transaction_complete") }
+                        assert(anyTransactionComplete) { "Expected transaction_complete event in webview" }
+                        val anyProductId = delegate.evals.any { it.contains("com.app.product.monthly") }
+                        assert(anyProductId) { "Expected product_identifier in transaction_complete event" }
                     }
                 }
             }

@@ -24,6 +24,7 @@ import com.superwall.sdk.models.internal.DeviceVendorId
 import com.superwall.sdk.models.internal.UserId
 import com.superwall.sdk.models.internal.WebRedemptionResponse
 import com.superwall.sdk.models.paywall.Paywall
+import com.superwall.sdk.store.testmode.models.SuperwallProductsResponse
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.JsonElement
@@ -150,6 +151,11 @@ open class Network(
         subscriptionService
             .webEntitlementsByDeviceId(deviceId)
             .logError("/redeem")
+
+    suspend fun getSuperwallProducts(): Either<SuperwallProductsResponse, NetworkError> =
+        subscriptionService
+            .getProducts()
+            .logError("/products")
 
     private suspend fun awaitUntilAppInForeground() {
         // Wait until the app is not in the background.

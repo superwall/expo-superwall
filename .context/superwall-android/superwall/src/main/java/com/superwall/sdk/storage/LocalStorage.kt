@@ -24,6 +24,7 @@ import kotlin.coroutines.CoroutineContext
 open class LocalStorage(
     context: Context,
     private val json: Json,
+    private val _apiKey: String,
     private val factory: LocalStorage.Factory,
     private val ioScope: IOScope,
     // / The disk cache.
@@ -36,8 +37,8 @@ open class LocalStorage(
         DeviceHelperFactory,
         HasExternalPurchaseControllerFactory
 
-    // / The API key, set on configure.
-    var apiKey: String = ""
+    // / The API key, set on configure. Passed via injection first to ensure availability.
+    var apiKey: String = _apiKey
 
     // / The API key for debugging, set when handling a deep link.
     var debugKey: String = ""

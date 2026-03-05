@@ -41,6 +41,12 @@ class RequestExecutor(
                     request.responseCode
                 } catch (e: Throwable) {
                     e.printStackTrace()
+                    Logger.debug(
+                        LogLevel.error,
+                        LogScope.network,
+                        "Request failed - ${request.url?.toString()} - ${e.message}",
+                        error = e,
+                    )
                     return Either.Failure(NetworkError.Unknown(e))
                 }
 

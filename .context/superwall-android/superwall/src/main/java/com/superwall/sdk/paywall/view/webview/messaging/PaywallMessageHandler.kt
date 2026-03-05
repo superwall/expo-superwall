@@ -2,6 +2,8 @@ package com.superwall.sdk.paywall.view.webview.messaging
 
 import TemplateLogic
 import android.app.Activity
+import android.os.Build
+import android.view.HapticFeedbackConstants
 import android.webkit.JavascriptInterface
 import com.superwall.sdk.analytics.internal.trackable.InternalSuperwallEvent
 import com.superwall.sdk.analytics.internal.trackable.TrackableSuperwallEvent
@@ -14,17 +16,25 @@ import com.superwall.sdk.logger.Logger
 import com.superwall.sdk.misc.MainScope
 import com.superwall.sdk.models.paywall.LocalNotification
 import com.superwall.sdk.models.paywall.Paywall
+import com.superwall.sdk.paywall.presentation.CustomCallback
+import com.superwall.sdk.paywall.presentation.CustomCallbackRegistry
+import com.superwall.sdk.paywall.presentation.CustomCallbackResult
+import com.superwall.sdk.paywall.presentation.CustomCallbackResultStatus
 import com.superwall.sdk.paywall.view.PaywallView
 import com.superwall.sdk.paywall.view.PaywallViewState
 import com.superwall.sdk.paywall.view.delegate.PaywallLoadingState
 import com.superwall.sdk.paywall.view.webview.SendPaywallMessages
 import com.superwall.sdk.permissions.PermissionStatus
 import com.superwall.sdk.permissions.UserPermissions
+import com.superwall.sdk.storage.core_data.convertFromJsonElement
 import com.superwall.sdk.storage.core_data.convertToJsonElement
+import com.superwall.sdk.utilities.withErrorTracking
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -32,6 +42,7 @@ import java.net.URI
 import java.util.Date
 import java.util.LinkedList
 import java.util.Queue
+import kotlin.coroutines.resume
 
 interface PaywallStateDelegate {
     val state: PaywallViewState
@@ -68,6 +79,7 @@ class PaywallMessageHandler(
     private val encodeToB64: (String) -> String,
     private val userPermissions: UserPermissions,
     private val getActivity: () -> Activity?,
+    private val customCallbackRegistry: CustomCallbackRegistry,
 ) : SendPaywallMessages {
     private companion object {
         val selectionString =
@@ -162,7 +174,12 @@ class PaywallMessageHandler(
 
             is PaywallMessage.OpenDeepLink -> openDeepLink(message.url.toString())
             is PaywallMessage.Restore -> restorePurchases()
-            is PaywallMessage.Purchase -> purchaseProduct(withId = message.productId)
+            is PaywallMessage.Purchase ->
+                purchaseProduct(
+                    withId = message.productId,
+                    shouldDismiss = message.shouldDismiss,
+                )
+
             is PaywallMessage.PaywallOpen -> {
                 if (messageHandler?.state?.paywall?.paywalljsVersion == null) {
                     queue.offer(message)
@@ -203,6 +220,16 @@ class PaywallMessageHandler(
                 setAttributes(message.data)
             }
 
+            is PaywallMessage.TransactionComplete -> {
+                ioScope.launch {
+                    pass(
+                        SuperwallEvents.TransactionComplete.rawName,
+                        paywall,
+                        mapOf("product_identifier" to message.productIdentifier),
+                    )
+                }
+            }
+
             is PaywallMessage.TrialStarted -> {
                 ioScope.launch {
                     pass(
@@ -232,6 +259,10 @@ class PaywallMessageHandler(
                 )
 
             is PaywallMessage.RequestPermission -> handleRequestPermission(message)
+
+            is PaywallMessage.RequestCallback -> handleRequestCallback(message)
+
+            is PaywallMessage.HapticFeedback -> triggerHapticFeedback(message.hapticType)
 
             else -> {
                 Logger.debug(
@@ -460,10 +491,13 @@ class PaywallMessageHandler(
         messageHandler?.eventDidOccur(PaywallWebEvent.InitiateRestore)
     }
 
-    private fun purchaseProduct(withId: String) {
+    private fun purchaseProduct(
+        withId: String,
+        shouldDismiss: Boolean,
+    ) {
         detectHiddenPaywallEvent("purchase")
         hapticFeedback()
-        messageHandler?.eventDidOccur(PaywallWebEvent.InitiatePurchase(withId))
+        messageHandler?.eventDidOccur(PaywallWebEvent.InitiatePurchase(withId, shouldDismiss))
     }
 
     private fun handleCustomEvent(customEvent: String) {
@@ -559,6 +593,7 @@ class PaywallMessageHandler(
                         ),
                     )
                 }
+
                 PermissionStatus.DENIED, PermissionStatus.UNSUPPORTED -> {
                     track(
                         InternalSuperwallEvent.Permission(
@@ -618,6 +653,113 @@ class PaywallMessageHandler(
         passMessageToWebView(base64String = encodeToB64(jsonString))
     }
 
+    private fun handleRequestCallback(request: PaywallMessage.RequestCallback) {
+        val paywallIdentifier = messageHandler?.state?.paywall?.identifier ?: ""
+
+        // Emit event to listeners
+        messageHandler?.eventDidOccur(
+            PaywallWebEvent.RequestCallback(
+                name = request.name,
+                behavior = request.behavior,
+                requestId = request.requestId,
+                variables = request.variables,
+            ),
+        )
+
+        // Get the callback handler from the registry
+        val callbackHandler = customCallbackRegistry.getHandler(paywallIdentifier)
+
+        if (callbackHandler == null) {
+            Logger.debug(
+                LogLevel.warn,
+                LogScope.superwallCore,
+                "No custom callback handler registered for callback: ${request.name}",
+            )
+            // Send failure response if no handler is registered
+            ioScope.launch {
+                sendCallbackResult(
+                    requestId = request.requestId,
+                    name = request.name,
+                    status = CustomCallbackResultStatus.FAILURE,
+                    data = null,
+                )
+            }
+            return
+        }
+
+        ioScope.launch {
+            val result =
+                try {
+                    val callback =
+                        CustomCallback(
+                            name = request.name,
+                            variables = request.variables,
+                        )
+                    callbackHandler(callback)
+                } catch (e: Exception) {
+                    Logger.debug(
+                        LogLevel.error,
+                        LogScope.superwallCore,
+                        "Error executing custom callback: ${e.message}",
+                        error = e,
+                    )
+                    CustomCallbackResult.failure()
+                }
+
+            sendCallbackResult(
+                requestId = request.requestId,
+                name = request.name,
+                status = result.status,
+                data = result.data,
+            )
+        }
+    }
+
+    /**
+     * Send a callback_result message back to the webview
+     */
+    private suspend fun sendCallbackResult(
+        requestId: String,
+        name: String,
+        status: CustomCallbackResultStatus,
+        data: Map<String, Any>?,
+    ) {
+        val eventMap =
+            mutableMapOf<String, Any>(
+                "event_name" to "callback_result",
+                "request_id" to requestId,
+                "name" to name,
+                "status" to status.rawValue,
+            )
+
+        if (data != null) {
+            eventMap["data"] = data
+        }
+
+        val eventList = listOf(eventMap)
+
+        val jsonString =
+            try {
+                json.encodeToString(eventList.convertToJsonElement())
+            } catch (e: Throwable) {
+                Logger.debug(
+                    LogLevel.error,
+                    LogScope.superwallCore,
+                    "Error encoding callback result: ${e.message}",
+                    error = e,
+                )
+                return
+            }
+
+        Logger.debug(
+            LogLevel.debug,
+            LogScope.superwallCore,
+            "Sending callback_result: $jsonString",
+        )
+
+        passMessageToWebView(base64String = encodeToB64(jsonString))
+    }
+
     private fun detectHiddenPaywallEvent(
         eventName: String,
         userInfo: Map<String, Any>? = null,
@@ -651,12 +793,103 @@ class PaywallMessageHandler(
         val isHapticFeedbackEnabled = options.paywalls.isHapticFeedbackEnabled
         val isGameControllerEnabled = options.isGameControllerEnabled
 
-        if (isHapticFeedbackEnabled == false || isGameControllerEnabled == true) {
+        if (!isHapticFeedbackEnabled || isGameControllerEnabled) {
             return
         }
 
-        // Replace this with your platform-specific implementation for haptic feedback
-        // Android doesn't have a direct equivalent to UIImpactFeedbackGenerator
-        // TODO: Implement haptic feedback
+        mainScope.launch {
+            getView()?.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+        }
     }
+
+    private fun triggerHapticFeedback(hapticType: PaywallMessage.HapticFeedback.HapticType) {
+        withErrorTracking {
+            val options = options.makeSuperwallOptions()
+            if (!options.paywalls.isHapticFeedbackEnabled || options.isGameControllerEnabled) {
+                return
+            }
+
+            val feedbackConstant =
+                when (hapticType) {
+                    PaywallMessage.HapticFeedback.HapticType.LIGHT -> HapticFeedbackConstants.CLOCK_TICK
+                    PaywallMessage.HapticFeedback.HapticType.MEDIUM -> HapticFeedbackConstants.VIRTUAL_KEY
+                    PaywallMessage.HapticFeedback.HapticType.HEAVY -> HapticFeedbackConstants.LONG_PRESS
+                    PaywallMessage.HapticFeedback.HapticType.SUCCESS ->
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            HapticFeedbackConstants.CONFIRM
+                        } else {
+                            HapticFeedbackConstants.VIRTUAL_KEY
+                        }
+
+                    PaywallMessage.HapticFeedback.HapticType.WARNING -> HapticFeedbackConstants.LONG_PRESS
+                    PaywallMessage.HapticFeedback.HapticType.ERROR ->
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                            HapticFeedbackConstants.REJECT
+                        } else {
+                            HapticFeedbackConstants.LONG_PRESS
+                        }
+
+                    PaywallMessage.HapticFeedback.HapticType.SELECTION -> HapticFeedbackConstants.CLOCK_TICK
+                }
+
+            mainScope.launch {
+                getView()?.performHapticFeedback(feedbackConstant)
+            }
+        }
+    }
+
+    /**
+     * Gets the current state from the paywall webview by evaluating JavaScript.
+     * @return A map containing the paywall state, or an empty map if evaluation fails.
+     */
+    suspend fun getState(): Map<String, Any> {
+        val messageScript = "window.app.getAllState();"
+
+        Logger.debug(
+            logLevel = LogLevel.debug,
+            scope = LogScope.paywallView,
+            message = "Getting state",
+            info = mapOf("message" to messageScript),
+        )
+
+        return withTimeoutOrNull(1000) {
+            suspendCancellableCoroutine { continuation ->
+                mainScope.launch {
+                    messageHandler?.evaluate(messageScript) { result ->
+                        if (result != null) {
+                            try {
+                                val parsed = json.parseToJsonElement(result)
+                                val converted = parsed.convertFromJsonElement()
+                                val stateMap =
+                                    replaceNullsWithEmpty(converted) as? Map<String, Any>
+                                        ?: emptyMap()
+                                continuation.resume(stateMap)
+                            } catch (e: Exception) {
+                                Logger.debug(
+                                    logLevel = LogLevel.error,
+                                    scope = LogScope.paywallView,
+                                    message = "Error parsing state JSON",
+                                    info = mapOf("message" to messageScript, "result" to result),
+                                    error = e,
+                                )
+                                continuation.resume(emptyMap())
+                            }
+                        } else {
+                            continuation.resume(emptyMap())
+                        }
+                    } ?: run {
+                        continuation.resume(emptyMap())
+                    }
+                }
+            }
+        } ?: emptyMap()
+    }
+
+    private fun replaceNullsWithEmpty(value: Any?): Any =
+        when (value) {
+            null -> ""
+            is Map<*, *> -> value.mapValues { (_, v) -> replaceNullsWithEmpty(v) }
+            is List<*> -> value.map { replaceNullsWithEmpty(it) }
+            else -> value
+        }
 }

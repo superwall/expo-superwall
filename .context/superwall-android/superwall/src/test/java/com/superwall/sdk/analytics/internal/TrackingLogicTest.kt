@@ -436,30 +436,6 @@ class TrackingLogicTest {
             }
         }
 
-    @Test
-    fun `isNotDisabledVerboseEvent allows PaywallWebviewLoad Timeout even when verbose events disabled`() =
-        Given("PaywallWebviewLoad with Timeout state and verbose events disabled") {
-            val paywallInfo = PaywallInfo.empty()
-            val event =
-                InternalSuperwallEvent.PaywallWebviewLoad(
-                    state = InternalSuperwallEvent.PaywallWebviewLoad.State.Timeout("timeout"),
-                    paywallInfo = paywallInfo,
-                )
-
-            When("checking if event is not disabled verbose event") {
-                val result =
-                    TrackingLogic.isNotDisabledVerboseEvent(
-                        event,
-                        disableVerboseEvents = true,
-                        isSandbox = false,
-                    )
-
-                Then("it should return true because Timeout events are always allowed") {
-                    assertTrue(result)
-                }
-            }
-        }
-
     // ========== canTriggerPaywall Tests ==========
 
     @Test

@@ -95,7 +95,7 @@ import java.lang.ref.WeakReference
 import java.net.MalformedURLException
 import java.net.URI
 import java.util.Date
-import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 
 class PaywallView(
@@ -295,7 +295,8 @@ class PaywallView(
         val timeout = factory.makeSuperwallOptions().paywalls.timeoutAfter
         if (timeout != null) {
             ioScope.launch {
-                val msg = "Timeout triggered - paywall wasn't loaded in ${timeout.inWholeSeconds} seconds"
+                val msg =
+                    "Timeout triggered - paywall wasn't loaded in ${timeout.inWholeSeconds} seconds"
                 controller.currentState
                     .filter { it.loadingState == PaywallLoadingState.Ready }
                     .timeout(timeout)
@@ -387,9 +388,10 @@ class PaywallView(
         webView.scrollTo(0, 0)
         if (loadingState is PaywallLoadingState.Ready) {
             webView.messageHandler.handle(PaywallMessage.TemplateParamsAndUserAttributes)
+        } else if (loadingState is PaywallLoadingState.LoadingURL || loadingState is PaywallLoadingState.Unknown) {
+            trackShimmerStart()
+            controller.updateState(ShimmerStarted)
         }
-        controller.updateState(ShimmerStarted)
-        trackShimmerStart()
     }
 
     fun beforeOnDestroy() {
@@ -469,6 +471,10 @@ class PaywallView(
         val isManualClose = closeReason is PaywallCloseReason.ManualClose
 
         suspend fun dismissView() {
+            // Get the paywall state from the webview before dismissing
+            val paywallState = webView.messageHandler.getState()
+            controller.updateState(SetPaywallState(paywallState))
+
             if (isDeclined && isManualClose) {
                 val trackedEvent = InternalSuperwallEvent.PaywallDecline(paywallInfo = info)
 
@@ -614,6 +620,7 @@ class PaywallView(
     private var initialOrientation: Int? = null
 
     private suspend fun trackOpen() {
+        controller.updateState(PaywallViewState.Updates.SetLastOpen)
         storage.trackPaywallOpen()
         webView.messageHandler.handle(PaywallMessage.PaywallOpen)
         val trackedEvent =
@@ -706,22 +713,28 @@ class PaywallView(
                 it.hideShimmer()
             }
         }
-        val visible = state.paywall.shimmerLoadingInfo.startAt
+        // Guard against duplicate tracking
+        if (state.paywall.shimmerLoadingInfo.endAt != null) return
+
+        // Match iOS: visibleDuration = now - lastOpen (when paywall was presented)
+        // Duration is 0 if shimmer was never started (preloaded) or lastOpen not set yet
+        val shimmerStartAt = state.paywall.shimmerLoadingInfo.startAt
+        val lastOpen = state.lastOpen
         val now = Date()
+        val visibleDuration =
+            if (shimmerStartAt != null && lastOpen != null) {
+                (now.time - lastOpen.time).seconds.toDouble(DurationUnit.SECONDS)
+            } else {
+                0.0
+            }
+
         controller.updateState(ShimmerEnded)
         ioScope.launch {
             val trackedEvent =
                 InternalSuperwallEvent.ShimmerLoad(
                     state = InternalSuperwallEvent.ShimmerLoad.State.Complete,
                     paywallId = state.paywall.identifier,
-                    visibleDuration =
-                        if (visible != null) {
-                            (now.time - visible.time).milliseconds.toDouble(
-                                DurationUnit.MILLISECONDS,
-                            )
-                        } else {
-                            0.0
-                        },
+                    visibleDuration = visibleDuration,
                     delay =
                         state.paywall.presentation.delay
                             .toDouble(),
@@ -885,9 +898,11 @@ class PaywallView(
     }
 
     private fun recreateWebview() {
-        webView.detach(this)
+        val oldWebView = webView
+        oldWebView.detach(this)
+        oldWebView.destroyView()
         webView =
-            SWWebView(context, webView.messageHandler, options = {
+            SWWebView(context, oldWebView.messageHandler, options = {
                 factory.makeSuperwallOptions().paywalls
             })
         webView.attach(this)

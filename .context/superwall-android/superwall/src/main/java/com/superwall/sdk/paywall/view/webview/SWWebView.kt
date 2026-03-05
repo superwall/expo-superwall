@@ -3,6 +3,7 @@ package com.superwall.sdk.paywall.view.webview
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.Color
 import android.net.Uri
 import android.os.Build
@@ -23,6 +24,7 @@ import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.EditText
+import androidx.core.graphics.createBitmap
 import com.superwall.sdk.Superwall
 import com.superwall.sdk.analytics.internal.track
 import com.superwall.sdk.analytics.internal.trackable.InternalSuperwallEvent
@@ -108,6 +110,8 @@ class SWWebView(
         { i, e -> }
 
     private companion object ChromeClient : WebChromeClient() {
+        val posterBmp by lazy { createBitmap(10, 10) }
+
         private class ChromeClient(
             val activity: () -> Activity?,
         ) : WebChromeClient() {
@@ -115,6 +119,8 @@ class SWWebView(
                 // Don't log anything
                 return true
             }
+
+            override fun getDefaultVideoPoster(): Bitmap? = posterBmp
 
             override fun onJsAlert(
                 view: WebView,
@@ -173,7 +179,7 @@ class SWWebView(
         addJavascriptInterface(messageHandler, "SWAndroid")
 
         val webSettings = this.settings
-        setWebContentsDebuggingEnabled(true)
+        setWebContentsDebuggingEnabled(false)
         webSettings.javaScriptEnabled = true
         webSettings.setSupportZoom(false)
         webSettings.builtInZoomControls = false

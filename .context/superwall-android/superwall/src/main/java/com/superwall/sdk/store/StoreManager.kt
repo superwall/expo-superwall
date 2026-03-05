@@ -11,15 +11,14 @@ import com.superwall.sdk.logger.LogScope
 import com.superwall.sdk.logger.Logger
 import com.superwall.sdk.models.entitlements.Entitlement
 import com.superwall.sdk.models.paywall.Paywall
-import com.superwall.sdk.models.product.Offer
 import com.superwall.sdk.models.product.PlayStoreProduct
 import com.superwall.sdk.models.product.ProductItem
 import com.superwall.sdk.models.product.ProductVariable
 import com.superwall.sdk.paywall.request.PaywallRequest
-import com.superwall.sdk.store.abstractions.product.OfferType
 import com.superwall.sdk.store.abstractions.product.StoreProduct
 import com.superwall.sdk.store.abstractions.product.receipt.ReceiptManager
 import com.superwall.sdk.store.coordinator.ProductsFetcher
+import com.superwall.sdk.store.testmode.TestModeManager
 import java.util.Date
 
 class StoreManager(
@@ -29,6 +28,7 @@ class StoreManager(
     private val track: suspend (InternalSuperwallEvent) -> Unit = {
         Superwall.instance.track(it)
     },
+    var testModeManager: TestModeManager? = null,
 ) : ProductsFetcher,
     StoreKit {
     val receiptManager by lazy(receiptManagerFactory)
@@ -170,17 +170,7 @@ class StoreManager(
                             PlayStoreProduct(
                                 productIdentifier = decomposedProductIds.subscriptionId,
                                 basePlanIdentifier = decomposedProductIds.basePlanId ?: "",
-                                offer =
-                                    decomposedProductIds.offerType.let { offerType ->
-                                        when (offerType) {
-                                            is OfferType.Offer ->
-                                                Offer.Specified(
-                                                    offerIdentifier = offerType.id,
-                                                )
-
-                                            is OfferType.Auto -> Offer.Automatic()
-                                        }
-                                    },
+                                offer = decomposedProductIds.offerType.toOffer(),
                             ),
                         )
                     productItems[index] =
@@ -196,17 +186,7 @@ class StoreManager(
                             PlayStoreProduct(
                                 productIdentifier = decomposedProductIds.subscriptionId,
                                 basePlanIdentifier = decomposedProductIds.basePlanId ?: "",
-                                offer =
-                                    decomposedProductIds.offerType.let { offerType ->
-                                        when (offerType) {
-                                            is OfferType.Offer ->
-                                                Offer.Specified(
-                                                    offerIdentifier = offerType.id,
-                                                )
-
-                                            is OfferType.Auto -> Offer.Automatic()
-                                        }
-                                    },
+                                offer = decomposedProductIds.offerType.toOffer(),
                             ),
                         )
                     // If no existing product found, just append to the list.
@@ -257,9 +237,24 @@ class StoreManager(
         productsByFullId[fullProductIdentifier] = storeProduct
     }
 
-    override fun getProductFromCache(productId: String): StoreProduct? = productsByFullId[productId]
+    override fun getProductFromCache(productId: String): StoreProduct? {
+        // Check test products first when in test mode
+        testModeManager?.let { manager ->
+            if (manager.isTestMode) {
+                manager.testProductsByFullId[productId]?.let { return it }
+            }
+        }
+        return productsByFullId[productId]
+    }
 
-    override fun hasCached(productId: String): Boolean = productsByFullId.contains(productId)
+    override fun hasCached(productId: String): Boolean {
+        testModeManager?.let { manager ->
+            if (manager.isTestMode && manager.testProductsByFullId.containsKey(productId)) {
+                return true
+            }
+        }
+        return productsByFullId.contains(productId)
+    }
 
     override suspend fun consume(purchaseToken: String): Result<String> = billing.consume(purchaseToken)
 

@@ -7,6 +7,21 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 
+suspend fun <T> retryOrNull(
+    maxRetries: Int,
+    delayMs: (attempt: Int) -> Long = { (it + 1) * 1000L },
+    operation: suspend () -> T,
+): T? {
+    repeat(maxRetries) { attempt ->
+        try {
+            return operation()
+        } catch (_: Throwable) {
+            if (attempt < maxRetries - 1) delay(delayMs(attempt))
+        }
+    }
+    return null
+}
+
 suspend fun <T> retrying(
     maxRetryCount: Int,
     isRetryingCallback: (suspend () -> Unit)?,

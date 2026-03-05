@@ -29,13 +29,14 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import java.math.BigDecimal
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 class ObserverModeTest {
@@ -71,6 +72,7 @@ class ObserverModeTest {
             every { productType } returns "subs"
             every { subscriptionOfferDetails } returns listOf(mockSubscriptionOfferDetails)
             every { this@mockk.oneTimePurchaseOfferDetails } returns null
+            every { this@mockk.oneTimePurchaseOfferDetailsList } returns null
             every { this@mockk.name } returns "Test Product"
             every { description } returns "Test Product Description"
         }
@@ -116,6 +118,12 @@ class ObserverModeTest {
                     configured = true
                 },
             )
+            // Wait for SDK initialization to complete using the same flow that track() uses
+            runBlocking {
+                withTimeout(120.seconds) {
+                    Superwall.hasInitialized.first()
+                }
+            }
         }
         dependencyContainer = Superwall.instance.dependencyContainer
         transactionManager = dependencyContainer.transactionManager
@@ -124,12 +132,12 @@ class ObserverModeTest {
 
     @After
     fun tearDown() {
-        Superwall.initialized = false
+        // Don't reset initialized state between tests to avoid re-initialization
     }
 
     @Test
     fun test_observe_purchase_will_begin_with_controller() =
-        runTest(timeout = 5.minutes) {
+        runTest(timeout = 30.seconds) {
             Given("a configured Superwall instance with purchase observation enabled") {
                 mockDelegate = MockDelegate()
                 Superwall.instance.delegate = mockDelegate
@@ -204,7 +212,7 @@ class ObserverModeTest {
 */
     @Test
     fun test_observe_purchase_failed_with_controller() =
-        runTest(timeout = 120.seconds) {
+        runTest(timeout = 30.seconds) {
             Given("a configured Superwall instance and failed purchase") {
                 mockDelegate = MockDelegate()
                 Superwall.instance.delegate = mockDelegate

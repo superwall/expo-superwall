@@ -2,13 +2,18 @@ package com.superwall.sdk.config.options
 
 import com.superwall.sdk.logger.LogLevel
 import com.superwall.sdk.logger.LogScope
+import com.superwall.sdk.store.testmode.TestModeBehavior
 import java.util.*
 
 // Options for configuring Superwall, including paywall presentation and appearance.
 //
 // Pass an instance of this class to
 // ``Superwall/configure(apiKey:purchaseController:options:completion:)-52tke``.
-class SuperwallOptions {
+class SuperwallOptions() {
+    constructor(definition: SuperwallOptions.() -> Unit) : this() {
+        definition()
+    }
+
     // Configures the appearance and behavior of paywalls.
     var paywalls: PaywallOptions = PaywallOptions()
 
@@ -98,7 +103,11 @@ class SuperwallOptions {
     var enableExperimentalDeviceVariables: Boolean = false
 
     // Configuration for printing to the console.
-    class Logging {
+    class Logging() {
+        constructor(definition: Logging.() -> Unit) : this() {
+            definition()
+        }
+
         // Defines the minimum log level to print to the console. Defaults to `warn`.
         var level: LogLevel = LogLevel.warn
 
@@ -110,6 +119,9 @@ class SuperwallOptions {
     var logging: Logging = Logging()
 
     var useMockReviews: Boolean = false
+
+    // Controls when test mode activates. Defaults to `AUTOMATIC`.
+    var testModeBehavior: TestModeBehavior = TestModeBehavior.AUTOMATIC
 }
 
 internal fun SuperwallOptions.NetworkEnvironment.toMap(): Map<String, Any> =
@@ -135,4 +147,5 @@ internal fun SuperwallOptions.toMap(): Map<String, Any> =
         localeIdentifier?.let { "locale_identifier" to it },
         "is_game_controller_enabled" to isGameControllerEnabled,
         "logging" to logging.toMap(),
+        "test_mode_behavior" to testModeBehavior.name,
     ).toMap()

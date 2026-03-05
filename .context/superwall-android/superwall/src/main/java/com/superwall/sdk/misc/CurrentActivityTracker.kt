@@ -6,12 +6,17 @@ import android.os.Bundle
 import com.superwall.sdk.logger.LogLevel
 import com.superwall.sdk.logger.LogScope
 import com.superwall.sdk.logger.Logger
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import java.lang.ref.WeakReference
+import kotlin.time.Duration
 
 class CurrentActivityTracker :
     Application.ActivityLifecycleCallbacks,
     ActivityProvider {
     private var currentActivity: WeakReference<Activity>? = null
+    private val activityState = MutableStateFlow<Activity?>(null)
 
     override fun onActivityCreated(
         activity: Activity,
@@ -31,6 +36,7 @@ class CurrentActivityTracker :
             "!! onActivityStarted: $activity",
         )
         currentActivity = WeakReference(activity)
+        activityState.value = activity
     }
 
     override fun onActivityResumed(activity: Activity) {
@@ -40,11 +46,16 @@ class CurrentActivityTracker :
             "!! onActivityResumed: $activity",
         )
         currentActivity = WeakReference(activity)
+        activityState.value = activity
     }
 
     override fun onActivityPaused(activity: Activity) {}
 
-    override fun onActivityStopped(activity: Activity) {}
+    override fun onActivityStopped(activity: Activity) {
+        if (currentActivity?.get() === activity) {
+            activityState.value = null
+        }
+    }
 
     override fun onActivitySaveInstanceState(
         activity: Activity,
@@ -57,8 +68,9 @@ class CurrentActivityTracker :
             LogScope.all,
             "!! onActivityDestroyed: $activity",
         )
-        if (currentActivity == activity) {
+        if (currentActivity?.get() === activity) {
             currentActivity = null
+            activityState.value = null
         }
     }
 
@@ -70,4 +82,12 @@ class CurrentActivityTracker :
         )
         return currentActivity?.get()
     }
+
+    /**
+     * Suspends until an activity becomes available, or returns null on timeout.
+     */
+    suspend fun awaitActivity(timeout: Duration): Activity? =
+        currentActivity?.get() ?: withTimeoutOrNull(timeout) {
+            activityState.first { it != null }
+        }
 }
