@@ -24,6 +24,7 @@ export type IntegrationAttribute =
   | "tenjinId"
   | "posthogUserId"
   | "customerioId"
+  | "appstackId"
 
 /**
  * Object mapping integration attribute keys to their values.

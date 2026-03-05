@@ -24,6 +24,7 @@ fun attributionProviderFromString(provider: String): AttributionProvider? {
     "tenjinId" -> AttributionProvider.TENJIN_ID
     "posthogUserId" -> AttributionProvider.POSTHOG_USER_ID
     "customerioId" -> AttributionProvider.CUSTOMERIO_ID
+    "appstackId" -> AttributionProvider.APPSTACK_ID
     else -> null
   }
 }

@@ -23,6 +23,7 @@ extension IntegrationAttribute {
     case "tenjinId": return .tenjinId
     case "posthogUserId": return .posthogUserId
     case "customerioId": return .customerioId
+    case "appstackId": return .appstackId
     default: return nil
     }
   }

@@ -98,6 +98,7 @@ export type IntegrationAttribute =
   | "tenjinId"
   | "posthogUserId"
   | "customerioId"
+  | "appstackId"
 
 /**
  * Object with optional keys for third-party integration provider IDs.
@@ -107,7 +108,7 @@ export type IntegrationAttribute =
  * brazeAliasName, brazeAliasLabel, onesignalId, fbAnonId, firebaseAppInstanceId,
  * iterableUserId, iterableCampaignId, iterableTemplateId, mixpanelDistinctId,
  * mparticleId, clevertapId, airshipChannelId, kochavaDeviceId, tenjinId,
- * posthogUserId, customerioId
+ * posthogUserId, customerioId, appstackId
  *
  * @example
  * ```typescript
