@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.5
+
+### Patch Changes
+
+- 49ef4ff: Add `appstackId` integration attribute to `setIntegrationAttributes()` for Appstack integration support.
+- 49ef4ff: Fix `setUserAttributes` silently failing when JavaScript attribute values are
+  `null` by making the bridge value types nullable on iOS and Android, and update
+  TypeScript signatures to explicitly allow nullable user attribute values.
+- 7c53e77: Update Android, add appstack integration id
+
 ## 1.0.4
 
 ### Patch Changes
