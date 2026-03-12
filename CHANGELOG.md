@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.0.6
+
+### Patch Changes
+
+- a343340: Prevent `configure()` from settling its Expo promise more than once during
+  native setup on iOS and Android. This avoids crashes such as
+  `PromiseAlreadySettledException` if the native SDK completion handler is
+  invoked more than once.
+
 ## 1.0.5
 
 ### Patch Changes
