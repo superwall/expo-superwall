@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.7
+
+### Patch Changes
+
+- 6a8fea6: Fix compat event decoding for `paywallPreloadStart`.
+
 ## 1.0.6
 
 ### Patch Changes
