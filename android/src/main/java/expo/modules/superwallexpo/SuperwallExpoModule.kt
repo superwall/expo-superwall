@@ -145,6 +145,7 @@ class SuperwallExpoModule : Module() {
       sdkVersion: String?,
       promise: Promise ->
       ioScope.launch {
+        val promiseSettled = java.util.concurrent.atomic.AtomicBoolean(false)
         try{
         val superwallOptions: SuperwallOptions = options?.let {
           superwallOptionsFromJson(options)
@@ -175,13 +176,17 @@ class SuperwallExpoModule : Module() {
           completion = {
             Superwall.instance.setPlatformWrapper("Expo", version = sdkVersion ?: "0.0.0")
             Superwall.instance.delegate = SuperwallDelegateBridge()
-            promise.resolve(true)
+            if (promiseSettled.compareAndSet(false, true)) {
+              promise.resolve(true)
+            }
            }
          )
         } catch (error: Throwable) {
           error.printStackTrace()
-          scope.launch {
-            promise.reject(CodedException(error))
+          if (promiseSettled.compareAndSet(false, true)) {
+            scope.launch {
+              promise.reject(CodedException(error))
+            }
           }
         }
       }
