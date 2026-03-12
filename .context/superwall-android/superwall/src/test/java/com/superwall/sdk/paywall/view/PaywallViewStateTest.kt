@@ -474,6 +474,41 @@ class PaywallViewStateTest {
     }
 
     @Test
+    fun setLastOpen_sets_timestamp() {
+        Given("a default state with null lastOpen") {
+            val state = makeState()
+            assertEquals(null, state.lastOpen)
+
+            When("SetLastOpen is applied") {
+                val newState = PaywallViewState.Updates.SetLastOpen.transform(state)
+
+                Then("lastOpen is set to a non-null Date") {
+                    assertTrue(newState.lastOpen != null)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun cleanupAfterDestroy_clears_lastOpen() {
+        Given("a state with lastOpen set") {
+            val state =
+                makeState().copy(
+                    lastOpen = Date(),
+                    isPresented = true,
+                )
+
+            When("CleanupAfterDestroy is applied") {
+                val newState = PaywallViewState.Updates.CleanupAfterDestroy.transform(state)
+
+                Then("lastOpen is cleared") {
+                    assertEquals(null, newState.lastOpen)
+                }
+            }
+        }
+    }
+
+    @Test
     fun clearViewCreatedCompletion_clears_callback() {
         Given("a state with viewCreatedCompletion set") {
             val state = makeState().copy(viewCreatedCompletion = { })

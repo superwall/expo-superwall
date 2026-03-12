@@ -339,8 +339,8 @@ class PaywallMessageParsingTest {
     // region Purchase
 
     @Test
-    fun parse_purchase_returns_Purchase_with_product_info() {
-        Given("a JSON with purchase event") {
+    fun parse_purchase_returns_Purchase_with_product_info_and_default_shouldDismiss() {
+        Given("a JSON with purchase event without should_dismiss") {
             val json =
                 """
                 {
@@ -360,13 +360,86 @@ class PaywallMessageParsingTest {
             When("parsed") {
                 val result = parseWrappedPaywallMessages(json)
 
-                Then("it returns Purchase with correct product and productId") {
+                Then("it returns Purchase with correct product, productId, and shouldDismiss defaults to false") {
                     assertTrue(result.isSuccess)
                     val messages = result.getOrThrow().payload.messages
                     assertEquals(1, messages.size)
                     val message = messages[0] as PaywallMessage.Purchase
                     assertEquals("primary", message.product)
                     assertEquals("com.app.subscription.monthly", message.productId)
+                    assertEquals(true, message.shouldDismiss)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun parse_purchase_with_should_dismiss_true_returns_Purchase_with_shouldDismiss_true() {
+        Given("a JSON with purchase event with should_dismiss true") {
+            val json =
+                """
+                {
+                    "version": 1,
+                    "payload": {
+                        "events": [
+                            {
+                                "event_name": "purchase",
+                                "product": "primary",
+                                "product_identifier": "com.app.subscription.monthly",
+                                "should_dismiss": true
+                            }
+                        ]
+                    }
+                }
+                """.trimIndent()
+
+            When("parsed") {
+                val result = parseWrappedPaywallMessages(json)
+
+                Then("it returns Purchase with shouldDismiss true") {
+                    assertTrue(result.isSuccess)
+                    val messages = result.getOrThrow().payload.messages
+                    assertEquals(1, messages.size)
+                    val message = messages[0] as PaywallMessage.Purchase
+                    assertEquals("primary", message.product)
+                    assertEquals("com.app.subscription.monthly", message.productId)
+                    assertEquals(true, message.shouldDismiss)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun parse_purchase_with_should_dismiss_false_returns_Purchase_with_shouldDismiss_false() {
+        Given("a JSON with purchase event with explicit should_dismiss false") {
+            val json =
+                """
+                {
+                    "version": 1,
+                    "payload": {
+                        "events": [
+                            {
+                                "event_name": "purchase",
+                                "product": "secondary",
+                                "product_identifier": "com.app.subscription.yearly",
+                                "should_dismiss": false
+                            }
+                        ]
+                    }
+                }
+                """.trimIndent()
+
+            When("parsed") {
+                val result = parseWrappedPaywallMessages(json)
+
+                Then("it returns Purchase with shouldDismiss false") {
+                    assertTrue(result.isSuccess)
+                    val messages = result.getOrThrow().payload.messages
+                    assertEquals(1, messages.size)
+                    val message = messages[0] as PaywallMessage.Purchase
+                    assertEquals("secondary", message.product)
+                    assertEquals("com.app.subscription.yearly", message.productId)
+                    assertEquals(false, message.shouldDismiss)
                 }
             }
         }

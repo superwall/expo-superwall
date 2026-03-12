@@ -23,8 +23,10 @@ import com.superwall.sdk.logger.LogLevel
 import com.superwall.sdk.logger.LogScope
 import com.superwall.sdk.logger.Logger
 import com.superwall.sdk.misc.IOScope
+import com.superwall.sdk.misc.retryOrNull
 import com.superwall.sdk.models.customer.toSet
 import com.superwall.sdk.models.entitlements.SubscriptionStatus
+import com.superwall.sdk.store.abstractions.product.BasePlanType
 import com.superwall.sdk.store.abstractions.product.OfferType
 import com.superwall.sdk.store.abstractions.product.RawStoreProduct
 import com.superwall.sdk.store.transactions.PlayBillingErrors
@@ -35,7 +37,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.min
+import kotlin.time.Duration.Companion.seconds
 
 private val BILLING_INSANTIATION_ERROR =
     """Cannot create Google Play Billing Client. This can be caused by:
@@ -52,8 +56,9 @@ class AutomaticPurchaseController(
             BillingClient
                 .newBuilder(ctx)
                 .setListener(listener)
-                .enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimeProducts().build())
-                .build()
+                .enablePendingPurchases(
+                    PendingPurchasesParams.newBuilder().enableOneTimeProducts().build(),
+                ).build()
         } catch (e: Throwable) {
             Logger.debug(
                 logLevel = LogLevel.error,
@@ -67,6 +72,11 @@ class AutomaticPurchaseController(
     },
 ) : PurchaseController,
     PurchasesUpdatedListener {
+    companion object {
+        private const val QUERY_TIMEOUT_MS = 10_000L
+        private const val MAX_RETRIES = 3
+    }
+
     private var billingClient: BillingClient = getBilling(context, this)
 
     private val isConnected = MutableStateFlow(false)
@@ -120,8 +130,7 @@ class AutomaticPurchaseController(
             Logger.debug(
                 LogLevel.error,
                 LogScope.nativePurchaseController,
-                "IllegalStateException when connecting to billing client for " +
-                    "ExternalNativePurchaseController: ${e.message}",
+                "IllegalStateException when connecting to billing client for " + "ExternalNativePurchaseController: ${e.message}",
             )
         }
     }
@@ -172,24 +181,38 @@ class AutomaticPurchaseController(
             RawStoreProduct(
                 underlyingProductDetails = productDetails,
                 fullIdentifier = fullId,
-                basePlanId = basePlanId ?: "",
-                offerType = offerId?.let { OfferType.Offer(id = it) },
+                basePlanType = BasePlanType.from(basePlanId),
+                offerType = OfferType.from(offerId),
             )
 
-        val offerToken = rawStoreProduct.selectedOffer?.offerToken
+        val offerToken =
+            when (val offer = rawStoreProduct.selectedOffer) {
+                is RawStoreProduct.SelectedOfferDetails.Subscription -> offer.underlying.offerToken
+                is RawStoreProduct.SelectedOfferDetails.OneTime -> {
+                    // For OTP with purchase options, we need the offerToken to specify which
+                    // purchase option to use, even when there's no discount offer (offerId=null).
+                    // Only skip offerToken for legacy OTPs without purchase options.
+                    if (offer.purchaseOptionId != null || offerId != null) {
+                        offer.underlying.offerToken
+                    } else {
+                        null
+                    }
+                }
 
-        val isOneTime =
-            productDetails.productType == BillingClient.ProductType.INAPP && offerToken.isNullOrEmpty()
+                null -> null
+            }
+
+        val hasOfferToken = !offerToken.isNullOrEmpty()
 
         val productDetailsParams =
             BillingFlowParams.ProductDetailsParams
                 .newBuilder()
                 .setProductDetails(productDetails)
                 .also {
-                    // Do not set empty offer token for one time products
-                    // as Google play is not supporting it since June 12th 2024
-                    if (!isOneTime && offerToken != null) {
-                        it.setOfferToken(offerToken)
+                    // Set offer token if we have one (for both subscriptions and OTP with purchase options)
+                    // Don't set empty token as Google Play doesn't support it
+                    if (hasOfferToken) {
+                        it.setOfferToken(offerToken!!)
                     }
                 }.build()
 
@@ -216,7 +239,6 @@ class AutomaticPurchaseController(
                 )
                 null
             }
-
         val flowParams =
             BillingFlowParams
                 .newBuilder()
@@ -278,7 +300,8 @@ class AutomaticPurchaseController(
                 // For all other response codes, create a Failed result with an exception
                 else -> {
                     PurchaseResult.Failed(
-                        PlayBillingErrors.fromCode(billingResult.responseCode)?.message ?: "Unknown error ${billingResult.responseCode}",
+                        PlayBillingErrors.fromCode(billingResult.responseCode)?.message
+                            ?: "Unknown error ${billingResult.responseCode}",
                     )
                 }
             }
@@ -296,14 +319,29 @@ class AutomaticPurchaseController(
 
 //region Private
 
-    private suspend fun syncSubscriptionStatusAndWait() {
+    private suspend fun syncSubscriptionStatusAndWait(count: Int = 0) {
         // We await for configuration to be set so our entitlements are available
         Superwall.instance.configurationStateListener.first { it is ConfigurationStatus.Configured }
-        val subscriptionPurchases = queryPurchasesOfType(BillingClient.ProductType.SUBS)
-        val inAppPurchases = queryPurchasesOfType(BillingClient.ProductType.INAPP)
-        val allPurchases = subscriptionPurchases + inAppPurchases
+        val subscriptionPurchases =
+            retryOrNull(MAX_RETRIES) { queryPurchasesOfType(BillingClient.ProductType.SUBS).getOrThrow() }
+        val inAppPurchases =
+            retryOrNull(MAX_RETRIES) { queryPurchasesOfType(BillingClient.ProductType.INAPP).getOrThrow() }
+        val failed = subscriptionPurchases == null || inAppPurchases == null
+        val allPurchases = (subscriptionPurchases ?: emptyList()) + (inAppPurchases ?: emptyList())
         val hasActivePurchaseOrSubscription =
             allPurchases.any { it.purchaseState == Purchase.PurchaseState.PURCHASED }
+
+        Logger.debug(
+            logLevel = LogLevel.debug,
+            scope = LogScope.nativePurchaseController,
+            message = "Found purchases: ${
+                allPurchases.mapIndexed { i, it ->
+                    val items = it.products.joinToString(",")
+                    "<$i. Products: $items id: ${it.orderId} time: ${it.purchaseTime} state: ${it.purchaseState} >"
+                }
+            }",
+        )
+
         val status: SubscriptionStatus =
             if (hasActivePurchaseOrSubscription) {
                 allPurchases
@@ -315,9 +353,17 @@ class AutomaticPurchaseController(
                         res
                     }.toSet()
                     .let { entitlements ->
+                        Logger.debug(
+                            logLevel = LogLevel.debug,
+                            scope = LogScope.nativePurchaseController,
+                            message = "Found entitlements: ${entitlements.joinToString { it.id }}",
+                        )
+
                         entitlementsInfo.activeDeviceEntitlements = entitlements
                         if (entitlements.isNotEmpty()) {
-                            SubscriptionStatus.Active(entitlements.map { it.copy(isActive = true) }.toSet())
+                            SubscriptionStatus.Active(
+                                entitlements.map { it.copy(isActive = true) }.toSet(),
+                            )
                         } else {
                             SubscriptionStatus.Inactive
                         }
@@ -335,16 +381,23 @@ class AutomaticPurchaseController(
         }
 
         Superwall.instance.internallySetSubscriptionStatus(status)
+
+        if (failed && count < MAX_RETRIES) {
+            scope.launch {
+                delay(count.seconds)
+                syncSubscriptionStatusAndWait(count + 1)
+            }
+        }
     }
 
-    private suspend fun queryPurchasesOfType(productType: String): List<Purchase> {
-        val deferred = CompletableDeferred<List<Purchase>>()
+    private suspend fun queryPurchasesOfType(productType: String): Result<List<Purchase>> {
+        val deferred = CompletableDeferred<Result<List<Purchase>>>()
 
-        val params =
-            QueryPurchasesParams
-                .newBuilder()
-                .setProductType(productType)
-                .build()
+        val params = QueryPurchasesParams.newBuilder().setProductType(productType).build()
+
+        if (!billingClient.isReady) {
+            return Result.failure(IllegalStateException("Billing client not ready"))
+        }
 
         billingClient.queryPurchasesAsync(params) { billingResult, purchasesList ->
             if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
@@ -353,13 +406,15 @@ class AutomaticPurchaseController(
                     scope = LogScope.nativePurchaseController,
                     message = "Unable to query for purchases.",
                 )
+                deferred.complete(Result.failure(Throwable("Billing query failed with code ${billingResult.responseCode}")))
                 return@queryPurchasesAsync
             }
-
-            deferred.complete(purchasesList)
+            deferred.complete(Result.success(purchasesList))
         }
 
-        return deferred.await()
+        return withTimeoutOrNull(QUERY_TIMEOUT_MS) {
+            deferred.await()
+        } ?: Result.failure(IllegalStateException("Query purchases timed out"))
     }
 
     private fun acknowledgePurchasesIfNecessary(purchases: List<Purchase>) {

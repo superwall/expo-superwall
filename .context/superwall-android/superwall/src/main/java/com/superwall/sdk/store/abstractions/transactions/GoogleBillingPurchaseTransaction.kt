@@ -49,20 +49,20 @@ data class GoogleBillingPurchaseTransaction(
 ) : StoreTransactionType {
     constructor(transaction: Purchase) : this(
         underlyingSK2Transaction = transaction,
-        transactionDate = Date(transaction.purchaseTime), // Replace with correct mapping
-        originalTransactionIdentifier = transaction.orderId, // Replace with correct mapping
-        state = StoreTransactionState.Purchased, // Replace with correct mapping
-        storeTransactionId = transaction.orderId, // Replace with correct mapping
-        originalTransactionDate = Date(transaction.purchaseTime), // Replace with correct mapping
-        webOrderLineItemID = null, // Replace with correct mapping
-        appBundleId = null, // Replace with correct mapping
-        subscriptionGroupId = null, // Replace with correct mapping
-        isUpgraded = null, // Replace with correct mapping
-        expirationDate = null, // Replace with correct mapping
-        offerId = null, // Replace with correct mapping
-        revocationDate = null, // Replace with correct mapping
-        appAccountToken = null, // Replace with correct mapping
-        payment = StorePayment(transaction), // Replace with correct mapping
+        transactionDate = Date(transaction.purchaseTime),
+        originalTransactionIdentifier = transaction.orderId,
+        state = StoreTransactionState.Purchased,
+        storeTransactionId = transaction.orderId,
+        originalTransactionDate = Date(transaction.purchaseTime),
+        webOrderLineItemID = null, // Not available in transaction, kept as iOS complement.
+        appBundleId = null, // Not available in transaction, kept as iOS complement.
+        subscriptionGroupId = null, // Base plan ID, filled after purchase from product.
+        isUpgraded = null, // Not available in transaction, kept as iOS complement.
+        expirationDate = null, // Expiration date, filled after purchase from product.
+        offerId = null, // Offer ID, filled after purchase from product
+        revocationDate = null, // Not available in transaction, kept as iOS complement
+        appAccountToken = null, // iOS property only, kept as complement
+        payment = StorePayment(transaction),
         purchaseToken = transaction.purchaseToken,
         signature = transaction.signature,
     )

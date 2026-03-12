@@ -3,6 +3,7 @@ package com.superwall.sdk.identity
 import com.superwall.sdk.Superwall
 import com.superwall.sdk.analytics.internal.track
 import com.superwall.sdk.analytics.internal.trackable.InternalSuperwallEvent
+import com.superwall.sdk.analytics.internal.trackable.TrackableSuperwallEvent
 import com.superwall.sdk.config.ConfigManager
 import com.superwall.sdk.logger.LogLevel
 import com.superwall.sdk.logger.LogScope
@@ -15,8 +16,8 @@ import com.superwall.sdk.network.device.DeviceHelper
 import com.superwall.sdk.storage.AliasId
 import com.superwall.sdk.storage.AppUserId
 import com.superwall.sdk.storage.DidTrackFirstSeen
-import com.superwall.sdk.storage.LocalStorage
 import com.superwall.sdk.storage.Seed
+import com.superwall.sdk.storage.Storage
 import com.superwall.sdk.storage.UserAttributes
 import com.superwall.sdk.utilities.withErrorTracking
 import kotlinx.coroutines.CoroutineScope
@@ -33,12 +34,26 @@ import java.util.concurrent.Executors
 
 class IdentityManager(
     private val deviceHelper: DeviceHelper,
-    private val storage: LocalStorage,
+    private val storage: Storage,
     private val configManager: ConfigManager,
     private val ioScope: IOScope,
+    private val neverCalledStaticConfig: () -> Boolean,
     private val stringToSha: (String) -> String = { it },
     private val notifyUserChange: (change: Map<String, Any>) -> Unit,
+    private val completeReset: () -> Unit = {
+        Superwall.instance.reset(duringIdentify = true)
+    },
+    private val track: suspend (TrackableSuperwallEvent) -> Unit = {
+        Superwall.instance.track(it)
+    },
 ) {
+    private companion object Keys {
+        val appUserId = "appUserId"
+        val aliasId = "aliasId"
+
+        val seed = "seed"
+    }
+
     private var _appUserId: String? = storage.read(AppUserId)
 
     val appUserId: String?
@@ -79,13 +94,16 @@ class IdentityManager(
                 _appUserId ?: _aliasId
             }
 
-    private var _userAttributes: Map<String, Any> =
-        storage.read(UserAttributes) ?: emptyMap()
+    private var _userAttributes: Map<String, Any> = storage.read(UserAttributes) ?: emptyMap()
 
     val userAttributes: Map<String, Any>
         get() =
             runBlocking(queue) {
-                _userAttributes
+                _userAttributes.toMutableMap().apply {
+                    // Ensure we always have user identifiers
+                    put(Keys.appUserId, _appUserId ?: _aliasId)
+                    put(Keys.aliasId, _aliasId)
+                }
             }
 
     val isLoggedIn: Boolean get() = _appUserId != null
@@ -103,13 +121,13 @@ class IdentityManager(
         val aliasId = storage.read(AliasId)
         if (aliasId == null) {
             storage.write(AliasId, _aliasId)
-            extraAttributes["aliasId"] = _aliasId
+            extraAttributes[Keys.aliasId] = _aliasId
         }
 
         val seed = storage.read(Seed)
         if (seed == null) {
             storage.write(Seed, _seed)
-            extraAttributes["seed"] = _seed
+            extraAttributes[Keys.seed] = _seed
         }
 
         if (extraAttributes.isNotEmpty()) {
@@ -122,7 +140,7 @@ class IdentityManager(
 
     fun configure() {
         ioScope.launchWithTracking {
-            val neverCalledStaticConfig = storage.neverCalledStaticConfig
+            val neverCalledStaticConfig = neverCalledStaticConfig()
             val isFirstAppOpen =
                 !(storage.read(DidTrackFirstSeen) ?: false)
 
@@ -160,7 +178,7 @@ class IdentityManager(
 
                     val oldUserId = _appUserId
                     if (oldUserId != null && sanitizedUserId != oldUserId) {
-                        Superwall.instance.reset(duringIdentify = true)
+                        completeReset()
                     }
 
                     _appUserId = sanitizedUserId
@@ -183,10 +201,14 @@ class IdentityManager(
 
                     ioScope.launch {
                         val trackableEvent = InternalSuperwallEvent.IdentityAlias()
-                        Superwall.instance.track(trackableEvent)
+                        track(trackableEvent)
                     }
 
                     configManager.checkForWebEntitlements()
+                    configManager.reevaluateTestMode(
+                        appUserId = _appUserId,
+                        aliasId = _aliasId,
+                    )
 
                     if (options?.restorePaywallAssignments == true) {
                         identityJobs +=
@@ -228,10 +250,10 @@ class IdentityManager(
 
             val newUserAttributes =
                 mutableMapOf(
-                    "aliasId" to _aliasId,
-                    "seed" to _seed,
+                    Keys.aliasId to _aliasId,
+                    Keys.seed to _seed,
                 )
-            _appUserId?.let { newUserAttributes["appUserId"] = it }
+            _appUserId?.let { newUserAttributes[Keys.appUserId] = it }
 
             _mergeUserAttributes(
                 newUserAttributes = newUserAttributes,
@@ -307,7 +329,7 @@ class IdentityManager(
                             deviceHelper.appInstalledAtString,
                             HashMap(mergedAttributes),
                         )
-                    Superwall.instance.track(trackableEvent)
+                    track(trackableEvent)
                 }
             }
             storage.write(UserAttributes, mergedAttributes)

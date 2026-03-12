@@ -144,43 +144,51 @@ class SuperwallExpoModule : Module() {
       usingPurchaseController: Boolean?,
       sdkVersion: String?,
       promise: Promise ->
-      //TODO SDK version in arguments?
-      try{
-      val superwallOptions: SuperwallOptions = options?.let {
-        superwallOptionsFromJson(options)
-      }?:SuperwallOptions()
+      ioScope.launch {
+        val promiseSettled = java.util.concurrent.atomic.AtomicBoolean(false)
+        try{
+        val superwallOptions: SuperwallOptions = options?.let {
+          superwallOptionsFromJson(options)
+        }?:SuperwallOptions()
 
-      // Set up onBackPressed callback to emit event to JS and wait for response
-      superwallOptions.paywalls.onBackPressed = { paywallInfo ->
-        backPressedPromise = CompletableFuture()
+        // Set up onBackPressed callback to emit event to JS and wait for response
+        superwallOptions.paywalls.onBackPressed = { paywallInfo ->
+          backPressedPromise = CompletableFuture()
 
-        val data = paywallInfo?.let {
-          mapOf("paywallInfo" to it.toJson())
-        } ?: emptyMap()
+          val data = paywallInfo?.let {
+            mapOf("paywallInfo" to it.toJson())
+          } ?: emptyMap()
 
-        emitEvent("onBackPressed", data)
+          emitEvent("onBackPressed", data)
 
-        // Block and wait for JS response via didHandleBackPressed
-        runBlocking {
-          backPressedPromise?.await() ?: false
+          // Block and wait for JS response via didHandleBackPressed
+          runBlocking {
+            backPressedPromise?.await() ?: false
+          }
         }
-      }
 
-      Superwall.configure(
-        apiKey = apiKey,
-        applicationContext = appContext.reactContext?.applicationContext as Application,
-        purchaseController = if (usingPurchaseController == true) purchaseController else null,
-        activityProvider = ExpoActivityProvider(appContext),
-        options = superwallOptions,
-        completion = {
-          Superwall.instance.setPlatformWrapper("Expo", version = sdkVersion ?: "0.0.0")
-          Superwall.instance.delegate = SuperwallDelegateBridge()
-          promise.resolve(true)
-         }
-       )
-      } catch (error: Throwable) {
-        error.printStackTrace()
-        promise.reject(CodedException(error))
+        Superwall.configure(
+          apiKey = apiKey,
+          applicationContext = appContext.reactContext?.applicationContext as Application,
+          purchaseController = if (usingPurchaseController == true) purchaseController else null,
+          activityProvider = ExpoActivityProvider(appContext),
+          options = superwallOptions,
+          completion = {
+            Superwall.instance.setPlatformWrapper("Expo", version = sdkVersion ?: "0.0.0")
+            Superwall.instance.delegate = SuperwallDelegateBridge()
+            if (promiseSettled.compareAndSet(false, true)) {
+              promise.resolve(true)
+            }
+           }
+         )
+        } catch (error: Throwable) {
+          error.printStackTrace()
+          if (promiseSettled.compareAndSet(false, true)) {
+            scope.launch {
+              promise.reject(CodedException(error))
+            }
+          }
+        }
       }
     }
 
@@ -361,7 +369,7 @@ class SuperwallExpoModule : Module() {
     }
 
 
-    AsyncFunction("setUserAttributes") { userAttributes: Map<String, Any>, promise: Promise ->
+    AsyncFunction("setUserAttributes") { userAttributes: Map<String, Any?>, promise: Promise ->
       scope.launch {
         try {
           Superwall.instance.setUserAttributes(userAttributes)

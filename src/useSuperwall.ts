@@ -9,6 +9,7 @@ import type {
   SubscriptionStatus,
 } from "./SuperwallExpoModule.types"
 import { DefaultSuperwallOptions, type PartialSuperwallOptions } from "./SuperwallOptions"
+import { filterUndefined } from "./utils/filterUndefined"
 
 /**
  * @category Models
@@ -25,7 +26,7 @@ export interface UserAttributes {
   /** A seed value associated with the user, used for consistent variant assignments in experiments. */
   seed: number
   /** Allows for custom attributes to be set for the user. These can be of any type. */
-  [key: string]: any
+  [key: string]: any | null
 }
 
 /**
@@ -149,7 +150,7 @@ export interface SuperwallStore {
    * @param attrs - An object containing the attributes to set.
    * @returns A promise that resolves when attributes are set.
    */
-  setUserAttributes: (attrs: Record<string, any>) => Promise<void>
+  setUserAttributes: (attrs: Record<string, any | null>) => Promise<void>
   /**
    * Retrieves the current user's attributes.
    * @returns A promise that resolves with the user's attributes.
@@ -307,7 +308,7 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     SuperwallExpoModule.preloadPaywalls(placements)
   },
   setUserAttributes: async (attrs) => {
-    await SuperwallExpoModule.setUserAttributes(attrs)
+    await SuperwallExpoModule.setUserAttributes(filterUndefined(attrs))
 
     const currentUser = await SuperwallExpoModule.getUserAttributes()
     set({ user: currentUser as UserAttributes })

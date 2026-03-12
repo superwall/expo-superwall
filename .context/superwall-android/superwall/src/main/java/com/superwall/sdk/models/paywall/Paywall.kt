@@ -84,7 +84,10 @@ data class Paywall(
     @SerialName("products_v2")
     internal var _productItems: List<ProductItem> = emptyList(),
     @kotlinx.serialization.Transient()
-    var productIds: List<String> = _productItems.map { it.compositeId },
+    var productIds: List<String> =
+        _productItems.map { it.compositeId }.ifEmpty {
+            _productItemsV3.map { it.fullProductId }
+        },
     @kotlinx.serialization.Transient()
     var responseLoadingInfo: LoadingInfo = LoadingInfo(),
     @kotlinx.serialization.Transient()
@@ -114,6 +117,11 @@ data class Paywall(
     var experiment: Experiment? = null,
     @kotlinx.serialization.Transient()
     var closeReason: PaywallCloseReason = PaywallCloseReason.None,
+    /**
+     * The state of the paywall, updated on paywall did dismiss.
+     */
+    @kotlinx.serialization.Transient()
+    var state: Map<String, Any> = emptyMap(),
     @SerialName("url_config")
     val urlConfig: PaywallWebviewUrl.Config? = null,
     @Serializable
@@ -261,6 +269,7 @@ data class Paywall(
             cacheKey = cacheKey,
             buildId = buildId,
             isScrollEnabled = isScrollEnabled ?: true,
+            state = state,
         )
 
     companion object {

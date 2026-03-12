@@ -96,11 +96,22 @@ class Entitlements(
         get() = _inactive.toSet() + all.minus(active)
 
     init {
-        storage.read(StoredSubscriptionStatus)?.let {
-            setSubscriptionStatus(it)
+        try {
+            storage.read(StoredSubscriptionStatus)?.let {
+                setSubscriptionStatus(it)
+            }
+        } catch (e: ClassCastException) {
+            // Handle corrupted cache data - reset to Unknown status
+            storage.delete(StoredSubscriptionStatus)
+            setSubscriptionStatus(SubscriptionStatus.Unknown)
         }
-        storage.read(StoredEntitlementsByProductId)?.let {
-            entitlementsByProduct.putAll(it)
+        try {
+            storage.read(StoredEntitlementsByProductId)?.let {
+                entitlementsByProduct.putAll(it)
+            }
+        } catch (e: ClassCastException) {
+            // Handle corrupted cache data
+            storage.delete(StoredEntitlementsByProductId)
         }
 
         scope.launch {
@@ -181,12 +192,12 @@ class Entitlements(
         return checkFor(
             listOf(
                 decomposedProductIds.fullId,
-                "${decomposedProductIds.subscriptionId}:${decomposedProductIds.basePlanId}:${decomposedProductIds.offerType.id ?: ""}",
-                "${decomposedProductIds.subscriptionId}:${decomposedProductIds.basePlanId}",
+                "${decomposedProductIds.subscriptionId}:${decomposedProductIds.basePlanId ?: ""}:${decomposedProductIds.offerType.specificId ?: ""}",
+                "${decomposedProductIds.subscriptionId}:${decomposedProductIds.basePlanId ?: ""}",
             ),
         ) ?: checkFor(
             listOf(
-                "${decomposedProductIds.subscriptionId}:${decomposedProductIds.basePlanId}:",
+                "${decomposedProductIds.subscriptionId}:${decomposedProductIds.basePlanId ?: ""}:",
                 decomposedProductIds.subscriptionId,
             ),
             isExact = false,

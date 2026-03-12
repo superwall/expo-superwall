@@ -262,6 +262,12 @@ class SuperwallEvent {
           map["event"] = "paywallPreloadComplete"
           map["paywallCount"] = superwallPlacement.paywallCount
         }
+        is SuperwallEvent.TestModeModalOpen -> {
+          map["event"] = "testModeModalOpen"
+        }
+        is SuperwallEvent.TestModeModalClose -> {
+          map["event"] = "testModeModalClose"
+        }
         else -> {}
       }
       return map

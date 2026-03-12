@@ -12,6 +12,7 @@ fun mockProductDetails(
     productId: String = "sample_product_id",
     @BillingClient.ProductType type: String = BillingClient.ProductType.SUBS,
     oneTimePurchaseOfferDetails: ProductDetails.OneTimePurchaseOfferDetails? = null,
+    oneTimePurchaseOfferDetailsList: List<ProductDetails.OneTimePurchaseOfferDetails>? = null,
     subscriptionOfferDetails: List<ProductDetails.SubscriptionOfferDetails>? =
         listOf(
             mockSubscriptionOfferDetails(),
@@ -27,6 +28,7 @@ fun mockProductDetails(
         every { getDescription() } returns description
         every { getTitle() } returns title
         every { getOneTimePurchaseOfferDetails() } returns oneTimePurchaseOfferDetails
+        every { getOneTimePurchaseOfferDetailsList() } returns oneTimePurchaseOfferDetailsList
         every { getSubscriptionOfferDetails() } returns subscriptionOfferDetails
         every { zza() } returns "mock-package-name" // This seems to return the packageName property from the response json
     }
@@ -34,11 +36,17 @@ fun mockProductDetails(
 fun mockOneTimePurchaseOfferDetails(
     price: Double = 4.99,
     priceCurrencyCodeValue: String = "USD",
+    purchaseOptionId: String? = null,
+    offerId: String? = null,
+    offerToken: String = "mock-otp-offer-token",
 ): OneTimePurchaseOfferDetails =
     mockk<OneTimePurchaseOfferDetails>().apply {
         every { formattedPrice } returns "${'$'}$price"
         every { priceAmountMicros } returns price.times(1_000_000).toLong()
         every { priceCurrencyCode } returns priceCurrencyCodeValue
+        every { getPurchaseOptionId() } returns purchaseOptionId
+        every { getOfferId() } returns offerId
+        every { getOfferToken() } returns offerToken
     }
 
 fun mockSubscriptionOfferDetails(

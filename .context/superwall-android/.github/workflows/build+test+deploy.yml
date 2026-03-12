@@ -40,9 +40,9 @@ jobs:
     - name: Change wrapper permissions
       run: chmod +x ./gradlew
 
-    # Run Build & Test the Project
+    # Run Build & Test the Project (only SDK modules, skip app/example/test_app)
     - name: Build gradle project
-      run: ./gradlew build
+      run: ./gradlew :superwall:build :superwall-compose:build
 
     - name: Build test project
       run: ./gradlew :app:assembleAndroidTest -DtestBuildType=debug

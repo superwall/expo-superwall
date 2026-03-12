@@ -2,6 +2,78 @@
 
 The changelog for `Superwall`. Also see the [releases](https://github.com/superwall/Superwall-Android/releases) on GitHub.
 
+## 2.7.5
+
+## Enhancements
+- Add appstack integration attribute identifier
+
+## Fixes
+- Ensure test mode does not interfere with expo
+- Ensure isActive is properly returned and not calculated via expiration date
+- Fix potential memory leak when webview crashes
+- Ensure O(n) cleanup doesn't run multiple times
+
+## 2.7.4
+
+## Enhancements
+
+- Adds support for "Test Mode", which allows you to simulate in-app purchases without involving Google Play. Test Mode can be enabled through the Superwall dashboard by marking specific users as test store users, or activates automatically when a an application ID mismatch is detected or behavior is set to `ALWAYS`. When active, a configuration modal lets you select starting entitlements and override free trial availability. Purchases are simulated with a UI that lets users complete, abandon, or fail transactions, with all purchase events firing normally for end-to-end paywall testing.
+- Improved logging in web entitlement and entitlement redeeming for easier debugging
+- Adds active entitlements to subscription status change event
+- Ensures purchases are always queried with connected clients and retried in background
+- Adds `expirationDate`, `subscriptionGroupId` and `offerId` to `StoreTransactionType`
+
+## Fixes
+- Improve rounding to match editor's pricing consistently
+
+## 2.7.3
+
+### Enhancements
+- Adds state and params to `PaywallInfo` for `PaywallClose` events
+
+## 2.7.2.
+
+### Fixes
+- Fixes issue with `enableExperimentalDeviceVariables` option causing subscription status sync to fail
+
+## 2.7.1
+
+### Enhancements
+- Adds improved constructors for `SuperwallOptions`,`PaywallOptions` and `PaywallPresentationHandler`, allowing a DSL like usage,i.e. ` PaywallPresentationHandler { onPresent { ... } }` 
+- Adds haptic feedback action support
+
+### Fixes
+- Ensures poster is always visible on video preview
+- Fix bug with loading not dismissing post purchase if user remains in paywall
+- Fix warning about old edge-to-edge API usages
+- Fix shimmerview theme warnings and memory leak
+
+## 2.7.0
+
+### Enhancements
+- Enables paywall post-purchase action execution instead of dismissing
+- Enables triggering custom callback requests from paywall
+- Adds a new method to PaywallPresentationHandler called onCustomCallback that allows user to handle custom callback requests
+- Adds retrieving of paywall state inside paywall info
+- Adds support for new one time purchases with purchase options and offers 
+- Update Superscript to version 1.0.13, find more in the [Superscript changelog](https://github.com/superwall/superscript/releases/tag/1.0.13)
+
+## Deprecations
+- Deprecated `paywallWebviewLoad_timeout` - this event was causing confusion due to it's naming, leading to it being deprecated
+
+## Fixes
+- Fixes late initialization authorization issue for Stripe checkouts
+- Improves how Shimmer duration is measured
+- Fixes wrong redemption type being displayed due to integration attributes
+
+## 2.6.8
+
+### Enhancements
+- Adds microphone permission
+
+### Fixes
+- Fixes error when redeeming external purchases
+
 ## 2.6.7
 
 ### Enhancements

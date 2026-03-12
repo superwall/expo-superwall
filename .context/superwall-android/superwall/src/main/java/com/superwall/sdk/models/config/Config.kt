@@ -6,6 +6,7 @@ import com.superwall.sdk.models.postback.PostbackRequest
 import com.superwall.sdk.models.product.CrossplatformProduct
 import com.superwall.sdk.models.product.ProductItem
 import com.superwall.sdk.models.triggers.Trigger
+import com.superwall.sdk.store.testmode.models.TestStoreUser
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -26,6 +27,8 @@ data class Config(
     @Transient var locales: Set<String> = emptySet(),
     @SerialName("web2app_config") var webToAppConfig: WebToAppConfig? = null,
     @SerialName("build_id") val buildId: String,
+    @SerialName("bundle_id_config") val bundleIdConfig: String? = null,
+    @SerialName("test_mode_user_ids") val testModeUserIds: List<TestStoreUser>? = null,
 ) : SerializableEntity {
     init {
         locales = localizationConfig.locales.map { it.locale }.toSet()

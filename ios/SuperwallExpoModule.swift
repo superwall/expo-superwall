@@ -1,6 +1,22 @@
 import ExpoModulesCore
 import SuperwallKit
 
+/// Thread-safe boolean flag that can only be set once.
+private final class AtomicFlag {
+  private var _value = false
+  private let lock = NSLock()
+
+  /// Sets the flag and returns the previous value.
+  /// Returns `false` on the first call, `true` on subsequent calls.
+  func testAndSet() -> Bool {
+    lock.lock()
+    defer { lock.unlock() }
+    let prev = _value
+    _value = true
+    return prev
+  }
+}
+
 public class SuperwallExpoModule: Module {
   public static var shared: SuperwallExpoModule?
 
@@ -102,6 +118,8 @@ public class SuperwallExpoModule: Module {
         superwallOptions = SuperwallOptions.fromJson(options)
       }
 
+      let promiseSettled = AtomicFlag()
+
       Superwall.configure(
         apiKey: apiKey,
         purchaseController: usingPurchaseController ? purchaseController : nil,
@@ -112,7 +130,9 @@ public class SuperwallExpoModule: Module {
 
           Superwall.shared.setPlatformWrapper("Expo", version: sdkVersion ?? "0.0.0")
 
-          promise.resolve(nil)
+          if promiseSettled.testAndSet() == false {
+            promise.resolve(nil)
+          }
         }
       )
     }
@@ -278,7 +298,7 @@ public class SuperwallExpoModule: Module {
       return await Superwall.shared.getDeviceAttributes()
     }
 
-    AsyncFunction("setUserAttributes") { (userAttributes: [String: Any], promise: Promise) in
+    AsyncFunction("setUserAttributes") { (userAttributes: [String: Any?], promise: Promise) in
       DispatchQueue.main.async {
         Superwall.shared.setUserAttributes(userAttributes)
         promise.resolve(nil)

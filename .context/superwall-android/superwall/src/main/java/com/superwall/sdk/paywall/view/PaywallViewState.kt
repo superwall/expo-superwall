@@ -41,6 +41,8 @@ data class PaywallViewState(
     val unsavedOccurrence: TriggerRuleOccurrence? = null,
     val useMultipleUrls: Boolean = false,
     val crashRetries: Int = 0,
+    // / The timestamp when the paywall was opened (presented to user). Used for calculating shimmer visible duration.
+    val lastOpen: Date? = null,
 ) {
     val info: PaywallInfo
         get() = paywall.getInfo(request?.presentationInfo?.eventData)
@@ -171,6 +173,7 @@ data class PaywallViewState(
                 paywallResult = null,
                 isPresented = false,
                 dismissCompletionBlock = null,
+                lastOpen = null,
             )
         })
 
@@ -187,6 +190,14 @@ data class PaywallViewState(
                 isPresented = true,
                 presentationDidFinishPrepare = true,
             )
+        })
+
+        /**
+         * Sets the lastOpen timestamp when the paywall is opened.
+         * Used for calculating shimmer visible duration (matching iOS behavior).
+         */
+        object SetLastOpen : Updates({ state ->
+            state.copy(lastOpen = Date())
         })
 
         object ShimmerEnded : Updates({ state ->
@@ -258,6 +269,16 @@ data class PaywallViewState(
         object ResetCrashRetry : Updates({
             it.copy(crashRetries = 0)
         })
+
+        /**
+         * Updates the paywall state with data retrieved from the webview on dismiss.
+         */
+        class SetPaywallState(
+            val state: Map<String, Any>,
+        ) : Updates({ viewState ->
+                val dropStyle = state.filterNot { it.key == "style" }
+                viewState.copy(paywall = viewState.paywall.copy(state = dropStyle))
+            })
 
         /**
          * Hides or displays the paywall spinner.

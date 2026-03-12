@@ -3,9 +3,12 @@ package com.superwall.sdk.models.product
 import com.superwall.sdk.models.serialization.BigDecimalSerializer
 import com.superwall.sdk.store.abstractions.product.StoreProductType
 import com.superwall.sdk.store.abstractions.product.SubscriptionPeriod
+import com.superwall.sdk.utilities.DateUtils
+import com.superwall.sdk.utilities.localizedDateFormat
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
+import java.math.RoundingMode
 import java.text.NumberFormat
 import java.util.*
 
@@ -185,16 +188,16 @@ data class StripeProductType(
         get() = periodDays.toString()
 
     override val dailyPrice: String
-        get() = calculatePricePerPeriod(1)
+        get() = calculateAnnualizedPrice(365)
 
     override val weeklyPrice: String
-        get() = calculatePricePerPeriod(7)
+        get() = calculateAnnualizedPrice(52)
 
     override val monthlyPrice: String
-        get() = calculatePricePerPeriod(30)
+        get() = calculateAnnualizedPrice(12)
 
     override val yearlyPrice: String
-        get() = calculatePricePerPeriod(365)
+        get() = calculateAnnualizedPrice(1)
 
     override val hasFreeTrial: Boolean
         get() = subscriptionIntroOffer?.paymentMethod == SubscriptionIntroductoryOffer.PaymentMethod.freeTrial
@@ -221,7 +224,7 @@ data class StripeProductType(
         }
 
     override val trialPeriodEndDateString: String
-        get() = trialPeriodEndDate?.toString() ?: ""
+        get() = trialPeriodEndDate?.let { localizedDateFormat(DateUtils.MMM_dd_yyyy).format(it) } ?: ""
 
     override val trialPeriodDays: Int
         get() =
@@ -293,24 +296,41 @@ data class StripeProductType(
         val totalDays = trialPeriodDays
         if (totalDays == 0) return ""
 
-        val daysPerUnit =
+        val unitsPerYear =
             when (unit) {
-                SubscriptionPeriod.Unit.day -> 1
-                SubscriptionPeriod.Unit.week -> 7
-                SubscriptionPeriod.Unit.month -> 30
-                SubscriptionPeriod.Unit.year -> 365
+                SubscriptionPeriod.Unit.day -> 365
+                SubscriptionPeriod.Unit.week -> 52
+                SubscriptionPeriod.Unit.month -> 12
+                SubscriptionPeriod.Unit.year -> 1
             }
 
-        val pricePerUnit = trialPeriodPrice.multiply(BigDecimal(daysPerUnit)).divide(BigDecimal(totalDays))
+        // Annualize first, then divide by target units per year
+        val annualPrice = trialPeriodPrice.multiply(BigDecimal(365)).divide(BigDecimal(totalDays), 6, RoundingMode.DOWN)
+        val pricePerUnit = annualPrice.divide(BigDecimal(unitsPerYear), 2, RoundingMode.DOWN)
         return formatPrice(pricePerUnit)
     }
 
-    private fun calculatePricePerPeriod(targetDays: Int): String {
-        val currentPeriodDays = periodDays
-        if (currentPeriodDays == 0) return ""
+    /**
+     * Calculates price per period by annualizing first, then dividing by target units per year.
+     * This matches the paywall editor behavior.
+     *
+     * @param targetUnitsPerYear How many of the target unit fit in a year (e.g. 365 for daily, 52 for weekly)
+     */
+    private fun calculateAnnualizedPrice(targetUnitsPerYear: Int): String {
+        val subscriptionPeriod = stripeSubscriptionPeriod ?: return ""
+        if (price == BigDecimal.ZERO) return formatPrice(BigDecimal.ZERO)
 
-        val pricePerDay = price.divide(BigDecimal(currentPeriodDays), 6, BigDecimal.ROUND_HALF_UP)
-        val targetPrice = pricePerDay.multiply(BigDecimal(targetDays))
+        val sourceUnitsPerYear =
+            when (subscriptionPeriod.unit) {
+                StripeSubscriptionPeriod.Unit.day -> BigDecimal(365)
+                StripeSubscriptionPeriod.Unit.week -> BigDecimal(52)
+                StripeSubscriptionPeriod.Unit.month -> BigDecimal(12)
+                StripeSubscriptionPeriod.Unit.year -> BigDecimal.ONE
+            }
+
+        // Annualize: price * (sourceUnitsPerYear / value), then divide by targetUnitsPerYear
+        val annualPrice = price.multiply(sourceUnitsPerYear).divide(BigDecimal(subscriptionPeriod.value), 6, RoundingMode.DOWN)
+        val targetPrice = annualPrice.divide(BigDecimal(targetUnitsPerYear), 2, RoundingMode.DOWN)
         return formatPrice(targetPrice)
     }
 

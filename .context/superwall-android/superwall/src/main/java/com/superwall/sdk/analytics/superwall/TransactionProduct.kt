@@ -48,7 +48,7 @@ data class TransactionProduct(
     )
 
     constructor(product: StoreProduct) : this(
-        id = product.productIdentifier,
+        id = product.fullIdentifier,
         price =
             Price(
                 raw = product.price,

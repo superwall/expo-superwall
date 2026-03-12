@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons"
 import { LinearGradient } from "expo-linear-gradient"
 import { Link } from "expo-router"
-import Superwall, { type SubscriptionStatus } from "expo-superwall/compat"
+import Superwall, { TestModeBehavior, type SubscriptionStatus } from "expo-superwall/compat"
 import { useEffect, useState } from "react"
 import {
   Alert,

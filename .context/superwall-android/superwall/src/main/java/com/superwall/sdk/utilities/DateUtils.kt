@@ -15,4 +15,6 @@ internal object DateUtils {
 
 internal fun dateFormat(format: String = DateUtils.ISO_MILLIS) = SimpleDateFormat(format, Locale.US)
 
+internal fun localizedDateFormat(format: String = DateUtils.MMM_dd_yyyy) = SimpleDateFormat(format, Locale.getDefault())
+
 internal val DateFormatterUtil = dateFormat()

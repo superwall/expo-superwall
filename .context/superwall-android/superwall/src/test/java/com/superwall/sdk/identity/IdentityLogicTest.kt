@@ -1,4 +1,4 @@
-//  File.kt
+package com.superwall.sdk.identity //  File.kt
 //
 //
 //  Created by Yusuf Tör on 29/09/2022.

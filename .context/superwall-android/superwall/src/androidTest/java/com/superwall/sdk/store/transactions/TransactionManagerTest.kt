@@ -36,6 +36,7 @@ import com.superwall.sdk.storage.EventsQueue
 import com.superwall.sdk.storage.Storage
 import com.superwall.sdk.store.InternalPurchaseController
 import com.superwall.sdk.store.StoreManager
+import com.superwall.sdk.store.abstractions.product.BasePlanType
 import com.superwall.sdk.store.abstractions.product.OfferType
 import com.superwall.sdk.store.abstractions.product.RawStoreProduct
 import com.superwall.sdk.store.abstractions.product.StoreProduct
@@ -66,7 +67,10 @@ class TransactionManagerTest {
                 mockk {
                     every { priceAmountMicros } returns 1000000
                     every { priceCurrencyCode } returns "USD"
+                    every { purchaseOptionId } returns null
+                    every { offerId } returns null
                 }
+            every { oneTimePurchaseOfferDetailsList } returns null
         }
 
     val entitlements = setOf("test-entitlement").map { Entitlement(it) }.toSet()
@@ -74,7 +78,7 @@ class TransactionManagerTest {
         RawStoreProduct(
             playProduct,
             "product1",
-            "basePlan",
+            BasePlanType.from("basePlan"),
             OfferType.Auto,
         )
 

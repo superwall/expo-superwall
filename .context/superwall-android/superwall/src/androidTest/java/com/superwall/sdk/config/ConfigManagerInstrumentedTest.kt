@@ -156,7 +156,7 @@ class ConfigManagerTests {
                 val assignment =
                     ConfirmableAssignment(experimentId = experimentId, variant = variant)
                 val dependencyContainer =
-                    DependencyContainer(context, null, null, activityProvider = null)
+                    DependencyContainer(context, null, null, activityProvider = null, apiKey = "")
                 val network = NetworkMock()
                 val storage = StorageMock(context = context, coroutineScope = backgroundScope)
                 val assignments = Assignments(storage, network, backgroundScope)
@@ -201,7 +201,7 @@ class ConfigManagerTests {
                 // get context
                 val context = InstrumentationRegistry.getInstrumentation().targetContext
                 val dependencyContainer =
-                    DependencyContainer(context, null, null, activityProvider = null)
+                    DependencyContainer(context, null, null, activityProvider = null, apiKey = "")
                 val network = NetworkMock()
                 val storage = StorageMock(context = context, coroutineScope = backgroundScope)
                 val assignments = Assignments(storage, network, backgroundScope)
@@ -255,7 +255,7 @@ class ConfigManagerTests {
                 val context = InstrumentationRegistry.getInstrumentation().targetContext
 
                 val dependencyContainer =
-                    DependencyContainer(context, null, null, activityProvider = null)
+                    DependencyContainer(context, null, null, activityProvider = null, apiKey = "")
                 val network = NetworkMock()
                 val storage = StorageMock(context = context, coroutineScope = backgroundScope)
                 val assignments = Assignments(storage, network, backgroundScope)
@@ -295,7 +295,7 @@ class ConfigManagerTests {
                 val context = InstrumentationRegistry.getInstrumentation().targetContext
 
                 val dependencyContainer =
-                    DependencyContainer(context, null, null, activityProvider = null)
+                    DependencyContainer(context, null, null, activityProvider = null, apiKey = "")
                 val network = NetworkMock()
                 val storage = StorageMock(context = context, coroutineScope = backgroundScope)
                 val assignmentStore = Assignments(storage, network, backgroundScope)
@@ -382,7 +382,7 @@ class ConfigManagerTests {
                     }
                 val context = InstrumentationRegistry.getInstrumentation().targetContext
                 val dependencyContainer =
-                    DependencyContainer(context, null, null, activityProvider = null)
+                    DependencyContainer(context, null, null, activityProvider = null, apiKey = "")
                 val storage = StorageMock(context = context, coroutineScope = backgroundScope)
                 val oldConfig =
                     Config.stub().copy(
@@ -455,7 +455,7 @@ class ConfigManagerTests {
                         coEvery { getEnrichment(any(), any(), any()) } returns Either.Success(mockk<Enrichment>())
                     }
                 val dependencyContainer =
-                    DependencyContainer(context, null, null, activityProvider = null)
+                    DependencyContainer(context, null, null, activityProvider = null, apiKey = "")
                 val storage = StorageMock(context = context, coroutineScope = backgroundScope)
                 val oldConfig =
                     Config.stub().copy(
@@ -581,7 +581,7 @@ class ConfigManagerTests {
                 val context = InstrumentationRegistry.getInstrumentation().targetContext
 
                 val dependencyContainer =
-                    DependencyContainer(context, null, null, activityProvider = null)
+                    DependencyContainer(context, null, null, activityProvider = null, apiKey = "")
                 val mockContainer =
                     spyk(dependencyContainer) {
                         every { deviceHelper } returns mockDeviceHelper
@@ -850,7 +850,7 @@ class ConfigManagerTests {
                 val context = InstrumentationRegistry.getInstrumentation().targetContext
 
                 val dependencyContainer =
-                    DependencyContainer(context, null, null, activityProvider = null)
+                    DependencyContainer(context, null, null, activityProvider = null, apiKey = "")
 
                 val mockContainer =
                     spyk(dependencyContainer) {

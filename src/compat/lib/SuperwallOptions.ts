@@ -25,6 +25,18 @@ export enum NetworkEnvironment {
 }
 
 /**
+ * @category Enums
+ * @since 0.3.0
+ * Controls when the SDK enters test mode.
+ */
+export enum TestModeBehavior {
+  Automatic = "automatic",
+  WhenEnabledForUser = "whenEnabledForUser",
+  Never = "never",
+  Always = "always",
+}
+
+/**
  * @category Models
  * @since 0.0.15
  * Options for configuring logging behavior.
@@ -61,6 +73,7 @@ export interface PartialSuperwallOptions {
   shouldBypassAppTransactionCheck?: boolean
   maxConfigRetryCount?: number
   useMockReviews?: boolean
+  testModeBehavior?: TestModeBehavior
 }
 
 /**
@@ -100,6 +113,11 @@ export class SuperwallOptions {
    * @platform Android only
    */
   useMockReviews = false
+  /**
+   * Controls when the SDK enters test mode. Defaults to automatic.
+   * @platform iOS and Android
+   */
+  testModeBehavior: TestModeBehavior = TestModeBehavior.Automatic
 
   constructor(init?: PartialSuperwallOptions) {
     if (init) {
@@ -142,6 +160,7 @@ export class SuperwallOptions {
       shouldBypassAppTransactionCheck: this.shouldBypassAppTransactionCheck,
       maxConfigRetryCount: this.maxConfigRetryCount,
       useMockReviews: this.useMockReviews,
+      testModeBehavior: this.testModeBehavior,
     })
   }
 }

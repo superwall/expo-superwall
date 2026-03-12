@@ -2,6 +2,115 @@
 
 The changelog for `SuperwallKit`. Also see the [releases](https://github.com/superwall/Superwall-iOS/releases) on GitHub.
 
+## 4.14.1
+
+### Enhancements
+
+- Localizes all alerts into 41 languages.
+- Makes sure to refresh free trial eligibility on every paywall open.
+
+### Fixes
+
+- Makes `device.isSandbox` more reliable.
+- Fixes the web restore alert not showing the "Yes" action button and "Cancel" incorrectly triggering the restore action.
+- Fixes a rare issue where a user's subscription could remain active after a refund, preventing paywalls from being shown.
+- Fixed trial eligibility for Stripe products.
+
+## 4.14.0
+
+### Enhancements
+
+- Adds support for "Test Mode", which allows you to simulate in-app purchases without involving StoreKit. Test Mode can be enabled through the Superwall dashboard by marking specific users as test store users, or activates automatically when a bundle ID mismatch is detected. When active, a configuration modal lets you select starting entitlements and override free trial availability. Purchases are simulated with a UI that lets users complete, abandon, or fail transactions, with all purchase events firing normally for end-to-end paywall testing.
+- Adds prioritized campaign preloading. When a campaign is marked as prioritized in the dashboard, its paywalls are preloaded before all others.
+- Adds Stripe checkout message handling for `stripe_checkout_start`, `stripe_checkout_submit`, `stripe_checkout_complete`, `stripe_checkout_fail`, and `stripe_checkout_abandon`.
+- Adds SDK-side analytics tracking for Stripe checkout lifecycle events (`start`, `submit`, `complete`, `fail`) with `store` and `product_identifier` payload fields.
+
+### Fixes
+
+- Fixes issue with compiling on Xcode 26.4 beta.
+- Fixes dashboard display of multiple active entitlements.
+
+## 4.13.0
+
+### Enhancements
+
+- Adds support for local images and videos in paywalls.
+- Schedules trial notifications after purchasing Stripe products.
+- Adds ability to group placements into preloading stages.
+
+### Fixes
+
+- Fixes race condition relating to the user ID when upgrading from v3 of the SDK to v4.
+- Fixes issue where the Superscript version hadn't been upgraded to 1.0.13 if installed via CocoaPods.
+
+## 4.12.11
+
+### Enhancements
+
+- Adds `appstackId` as an `IntegrationAttribute`.
+
+## 4.12.10
+
+### Enhancements
+
+- Adds native haptic feedback support for paywall buttons. Haptic types can be configured in the paywall editor and include light, medium, heavy, success, warning, error, and selection.
+- Adds `custom callback` action support allowing you to perform an async action and send the result back to the paywall.
+
+### Fixes
+
+- Fixes issue where the `app_install` event was being cleared upon reset, which meant that this couldn't be used with `device.daysSince_app_install` after reset.
+
+## 4.12.9
+
+### Fixes
+
+- Updates Superscript version to 1.0.13. This fixes an issue with String and Int comparison. View the original Rust release changelog [here](https://github.com/superwall/superscript/releases/tag/1.0.13).
+- Fixes an issue where dismissing a modally presented paywall didn't fire `paywall_decline`.
+
+## 4.12.8
+
+### Enhancements
+
+- Exposes the `introOfferToken` on `StoreProduct` so that those using a PurchaseController can take advantage of the introductory offer eligiblity override.
+
+### Fixes
+
+- Stop logging `paywallWebviewLoad_timeout` events because they were confusing.
+- Only refreshes terminated webviews once to avoid infinite reloading loops on low RAM devices.
+
+## 4.12.7
+
+### Fixes
+
+- Fixes microphone permission request to prevent App Store Connect warnings.
+
+## 4.12.6
+
+### Enhancements
+
+- Adds post purchase actions support.
+
+### Fixes
+
+- Fixes a rare issue where TestFlight products could display in a different currency on the paywall than on Apple's payment sheet.
+
+## 4.12.5
+
+### Enhancements
+
+- Adds microphone permission request support.
+
+### Fixes
+
+- Fixes issue where the notification permission prompt would not appear if provisional notification permission was already granted.
+
+## 4.12.4
+
+### Enhancements
+
+- Adds back in contacts and location permission requests but this time will not get flagged in App Store review if they're not being used.
+- Adds App Tracking Transparency permission request.
+
 ## 4.12.3
 
 ### Fixes

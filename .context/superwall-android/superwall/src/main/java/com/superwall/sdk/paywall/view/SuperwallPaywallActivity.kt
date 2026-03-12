@@ -21,8 +21,6 @@ import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import android.view.Window
-import android.view.WindowInsetsController
-import android.view.WindowManager
 import android.view.animation.OvershootInterpolator
 import android.widget.FrameLayout
 import androidx.activity.OnBackPressedCallback
@@ -35,7 +33,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.children
 import androidx.core.view.updateLayoutParams
@@ -163,24 +160,15 @@ class SuperwallPaywallActivity : AppCompatActivity() {
                 PaywallPresentationStyle.fromIntentString(JsonFactory.JSON_POLYMORPHIC, it)
             }
 
-        // Show content behind the status bar
-        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
-            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-        window.statusBarColor = Color.TRANSPARENT
-        window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS)
-        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val isLightBackground = intent.getBooleanExtra(IS_LIGHT_BACKGROUND_KEY, false)
-            if (isLightBackground) {
-                window.insetsController?.let {
-                    it.setSystemBarsAppearance(
-                        WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS,
-                        WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS,
-                    )
-                }
-            }
-        }
+        enableEdgeToEdge(
+            statusBarStyle =
+                SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) {
+                    !intent.getBooleanExtra(IS_LIGHT_BACKGROUND_KEY, false)
+                },
+            // Navigation bar style uses the library defaults (semi-transparent scrims)
+            // which ensure proper contrast on API 23-25 where nav button icons are always white.
+            // Presentation-specific handlers override this with the paywall background color.
+        )
 
         requestWindowFeature(Window.FEATURE_NO_TITLE)
         super.onCreate(savedInstanceState)
@@ -326,7 +314,6 @@ class SuperwallPaywallActivity : AppCompatActivity() {
             supportActionBar?.hide()
         } catch (e: Throwable) {
         }
-        window.navigationBarColor = view.backgroundColor
         // TODO: handle animation and style from `presentationStyleOverride`
         when (presentationStyle) {
             is PaywallPresentationStyle.Push -> {
@@ -342,40 +329,11 @@ class SuperwallPaywallActivity : AppCompatActivity() {
                         com.superwall.sdk.R.anim.slide_out_left,
                     )
                 }
+                applyFullscreenEdgeToEdge(view)
             }
 
             is PaywallPresentationStyle.Fullscreen -> {
-                WindowCompat.setDecorFitsSystemWindows(window, true)
-
-                // Set the navigation bar color to the paywall background color
-                enableEdgeToEdge(
-                    navigationBarStyle =
-                        when (
-                            view.state.paywall.backgroundColor
-                                .isDarkColor()
-                        ) {
-                            true -> SystemBarStyle.dark(view.state.paywall.backgroundColor)
-                            else ->
-                                SystemBarStyle.light(
-                                    scrim = view.state.paywall.backgroundColor,
-                                    darkScrim =
-                                        view.state.paywall.backgroundColor
-                                            .readableOverlayColor(),
-                                )
-                        },
-                )
-
-                // Set the bottom margin of the webview to the height of the system bars
-                view.webView.onView {
-                    ViewCompat.setOnApplyWindowInsetsListener(this) { v, windowInsets ->
-                        val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
-                        v.updateLayoutParams<ViewGroup.MarginLayoutParams> {
-                            bottomMargin = insets.bottom
-                        }
-
-                        WindowInsetsCompat.CONSUMED
-                    }
-                }
+                applyFullscreenEdgeToEdge(view)
             }
 
             is PaywallPresentationStyle.FullscreenNoAnimation -> {
@@ -385,30 +343,26 @@ class SuperwallPaywallActivity : AppCompatActivity() {
                 } else {
                     overridePendingTransition(0, 0)
                 }
-                enableEdgeToEdge(
-                    navigationBarStyle =
-                        when (
-                            view.state.paywall.backgroundColor
-                                .isDarkColor()
-                        ) {
-                            true -> SystemBarStyle.dark(view.state.paywall.backgroundColor)
-                            else ->
-                                SystemBarStyle.light(
-                                    scrim = view.state.paywall.backgroundColor,
-                                    darkScrim =
-                                        view.state.paywall.backgroundColor
-                                            .readableOverlayColor(),
-                                )
-                        },
-                )
+                applyFullscreenEdgeToEdge(view)
+            }
+
+            is PaywallPresentationStyle.None,
+            null,
+            -> {
+                applyFullscreenEdgeToEdge(view)
             }
 
             is PaywallPresentationStyle.Modal,
-            is PaywallPresentationStyle.None,
             is PaywallPresentationStyle.Drawer,
-            null,
             -> {
-                // Do nothing
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                    // On API < 30, bottom sheet falls back to plain fullscreen
+                    applyFullscreenEdgeToEdge(view)
+                } else {
+                    // On API 30+, bottom sheet layout handles content insets via setupBottomSheetLayout,
+                    // but we still need to color the navigation bar to match the paywall background.
+                    applyNavigationBarStyle(view)
+                }
             }
 
             is PaywallPresentationStyle.Popup -> {
@@ -419,6 +373,65 @@ class SuperwallPaywallActivity : AppCompatActivity() {
                 } else {
                     overridePendingTransition(0, 0)
                 }
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                    // On API < 30, popup falls back to plain fullscreen
+                    applyFullscreenEdgeToEdge(view)
+                } else {
+                    // On API 30+, popup layout handles content insets via setupPopupLayout,
+                    // but we still need to color the navigation bar to match the paywall background.
+                    applyNavigationBarStyle(view)
+                }
+            }
+        }
+    }
+
+    /**
+     * Applies edge-to-edge navigation bar color to match the paywall background.
+     * Used by Modal, Drawer, and Popup styles where content insets are handled separately.
+     */
+    private fun applyNavigationBarStyle(view: PaywallView) {
+        val bgColor = view.backgroundColor
+        enableEdgeToEdge(
+            navigationBarStyle =
+                when (bgColor.isDarkColor()) {
+                    true -> SystemBarStyle.dark(bgColor)
+                    else ->
+                        SystemBarStyle.light(
+                            scrim = bgColor,
+                            darkScrim = bgColor.readableOverlayColor(),
+                        )
+                },
+        )
+    }
+
+    /**
+     * Applies edge-to-edge navigation bar styling and sets bottom insets on the WebView
+     * so content is not hidden behind the navigation bar.
+     * Used by Fullscreen, FullscreenNoAnimation, Push, and None presentation styles.
+     */
+    private fun applyFullscreenEdgeToEdge(view: PaywallView) {
+        val bgColor = view.backgroundColor
+        enableEdgeToEdge(
+            navigationBarStyle =
+                when (bgColor.isDarkColor()) {
+                    true -> SystemBarStyle.dark(bgColor)
+                    else ->
+                        SystemBarStyle.light(
+                            scrim = bgColor,
+                            darkScrim = bgColor.readableOverlayColor(),
+                        )
+                },
+        )
+
+        // Set the bottom margin of the webview to the height of the system bars
+        view.webView.onView {
+            ViewCompat.setOnApplyWindowInsetsListener(this) { v, windowInsets ->
+                val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+                v.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                    bottomMargin = insets.bottom
+                }
+
+                WindowInsetsCompat.CONSUMED
             }
         }
     }
@@ -445,6 +458,13 @@ class SuperwallPaywallActivity : AppCompatActivity() {
             roundedBackground(radius)
 
         container.background = drawable
+
+        // Apply navigation bar insets as bottom padding so content isn't hidden behind nav bar
+        ViewCompat.setOnApplyWindowInsetsListener(container) { v, windowInsets ->
+            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(v.paddingLeft, v.paddingTop, v.paddingRight, insets.bottom)
+            WindowInsetsCompat.CONSUMED
+        }
     }
 
     private fun roundedBackground(radius: Float) =
@@ -472,6 +492,14 @@ class SuperwallPaywallActivity : AppCompatActivity() {
         val activityView =
             layoutInflater.inflate(com.superwall.sdk.R.layout.activity_popup, null)
         setContentView(activityView)
+
+        // Apply system bar insets as padding so popup centers within safe area
+        ViewCompat.setOnApplyWindowInsetsListener(activityView) { v, windowInsets ->
+            val insets = windowInsets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(insets.left, insets.top, insets.right, insets.bottom)
+            WindowInsetsCompat.CONSUMED
+        }
+
         val container =
             activityView.findViewById<FrameLayout>(com.superwall.sdk.R.id.container)
 

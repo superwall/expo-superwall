@@ -2,6 +2,7 @@ package com.superwall.sdk.paywall.view.webview.messaging
 
 import android.net.Uri
 import com.superwall.sdk.models.paywall.LocalNotification
+import com.superwall.sdk.paywall.presentation.CustomCallbackBehavior
 import com.superwall.sdk.permissions.PermissionType
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -15,6 +16,7 @@ sealed class PaywallWebEvent {
     @SerialName("initiate_purchase")
     data class InitiatePurchase(
         val productId: String,
+        val shouldDismiss: Boolean,
     ) : PaywallWebEvent()
 
     object InitiateRestore : PaywallWebEvent()
@@ -69,5 +71,13 @@ sealed class PaywallWebEvent {
     data class RequestPermission(
         val permissionType: PermissionType,
         val requestId: String,
+    ) : PaywallWebEvent()
+
+    @SerialName("request_callback")
+    data class RequestCallback(
+        val name: String,
+        val behavior: CustomCallbackBehavior,
+        val requestId: String,
+        val variables: Map<String, Any>?,
     ) : PaywallWebEvent()
 }
