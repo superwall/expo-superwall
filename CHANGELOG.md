@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.8
+
+### Patch Changes
+
+- d0f5d72: Bump Android SDK version
+- 9c51c45: Bump iOS SDK to 4.14.1
+
 ## 1.0.7
 
 ### Patch Changes
