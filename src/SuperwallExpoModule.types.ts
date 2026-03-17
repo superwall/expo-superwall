@@ -2334,6 +2334,15 @@ export type OnPurchaseParamsAndroid = {
 export type OnPurchaseParams = OnPurchaseParamsIOS | OnPurchaseParamsAndroid
 
 /**
+ * Represents the result of a purchase restoration attempt.
+ * - `restored`: The restoration completed successfully.
+ * - `failed`: The restoration failed, with an accompanying error message.
+ */
+export type RestorationResultResponse =
+  | { result: "restored" }
+  | { result: "failed"; errorMessage: string | null }
+
+/**
  * Defines the events emitted by the native Superwall Expo module that can be listened to.
  * These events provide a way to react to various SDK activities and user interactions.
  * Use `SuperwallExpoModule.addListener(eventName, callback)` to subscribe.

@@ -418,6 +418,20 @@ class SuperwallExpoModule : Module() {
       promise.resolve(null)
     }
 
+    AsyncFunction("restorePurchases") { promise: Promise ->
+      ioScope.launch {
+        Superwall.instance.restorePurchases().fold({ result ->
+          scope.launch {
+            promise.resolve(restorationResultToJson(result))
+          }
+        }, { error ->
+          scope.launch {
+            promise.resolve(restorationResultToJson(RestorationResult.Failed(error)))
+          }
+        })
+      }
+    }
+
     AsyncFunction("dismiss") { promise: Promise ->
       ioScope.launch {
         Superwall.instance.dismiss()

@@ -22,6 +22,7 @@ export { PaywallResult } from "./lib/PaywallResult"
 import { EventEmitter } from "expo"
 import { version } from "../../package.json"
 import SuperwallExpoModule from "../SuperwallExpoModule"
+import type { RestorationResultResponse } from "../SuperwallExpoModule.types"
 import { filterUndefined } from "../utils/filterUndefined"
 
 export { ComputedPropertyRequest } from "./lib/ComputedPropertyRequest"
@@ -60,6 +61,7 @@ export {
 } from "./lib/PurchaseResult"
 export * from "./lib/RedemptionResults"
 export { RestorationResult } from "./lib/RestorationResult"
+export type { RestorationResultResponse } from "../SuperwallExpoModule.types"
 export { RestoreType } from "./lib/RestoreType"
 export { StoreProduct } from "./lib/StoreProduct"
 export { StoreTransaction } from "./lib/StoreTransaction"
@@ -705,6 +707,19 @@ export default class Superwall {
   async setUserAttributes(userAttributes: UserAttributes): Promise<void> {
     await this.awaitConfig()
     await SuperwallExpoModule.setUserAttributes(filterUndefined(userAttributes))
+  }
+
+  /**
+   * Programmatically restores purchases.
+   *
+   * Use this to trigger a restore from outside a paywall context,
+   * e.g. from a "Restore Purchases" button in app settings.
+   *
+   * @returns {Promise<RestorationResultResponse>} A promise that resolves with the restoration result.
+   */
+  async restorePurchases(): Promise<RestorationResultResponse> {
+    await this.awaitConfig()
+    return await SuperwallExpoModule.restorePurchases()
   }
 
   /**
