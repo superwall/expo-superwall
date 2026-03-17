@@ -2338,9 +2338,9 @@ export type OnPurchaseParams = OnPurchaseParamsIOS | OnPurchaseParamsAndroid
  * - `restored`: The restoration completed successfully.
  * - `failed`: The restoration failed, with an accompanying error message.
  */
-export type RestorationResult =
+export type RestorationResultResponse =
   | { result: "restored" }
-  | { result: "failed"; errorMessage: string }
+  | { result: "failed"; errorMessage: string | null }
 
 /**
  * Defines the events emitted by the native Superwall Expo module that can be listened to.

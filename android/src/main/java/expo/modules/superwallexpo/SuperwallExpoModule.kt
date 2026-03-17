@@ -426,7 +426,7 @@ class SuperwallExpoModule : Module() {
           }
         }, { error ->
           scope.launch {
-            promise.reject(CodedException(error))
+            promise.resolve(restorationResultToJson(RestorationResult.Failed(error)))
           }
         })
       }

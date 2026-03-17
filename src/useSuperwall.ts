@@ -6,7 +6,7 @@ import SuperwallExpoModule from "./SuperwallExpoModule"
 import type {
   EntitlementsInfo,
   IntegrationAttributes,
-  RestorationResult,
+  RestorationResultResponse,
   SubscriptionStatus,
 } from "./SuperwallExpoModule.types"
 import { DefaultSuperwallOptions, type PartialSuperwallOptions } from "./SuperwallOptions"
@@ -130,9 +130,9 @@ export interface SuperwallStore {
   getPresentationResult: (placement: string, params?: Record<string, any>) => Promise<any>
   /**
    * Programmatically restores purchases.
-   * @returns A promise that resolves with a {@link RestorationResult} indicating success or failure.
+   * @returns A promise that resolves with a {@link RestorationResultResponse} indicating success or failure.
    */
-  restorePurchases: () => Promise<RestorationResult>
+  restorePurchases: () => Promise<RestorationResultResponse>
 
   /**
    * Dismisses any currently presented Superwall paywall.
