@@ -13,3 +13,13 @@ fun restorationResultFromJson(json: Map<String, Any>): RestorationResult {
         else -> RestorationResult.Failed(Error("Unknown restoration result"))
       }
 }
+
+fun restorationResultToJson(result: RestorationResult): Map<String, Any?> {
+    return when (result) {
+        is RestorationResult.Restored -> mapOf("result" to "restored")
+        is RestorationResult.Failed -> mapOf(
+            "result" to "failed",
+            "errorMessage" to (result.error?.message ?: "Unknown error")
+        )
+    }
+}

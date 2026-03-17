@@ -21,4 +21,13 @@ extension RestorationResult {
       return nil
     }
   }
+
+  func toJson() -> [String: Any] {
+    switch self {
+    case .restored:
+      return ["result": "restored"]
+    case .failed(let error):
+      return ["result": "failed", "errorMessage": error?.localizedDescription ?? "Unknown error"]
+    }
+  }
 }

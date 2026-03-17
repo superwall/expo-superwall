@@ -2,6 +2,7 @@ import { NativeModule, requireNativeModule } from "expo"
 import type {
   EntitlementsInfo,
   IntegrationAttributes,
+  RestorationResult,
   SuperwallExpoModuleEvents,
 } from "./SuperwallExpoModule.types"
 
@@ -50,6 +51,8 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
   didRestore(result: Record<string, any>): void
   didHandleBackPressed(shouldConsume: boolean): void
   didHandleCustomCallback(callbackId: string, status: string, data?: Record<string, any>): Promise<void>
+
+  restorePurchases(): Promise<RestorationResult>
 
   dismiss(): Promise<void>
   confirmAllAssignments(): Promise<any[]>
