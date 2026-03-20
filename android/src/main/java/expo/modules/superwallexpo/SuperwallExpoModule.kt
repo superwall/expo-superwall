@@ -291,19 +291,11 @@ class SuperwallExpoModule : Module() {
     AsyncFunction("getEntitlements") { promise: Promise ->
       try {
         val entitlements = Superwall.instance.entitlements
-        val map = mutableMapOf<String, List<Map<String, String>>>()
-        
-        map["all"] = entitlements.all.map { entitlement ->
-          mapOf("id" to entitlement.id)
-        }
-        
-        map["inactive"] = entitlements.inactive.map { entitlement ->
-          mapOf("id" to entitlement.id)
-        }
-        
-        map["active"] = entitlements.active.map { entitlement ->
-          mapOf("id" to entitlement.id)
-        }
+        val map = mutableMapOf<String, List<Map<String, Any>>>()
+
+        map["all"] = entitlements.all.toJson()
+        map["inactive"] = entitlements.inactive.toJson()
+        map["active"] = entitlements.active.toJson()
         promise.resolve(map)
       } catch (error: Exception) {
         promise.reject(CodedException(error))

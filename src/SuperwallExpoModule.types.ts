@@ -130,6 +130,11 @@ export type IntegrationAttributes = {
  */
 export interface EntitlementsInfo {
   /**
+   * Array of all entitlements known for the user.
+   * Present when the native bridge exposes the full entitlement set.
+   */
+  all?: Entitlement[]
+  /**
    * Array of entitlements that are currently active for the user.
    * See {@link Entitlement}.
    */

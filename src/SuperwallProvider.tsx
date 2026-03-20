@@ -99,9 +99,13 @@ export function SuperwallProvider({
     if (!isConfigured && !isLoading && !configurationError) {
       const apiKey = apiKeys[Platform.OS as keyof typeof apiKeys]
       if (!apiKey) {
-        const error = new Error(`No API key provided for platform ${Platform.OS}`)
-        console.error("[Superwall] Configure failed", error)
-        onConfigurationError?.(error)
+        const errorMessage = `No API key provided for platform ${Platform.OS}`
+        console.error("[Superwall] Configure failed", new Error(errorMessage))
+        useSuperwallStore.setState({
+          isConfigured: false,
+          isLoading: false,
+          configurationError: errorMessage,
+        })
         return
       }
 
@@ -118,7 +122,6 @@ export function SuperwallProvider({
     apiKeys,
     options,
     configure,
-    onConfigurationError,
   ])
 
   // Notify callback when configuration error changes

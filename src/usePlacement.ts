@@ -1,4 +1,4 @@
-import { useCallback, useId, useState } from "react"
+import { useCallback, useId, useRef, useState } from "react"
 
 import type {
   CustomCallback,
@@ -109,20 +109,38 @@ export function usePlacement(callbacks: usePlacementCallbacks = {}) {
   const id = useId()
 
   const [state, setState] = useState<PaywallState>({ status: "idle" })
+  const pendingFeatureRef = useRef<RegisterPlacementArgs["feature"]>(undefined)
+
+  const clearPendingFeature = useCallback(() => {
+    pendingFeatureRef.current = undefined
+  }, [])
+
+  const runPendingFeature = useCallback(() => {
+    const feature = pendingFeatureRef.current
+    pendingFeatureRef.current = undefined
+    feature?.()
+  }, [])
 
   useSuperwallEvents({
     handlerId: id,
     onPaywallDismiss(info, result) {
       setState({ status: "dismissed", result })
+      if (result.type === "purchased" || result.type === "restored") {
+        runPendingFeature()
+      } else {
+        clearPendingFeature()
+      }
 
       callbacks.onDismiss?.(info, result)
     },
     onPaywallSkip(reason) {
       setState({ status: "skipped", reason })
+      runPendingFeature()
       callbacks.onSkip?.(reason)
     },
     onPaywallError(error) {
       setState({ status: "error", error })
+      clearPendingFeature()
       callbacks.onError?.(error)
     },
     onPaywallPresent(info) {
@@ -139,9 +157,13 @@ export function usePlacement(callbacks: usePlacementCallbacks = {}) {
   /* -------------------- Helpers -------------------- */
   const registerPlacement = useCallback(
     async ({ placement, params, feature }: RegisterPlacementArgs) => {
-      await storeRegisterPlacement(placement, params, id)
-      // Execute feature if provided (called when the user is allowed access)
-      feature?.()
+      pendingFeatureRef.current = feature
+      try {
+        await storeRegisterPlacement(placement, params, id)
+      } catch (error) {
+        pendingFeatureRef.current = undefined
+        throw error
+      }
     },
     [storeRegisterPlacement, id],
   )

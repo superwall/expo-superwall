@@ -233,7 +233,8 @@ export function useSuperwallEvents({
     )
 
     subs.push(
-      SuperwallExpoModule.addListener("onPaywallError", ({ errorString }) => {
+      SuperwallExpoModule.addListener("onPaywallError", ({ errorString, handlerId }) => {
+        if (trackedHandlerId && handlerId !== trackedHandlerId) return
         callbacksRef.current.onPaywallError?.(errorString)
       }),
     )
