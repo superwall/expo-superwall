@@ -340,7 +340,7 @@ The hook returns an object representing the Superwall store. If a `selector` fun
         -   `IdentifyOptions`:
             -   `restorePaywallAssignments?: boolean`: If true, restores paywall assignments from a previous session.
     -   `registerPlacement: (placement: string, params?: Record<string, any>, handlerId?: string | null) => Promise<void>`: Registers a placement. This may or may not present a paywall depending on campaign rules. `handlerId` is used internally by `usePlacement` to associate events.
-    -   `getPresentationResult: (placement: string, params?: Record<string, any>) => Promise<any>`: Gets the presentation result for a given placement.
+    -   `getPresentationResult: (placement: string, params?: Record<string, any>) => Promise<PresentationResult>`: Gets the presentation result for a given placement.
     -   `dismiss: () => Promise<void>`: Dismisses any currently presented paywall.
     -   `preloadAllPaywalls: () => Promise<void>`: Preloads all paywalls.
     -   `preloadPaywalls: (placements: string[]) => Promise<void>`: Preloads paywalls for the specified placement IDs.

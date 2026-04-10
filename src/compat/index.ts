@@ -18,6 +18,15 @@ import { SuperwallEventInfo } from "./lib/SuperwallEventInfo"
 import { type PartialSuperwallOptions, SuperwallOptions } from "./lib/SuperwallOptions"
 
 export { PaywallResult } from "./lib/PaywallResult"
+export {
+  PresentationResult,
+  PresentationResultHoldout,
+  PresentationResultNoAudienceMatch,
+  PresentationResultPaywall,
+  PresentationResultPaywallNotAvailable,
+  PresentationResultPlacementNotFound,
+  PresentationResultUserIsSubscribed,
+} from "./lib/PresentationResult"
 
 import { EventEmitter } from "expo"
 import { version } from "../../package.json"
@@ -66,7 +75,11 @@ export { StoreTransaction } from "./lib/StoreTransaction"
 export { SubscriptionStatus } from "./lib/SubscriptionStatus"
 export { SuperwallDelegate } from "./lib/SuperwallDelegate"
 export { EventType, SuperwallEventInfo } from "./lib/SuperwallEventInfo"
-export { type PartialSuperwallOptions, SuperwallOptions, TestModeBehavior } from "./lib/SuperwallOptions"
+export {
+  type PartialSuperwallOptions,
+  SuperwallOptions,
+  TestModeBehavior,
+} from "./lib/SuperwallOptions"
 export { Survey } from "./lib/Survey"
 export { TriggerResult } from "./lib/TriggerResult"
 
@@ -208,7 +221,9 @@ export default class Superwall {
         return
       }
 
-      Promise.resolve(handler.onCustomCallbackHandler({ name: data.name, variables: data.variables })).then(
+      Promise.resolve(
+        handler.onCustomCallbackHandler({ name: data.name, variables: data.variables }),
+      ).then(
         (result) => {
           SuperwallExpoModule.didHandleCustomCallback(data.callbackId, result.status, result.data)
         },
