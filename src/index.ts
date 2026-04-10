@@ -9,7 +9,6 @@ export {
   PresentationResultUserIsSubscribed,
 } from "./compat/lib/PresentationResult"
 export * from "./components"
-export * from "./components"
 export { default as SuperwallExpoModule } from "./SuperwallExpoModule"
 export type * from "./SuperwallExpoModule.types"
 export type {
