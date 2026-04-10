@@ -346,6 +346,13 @@ public class SuperwallExpoModule: Module {
       promise.resolve(nil)
     }
 
+    AsyncFunction("restorePurchases") { (promise: Promise) in
+      Task {
+        let result = await Superwall.shared.restorePurchases()
+        promise.resolve(result.toJson())
+      }
+    }
+
     AsyncFunction("dismiss") { (promise: Promise) in
       Superwall.shared.dismiss {
         promise.resolve(nil)
