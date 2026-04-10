@@ -2,6 +2,7 @@ import { createContext, useContext } from "react"
 import { create } from "zustand"
 import { useShallow } from "zustand/shallow"
 import pkg from "../package.json"
+import type { PresentationResult } from "./compat/lib/PresentationResult"
 import SuperwallExpoModule from "./SuperwallExpoModule"
 import type {
   EntitlementsInfo,
@@ -126,7 +127,10 @@ export interface SuperwallStore {
    * @param params - Optional parameters for the placement.
    * @returns A promise that resolves with the presentation result.
    */
-  getPresentationResult: (placement: string, params?: Record<string, any>) => Promise<any>
+  getPresentationResult: (
+    placement: string,
+    params?: Record<string, any>,
+  ) => Promise<PresentationResult>
   /**
    * Dismisses any currently presented Superwall paywall.
    * @returns A promise that resolves when the dismissal is complete.

@@ -1,4 +1,5 @@
 import { NativeModule, requireNativeModule } from "expo"
+import type { PresentationResult } from "./compat/lib/PresentationResult"
 import type {
   EntitlementsInfo,
   IntegrationAttributes,
@@ -49,7 +50,11 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
   ): void
   didRestore(result: Record<string, any>): void
   didHandleBackPressed(shouldConsume: boolean): void
-  didHandleCustomCallback(callbackId: string, status: string, data?: Record<string, any>): Promise<void>
+  didHandleCustomCallback(
+    callbackId: string,
+    status: string,
+    data?: Record<string, any>,
+  ): Promise<void>
 
   dismiss(): Promise<void>
   confirmAllAssignments(): Promise<any[]>
@@ -57,7 +62,7 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
   getPresentationResult(
     placement: string,
     params?: Map<string, any> | Record<string, any>,
-  ): Promise<any>
+  ): Promise<PresentationResult>
 
   getDeviceAttributes(): Promise<Record<string, any>>
 
