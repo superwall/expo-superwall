@@ -1,8 +1,8 @@
-import React from "react"
 import TestRenderer, { act } from "react-test-renderer"
 
 const mockListeners = new Map<string, Set<(payload: any) => void>>()
 const mockHandleDeepLink = jest.fn().mockResolvedValue(false)
+const mockRefreshConfiguration = jest.fn().mockResolvedValue(undefined)
 const mockDidHandleBackPressed = jest.fn()
 const mockDidHandleCustomCallback = jest.fn().mockResolvedValue(undefined)
 const mockAddListener = jest.fn(
@@ -25,7 +25,9 @@ const mockAddListener = jest.fn(
 const emit = (eventName: string, payload: any) => {
   const listeners = mockListeners.get(eventName)
   if (!listeners) return
-  listeners.forEach((listener) => listener(payload))
+  listeners.forEach((listener) => {
+    listener(payload)
+  })
 }
 
 jest.mock("../SuperwallExpoModule", () => ({
@@ -33,6 +35,7 @@ jest.mock("../SuperwallExpoModule", () => ({
   default: {
     addListener: mockAddListener,
     handleDeepLink: mockHandleDeepLink,
+    refreshConfiguration: mockRefreshConfiguration,
     didHandleBackPressed: mockDidHandleBackPressed,
     didHandleCustomCallback: mockDidHandleCustomCallback,
   },
@@ -56,7 +59,10 @@ jest.mock("react-native", () => {
 ;(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
 
 const { SuperwallProvider }: typeof import("../SuperwallProvider") = require("../SuperwallProvider")
-const { SuperwallContext, useSuperwallStore }: typeof import("../useSuperwall") = require("../useSuperwall")
+const {
+  SuperwallContext,
+  useSuperwallStore,
+}: typeof import("../useSuperwall") = require("../useSuperwall")
 const { usePlacement }: typeof import("../usePlacement") = require("../usePlacement")
 const { useSuperwallEvents }: typeof import("../useSuperwallEvents") =
   require("../useSuperwallEvents")
@@ -71,6 +77,7 @@ describe("SDK behavior regressions", () => {
   beforeEach(() => {
     jest.clearAllMocks()
     __resetSuperwallEventBridgeForTests()
+    ;(globalThis as { __DEV__?: boolean }).__DEV__ = true
     consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {})
     consoleLogSpy = jest.spyOn(console, "log").mockImplementation(() => {})
     useSuperwallStore.setState({
@@ -283,8 +290,11 @@ describe("SDK behavior regressions", () => {
     let renderer: TestRenderer.ReactTestRenderer
     await act(async () => {
       renderer = TestRenderer.create(
-        <SuperwallProvider apiKeys={{ android: "android-key" }} onConfigurationError={onConfigurationError}>
-          <></>
+        <SuperwallProvider
+          apiKeys={{ android: "android-key" }}
+          onConfigurationError={onConfigurationError}
+        >
+          {null}
         </SuperwallProvider>,
       )
 
@@ -299,6 +309,204 @@ describe("SDK behavior regressions", () => {
     expect(onConfigurationError.mock.calls[0][0]).toBeInstanceOf(Error)
     expect(onConfigurationError.mock.calls[0][0].message).toBe(
       "No API key provided for platform ios",
+    )
+
+    act(() => {
+      renderer!.unmount()
+    })
+  })
+  it("configures once and does not immediately refresh after the first successful configuration", async () => {
+    const configure = jest.fn().mockResolvedValue(undefined)
+
+    useSuperwallStore.setState({ configure })
+
+    let renderer: TestRenderer.ReactTestRenderer
+    await act(async () => {
+      renderer = TestRenderer.create(
+        <SuperwallProvider apiKeys={{ ios: "ios-key" }}>{null}</SuperwallProvider>,
+      )
+
+      await Promise.resolve()
+    })
+
+    expect(configure).toHaveBeenCalledTimes(1)
+    expect(mockRefreshConfiguration).not.toHaveBeenCalled()
+
+    act(() => {
+      useSuperwallStore.setState({
+        isConfigured: true,
+        isLoading: false,
+        configurationError: null,
+      })
+    })
+
+    expect(mockRefreshConfiguration).not.toHaveBeenCalled()
+
+    act(() => {
+      renderer!.unmount()
+    })
+  })
+
+  it("refreshes configuration on a later dev rerun once configuration was already observed", async () => {
+    useSuperwallStore.setState({
+      isConfigured: true,
+      isLoading: false,
+      configurationError: null,
+    })
+
+    let renderer: TestRenderer.ReactTestRenderer
+    await act(async () => {
+      renderer = TestRenderer.create(
+        <SuperwallProvider apiKeys={{ ios: "ios-key" }}>{null}</SuperwallProvider>,
+      )
+
+      await Promise.resolve()
+    })
+
+    expect(mockRefreshConfiguration).not.toHaveBeenCalled()
+
+    act(() => {
+      useSuperwallStore.setState({ isConfigured: false })
+    })
+
+    await act(async () => {
+      useSuperwallStore.setState({
+        isConfigured: true,
+        isLoading: false,
+        configurationError: null,
+      })
+      await Promise.resolve()
+    })
+
+    expect(mockRefreshConfiguration).toHaveBeenCalledTimes(1)
+
+    act(() => {
+      renderer!.unmount()
+    })
+  })
+
+  it("does not refresh configuration outside development", async () => {
+    ;(globalThis as { __DEV__?: boolean }).__DEV__ = false
+
+    useSuperwallStore.setState({
+      isConfigured: true,
+      isLoading: false,
+      configurationError: null,
+    })
+
+    let renderer: TestRenderer.ReactTestRenderer
+    await act(async () => {
+      renderer = TestRenderer.create(
+        <SuperwallProvider apiKeys={{ ios: "ios-key" }}>{null}</SuperwallProvider>,
+      )
+
+      await Promise.resolve()
+    })
+
+    act(() => {
+      useSuperwallStore.setState({ isConfigured: false })
+    })
+
+    await act(async () => {
+      useSuperwallStore.setState({
+        isConfigured: true,
+        isLoading: false,
+        configurationError: null,
+      })
+      await Promise.resolve()
+    })
+
+    expect(mockRefreshConfiguration).not.toHaveBeenCalled()
+
+    act(() => {
+      renderer!.unmount()
+    })
+  })
+
+  it("catches refresh failures locally", async () => {
+    const refreshError = new Error("refresh failed")
+    mockRefreshConfiguration.mockRejectedValueOnce(refreshError)
+
+    useSuperwallStore.setState({
+      isConfigured: true,
+      isLoading: false,
+      configurationError: null,
+    })
+
+    let renderer: TestRenderer.ReactTestRenderer
+    await act(async () => {
+      renderer = TestRenderer.create(
+        <SuperwallProvider apiKeys={{ ios: "ios-key" }}>{null}</SuperwallProvider>,
+      )
+
+      await Promise.resolve()
+    })
+
+    act(() => {
+      useSuperwallStore.setState({ isConfigured: false })
+    })
+
+    await act(async () => {
+      useSuperwallStore.setState({
+        isConfigured: true,
+        isLoading: false,
+        configurationError: null,
+      })
+      await Promise.resolve()
+    })
+
+    await act(async () => {
+      await Promise.resolve()
+    })
+
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      "[Superwall] Failed to refresh configuration after Metro refresh",
+      refreshError,
+    )
+
+    act(() => {
+      renderer!.unmount()
+    })
+  })
+
+  it("updates configuration error state from config refresh and fail events", async () => {
+    useSuperwallStore.setState({
+      isConfigured: true,
+      isLoading: false,
+      configurationError: "stale error",
+    })
+
+    let renderer: TestRenderer.ReactTestRenderer
+    await act(async () => {
+      renderer = TestRenderer.create(
+        <SuperwallProvider apiKeys={{ ios: "ios-key" }}>{null}</SuperwallProvider>,
+      )
+
+      await Promise.resolve()
+    })
+
+    act(() => {
+      emit("handleSuperwallEvent", {
+        eventInfo: {
+          event: { event: "configRefresh" },
+          params: null,
+        },
+      })
+    })
+
+    expect(useSuperwallStore.getState().configurationError).toBeNull()
+
+    act(() => {
+      emit("handleSuperwallEvent", {
+        eventInfo: {
+          event: { event: "configFail" },
+          params: null,
+        },
+      })
+    })
+
+    expect(useSuperwallStore.getState().configurationError).toBe(
+      "Failed to load Superwall configuration",
     )
 
     act(() => {
@@ -420,10 +628,7 @@ describe("SDK behavior regressions", () => {
     })
 
     expect(matchingDismiss).toHaveBeenCalledTimes(1)
-    expect(matchingDismiss).toHaveBeenCalledWith(
-      { name: "buffered-paywall" },
-      { type: "declined" },
-    )
+    expect(matchingDismiss).toHaveBeenCalledWith({ name: "buffered-paywall" }, { type: "declined" })
     expect(globalDismiss).not.toHaveBeenCalled()
 
     act(() => {

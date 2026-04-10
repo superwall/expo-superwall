@@ -192,6 +192,15 @@ class SuperwallExpoModule : Module() {
       }
     }
 
+    AsyncFunction("refreshConfiguration") { promise: Promise ->
+      try {
+        Superwall.instance.refreshConfiguration()
+        promise.resolve(null)
+      } catch (error: Throwable) {
+        promise.reject(CodedException(error))
+      }
+    }
+
     AsyncFunction("getConfigurationStatus") { promise: Promise ->
       try {
         val configurationStatus = Superwall.instance.configurationState.asString()
