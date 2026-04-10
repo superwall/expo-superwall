@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.9
+
+### Patch Changes
+
+- 836249d: Fix `useSuperwallEvents` so non-interactive Superwall callbacks are not dropped on first app launch before React listeners mount.
+
 ## 1.0.8
 
 ### Patch Changes
