@@ -60,14 +60,17 @@ const { SuperwallContext, useSuperwallStore }: typeof import("../useSuperwall") 
 const { usePlacement }: typeof import("../usePlacement") = require("../usePlacement")
 const { useSuperwallEvents }: typeof import("../useSuperwallEvents") =
   require("../useSuperwallEvents")
+const {
+  __resetSuperwallEventBridgeForTests,
+}: typeof import("../internal/superwallEventBridge") = require("../internal/superwallEventBridge")
 
 describe("SDK behavior regressions", () => {
   let consoleErrorSpy: jest.SpyInstance
   let consoleLogSpy: jest.SpyInstance
 
   beforeEach(() => {
-    mockListeners.clear()
     jest.clearAllMocks()
+    __resetSuperwallEventBridgeForTests()
     consoleErrorSpy = jest.spyOn(console, "error").mockImplementation(() => {})
     consoleLogSpy = jest.spyOn(console, "log").mockImplementation(() => {})
     useSuperwallStore.setState({
@@ -297,6 +300,179 @@ describe("SDK behavior regressions", () => {
     expect(onConfigurationError.mock.calls[0][0].message).toBe(
       "No API key provided for platform ios",
     )
+
+    act(() => {
+      renderer!.unmount()
+    })
+  })
+
+  it("replays buffered log and superwall events once after hooks mount", () => {
+    const onLog = jest.fn()
+    const onSuperwallEvent = jest.fn()
+
+    emit("handleLog", {
+      level: "debug",
+      scope: "paywallPresentation",
+      message: "buffered log",
+      info: null,
+      error: null,
+    })
+    emit("handleSuperwallEvent", {
+      eventInfo: {
+        event: { event: "appLaunch" },
+        params: null,
+      },
+    })
+
+    function Harness() {
+      useSuperwallEvents({
+        onLog,
+        onSuperwallEvent,
+      })
+      return null
+    }
+
+    let renderer: TestRenderer.ReactTestRenderer
+    act(() => {
+      renderer = TestRenderer.create(<Harness />)
+    })
+
+    expect(onLog).toHaveBeenCalledTimes(1)
+    expect(onLog).toHaveBeenCalledWith({
+      level: "debug",
+      scope: "paywallPresentation",
+      message: "buffered log",
+      info: null,
+      error: null,
+    })
+    expect(onSuperwallEvent).toHaveBeenCalledTimes(1)
+    expect(onSuperwallEvent).toHaveBeenCalledWith({
+      event: { event: "appLaunch" },
+      params: null,
+    })
+
+    act(() => {
+      renderer!.unmount()
+    })
+
+    const lateOnLog = jest.fn()
+    const lateOnSuperwallEvent = jest.fn()
+
+    function LateHarness() {
+      useSuperwallEvents({
+        onLog: lateOnLog,
+        onSuperwallEvent: lateOnSuperwallEvent,
+      })
+      return null
+    }
+
+    act(() => {
+      renderer = TestRenderer.create(<LateHarness />)
+    })
+
+    expect(lateOnLog).not.toHaveBeenCalled()
+    expect(lateOnSuperwallEvent).not.toHaveBeenCalled()
+
+    act(() => {
+      renderer!.unmount()
+    })
+  })
+
+  it("replays buffered scoped events only to the matching handler", () => {
+    const matchingDismiss = jest.fn()
+    const globalDismiss = jest.fn()
+
+    emit("onPaywallDismiss", {
+      paywallInfoJson: { name: "buffered-paywall" },
+      result: { type: "declined" },
+      handlerId: "placement-a",
+    })
+
+    function GlobalHarness() {
+      useSuperwallEvents({
+        onPaywallDismiss: globalDismiss,
+      })
+      return null
+    }
+
+    let renderer: TestRenderer.ReactTestRenderer
+    act(() => {
+      renderer = TestRenderer.create(<GlobalHarness />)
+    })
+
+    expect(globalDismiss).not.toHaveBeenCalled()
+
+    function MatchingHarness() {
+      useSuperwallEvents({
+        handlerId: "placement-a",
+        onPaywallDismiss: matchingDismiss,
+      })
+      return null
+    }
+
+    act(() => {
+      renderer.update(
+        <>
+          <GlobalHarness />
+          <MatchingHarness />
+        </>,
+      )
+    })
+
+    expect(matchingDismiss).toHaveBeenCalledTimes(1)
+    expect(matchingDismiss).toHaveBeenCalledWith(
+      { name: "buffered-paywall" },
+      { type: "declined" },
+    )
+    expect(globalDismiss).not.toHaveBeenCalled()
+
+    act(() => {
+      renderer!.unmount()
+    })
+  })
+
+  it("does not buffer back press, custom callback, or purchase events", () => {
+    emit("onBackPressed", {
+      paywallInfo: { name: "buffered-back-press" },
+    })
+    emit("onCustomCallback", {
+      callbackId: "callback-1",
+      name: "validate",
+      variables: { foo: "bar" },
+      handlerId: "placement-a",
+    })
+    emit("onPurchase", {
+      productId: "pro_monthly",
+      platform: "ios",
+    })
+
+    const onBackPressed = jest.fn(() => true)
+    const onCustomCallback = jest.fn(() => ({
+      status: "success" as const,
+      data: { ok: true },
+    }))
+    const onPurchase = jest.fn()
+
+    function Harness() {
+      useSuperwallEvents({
+        handlerId: "placement-a",
+        onBackPressed,
+        onCustomCallback,
+        onPurchase,
+      })
+      return null
+    }
+
+    let renderer: TestRenderer.ReactTestRenderer
+    act(() => {
+      renderer = TestRenderer.create(<Harness />)
+    })
+
+    expect(onBackPressed).not.toHaveBeenCalled()
+    expect(onCustomCallback).not.toHaveBeenCalled()
+    expect(onPurchase).not.toHaveBeenCalled()
+    expect(mockDidHandleBackPressed).toHaveBeenCalledWith(false)
+    expect(mockDidHandleCustomCallback).toHaveBeenCalledWith("callback-1", "failure", undefined)
 
     act(() => {
       renderer!.unmount()
