@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.10
+
+### Patch Changes
+
+- 9d23138: Replace any in getPresentation result, improve chaining on delegate
+
 ## 1.0.9
 
 ### Patch Changes
