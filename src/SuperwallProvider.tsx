@@ -79,6 +79,11 @@ export function SuperwallProvider({
   onConfigurationError,
 }: SuperwallProviderProps) {
   const deepLinkEventHandlerRef = useRef<EmitterSubscription>(null)
+  const hasObservedConfiguredRef = useRef(false)
+  const refreshStateRef = useRef({
+    isLoading: false,
+    configurationError: null as string | null,
+  })
   const isUsingCustomPurchaseController = !!useCustomPurchaseController()
 
   // Handle onBackPressed callback from options
@@ -94,6 +99,11 @@ export function SuperwallProvider({
       configurationError: state.configurationError,
     })),
   )
+
+  refreshStateRef.current = {
+    isLoading,
+    configurationError,
+  }
 
   useEffect(() => {
     if (!isConfigured && !isLoading && !configurationError) {
@@ -123,6 +133,23 @@ export function SuperwallProvider({
     options,
     configure,
   ])
+
+  useEffect(() => {
+    const { isLoading, configurationError } = refreshStateRef.current
+
+    if (!__DEV__ || !isConfigured || isLoading || configurationError) {
+      return
+    }
+
+    if (!hasObservedConfiguredRef.current) {
+      hasObservedConfiguredRef.current = true
+      return
+    }
+
+    SuperwallExpoModule.refreshConfiguration().catch((error) => {
+      console.error("[Superwall] Failed to refresh configuration after Metro refresh", error)
+    })
+  }, [isConfigured])
 
   // Notify callback when configuration error changes
   useEffect(() => {
