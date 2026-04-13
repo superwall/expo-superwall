@@ -3,6 +3,7 @@ import type { PresentationResult } from "./compat/lib/PresentationResult"
 import type {
   EntitlementsInfo,
   IntegrationAttributes,
+  RestorationResultResponse,
   SuperwallExpoModuleEvents,
 } from "./SuperwallExpoModule.types"
 
@@ -55,6 +56,8 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
     status: string,
     data?: Record<string, any>,
   ): Promise<void>
+
+  restorePurchases(): Promise<RestorationResultResponse>
 
   dismiss(): Promise<void>
   confirmAllAssignments(): Promise<any[]>
