@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.11
+
+### Patch Changes
+
+- 975de31: Add android 'consume' method
+- 2204ee8: Bump Android version
+
 ## 1.0.10
 
 ### Patch Changes
