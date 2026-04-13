@@ -76,6 +76,8 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
 
   setIntegrationAttributes(attributes: IntegrationAttributes): Promise<void>
   getIntegrationAttributes(): Promise<Record<string, string>>
+
+  consume(purchaseToken: string): Promise<string>
 }
 
 export default requireNativeModule<SuperwallExpoModule>("SuperwallExpo")

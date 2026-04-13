@@ -496,5 +496,15 @@ class SuperwallExpoModule : Module() {
       val attributes = Superwall.instance.integrationAttributes
       promise.resolve(attributes)
     }
+
+    AsyncFunction("consume") { purchaseToken: String, promise: Promise ->
+      ioScope.launch {
+        Superwall.instance.consume(purchaseToken).fold({ token ->
+          scope.launch { promise.resolve(token) }
+        }, { error ->
+          scope.launch { promise.reject(CodedException(error)) }
+        })
+      }
+    }
   }
 }

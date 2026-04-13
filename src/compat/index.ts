@@ -768,4 +768,15 @@ export default class Superwall {
     await this.awaitConfig()
     return SuperwallExpoModule.getIntegrationAttributes()
   }
+
+  /**
+   * Consumes a Google Play purchase token so the item can be purchased again.
+   * Android-only; rejects on iOS.
+   * @param purchaseToken - The Google Play purchase token to consume.
+   * @returns The consumed purchase token on success.
+   */
+  async consume(purchaseToken: string): Promise<string> {
+    await this.awaitConfig()
+    return SuperwallExpoModule.consume(purchaseToken)
+  }
 }
