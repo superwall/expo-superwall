@@ -397,5 +397,9 @@ public class SuperwallExpoModule: Module {
       let attributes = Superwall.shared.integrationAttributes
       promise.resolve(attributes)
     }
+
+    AsyncFunction("consume") { (_: String, promise: Promise) in
+      promise.resolve(nil)
+    }
   }
 }
