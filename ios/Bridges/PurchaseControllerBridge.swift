@@ -17,6 +17,16 @@ final class PurchaseControllerBridge: PurchaseController {
 
         if let store = await Self.storeForProductIdentifier(product.productIdentifier) {
             payload["store"] = store
+        } else {
+            // No matching product on the latest paywall — the paywall may have been
+            // dismissed or replaced before this callback fired. JS will receive
+            // `onPurchase` without a `store` field and must default to StoreKit.
+            // CUSTOM products in this state will fail; surface it loudly during
+            // integration so it can be caught.
+            print("[SuperwallExpo] onPurchase: could not resolve store for product " +
+                  "\"\(product.productIdentifier)\" against latestPaywallInfo. " +
+                  "If this is a CUSTOM product, the JS purchase handler will not " +
+                  "receive `store: \"CUSTOM\"` and may incorrectly fall through to StoreKit.")
         }
 
         SuperwallExpoModule.emitEvent("onPurchase", payload)

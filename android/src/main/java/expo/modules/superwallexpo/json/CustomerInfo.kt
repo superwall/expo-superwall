@@ -3,9 +3,22 @@ package expo.modules.superwallexpo.json
 import com.superwall.sdk.models.customer.CustomerInfo
 import com.superwall.sdk.models.customer.NonSubscriptionTransaction
 import com.superwall.sdk.models.customer.SubscriptionTransaction
+import com.superwall.sdk.store.abstractions.product.receipt.LatestPeriodType
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Date
+
+// Mirrors the @SerialName values on `LatestPeriodType`. Exhaustive `when` so a new
+// SDK case is a compile error rather than a silently-incorrect string.
+private fun LatestPeriodType.toJsonString(): String =
+  when (this) {
+    LatestPeriodType.TRIAL -> "trial"
+    LatestPeriodType.CODE -> "code"
+    LatestPeriodType.SUBSCRIPTION -> "subscription"
+    LatestPeriodType.PROMOTIONAL -> "promotional"
+    LatestPeriodType.WINBACK -> "winback"
+    LatestPeriodType.REVOKED -> "revoked"
+  }
 
 private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_INSTANT
 
@@ -33,7 +46,7 @@ fun SubscriptionTransaction.toJson(): Map<String, Any?> {
   map["isActive"] = this.isActive
   map["expirationDate"] = this.expirationDate?.toIsoString()
   map["store"] = this.store.name
-  this.offerType?.let { map["offerType"] = it.name.lowercase() }
+  this.offerType?.let { map["offerType"] = it.toJsonString() }
   this.subscriptionGroupId?.let { map["subscriptionGroupId"] = it }
   return map
 }
