@@ -14,21 +14,14 @@ extension PaywallInfo {
     map["identifier"] = self.identifier
     map["name"] = self.name
     map["url"] = self.url.absoluteString
+    if let presentationId = self.presentationId {
+      map["presentationId"] = presentationId
+    }
     if let experiment = self.experiment {
       map["experiment"] = experiment.toJson()
     }
 
-    let products = products.map({ product in
-      var dictionary: [String: Any] = [
-        "id": product.id,
-        "entitlements": product.entitlements.map { $0.toJson() },
-      ]
-      if let name = product.name {
-        dictionary["name"] = name
-      }
-      return dictionary
-    })
-    map["products"] = products
+    map["products"] = products.map { $0.toJson() }
 
     let productIdsArray = self.productIds
     map["productIds"] = productIdsArray

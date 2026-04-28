@@ -1,4 +1,5 @@
 import { ComputedPropertyRequest } from "./ComputedPropertyRequest"
+import { CustomerInfo } from "./CustomerInfo"
 import { Experiment } from "./Experiment"
 import { type FeatureGatingBehavior, featureGatingBehaviorFromJson } from "./FeatureGatingBehavior"
 import { LocalNotification } from "./LocalNotification"
@@ -15,6 +16,7 @@ export class PaywallInfo {
   identifier: string
   name: string
   url: string
+  presentationId?: string
   experiment?: Experiment
   products: Product[]
   productIds: string[]
@@ -43,11 +45,17 @@ export class PaywallInfo {
   computedPropertyRequests: ComputedPropertyRequest[] // Assuming ComputedPropertyRequest is defined elsewhere
   surveys: Survey[] // Assuming Survey is defined elsewhere
   state: Record<string, any>
+  /**
+   * Snapshot of the customer's subscription/entitlement state.
+   * Currently only populated by the Android SDK (2.7.12+).
+   */
+  customerInfo?: CustomerInfo
 
   constructor({
     identifier,
     name,
     url,
+    presentationId,
     experiment,
     products,
     productIds,
@@ -76,10 +84,12 @@ export class PaywallInfo {
     computedPropertyRequests,
     surveys,
     state,
+    customerInfo,
   }: {
     identifier: string
     name: string
     url: string
+    presentationId?: string
     experiment?: Experiment
     products: Product[]
     productIds: string[]
@@ -108,10 +118,12 @@ export class PaywallInfo {
     computedPropertyRequests: ComputedPropertyRequest[]
     surveys: Survey[]
     state: Record<string, any>
+    customerInfo?: CustomerInfo
   }) {
     this.identifier = identifier
     this.name = name
     this.url = url
+    this.presentationId = presentationId
     this.experiment = experiment
     this.products = products
     this.productIds = productIds
@@ -140,6 +152,7 @@ export class PaywallInfo {
     this.computedPropertyRequests = computedPropertyRequests
     this.surveys = surveys
     this.state = state
+    this.customerInfo = customerInfo
   }
 
   static fromJson(json: any): PaywallInfo {
@@ -147,6 +160,7 @@ export class PaywallInfo {
       identifier: json.identifier,
       name: json.name,
       url: json.url,
+      presentationId: json.presentationId,
       experiment: json.experiment ? Experiment.fromJson(json.experiment) : undefined,
       products: json.products?.map((p: any) => Product.fromJson(p)),
       productIds: json.productIds,
@@ -177,6 +191,7 @@ export class PaywallInfo {
       ),
       surveys: json.surveys?.map((s: any) => Survey.fromJson(s)),
       state: json.state ?? {},
+      customerInfo: json.customerInfo ? CustomerInfo.fromJson(json.customerInfo) : undefined,
     })
   }
 }

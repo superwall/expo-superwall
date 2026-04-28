@@ -13,7 +13,11 @@ extension ProductStore {
       return "SUPERWALL"
     case .playStore:
       return "PLAY_STORE"
+    case .custom:
+      return "CUSTOM"
     case .other:
+      return "OTHER"
+    @unknown default:
       return "OTHER"
     }
   }

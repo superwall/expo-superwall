@@ -19,7 +19,7 @@ Pod::Spec.new do |s|
   s.static_framework = true
 
   s.dependency 'ExpoModulesCore'
-  s.dependency "SuperwallKit", '4.14.1'
+  s.dependency "SuperwallKit", '4.15.1'
 
 
   # Swift/Objective-C compatibility
