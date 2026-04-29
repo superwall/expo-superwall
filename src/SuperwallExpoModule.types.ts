@@ -372,8 +372,146 @@ export interface ComputedPropertyRequest {
 }
 
 /**
+ * The store that backs a {@link Product}.
+ * - `APP_STORE`: Apple App Store product (iOS).
+ * - `PLAY_STORE`: Google Play Store product (Android).
+ * - `STRIPE`: Stripe-managed product.
+ * - `PADDLE`: Paddle-managed product.
+ * - `SUPERWALL`: Manually granted entitlement from the Superwall dashboard.
+ * - `CUSTOM`: A custom product purchased through a `PurchaseController` outside of any
+ *   storefront. When you receive a custom product in `onPurchase`, you must implement the
+ *   purchase yourself (e.g., calling your backend) instead of going through StoreKit / Billing.
+ * - `OTHER`: An unknown or unsupported store.
+ */
+export type ProductStore =
+  | "APP_STORE"
+  | "PLAY_STORE"
+  | "STRIPE"
+  | "PADDLE"
+  | "SUPERWALL"
+  | "CUSTOM"
+  | "OTHER"
+
+/**
+ * The Apple App Store-specific data for a {@link Product}.
+ */
+export interface AppStoreProductIdentifier {
+  /** The App Store product identifier. */
+  id: string
+}
+
+/**
+ * The Stripe-specific data for a {@link Product}.
+ */
+export interface StripeProductIdentifier {
+  /** The Stripe price/product identifier. */
+  id: string
+  /** The number of trial days for this product, if any. */
+  trialDays?: number
+}
+
+/**
+ * The Paddle-specific data for a {@link Product}.
+ */
+export interface PaddleProductIdentifier {
+  /** The Paddle product identifier. */
+  id: string
+}
+
+/**
+ * The custom-product data for a {@link Product}.
+ * Custom products are purchased via your `PurchaseController` rather than through a storefront.
+ */
+export interface CustomStoreProductIdentifier {
+  /** The custom product identifier (as configured on the Superwall dashboard). */
+  id: string
+}
+
+/**
+ * The offer type that applied to a {@link SubscriptionTransaction}.
+ *
+ * @platform Android
+ */
+export type SubscriptionOfferType =
+  | "trial"
+  | "code"
+  | "subscription"
+  | "promotional"
+  | "winback"
+  | "revoked"
+
+/**
+ * A subscription transaction recorded in the customer's purchase history.
+ *
+ * @platform Android — currently only delivered by the Android SDK.
+ */
+export interface SubscriptionTransaction {
+  /** The unique identifier for the transaction. */
+  transactionId: string
+  /** The product identifier of the subscription. */
+  productId: string
+  /** ISO-8601 timestamp of when the user was charged. */
+  purchaseDate: string
+  /** Whether the subscription is set to renew. */
+  willRenew: boolean
+  /** Whether the transaction has been revoked. */
+  isRevoked: boolean
+  /** Whether the subscription is in a billing grace period. */
+  isInGracePeriod: boolean
+  /** Whether the subscription is in a billing retry period. */
+  isInBillingRetryPeriod: boolean
+  /** Whether the subscription is currently active. */
+  isActive: boolean
+  /** ISO-8601 expiration date, or `null` if non-renewing. */
+  expirationDate?: string | null
+  /** Store the transaction came from (e.g. `"PLAY_STORE"`). */
+  store: string
+  /** Offer type, if any was applied. */
+  offerType?: SubscriptionOfferType
+  /** iOS-only — the subscription group identifier. */
+  subscriptionGroupId?: string
+}
+
+/**
+ * A non-subscription (one-time / consumable) transaction in the customer's purchase history.
+ *
+ * @platform Android — currently only delivered by the Android SDK.
+ */
+export interface NonSubscriptionTransaction {
+  /** The unique identifier for the transaction. */
+  transactionId: string
+  /** The product identifier of the in-app purchase. */
+  productId: string
+  /** ISO-8601 timestamp of when the user was charged. */
+  purchaseDate: string
+  /** Whether the in-app purchase is consumable. */
+  isConsumable: boolean
+  /** Whether the transaction has been revoked. */
+  isRevoked: boolean
+  /** Store the transaction came from (e.g. `"PLAY_STORE"`). */
+  store: string
+}
+
+/**
+ * The latest subscription and entitlement state for the customer.
+ * Snapshots are immutable and don't auto-update.
+ *
+ * @platform Android — currently only delivered by the Android SDK.
+ */
+export interface CustomerInfo {
+  /** The user ID at the time the snapshot was taken. */
+  userId: string
+  /** All subscription transactions, ordered by purchase date ascending. */
+  subscriptions: SubscriptionTransaction[]
+  /** All non-subscription transactions, ordered by purchase date ascending. */
+  nonSubscriptions: NonSubscriptionTransaction[]
+  /** All entitlements available to the user. */
+  entitlements: Entitlement[]
+}
+
+/**
  * Represents a product available for purchase on a paywall, as defined within {@link PaywallInfo}.
- * This provides a simplified view of a product, focusing on its ID, name, and granted entitlements.
+ * This provides a simplified view of a product, focusing on its ID, name, store, and granted entitlements.
  */
 export interface Product {
   /**
@@ -389,6 +527,34 @@ export interface Product {
    * See {@link Entitlement}.
    */
   entitlements: Entitlement[]
+  /**
+   * The store that backs this product. See {@link ProductStore}.
+   * Use this to detect `CUSTOM` products in `onPurchase` and route them to your own
+   * purchase logic instead of StoreKit / Google Play Billing.
+   *
+   * @platform iOS — present on iOS 4.15.0+. May be absent on older Android SDK versions.
+   */
+  store?: ProductStore
+  /**
+   * App Store-specific product data, present when `store === "APP_STORE"`.
+   * @platform iOS
+   */
+  appStoreProduct?: AppStoreProductIdentifier
+  /**
+   * Stripe-specific product data, present when `store === "STRIPE"`.
+   * @platform iOS
+   */
+  stripeProduct?: StripeProductIdentifier
+  /**
+   * Paddle-specific product data, present when `store === "PADDLE"`.
+   * @platform iOS
+   */
+  paddleProduct?: PaddleProductIdentifier
+  /**
+   * Custom-product data, present when `store === "CUSTOM"`.
+   * @platform iOS
+   */
+  customProduct?: CustomStoreProductIdentifier
 }
 
 /**
@@ -402,6 +568,11 @@ export interface PaywallInfo {
   name: string
   /** The URL where the paywall's web content is hosted. */
   url: string
+  /**
+   * A unique identifier for this paywall presentation, used to correlate all events
+   * within a single presentation lifecycle.
+   */
+  presentationId?: string
   /**
    * The experiment associated with this paywall presentation, if applicable.
    * See {@link Experiment}.
@@ -495,6 +666,14 @@ export interface PaywallInfo {
    * Contains key-value pairs representing the paywall's current state.
    */
   state: Record<string, any>
+  /**
+   * A snapshot of the customer's subscription and entitlement state at the time
+   * the paywall was presented.
+   *
+   * @platform Android — currently only populated by the Android SDK (2.7.12+).
+   *   Will be `undefined` on iOS.
+   */
+  customerInfo?: CustomerInfo
 }
 
 /**
@@ -2079,6 +2258,43 @@ export interface StripeCheckoutFailEvent {
 }
 
 /**
+ * Page-specific details for a multi-page paywall page view.
+ */
+export interface PageViewData {
+  /** The unique identifier for the page node. */
+  pageNodeId: string
+  /** The zero-based index of the page in the paywall flow. */
+  flowPosition: number
+  /** The display name of the page. */
+  pageName: string
+  /** The unique identifier for the navigation node. */
+  navigationNodeId: string
+  /** The unique identifier for the previous page node, if any. */
+  previousPageNodeId?: string
+  /** The flow position of the previous page, if any. */
+  previousFlowPosition?: number
+  /**
+   * How the user navigated to the page.
+   * Possible values: `"entry"`, `"forward"`, `"back"`, `"auto_transition"`.
+   */
+  navigationType: string
+  /** Time spent on the previous page in milliseconds, if any. */
+  timeOnPreviousPageMs?: number
+}
+
+/**
+ * The user navigated to a page in a multi-page paywall.
+ */
+export interface PaywallPageViewEvent {
+  /** The user navigated to a page in a multi-page paywall. */
+  event: "paywallPageView"
+  /** Information about the paywall associated with this page view. */
+  paywallInfo: PaywallInfo
+  /** Details about the page that was navigated to. */
+  data: PageViewData
+}
+
+/**
  * A union of all possible string literal values for the `event` property from all specific Superwall event types.
  * This type can be used when you need to refer to an event type name itself.
  */
@@ -2162,6 +2378,7 @@ export type SuperwallEventType =
   | StripeCheckoutSubmitEvent["event"]
   | StripeCheckoutCompleteEvent["event"]
   | StripeCheckoutFailEvent["event"]
+  | PaywallPageViewEvent["event"]
 
 /**
  * Represents a Superwall event that can be tracked by the SDK.
@@ -2248,6 +2465,7 @@ export type SuperwallEvent =
   | StripeCheckoutSubmitEvent
   | StripeCheckoutCompleteEvent
   | StripeCheckoutFailEvent
+  | PaywallPageViewEvent
 
 /**
  * Contains information about a Superwall event, including the specific {@link SuperwallEvent}
@@ -2327,7 +2545,18 @@ export type LogScope =
   | "cache"
   | "all"
 
-export type OnPurchaseParamsIOS = { productId: string; platform: "ios" }
+export type OnPurchaseParamsIOS = {
+  productId: string
+  platform: "ios"
+  /**
+   * The store that backs the product being purchased. See {@link ProductStore}.
+   * When the value is `"CUSTOM"`, the product is not backed by StoreKit and your
+   * purchase handler must implement the purchase itself (e.g., calling your backend).
+   * May be `undefined` if the product cannot be matched against the most recently
+   * presented paywall (e.g., during background flows).
+   */
+  store?: ProductStore
+}
 
 export type OnPurchaseParamsAndroid = {
   productId: string

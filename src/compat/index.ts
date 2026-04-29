@@ -36,6 +36,12 @@ import { filterUndefined } from "../utils/filterUndefined"
 
 export { ComputedPropertyRequest } from "./lib/ComputedPropertyRequest"
 export { ConfigurationStatus } from "./lib/ConfigurationStatus"
+export {
+  CustomerInfo,
+  type SubscriptionTransaction,
+  type NonSubscriptionTransaction,
+  type SubscriptionOfferType,
+} from "./lib/CustomerInfo"
 export { EntitlementsInfo } from "./lib/EntitlementsInfo"
 export { Experiment } from "./lib/Experiment"
 export { FeatureGatingBehavior } from "./lib/FeatureGatingBehavior"
@@ -59,7 +65,14 @@ export {
   PaywallSkippedReasonPlacementNotFound,
   PaywallSkippedReasonUserIsSubscribed,
 } from "./lib/PaywallSkippedReason"
-export { Product } from "./lib/Product"
+export {
+  Product,
+  ProductStore,
+  type AppStoreProductIdentifier,
+  type StripeProductIdentifier,
+  type PaddleProductIdentifier,
+  type CustomStoreProductIdentifier,
+} from "./lib/Product"
 export { PurchaseController } from "./lib/PurchaseController"
 export {
   PurchaseResult,

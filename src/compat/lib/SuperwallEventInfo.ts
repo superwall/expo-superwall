@@ -116,6 +116,23 @@ export enum EventType {
   stripeCheckoutSubmit = "stripeCheckoutSubmit",
   stripeCheckoutComplete = "stripeCheckoutComplete",
   stripeCheckoutFail = "stripeCheckoutFail",
+  paywallPageView = "paywallPageView",
+}
+
+/**
+ * @category Models
+ * Page-specific details for a multi-page paywall page view.
+ */
+export interface PageViewData {
+  pageNodeId: string
+  flowPosition: number
+  pageName: string
+  navigationNodeId: string
+  previousPageNodeId?: string
+  previousFlowPosition?: number
+  /** `"entry"` | `"forward"` | `"back"` | `"auto_transition"` */
+  navigationType: string
+  timeOnPreviousPageMs?: number
 }
 
 /**
@@ -151,6 +168,7 @@ export class SuperwallEvent {
   errorMessage?: string
   userEnrichment?: Record<string, any>
   deviceEnrichment?: Record<string, any>
+  pageViewData?: PageViewData
 
   private constructor(options: {
     type: EventType
@@ -186,6 +204,7 @@ export class SuperwallEvent {
     errorMessage?: string
     userEnrichment?: Record<string, any>
     deviceEnrichment?: Record<string, any>
+    pageViewData?: PageViewData
   }) {
     Object.assign(this, options)
   }
@@ -421,6 +440,12 @@ export class SuperwallEvent {
         return new SuperwallEvent({
           type: eventType,
           paywallInfo: PaywallInfo.fromJson(json.paywallInfo),
+        })
+      case EventType.paywallPageView:
+        return new SuperwallEvent({
+          type: eventType,
+          paywallInfo: PaywallInfo.fromJson(json.paywallInfo),
+          pageViewData: json.data,
         })
       default:
         console.warn(`[Superwall] Unhandled event type in SuperwallEvent.fromJson: ${json.event}`)
