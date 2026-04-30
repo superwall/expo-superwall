@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1
+
+### Patch Changes
+
+- b136375: Update Android version, resolve ANR when used without provider
+
 ## 1.1.0
 
 ### Minor Changes
