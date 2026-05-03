@@ -477,6 +477,10 @@ class SuperwallExpoModule : Module() {
       }
     }
 
+    Function("setLocaleIdentifier") { localeIdentifier: String? ->
+      Superwall.instance.localeIdentifier = localeIdentifier
+    }
+
     AsyncFunction("setIntegrationAttributes") { attributes: Map<String, String>, promise: Promise ->
       scope.launch {
         try {
