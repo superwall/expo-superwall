@@ -125,21 +125,16 @@ export function usePlacement(callbacks: usePlacementCallbacks = {}) {
     handlerId: id,
     onPaywallDismiss(info, result) {
       setState({ status: "dismissed", result })
-      if (result.type === "purchased" || result.type === "restored") {
-        runPendingFeature()
-      } else {
-        clearPendingFeature()
-      }
-
       callbacks.onDismiss?.(info, result)
     },
     onPaywallSkip(reason) {
       setState({ status: "skipped", reason })
-      runPendingFeature()
       callbacks.onSkip?.(reason)
     },
     onPaywallError(error) {
       setState({ status: "error", error })
+      // Native won't resolve the register promise on error, so drop the pending
+      // feature here to avoid firing it on a later unrelated registerPlacement.
       clearPendingFeature()
       callbacks.onError?.(error)
     },
@@ -155,17 +150,23 @@ export function usePlacement(callbacks: usePlacementCallbacks = {}) {
   }))
 
   /* -------------------- Helpers -------------------- */
+  // The native module passes a feature closure to Superwall.register; that closure
+  // resolves this promise. The native SDK only invokes it when access is granted —
+  // including Non-Gated dismissals, skips, and successful purchases — so awaiting
+  // the promise is the correct gate for running `feature`. Letting JS infer this
+  // from dismiss `result.type` is wrong: it can't distinguish Gated from Non-Gated.
   const registerPlacement = useCallback(
     async ({ placement, params, feature }: RegisterPlacementArgs) => {
       pendingFeatureRef.current = feature
       try {
         await storeRegisterPlacement(placement, params, id)
+        runPendingFeature()
       } catch (error) {
-        pendingFeatureRef.current = undefined
+        clearPendingFeature()
         throw error
       }
     },
-    [storeRegisterPlacement, id],
+    [storeRegisterPlacement, id, runPendingFeature, clearPendingFeature],
   )
 
   return {
