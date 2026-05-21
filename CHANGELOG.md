@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.2
+
+### Patch Changes
+
+- a03889a: Ensure register callbacks resolve properly in all cases
+- 09f7538: Bump Android & iOS versions
+
 ## 1.1.1
 
 ### Patch Changes
