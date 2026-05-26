@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.3
+
+### Patch Changes
+
+- a8ba5af: Add localResources resolving for expo
+
 ## 1.1.2
 
 ### Patch Changes
