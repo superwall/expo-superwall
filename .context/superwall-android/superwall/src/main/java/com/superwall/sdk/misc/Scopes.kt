@@ -6,6 +6,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlin.coroutines.CoroutineContext
@@ -24,14 +25,14 @@ class IOScope(
     overrideWithContext: CoroutineContext = Dispatchers.IO,
 ) : CoroutineScope,
     SuperwallScope {
-    override val coroutineContext: CoroutineContext = overrideWithContext + exceptionHandler
+    override val coroutineContext: CoroutineContext = SupervisorJob() + overrideWithContext + exceptionHandler
 }
 
 class MainScope(
     overrideWithContext: CoroutineContext = Dispatchers.Main,
 ) : CoroutineScope,
     SuperwallScope {
-    override val coroutineContext: CoroutineContext = overrideWithContext + exceptionHandler
+    override val coroutineContext: CoroutineContext = SupervisorJob() + overrideWithContext + exceptionHandler
 }
 
 internal fun SuperwallScope.launchWithTracking(block: suspend CoroutineScope.() -> Unit): Job =

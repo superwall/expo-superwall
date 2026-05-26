@@ -20,6 +20,8 @@ import com.superwall.sdk.misc.IOScope
 import com.superwall.sdk.misc.MainScope
 import com.superwall.sdk.models.config.ComputedPropertyRequest
 import com.superwall.sdk.models.config.FeatureFlags
+import com.superwall.sdk.models.customer.CustomerInfo
+import com.superwall.sdk.models.entitlements.Entitlement
 import com.superwall.sdk.models.entitlements.SubscriptionStatus
 import com.superwall.sdk.models.events.EventData
 import com.superwall.sdk.models.paywall.Paywall
@@ -44,7 +46,7 @@ import com.superwall.sdk.paywall.view.webview.templating.models.JsonVariables
 import com.superwall.sdk.storage.LocalStorage
 import com.superwall.sdk.storage.core_data.CoreDataManager
 import com.superwall.sdk.store.abstractions.transactions.StoreTransaction
-import com.superwall.sdk.store.testmode.TestModeManager
+import com.superwall.sdk.store.testmode.TestMode
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -145,6 +147,14 @@ fun interface TrackingFactory {
 
 interface DelegateAdapterFactory {
     fun delegate(): SuperwallDelegateAdapter
+}
+
+fun interface CustomerInfoFactory {
+    fun customerInfoFlow(): StateFlow<CustomerInfo>
+}
+
+fun interface ActiveEntitlementsFactory {
+    fun activeEntitlements(): Set<Entitlement>
 }
 
 interface PresentationFactory {
@@ -253,6 +263,6 @@ interface CoreDataManagerFactory {
     fun makeCoreDataManager(): CoreDataManager
 }
 
-internal interface TestModeManagerFactory {
-    fun makeTestModeManager(): TestModeManager?
+internal interface TestModeFactory {
+    fun makeTestMode(): TestMode?
 }

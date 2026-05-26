@@ -141,8 +141,7 @@ sealed class TrackingLogic {
             input?.let { value ->
                 when (value) {
                     is List<*> -> null
-                    is LinkedHashMap<*, *> -> value.mapValues { clean(it.value) }.filterValues { it != null }.toMap()
-                    is Map<*, *> -> value.mapValues { clean(it.value) }.filterValues { it != null }.toMap()
+                    is Map<*, *> -> value
                     is String -> value
                     is Int, is Float, is Double, is Long, is Boolean -> value
                     is JsonElement -> value.convertFromJsonElement()

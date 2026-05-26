@@ -17,7 +17,7 @@ import com.superwall.sdk.store.testmode.ui.TestModeRestoreDrawer
 import com.superwall.sdk.store.transactions.TransactionManager.PurchaseSource
 
 class TestModeTransactionHandler(
-    private val testModeManager: TestModeManager,
+    private val testMode: TestMode,
     private val activityProvider: ActivityProvider,
     private val activityTracker: CurrentActivityTracker? = null,
 ) {
@@ -37,10 +37,10 @@ class TestModeTransactionHandler(
                 ?: return PurchaseResult.Failed("Activity not found - required for test mode purchase drawer")
 
         val superwallProduct =
-            testModeManager.products.find { it.identifier == product.fullIdentifier }
+            testMode.products.find { it.identifier == product.fullIdentifier }
 
         val entitlements = superwallProduct?.entitlements ?: emptyList()
-        val hasFreeTrial = testModeManager.shouldShowFreeTrial(product.hasFreeTrial)
+        val hasFreeTrial = testMode.shouldShowFreeTrial(product.hasFreeTrial)
 
         Logger.debug(
             LogLevel.debug,
@@ -61,9 +61,9 @@ class TestModeTransactionHandler(
 
         return when (result) {
             is PurchaseSimulationResult.Purchased -> {
-                testModeManager.fakePurchase(entitlements)
-                val status = testModeManager.buildSubscriptionStatus()
-                testModeManager.setOverriddenSubscriptionStatus(status)
+                testMode.fakePurchase(entitlements)
+                val status = testMode.buildSubscriptionStatus()
+                testMode.setOverriddenSubscriptionStatus(status)
                 PurchaseResult.Purchased()
             }
             is PurchaseSimulationResult.Abandoned -> {
@@ -80,7 +80,7 @@ class TestModeTransactionHandler(
             getForegroundActivity()
                 ?: return RestorationResult.Failed(Throwable("Activity not found"))
 
-        val allEntitlements = testModeManager.allEntitlements()
+        val allEntitlements = testMode.allEntitlements()
 
         Logger.debug(
             LogLevel.debug,
@@ -92,14 +92,14 @@ class TestModeTransactionHandler(
             TestModeRestoreDrawer.show(
                 activity = activity,
                 availableEntitlements = allEntitlements.toList(),
-                currentSelections = testModeManager.testEntitlementSelections,
+                currentSelections = testMode.testEntitlementSelections,
             )
 
         return when (result) {
             is RestoreSimulationResult.Restored -> {
-                testModeManager.setEntitlements(result.selectedEntitlements)
-                val status = testModeManager.buildSubscriptionStatus()
-                testModeManager.setOverriddenSubscriptionStatus(status)
+                testMode.setEntitlements(result.selectedEntitlements)
+                val status = testMode.buildSubscriptionStatus()
+                testMode.setOverriddenSubscriptionStatus(status)
                 RestorationResult.Restored()
             }
             is RestoreSimulationResult.Cancelled -> {
@@ -108,7 +108,7 @@ class TestModeTransactionHandler(
         }
     }
 
-    fun findSuperwallProductForId(productId: String): SuperwallProduct? = testModeManager.products.find { it.identifier == productId }
+    fun findSuperwallProductForId(productId: String): SuperwallProduct? = testMode.products.find { it.identifier == productId }
 
     fun entitlementsForProduct(productId: String): Set<Entitlement> {
         val superwallProduct = findSuperwallProductForId(productId) ?: return emptySet()

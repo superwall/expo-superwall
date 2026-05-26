@@ -1,25 +1,59 @@
 package com.superwall.sdk.store.testmode
 
+import com.superwall.sdk.analytics.internal.trackable.InternalSuperwallEvent
+import com.superwall.sdk.analytics.internal.trackable.InternalSuperwallEvent.TestModeModal.State
 import com.superwall.sdk.logger.LogLevel
 import com.superwall.sdk.logger.LogScope
 import com.superwall.sdk.logger.Logger
+import com.superwall.sdk.misc.ActivityProvider
+import com.superwall.sdk.misc.CurrentActivityTracker
+import com.superwall.sdk.misc.Either
+import com.superwall.sdk.misc.fold
 import com.superwall.sdk.models.config.Config
 import com.superwall.sdk.models.entitlements.Entitlement
 import com.superwall.sdk.models.entitlements.SubscriptionStatus
+import com.superwall.sdk.network.NetworkError
 import com.superwall.sdk.storage.IsTestModeActiveSubscription
 import com.superwall.sdk.storage.Storage
 import com.superwall.sdk.storage.StoredTestModeSettings
 import com.superwall.sdk.storage.TestModeSettings
+import com.superwall.sdk.store.Entitlements
 import com.superwall.sdk.store.abstractions.product.StoreProduct
 import com.superwall.sdk.store.testmode.models.SuperwallEntitlementRef
 import com.superwall.sdk.store.testmode.models.SuperwallProduct
+import com.superwall.sdk.store.testmode.models.SuperwallProductPlatform
+import com.superwall.sdk.store.testmode.models.SuperwallProductsResponse
 import com.superwall.sdk.store.testmode.models.TestStoreUserType
 import com.superwall.sdk.store.testmode.ui.EntitlementSelection
 import com.superwall.sdk.store.testmode.ui.EntitlementStateOption
+import com.superwall.sdk.store.testmode.ui.TestModeModal
+import kotlin.time.Duration.Companion.seconds
 
-class TestModeManager(
+/**
+ * The single test-mode surface: holds the activation state (products,
+ * entitlement selections, settings persistence) AND runs the activation UI
+ * flow (`activate` → refresh products → present modal).
+ *
+ * Not exactly a "manager" — the UI flow pieces (activity lookup, subscription
+ * products fetch, modal presentation) are injected as thin lambdas so this
+ * class stays testable and config-slice-free.
+ */
+class TestMode(
     private val storage: Storage,
     private val isTestEnvironment: Boolean = Companion.isTestEnvironment,
+    // Activation UI hooks — all default to no-ops so unit tests exercising
+    // state management can construct `TestMode(storage)` without wiring the
+    // whole UI/network surface.
+    private val getSuperwallProducts: suspend () -> Either<SuperwallProductsResponse, NetworkError> = {
+        Either.Failure(NetworkError.Unknown())
+    },
+    private val entitlements: Entitlements? = null,
+    private val activityProvider: () -> ActivityProvider? = { null },
+    private val activityTracker: () -> CurrentActivityTracker? = { null },
+    private val hasExternalPurchaseController: () -> Boolean = { false },
+    private val apiKey: () -> String = { "" },
+    private val dashboardBaseUrl: () -> String = { "" },
+    private val track: suspend (InternalSuperwallEvent) -> Unit = { },
 ) {
     companion object {
         val isTestEnvironment: Boolean by lazy {
@@ -247,5 +281,104 @@ class TestModeManager(
 
     fun clearSettings() {
         storage.delete(StoredTestModeSettings)
+    }
+
+    // ---- Activation UI flow ------------------------------------------------
+
+    /**
+     * Refresh the test product catalog and (when [justActivated] is true)
+     * present the test-mode modal. Must be called off the actor queue —
+     * [presentModal] blocks on user interaction.
+     */
+    suspend fun activate(
+        config: Config,
+        justActivated: Boolean,
+    ) {
+        refreshProducts()
+        if (justActivated) {
+            presentModal(config)
+        }
+    }
+
+    private suspend fun refreshProducts() {
+        getSuperwallProducts().fold(
+            onSuccess = { response ->
+                val androidProducts =
+                    response.data.filter {
+                        it.platform == SuperwallProductPlatform.ANDROID && it.price != null
+                    }
+                setProducts(androidProducts)
+
+                val productsByFullId =
+                    androidProducts.associate { superwallProduct ->
+                        val testProduct = TestStoreProduct(superwallProduct)
+                        superwallProduct.identifier to StoreProduct(testProduct)
+                    }
+                setTestProducts(productsByFullId)
+
+                Logger.debug(
+                    LogLevel.info,
+                    LogScope.superwallCore,
+                    "Test mode: loaded ${androidProducts.size} products",
+                )
+            },
+            onFailure = { error ->
+                Logger.debug(
+                    LogLevel.error,
+                    LogScope.superwallCore,
+                    "Test mode: failed to fetch products - ${error.message}",
+                )
+            },
+        )
+    }
+
+    private suspend fun presentModal(config: Config) {
+        val activity =
+            activityTracker()?.getCurrentActivity()
+                ?: activityProvider()?.getCurrentActivity()
+                ?: activityTracker()?.awaitActivity(10.seconds)
+        if (activity == null) {
+            Logger.debug(
+                LogLevel.warn,
+                LogScope.superwallCore,
+                "Test mode modal could not be presented: no activity available. Setting default subscription status.",
+            )
+            val status = buildSubscriptionStatus()
+            setOverriddenSubscriptionStatus(status)
+            entitlements?.setSubscriptionStatus(status)
+            return
+        }
+
+        track(InternalSuperwallEvent.TestModeModal(State.Open))
+
+        val reason = testModeReason?.description ?: "Test mode activated"
+        val allEntitlements =
+            config.productsV3
+                ?.flatMap { it.entitlements.map { e -> e.id } }
+                ?.distinct()
+                ?.sorted()
+                ?: emptyList()
+
+        val savedSettings = loadSettings()
+
+        val result =
+            TestModeModal.show(
+                activity = activity,
+                reason = reason,
+                hasPurchaseController = hasExternalPurchaseController(),
+                availableEntitlements = allEntitlements,
+                apiKey = apiKey(),
+                dashboardBaseUrl = dashboardBaseUrl(),
+                savedSettings = savedSettings,
+            )
+
+        setFreeTrialOverride(result.freeTrialOverride)
+        setEntitlements(result.entitlements)
+        saveSettings()
+        val status = buildSubscriptionStatus()
+        setOverriddenSubscriptionStatus(status)
+        entitlements?.setSubscriptionStatus(status)
+
+        track(InternalSuperwallEvent.TestModeModal(State.Close))
     }
 }

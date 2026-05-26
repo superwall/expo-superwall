@@ -7,6 +7,7 @@ import com.superwall.sdk.logger.Logger
 import com.superwall.sdk.misc.camelCaseToSnakeCase
 import com.superwall.sdk.models.config.ComputedPropertyRequest
 import com.superwall.sdk.models.config.FeatureGatingBehavior
+import com.superwall.sdk.models.customer.CustomerInfo
 import com.superwall.sdk.models.events.EventData
 import com.superwall.sdk.models.paywall.LocalNotification
 import com.superwall.sdk.models.paywall.PaywallPresentationInfo
@@ -62,6 +63,7 @@ data class PaywallInfo(
     val isScrollEnabled: Boolean,
     @Serializable(with = AnyMapSerializer::class)
     val state: Map<String, Any> = emptyMap(),
+    val customerInfo: CustomerInfo = CustomerInfo.empty(),
 ) {
     constructor(
         databaseId: String,
@@ -96,6 +98,7 @@ data class PaywallInfo(
         cacheKey: String,
         isScrollEnabled: Boolean,
         state: Map<String, Any> = emptyMap(),
+        customerInfo: CustomerInfo = CustomerInfo.empty(),
     ) : this(
         databaseId = databaseId,
         identifier = identifier,
@@ -183,6 +186,7 @@ data class PaywallInfo(
         buildId = buildId,
         isScrollEnabled = isScrollEnabled,
         state = state,
+        customerInfo = customerInfo,
     )
 
     fun eventParams(
@@ -217,6 +221,10 @@ data class PaywallInfo(
                 "is_scroll_enabled" to isScrollEnabled,
                 "state" to state,
             )
+        val customerParams = customerInfo.toParams()
+        if (customerParams.isNotEmpty()) {
+            params["customer_info"] = customerParams
+        }
         params.values.removeAll { it == null }
         val filteredParams = params as MutableMap<String, Any>
         output.putAll(filteredParams)

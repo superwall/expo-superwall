@@ -995,6 +995,94 @@ class InternalSuperwallEventTest {
         return StoreTransaction(transaction, configRequestId = "config", appSessionId = "session")
     }
 
+    @Test
+    fun paywallPageView_allFieldsMappedToSnakeCase() =
+        runTest {
+            Given("a PaywallPageView event with all fields") {
+                val paywallInfo = stubPaywallInfo()
+                val data =
+                    com.superwall.sdk.paywall.view.webview.messaging.PageViewData(
+                        pageNodeId = "node-123",
+                        flowPosition = 2,
+                        pageName = "Pricing",
+                        navigationNodeId = "nav-456",
+                        previousPageNodeId = "node-000",
+                        previousFlowPosition = 1,
+                        navigationType = "forward",
+                        timeOnPreviousPageMs = 3500,
+                    )
+                val event =
+                    InternalSuperwallEvent.PaywallPageView(
+                        paywallInfo = paywallInfo,
+                        data = data,
+                    )
+
+                When("parameters are requested") {
+                    val params = event.getSuperwallParameters()
+
+                    Then("all page view fields are mapped to snake_case keys") {
+                        assertEquals("node-123", params["page_node_id"])
+                        assertEquals(2, params["flow_position"])
+                        assertEquals("Pricing", params["page_name"])
+                        assertEquals("nav-456", params["navigation_node_id"])
+                        assertEquals("forward", params["navigation_type"])
+                        assertEquals("node-000", params["previous_page_node_id"])
+                        assertEquals(1, params["previous_flow_position"])
+                        assertEquals(3500, params["time_on_previous_page_ms"])
+                    }
+
+                    And("paywall info params are also included") {
+                        assertEquals(paywallInfo.identifier, params["paywall_identifier"])
+                    }
+
+                    And("the superwall placement is paywall_page_view") {
+                        assertEquals("paywall_page_view", event.superwallPlacement.rawName)
+                    }
+                }
+            }
+        }
+
+    @Test
+    fun paywallPageView_optionalFieldsOmitted() =
+        runTest {
+            Given("a PaywallPageView event without optional fields") {
+                val paywallInfo = stubPaywallInfo()
+                val data =
+                    com.superwall.sdk.paywall.view.webview.messaging.PageViewData(
+                        pageNodeId = "node-first",
+                        flowPosition = 0,
+                        pageName = "Welcome",
+                        navigationNodeId = "nav-001",
+                        previousPageNodeId = null,
+                        previousFlowPosition = null,
+                        navigationType = "entry",
+                        timeOnPreviousPageMs = null,
+                    )
+                val event =
+                    InternalSuperwallEvent.PaywallPageView(
+                        paywallInfo = paywallInfo,
+                        data = data,
+                    )
+
+                When("parameters are requested") {
+                    val params = event.getSuperwallParameters()
+
+                    Then("required fields are present") {
+                        assertEquals("node-first", params["page_node_id"])
+                        assertEquals(0, params["flow_position"])
+                        assertEquals("Welcome", params["page_name"])
+                        assertEquals("entry", params["navigation_type"])
+                    }
+
+                    And("optional fields are absent") {
+                        assertFalse(params.containsKey("previous_page_node_id"))
+                        assertFalse(params.containsKey("previous_flow_position"))
+                        assertFalse(params.containsKey("time_on_previous_page_ms"))
+                    }
+                }
+            }
+        }
+
     private object NoopPresentationFactory : InternalSuperwallEvent.PresentationRequest.Factory {
         override suspend fun makeRuleAttributes(
             event: EventData?,

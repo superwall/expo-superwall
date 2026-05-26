@@ -40,12 +40,9 @@ jobs:
     - name: Change wrapper permissions
       run: chmod +x ./gradlew
 
-    # Run Build & Test the Project (only SDK modules, skip app/example/test_app)
+    # Assemble the SDK modules (tests/lint run in pr-tests.yml)
     - name: Build gradle project
-      run: ./gradlew :superwall:build :superwall-compose:build
-
-    - name: Build test project
-      run: ./gradlew :app:assembleAndroidTest -DtestBuildType=debug
+      run: ./gradlew :superwall:assemble :superwall-compose:assemble
 
     # See what version we're on
     # Writes to superwall/build/version.json with the version set 
@@ -86,8 +83,8 @@ jobs:
         ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.ORG_GRADLE_PROJECT_signingInMemoryKeyId }}
         ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.ORG_GRADLE_PROJECT_signingInMemoryKey }}
       run: |
-        ./gradlew :superwall:publish
-        ./gradlew :superwall-compose:publish
+        ./gradlew :superwall:publish --no-configuration-cache
+        ./gradlew :superwall-compose:publish --no-configuration-cache
 
     - name: Determine prerelease status
       id: prerelease

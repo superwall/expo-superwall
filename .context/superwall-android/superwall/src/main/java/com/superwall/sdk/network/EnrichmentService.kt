@@ -29,6 +29,7 @@ class EnrichmentService(
             "enrich",
             retryCount = maxRetry,
             body = factory.json().encodeToString(enrichmentRequest).toByteArray(),
+            timeout = timeout
         )
     }
 }

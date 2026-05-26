@@ -18,41 +18,176 @@ concurrency:
 
 jobs:
   build:
-    runs-on: macos-15-intel
+    runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
-        fetch-depth: 0
         ref: ${{ github.head_ref }}
         token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Set Up JDK
-      uses: actions/setup-java@v3
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
       with:
-        distribution: 'zulu' # See 'Supported distributions' for available options
         java-version: '17'
-        cache: 'gradle'
+        distribution: 'temurin'
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
 
     # Allow us to run the command
     - name: Change wrapper permissions
       run: chmod +x ./gradlew
 
-    # Run Build & Test the Project
-    - name: Build gradle project
-      run: ./gradlew build
+    # Assemble only the SDK modules + :app (used by Firebase Test Lab below).
+    # Skip :example:app and :test_app — they're sample/maestro targets, not
+    # gating artifacts for PRs, and rebuilding them adds minutes per run.
+    - name: Assemble gradle project
+      run: ./gradlew :superwall:assemble :superwall-compose:assemble :app:assemble -x lint -x lintDebug -x lintVitalRelease
 
-    - name: Run unit and instrumentation tests with coverage
+    - name: Build test project
+      run: ./gradlew :app:assembleAndroidTest -DtestBuildType=debug -x lint -x lintDebug -x lintVitalRelease
+
+    - name: Run tests on Firebase Test Lab
+      uses: asadmansr/Firebase-Test-Lab-Action@v1.0
+      with:
+        arg-spec: '.github/firebase-tests.yml:android-pixel-7'
+      env:
+        SERVICE_ACCOUNT: ${{ secrets.SERVICE_ACCOUNT }}
+
+  unit-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ github.head_ref }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+
+    - name: Change wrapper permissions
+      run: chmod +x ./gradlew
+
+    - name: Run unit tests with coverage
+      run: ./gradlew :superwall:testDebugUnitTest -x lint -x lintDebug -x lintVitalRelease
+
+    - name: Upload unit test coverage data
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: unit-test-coverage
+        path: superwall/build/jacoco/
+
+    - name: Upload unit test reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: unit-test-reports
+        path: |
+          superwall/build/reports/tests/
+          superwall/build/test-results/
+
+  # Single-runner pre-job that assembles :superwall debug + androidTest APKs once,
+  # so the 5 instrumentation shards get gradle build-cache hits on assemble tasks
+  # instead of each rebuilding the same APKs from scratch. cache-read-only: false
+  # is required so this job can WRITE to the gradle cache on PR branches (the
+  # setup-gradle default is read-only off the default branch).
+  prebuild-test-apks:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ github.head_ref }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+      with:
+        cache-read-only: false
+
+    - name: Change wrapper permissions
+      run: chmod +x ./gradlew
+
+    - name: Assemble debug + androidTest APKs (warms gradle cache for shards)
+      run: ./gradlew :superwall:assembleDebugAndroidTest -x lint -x lintDebug -x lintVitalRelease
+
+  # Single-runner pre-job that populates the AVD snapshot cache before the matrix
+  # fans out, so the 5 shards don't race to create the same snapshot on a cold cache.
+  # On a warm cache this job is ~30s of overhead (checkout + cache restore + skip).
+  warm-emulator-cache:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ github.head_ref }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: AVD cache
+      uses: actions/cache@v4
+      id: avd-cache
+      with:
+        path: |
+          ~/.android/avd/*
+          ~/.android/adb*
+        key: avd-api33-google_apis-x86_64-pixel_7_pro-v1
+
+    # Everything below only runs on a cold cache. On a warm cache the job ends here.
+    - name: Free disk space
+      if: steps.avd-cache.outputs.cache-hit != 'true'
+      uses: jlumbroso/free-disk-space@v1.3.1
+      with:
+        android: false
+        tool-cache: true
+        dotnet: true
+        haskell: true
+        swap-storage: true
+        docker-images: false
+        large-packages: false
+
+    - name: Enable KVM
+      if: steps.avd-cache.outputs.cache-hit != 'true'
+      run: |
+        echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+        sudo udevadm control --reload-rules
+        sudo udevadm trigger --name-match=kvm
+
+    - name: Set up JDK 17
+      if: steps.avd-cache.outputs.cache-hit != 'true'
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Setup Gradle
+      if: steps.avd-cache.outputs.cache-hit != 'true'
+      uses: gradle/actions/setup-gradle@v3
+
+    - name: Create AVD and generate snapshot for caching
+      if: steps.avd-cache.outputs.cache-hit != 'true'
       uses: reactivecircus/android-emulator-runner@v2
       with:
         api-level: 33
         target: google_apis
         arch: x86_64
         profile: pixel_7_pro
-        force-avd-creation: true
+        force-avd-creation: false
         ram-size: 4096M
         emulator-boot-timeout: 1800
-        disable-animations: true
+        disable-animations: false
         emulator-options: >
           -no-window
           -gpu swiftshader_indirect
@@ -60,22 +195,173 @@ jobs:
           -noaudio
           -camera-back none
           -camera-front none
+        script: echo "Generated AVD snapshot for caching."
+
+  instrumentation-tests:
+    runs-on: ubuntu-latest
+    needs: [warm-emulator-cache, prebuild-test-apks]
+    # Run even if warm-emulator-cache or prebuild-test-apks failed — the per-shard
+    # warm-up step below acts as an AVD fallback, and a cold gradle cache just
+    # means the shards rebuild (current behavior). Don't run on workflow cancellation.
+    if: ${{ !cancelled() }}
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0, 1, 2, 3, 4]
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ github.head_ref }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    # Reclaim ~10+ GB on the runner before the AVD cache restore + emulator boot.
+    # Ubuntu runners ship near-full and instrumentation jobs can hit "no space
+    # left on device" around the emulator boot or coverage write otherwise.
+    - name: Free disk space
+      uses: jlumbroso/free-disk-space@v1.3.1
+      with:
+        android: false        # keep Android SDK / tools
+        tool-cache: true      # rm -rf "$AGENT_TOOLSDIRECTORY"
+        dotnet: true          # rm -rf /usr/share/dotnet
+        haskell: true         # rm -rf /opt/ghc
+        swap-storage: true    # rm -f /mnt/swapfile (4 GiB)
+        docker-images: false  # slow (~16s), skip
+        large-packages: false # slow (includes google-cloud-sdk), skip
+
+    - name: Enable KVM
+      run: |
+        echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+        sudo udevadm control --reload-rules
+        sudo udevadm trigger --name-match=kvm
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+
+    - name: Change wrapper permissions
+      run: chmod +x ./gradlew
+
+    # Cache the AVD across runs. Key is shared across all 5 shards because they
+    # all use the same api-level/target/arch/profile, so they all share one snapshot.
+    - name: AVD cache
+      uses: actions/cache@v4
+      id: avd-cache
+      with:
+        path: |
+          ~/.android/avd/*
+          ~/.android/adb*
+        key: avd-api33-google_apis-x86_64-pixel_7_pro-v1
+
+    # Cold-cache only: create the AVD and let the emulator save a snapshot on shutdown.
+    # Note the deliberate ABSENCE of -no-snapshot-save in emulator-options here, and
+    # disable-animations is left false so the snapshot is generic and reusable.
+    - name: Create AVD and generate snapshot for caching
+      if: steps.avd-cache.outputs.cache-hit != 'true'
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: 33
+        target: google_apis
+        arch: x86_64
+        profile: pixel_7_pro
+        force-avd-creation: false
+        ram-size: 4096M
+        emulator-boot-timeout: 1800
+        disable-animations: false
+        emulator-options: >
+          -no-window
+          -gpu swiftshader_indirect
+          -no-boot-anim
+          -noaudio
+          -camera-back none
+          -camera-front none
+        script: echo "Generated AVD snapshot for caching."
+
+    - name: Run instrumentation tests with coverage (shard ${{ matrix.shard }}/5)
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: 33
+        target: google_apis
+        arch: x86_64
+        profile: pixel_7_pro
+        force-avd-creation: false
+        ram-size: 4096M
+        emulator-boot-timeout: 1800
+        disable-animations: true
+        emulator-options: >
           -no-snapshot-save
-        script: ./gradlew :superwall:jacocoFullReport
+          -no-window
+          -gpu swiftshader_indirect
+          -no-boot-anim
+          -noaudio
+          -camera-back none
+          -camera-front none
+        script: >
+          ./gradlew :superwall:connectedDebugAndroidTest
+          -Pandroid.testInstrumentationRunnerArguments.numShards=5
+          -Pandroid.testInstrumentationRunnerArguments.shardIndex=${{ matrix.shard }}
+          -x lint -x lintDebug -x lintVitalRelease
 
-    - name: Build test project
-      run: ./gradlew :app:assembleAndroidTest -DtestBuildType=debug
-
-    - name: Upload test reports
+    - name: Upload instrumentation test coverage data
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: test-reports
+        name: instrumentation-test-coverage-shard-${{ matrix.shard }}
+        path: superwall/build/outputs/code_coverage/
+
+    - name: Upload instrumentation test reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: instrumentation-test-reports-shard-${{ matrix.shard }}
         path: |
-          **/build/reports/tests/
-          **/build/test-results/
-          **/build/reports/androidTests/connected/
-          **/build/outputs/code_coverage/
+          superwall/build/reports/androidTests/connected/
+          superwall/build/outputs/androidTest-results/
+
+  coverage-report:
+    runs-on: ubuntu-latest
+    needs: [unit-tests, instrumentation-tests]
+    # Run as long as unit-tests succeeded, even if some/all instrumentation
+    # shards failed — a partial report is better than no report or badge update.
+    if: ${{ !cancelled() && needs.unit-tests.result == 'success' }}
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ github.head_ref }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v3
+
+    - name: Change wrapper permissions
+      run: chmod +x ./gradlew
+
+    - name: Download unit test coverage data
+      uses: actions/download-artifact@v4
+      with:
+        name: unit-test-coverage
+        path: superwall/build/jacoco/
+
+    - name: Download instrumentation test coverage data (all shards)
+      uses: actions/download-artifact@v4
+      with:
+        pattern: instrumentation-test-coverage-shard-*
+        path: superwall/build/outputs/code_coverage/
+
+    - name: Generate combined coverage report
+      run: ./gradlew :superwall:compileDebugSources :superwall:jacocoTestReport -x testDebugUnitTest -x lint -x lintDebug -x lintVitalRelease
 
     - name: Upload coverage report
       uses: actions/upload-artifact@v4
@@ -107,10 +393,3 @@ jobs:
           git commit -m "Update coverage badge [skip ci]"
           git push origin HEAD:${{ github.head_ref }}
         fi
-
-    - name: Run tests on Firebase Test Lab
-      uses: asadmansr/Firebase-Test-Lab-Action@v1.0
-      with:
-        arg-spec: '.github/firebase-tests.yml:android-pixel-7'
-      env:
-        SERVICE_ACCOUNT: ${{ secrets.SERVICE_ACCOUNT }}

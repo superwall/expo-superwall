@@ -19,7 +19,7 @@ import com.superwall.sdk.paywall.presentation.rule_logic.RuleEvaluationOutcome
 import com.superwall.sdk.paywall.request.PaywallRequest
 import com.superwall.sdk.paywall.request.ResponseIdentifiers
 import com.superwall.sdk.paywall.view.PaywallView
-import com.superwall.sdk.paywall.view.webview.webViewExists
+import com.superwall.sdk.paywall.view.webview.WebviewChecker
 import com.superwall.sdk.storage.LocalStorage
 import com.superwall.sdk.storage.core_data.CoreDataManager
 import io.mockk.coEvery
@@ -94,8 +94,8 @@ class GetPaywallViewOperatorTest {
     fun failsWhenWebViewMissing() =
         runTest {
             Given("the device has no WebView available") {
-                mockkStatic(::webViewExists)
-                every { webViewExists() } returns false
+                mockkObject(WebviewChecker)
+                every { WebviewChecker.webviewExists } returns false
 
                 val result =
                     When("getPaywallView is executed") {
@@ -121,8 +121,8 @@ class GetPaywallViewOperatorTest {
     fun returnsPaywallViewWhenSuccessful() =
         runTest {
             Given("the WebView exists and paywall manager returns a view") {
-                mockkStatic(::webViewExists)
-                every { webViewExists() } returns true
+                mockkObject(WebviewChecker)
+                every { WebviewChecker.webviewExists } returns true
                 coEvery {
                     paywallManager.getPaywallView(
                         request = any(),
@@ -154,8 +154,8 @@ class GetPaywallViewOperatorTest {
     fun emitsErrorWhenPaywallManagerFails() =
         runTest {
             Given("the WebView exists but paywall manager throws") {
-                mockkStatic(::webViewExists)
-                every { webViewExists() } returns true
+                mockkObject(WebviewChecker)
+                every { WebviewChecker.webviewExists } returns true
                 val error = IllegalStateException("boom")
                 coEvery {
                     paywallManager.getPaywallView(

@@ -139,6 +139,8 @@ data class Paywall(
     val isScrollEnabled: Boolean? = true,
     @SerialName("reroute_back_button")
     val rerouteBackButton: ToggleMode? = null,
+    @SerialName("intro_offer_eligibility")
+    val introOfferEligibility: IntroOfferEligibility = IntroOfferEligibility.AUTOMATIC,
 ) : SerializableEntity {
     val playStoreProducts: List<CrossplatformProduct>
         get() =

@@ -59,7 +59,9 @@ internal suspend fun evaluateRules(
         val paywallId =
             request.presentationInfo.identifier
                 ?: return Result.failure(
-                    PaywallPresentationRequestStatusReason.NoPaywallView(),
+                    PaywallPresentationRequestStatusReason.NoPaywallView(
+                        "No paywall identifier provided for debugger presentation."
+                    ),
                 )
 
         Result.success(

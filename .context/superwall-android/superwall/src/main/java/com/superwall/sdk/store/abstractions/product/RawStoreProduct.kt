@@ -684,7 +684,8 @@ class RawStoreProduct(
             SubscriptionPeriod.Unit.day -> {
                 when (trialSubscriptionPeriod?.unit) {
                     SubscriptionPeriod.Unit.day -> BigDecimal(1)
-                    SubscriptionPeriod.Unit.week -> BigDecimal(365).divide(BigDecimal(52), 6, RoundingMode.DOWN)
+                    // 7 days per week exactly — not 365/52.
+                    SubscriptionPeriod.Unit.week -> BigDecimal(7)
                     SubscriptionPeriod.Unit.month -> BigDecimal(365).divide(BigDecimal(12), 6, RoundingMode.DOWN)
                     SubscriptionPeriod.Unit.year -> BigDecimal(365)
                     else -> BigDecimal.ZERO
@@ -693,9 +694,10 @@ class RawStoreProduct(
 
             SubscriptionPeriod.Unit.week -> {
                 when (trialSubscriptionPeriod?.unit) {
+                    // A day is exactly 1/7 of a week — not 52/365.
                     SubscriptionPeriod.Unit.day ->
-                        BigDecimal(52).divide(
-                            BigDecimal(365),
+                        BigDecimal.ONE.divide(
+                            BigDecimal(7),
                             6,
                             RoundingMode.DOWN,
                         )

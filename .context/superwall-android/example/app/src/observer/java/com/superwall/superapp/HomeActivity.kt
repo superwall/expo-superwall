@@ -73,272 +73,287 @@ class HomeActivity : ComponentActivity() {
             }
         }
     }
-}
 
-@Composable
-fun HomeScreen(
-    subscriptionStatus: SubscriptionStatus,
-    onLogOutClicked: () -> Unit,
-) {
-    val context = LocalContext.current
-    var dropdownState =
-        remember {
-            mutableStateOf(false)
-        }
-
-    val scope = rememberCoroutineScope()
-
-    Surface(
-        modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background,
+    @Composable
+    fun SWButton(
+        text: String,
+        onClick: () -> Unit,
     ) {
-        Column(
+        Button(
+            onClick = onClick,
             modifier =
                 Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween,
+                    .fillMaxWidth()
+                    .heightIn(min = 50.dp)
+                    .padding(top = 8.dp),
         ) {
             Text(
-                text = "Observing purchases",
-                style = MaterialTheme.typography.headlineSmall,
-                textAlign = TextAlign.Center,
+                text = text,
+                color = MaterialTheme.colorScheme.onPrimary,
+                style =
+                    TextStyle(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                    ),
+            )
+        }
+    }
+
+    @Composable
+    fun HomeScreen(
+        subscriptionStatus: SubscriptionStatus,
+        onLogOutClicked: () -> Unit,
+    ) {
+        val context = LocalContext.current
+        var dropdownState =
+            remember {
+                mutableStateOf(false)
+            }
+
+        val scope = rememberCoroutineScope()
+
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background,
+        ) {
+            Column(
                 modifier =
                     Modifier
-                        .fillMaxWidth()
-                        .padding(top = 50.dp),
-            )
-            Row(
-                Modifier
-                    .padding(8.dp)
-                    .clickable {
-                        dropdownState.value = true
-                    },
-            ) {
-                Text(text = "Change entitlement status")
-                Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, tint = Color.White)
-            }
-            Column(
-                modifier = Modifier.fillMaxWidth(),
+                        .fillMaxSize()
+                        .padding(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
-                    text =
-                        "The buttons below trigger the purchase flow. " +
-                            "The first button will automatically observe the purchase flow. " +
-                            "The other buttons will manually observe the purchase flow." +
-                            "Please ensure you have your products set correctly" +
-                            " and are added as a tester to the Google Play Console.",
+                    text = "Observing purchases",
+                    style = MaterialTheme.typography.headlineSmall,
                     textAlign = TextAlign.Center,
-                )
-            }
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                SWButton("Purchase with automatic observation", {
-                    val billingClient =
-                        BillingClient
-                            .newBuilder(context)
-                            .enablePendingPurchases(PendingPurchasesParams.newBuilder().enableOneTimeProducts().build())
-                            .setListener { billingResult, purchases -> }
-                            .build()
-                    scope.launch(Dispatchers.IO) {
-                        // Replace with your product id
-                        val product =
-                            Superwall.instance
-                                .getProducts("com.ui_tests.monthly:com-ui-tests-montly:sw-auto")
-                                .getOrNull()!!
-                                .values
-                                .first()
-
-                        // Launch the billing flow with the product and ensure it is observed by superwall
-                        billingClient.launchBillingFlowWithSuperwall(
-                            (context as Activity),
-                            SuperwallBillingFlowParams
-                                .newBuilder()
-                                .setProductDetailsParamsList(
-                                    listOf(
-                                        SuperwallBillingFlowParams.ProductDetailsParams
-                                            .newBuilder()
-                                            .setProductDetails(product.rawStoreProduct.underlyingProductDetails)
-                                            .build(),
-                                    ),
-                                ).build(),
-                        )
-                    }
-                })
-                SWButton("Observe purchase start manually", {
-                    scope.launch(Dispatchers.IO) {
-                        val product =
-                            Superwall.instance
-                                .getProducts("com.ui_tests.monthly:com-ui-tests-montly:sw-auto")
-                                .getOrNull()!!
-                                .values
-                                .first()
-
-                        Superwall.instance.observe(
-                            PurchasingObserverState.PurchaseWillBegin(product.rawStoreProduct.underlyingProductDetails),
-                        )
-                    }
-                })
-                SWButton("Observe purchase complete manually", {
-                    scope.launch(Dispatchers.IO) {
-                        val product =
-                            Superwall.instance
-                                .getProducts("com.ui_tests.monthly:com-ui-tests-montly:sw-auto")
-                                .getOrNull()!!
-                                .values
-                                .first()
-
-                        Superwall.instance.observe(
-                            PurchasingObserverState.PurchaseResult(
-                                BillingResult
-                                    .newBuilder()
-                                    .setResponseCode(BillingClient.BillingResponseCode.OK)
-                                    .build(),
-                                purchases = listOf(PurchaseMockBuilder.createDefaultPurchase("com.ui_tests.monthly")),
-                            ),
-                        )
-                    }
-                })
-                SWButton("Observe purchase failed manually", {
-                    scope.launch(Dispatchers.IO) {
-                        val product =
-                            Superwall.instance
-                                .getProducts("com.ui_tests.monthly:com-ui-tests-montly:sw-auto")
-                                .getOrNull()!!
-                                .values
-                                .first()
-
-                        Superwall.instance.observe(
-                            PurchasingObserverState.PurchaseError(
-                                product.rawStoreProduct.underlyingProductDetails,
-                                IllegalStateException("Purchase Abandoned"),
-                            ),
-                        )
-                    }
-                })
-
-                Spacer(modifier = Modifier.height(8.dp))
-                Button(
-                    onClick = {
-                        Superwall.instance.reset()
-                        onLogOutClicked()
-                    },
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .heightIn(min = 50.dp)
-                            .padding(vertical = 8.dp),
+                            .padding(top = 50.dp),
+                )
+                Row(
+                    Modifier
+                        .padding(8.dp)
+                        .clickable {
+                            dropdownState.value = true
+                        },
+                ) {
+                    Text(text = "Change entitlement status")
+                    Icon(
+                        Icons.Default.KeyboardArrowDown,
+                        contentDescription = null,
+                        tint = Color.White
+                    )
+                }
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
-                        text = "Log Out",
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        style =
-                            TextStyle(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 18.sp,
-                            ),
+                        text =
+                            "The buttons below trigger the purchase flow. " +
+                                    "The first button will automatically observe the purchase flow. " +
+                                    "The other buttons will manually observe the purchase flow." +
+                                    "Please ensure you have your products set correctly" +
+                                    " and are added as a tester to the Google Play Console.",
+                        textAlign = TextAlign.Center,
                     )
+                }
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    SWButton("Purchase with automatic observation", {
+                        val billingClient =
+                            BillingClient
+                                .newBuilder(context)
+                                .enablePendingPurchases(
+                                    PendingPurchasesParams.newBuilder().enableOneTimeProducts()
+                                        .build()
+                                )
+                                .setListener { billingResult, purchases -> }
+                                .build()
+                        scope.launch(Dispatchers.IO) {
+                            // Replace with your product id
+                            val product =
+                                Superwall.instance
+                                    .getProducts("com.ui_tests.monthly:com-ui-tests-montly:sw-auto")
+                                    .getOrNull()
+                                    ?.values
+                                    ?.first()
+
+                            val productRes = product?.rawStoreProduct
+                            if (productRes != null)
+                            // Launch the billing flow with the product and ensure it is observed by superwall
+                                billingClient.launchBillingFlowWithSuperwall(
+                                    (context as Activity),
+                                    SuperwallBillingFlowParams
+                                        .newBuilder()
+                                        .setProductDetailsParamsList(
+                                            listOf(
+                                                SuperwallBillingFlowParams.ProductDetailsParams
+                                                    .newBuilder()
+                                                    .setProductDetails(productRes.underlyingProductDetails)
+                                                    .build(),
+                                            ),
+                                        ).build(),
+                                )
+                        }
+                    })
+                    SWButton("Observe purchase start manually", {
+                        scope.launch(Dispatchers.IO) {
+                            val product =
+                                Superwall.instance
+                                    .getProducts("com.ui_tests.monthly:com-ui-tests-montly:sw-auto")
+                                    .getOrNull()
+                                    ?.values
+                                    ?.first()
+                            val productRes = product?.rawStoreProduct
+                            if (productRes != null)
+
+                                Superwall.instance.observe(
+                                    PurchasingObserverState.PurchaseWillBegin(productRes.underlyingProductDetails),
+                                )
+                        }
+                    })
+                    SWButton("Observe purchase complete manually", {
+                        scope.launch(Dispatchers.IO) {
+                            val product =
+                                Superwall.instance
+                                    .getProducts("com.ui_tests.monthly:com-ui-tests-montly:sw-auto")
+                                    .getOrNull()!!
+                                    .values
+                                    .first()
+
+                            Superwall.instance.observe(
+                                PurchasingObserverState.PurchaseResult(
+                                    BillingResult
+                                        .newBuilder()
+                                        .setResponseCode(BillingClient.BillingResponseCode.OK)
+                                        .build(),
+                                    purchases = listOf(PurchaseMockBuilder.createDefaultPurchase("com.ui_tests.monthly")),
+                                ),
+                            )
+                        }
+                    })
+                    SWButton("Observe purchase failed manually", {
+                        scope.launch(Dispatchers.IO) {
+                            val product =
+                                Superwall.instance
+                                    .getProducts("com.ui_tests.monthly:com-ui-tests-montly:sw-auto")
+                                    .getOrNull()
+                                    ?.values
+                                    ?.first()
+                            val productRes = product?.rawStoreProduct
+                            if (productRes != null)
+                                Superwall.instance.observe(
+                                    PurchasingObserverState.PurchaseError(
+                                        productRes.underlyingProductDetails,
+                                        IllegalStateException("Purchase Abandoned"),
+                                    ),
+                                )
+                        }
+                    })
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = {
+                            Superwall.instance.reset()
+                            onLogOutClicked()
+                        },
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 50.dp)
+                                .padding(vertical = 8.dp),
+                    ) {
+                        Text(
+                            text = "Log Out",
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            style =
+                                TextStyle(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 18.sp,
+                                ),
+                        )
+                    }
                 }
             }
         }
-    }
-}
 
-fun showPaywall(
-    context: Context,
-    placement: String,
-) {
-    val handler = PaywallPresentationHandler()
-    handler.onDismiss { paywallInfo, paywallResult ->
-        println("The paywall dismissed. PaywallInfo: $paywallInfo")
-    }
-    handler.onPresent { paywallInfo ->
-        println("The paywall presented. PaywallInfo: $paywallInfo")
-    }
-    handler.onError { error ->
-        println("The paywall presentation failed with error $error")
-    }
-    handler.onSkip { reason ->
-        when (reason) {
-            is PaywallSkippedReason.PlacementNotFound -> {
-                print("Paywall not shown because this placement isn't part of a campaign.")
+
+        fun showPaywall(
+            context: Context,
+            placement: String,
+        ) {
+            val handler = PaywallPresentationHandler()
+            handler.onDismiss { paywallInfo, paywallResult ->
+                println("The paywall dismissed. PaywallInfo: $paywallInfo")
+            }
+            handler.onPresent { paywallInfo ->
+                println("The paywall presented. PaywallInfo: $paywallInfo")
+            }
+            handler.onError { error ->
+                println("The paywall presentation failed with error $error")
+            }
+            handler.onSkip { reason ->
+                when (reason) {
+                    is PaywallSkippedReason.PlacementNotFound -> {
+                        print("Paywall not shown because this placement isn't part of a campaign.")
+                    }
+
+                    is PaywallSkippedReason.Holdout -> {
+                        print(
+                            "Paywall not shown because user is in a holdout group in " +
+                                    "Experiment: ${reason.experiment.id}",
+                        )
+                    }
+
+                    is PaywallSkippedReason.NoAudienceMatch -> {
+                        print("Paywall not shown because user doesn't match any rules.")
+                    }
+
+                    is PaywallSkippedReason.UserIsSubscribed -> {
+                        print("Paywall not shown because user is subscribed.")
+                    }
+                }
             }
 
-            is PaywallSkippedReason.Holdout -> {
-                print(
-                    "Paywall not shown because user is in a holdout group in " +
-                        "Experiment: ${reason.experiment.id}",
-                )
-            }
+            Superwall.instance.register(placement = "campaign_trigger", handler = handler) {
+                // code in here can be remotely configured to execute. Either
+                // (1) always after presentation or
+                // (2) only if the user pays
+                // code is always executed if no paywall is configured to show
+                val builder =
+                    AlertDialog
+                        .Builder(context)
+                        .setTitle("Feature Launched")
+                        .setMessage("The feature block was called")
 
-            is PaywallSkippedReason.NoAudienceMatch -> {
-                print("Paywall not shown because user doesn't match any rules.")
-            }
+                builder.setPositiveButton("Ok") { _, _ -> }
 
-            is PaywallSkippedReason.UserIsSubscribed -> {
-                print("Paywall not shown because user is subscribed.")
+                val alertDialog = builder.create()
+                alertDialog.show()
             }
         }
-    }
 
-    Superwall.instance.register(placement = "campaign_trigger", handler = handler) {
-        // code in here can be remotely configured to execute. Either
-        // (1) always after presentation or
-        // (2) only if the user pays
-        // code is always executed if no paywall is configured to show
-        val builder =
-            AlertDialog
-                .Builder(context)
-                .setTitle("Feature Launched")
-                .setMessage("The feature block was called")
+        fun Context.dialog(
+            title: String,
+            text: String,
+        ) {
+            val builder =
+                AlertDialog
+                    .Builder(this)
+                    .setTitle(title)
+                    .setMessage(text)
 
-        builder.setPositiveButton("Ok") { _, _ -> }
+            builder.setPositiveButton("Ok") { _, _ -> }
 
-        val alertDialog = builder.create()
-        alertDialog.show()
-    }
-}
+            val alertDialog = builder.create()
+            alertDialog.show()
+        }
 
-fun Context.dialog(
-    title: String,
-    text: String,
-) {
-    val builder =
-        AlertDialog
-            .Builder(this)
-            .setTitle(title)
-            .setMessage(text)
-
-    builder.setPositiveButton("Ok") { _, _ -> }
-
-    val alertDialog = builder.create()
-    alertDialog.show()
-}
-
-@Composable
-fun SWButton(
-    text: String,
-    onClick: () -> Unit,
-) {
-    Button(
-        onClick = onClick,
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .heightIn(min = 50.dp)
-                .padding(top = 8.dp),
-    ) {
-        Text(
-            text = text,
-            color = MaterialTheme.colorScheme.onPrimary,
-            style =
-                TextStyle(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 18.sp,
-                ),
-        )
     }
 }
+

@@ -107,11 +107,11 @@ fun PaywallComposable(
                         viewToRender
                     },
                     onRelease = {
-                        viewToRender.beforeOnDestroy()
+                        viewToRender.beforeOnDestroy(forceCleanup = true)
                         viewToRender.encapsulatingActivity = null
 
                         CoroutineScope(Dispatchers.Main).launch {
-                            viewToRender.destroyed()
+                            viewToRender.destroyed(forceCleanup = true)
                             viewToRender.cleanup()
                         }
                     },

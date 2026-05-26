@@ -48,6 +48,14 @@ class GoogleBillingWrapper(
     val ioScope: IOScope,
     val appLifecycleObserver: AppLifecycleObserver,
     val factory: Factory,
+    val createBillingClient: (PurchasesUpdatedListener) -> BillingClient = {
+        BillingClient
+            .newBuilder(context)
+            .setListener(it)
+            .enablePendingPurchases(
+                PendingPurchasesParams.newBuilder().enableOneTimeProducts().build(),
+            ).build()
+    },
 ) : PurchasesUpdatedListener,
     BillingClientStateListener,
     Billing {
@@ -55,6 +63,11 @@ class GoogleBillingWrapper(
         private val productsCache = ConcurrentHashMap<String, Either<StoreProduct, Throwable>>()
         private const val QUERY_PURCHASES_TIMEOUT_MS = 10_000L
         private const val QUERY_PURCHASES_MAX_RETRIES = 3
+
+        @androidx.annotation.VisibleForTesting
+        internal fun clearProductsCache() {
+            productsCache.clear()
+        }
     }
 
     interface Factory :
@@ -164,13 +177,7 @@ class GoogleBillingWrapper(
     fun startConnection() {
         synchronized(this@GoogleBillingWrapper) {
             if (billingClient == null) {
-                billingClient =
-                    BillingClient
-                        .newBuilder(context)
-                        .setListener(this@GoogleBillingWrapper)
-                        .enablePendingPurchases(
-                            PendingPurchasesParams.newBuilder().enableOneTimeProducts().build(),
-                        ).build()
+                billingClient = createBillingClient(this)
             }
 
             reconnectionAlreadyScheduled = false
@@ -258,9 +265,14 @@ class GoogleBillingWrapper(
                     }
 
                     override fun onError(error: BillingError) {
-                        // Identify and handle missing products
-                        missingFullProductIds.forEach { fullProductId ->
-                            productsCache[fullProductId] = Either.Failure(error)
+                        // Cache BillingNotAvailable — it's a permanent device state
+                        // that won't resolve, so retrying is wasteful.
+                        // Other billing errors (service unavailable, disconnected, network)
+                        // are transient and should NOT be cached to allow retry.
+                        if (error is BillingError.BillingNotAvailable) {
+                            missingFullProductIds.forEach { fullProductId ->
+                                productsCache[fullProductId] = Either.Failure(error)
+                            }
                         }
                         continuation.resumeWithException(error)
                     }

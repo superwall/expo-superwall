@@ -1316,6 +1316,268 @@ internal class ConfigLogicTest {
         assertEquals("campaign_trigger", filteredTriggers.first().eventName)
     }
 
+    // MARK: - getAllActiveTreatmentPaywallIds with mixed IF_TRUE / ALWAYS / NEVER
+    //
+    // Semantics:
+    //   - ALWAYS  → always preloaded.
+    //   - NEVER   → never preloaded.
+    //   - IF_TRUE → preloaded only when the rule's expression matches. Within a
+    //               campaign, the first IF_TRUE match short-circuits any *other*
+    //               IF_TRUE rules in that campaign (ALWAYS rules are unaffected).
+
+    /**
+     * Returns Match for any rule whose experimentId is in [matchingExperimentIds],
+     * NoMatch otherwise.
+     */
+    private class IfTrueEvaluator(
+        private val matchingExperimentIds: Set<String>,
+    ) : ExpressionEvaluating {
+        override suspend fun evaluateExpression(
+            rule: TriggerRule,
+            eventData: EventData?,
+        ): TriggerRuleOutcome =
+            if (rule.experiment.id in matchingExperimentIds) {
+                TriggerRuleOutcome.match(rule)
+            } else {
+                TriggerRuleOutcome.noMatch(
+                    UnmatchedRule.Source.EXPRESSION,
+                    rule.experiment.id,
+                )
+            }
+    }
+
+    private fun ruleWith(
+        experimentId: String,
+        behavior: TriggerPreloadBehavior,
+        groupId: String = "g",
+    ): TriggerRule =
+        TriggerRule.stub().apply {
+            this.experimentId = experimentId
+            this.experimentGroupId = groupId
+            this.preload.behavior = behavior
+        }
+
+    private fun treatmentVariant(
+        variantId: String,
+        paywallId: String,
+    ): Experiment.Variant =
+        Experiment.Variant(
+            variantId,
+            Experiment.Variant.VariantType.TREATMENT,
+            paywallId,
+        )
+
+    @Test
+    fun test_getAllActiveTreatmentPaywallIds_ifTrueMatch_alongsideAlwaysAndNever() =
+        runTest {
+            // Rules: [IF_TRUE(match), ALWAYS, NEVER]. The matched IF_TRUE and the
+            // ALWAYS both preload; NEVER is skipped.
+            val expIfTrue = "expIfTrue"
+            val pwIfTrue = "pwIfTrue"
+            val expAlways = "expAlways"
+            val pwAlways = "pwAlways"
+            val expNever = "expNever"
+            val pwNever = "pwNever"
+
+            val trigger =
+                Trigger.stub().apply {
+                    rules =
+                        listOf(
+                            ruleWith(expIfTrue, TriggerPreloadBehavior.IF_TRUE),
+                            ruleWith(expAlways, TriggerPreloadBehavior.ALWAYS),
+                            ruleWith(expNever, TriggerPreloadBehavior.NEVER),
+                        )
+                }
+
+            val ids =
+                ConfigLogic.getAllActiveTreatmentPaywallIds(
+                    triggers = setOf(trigger),
+                    confirmedAssignments =
+                        mapOf(
+                            expIfTrue to treatmentVariant("v1", pwIfTrue),
+                            expAlways to treatmentVariant("v2", pwAlways),
+                            expNever to treatmentVariant("v3", pwNever),
+                        ),
+                    unconfirmedAssignments = emptyMap(),
+                    expressionEvaluator = IfTrueEvaluator(setOf(expIfTrue)),
+                )
+
+            assertEquals(setOf(pwIfTrue, pwAlways), ids)
+        }
+
+    @Test
+    fun test_getAllActiveTreatmentPaywallIds_firstIfTrueMatch_skipsLaterIfTrue() =
+        runTest {
+            // Rules: [IF_TRUE(match), IF_TRUE(would-also-match), ALWAYS]. Only the
+            // first IF_TRUE match should preload — the later IF_TRUE is skipped
+            // — but the ALWAYS rule still preloads independently.
+            val expIfTrue1 = "expIfTrue1"
+            val pwIfTrue1 = "pwIfTrue1"
+            val expIfTrue2 = "expIfTrue2"
+            val pwIfTrue2 = "pwIfTrue2"
+            val expAlways = "expAlways"
+            val pwAlways = "pwAlways"
+
+            val trigger =
+                Trigger.stub().apply {
+                    rules =
+                        listOf(
+                            ruleWith(expIfTrue1, TriggerPreloadBehavior.IF_TRUE),
+                            ruleWith(expIfTrue2, TriggerPreloadBehavior.IF_TRUE),
+                            ruleWith(expAlways, TriggerPreloadBehavior.ALWAYS),
+                        )
+                }
+
+            val ids =
+                ConfigLogic.getAllActiveTreatmentPaywallIds(
+                    triggers = setOf(trigger),
+                    confirmedAssignments =
+                        mapOf(
+                            expIfTrue1 to treatmentVariant("v1", pwIfTrue1),
+                            expIfTrue2 to treatmentVariant("v2", pwIfTrue2),
+                            expAlways to treatmentVariant("v3", pwAlways),
+                        ),
+                    unconfirmedAssignments = emptyMap(),
+                    // Both IF_TRUE rules would match in isolation; the first wins.
+                    expressionEvaluator = IfTrueEvaluator(setOf(expIfTrue1, expIfTrue2)),
+                )
+
+            assertEquals(setOf(pwIfTrue1, pwAlways), ids)
+        }
+
+    @Test
+    fun test_getAllActiveTreatmentPaywallIds_alwaysFirst_ifTrueNoMatch_neverLast() =
+        runTest {
+            // Rules: [ALWAYS, IF_TRUE(no match), NEVER]. The ALWAYS rule still
+            // preloads. The IF_TRUE rule skips itself because its expression did
+            // not match. NEVER is always skipped.
+            val expAlways = "expAlways"
+            val pwAlways = "pwAlways"
+            val expIfTrue = "expIfTrue"
+            val pwIfTrue = "pwIfTrue"
+            val expNever = "expNever"
+            val pwNever = "pwNever"
+
+            val trigger =
+                Trigger.stub().apply {
+                    rules =
+                        listOf(
+                            ruleWith(expAlways, TriggerPreloadBehavior.ALWAYS),
+                            ruleWith(expIfTrue, TriggerPreloadBehavior.IF_TRUE),
+                            ruleWith(expNever, TriggerPreloadBehavior.NEVER),
+                        )
+                }
+
+            val ids =
+                ConfigLogic.getAllActiveTreatmentPaywallIds(
+                    triggers = setOf(trigger),
+                    confirmedAssignments =
+                        mapOf(
+                            expAlways to treatmentVariant("v1", pwAlways),
+                            expIfTrue to treatmentVariant("v2", pwIfTrue),
+                            expNever to treatmentVariant("v3", pwNever),
+                        ),
+                    unconfirmedAssignments = emptyMap(),
+                    expressionEvaluator = IfTrueEvaluator(matchingExperimentIds = emptySet()),
+                )
+
+            assertEquals(setOf(pwAlways), ids)
+        }
+
+    @Test
+    fun test_getAllActiveTreatmentPaywallIds_sixRuleCombo_onlyFirstIfTrueMatchPlusAlways() =
+        runTest {
+            // Rules: [IF_TRUE(match), IF_TRUE(match), IF_TRUE(no match), ALWAYS,
+            //         IF_TRUE(match), NEVER].
+            //
+            // Among IF_TRUE rules only the first match (IFT1) should preload.
+            // IFT2 and IFT5 are skipped even though they'd individually match —
+            // the campaign already picked IFT1. IFT3 doesn't match anyway.
+            // ALWAYS preloads independently; NEVER is skipped.
+            val expIft1 = "expIft1"
+            val pwIft1 = "pwIft1"
+            val expIft2 = "expIft2"
+            val pwIft2 = "pwIft2"
+            val expIft3 = "expIft3"
+            val pwIft3 = "pwIft3"
+            val expAlways = "expAlways"
+            val pwAlways = "pwAlways"
+            val expIft5 = "expIft5"
+            val pwIft5 = "pwIft5"
+            val expNever = "expNever"
+            val pwNever = "pwNever"
+
+            val trigger =
+                Trigger.stub().apply {
+                    rules =
+                        listOf(
+                            ruleWith(expIft1, TriggerPreloadBehavior.IF_TRUE),
+                            ruleWith(expIft2, TriggerPreloadBehavior.IF_TRUE),
+                            ruleWith(expIft3, TriggerPreloadBehavior.IF_TRUE),
+                            ruleWith(expAlways, TriggerPreloadBehavior.ALWAYS),
+                            ruleWith(expIft5, TriggerPreloadBehavior.IF_TRUE),
+                            ruleWith(expNever, TriggerPreloadBehavior.NEVER),
+                        )
+                }
+
+            val ids =
+                ConfigLogic.getAllActiveTreatmentPaywallIds(
+                    triggers = setOf(trigger),
+                    confirmedAssignments =
+                        mapOf(
+                            expIft1 to treatmentVariant("v1", pwIft1),
+                            expIft2 to treatmentVariant("v2", pwIft2),
+                            expIft3 to treatmentVariant("v3", pwIft3),
+                            expAlways to treatmentVariant("v4", pwAlways),
+                            expIft5 to treatmentVariant("v5", pwIft5),
+                            expNever to treatmentVariant("v6", pwNever),
+                        ),
+                    unconfirmedAssignments = emptyMap(),
+                    // IFT1, IFT2, IFT5 match; IFT3 does not.
+                    expressionEvaluator = IfTrueEvaluator(setOf(expIft1, expIft2, expIft5)),
+                )
+
+            assertEquals(setOf(pwIft1, pwAlways), ids)
+        }
+
+    @Test
+    fun test_getAllActiveTreatmentPaywallIds_neverFirst_ifTrueMatchMiddle_alwaysLast() =
+        runTest {
+            // Rules: [NEVER, IF_TRUE(match), ALWAYS]. NEVER is skipped; the
+            // matched IF_TRUE and the trailing ALWAYS both preload.
+            val expNever = "expNever"
+            val pwNever = "pwNever"
+            val expIfTrue = "expIfTrue"
+            val pwIfTrue = "pwIfTrue"
+            val expAlways = "expAlways"
+            val pwAlways = "pwAlways"
+
+            val trigger =
+                Trigger.stub().apply {
+                    rules =
+                        listOf(
+                            ruleWith(expNever, TriggerPreloadBehavior.NEVER),
+                            ruleWith(expIfTrue, TriggerPreloadBehavior.IF_TRUE),
+                            ruleWith(expAlways, TriggerPreloadBehavior.ALWAYS),
+                        )
+                }
+
+            val ids =
+                ConfigLogic.getAllActiveTreatmentPaywallIds(
+                    triggers = setOf(trigger),
+                    confirmedAssignments =
+                        mapOf(
+                            expNever to treatmentVariant("v1", pwNever),
+                            expIfTrue to treatmentVariant("v2", pwIfTrue),
+                            expAlways to treatmentVariant("v3", pwAlways),
+                        ),
+                    unconfirmedAssignments = emptyMap(),
+                    expressionEvaluator = IfTrueEvaluator(setOf(expIfTrue)),
+                )
+
+            assertEquals(setOf(pwIfTrue, pwAlways), ids)
+        }
+
     @Test
     fun test_filterTriggers_disableNone() {
         val disabled =

@@ -3,6 +3,7 @@ package com.superwall.sdk.network
 import kotlinx.serialization.Serializable
 import java.net.URI
 import java.util.*
+import kotlin.time.Duration
 
 data class URLQueryItem(
     val name: String,
@@ -16,6 +17,7 @@ class NetworkRequestData<Response>(
     var requestId: String = UUID.randomUUID().toString(),
     var isForDebugging: Boolean = false,
     val factory: suspend (isForDebugging: Boolean, requestId: String) -> Map<String, String>,
+    val timeout: Duration?
 ) where Response : @Serializable Any {
     enum class HttpMethod(
         val method: String,
@@ -51,5 +53,6 @@ class NetworkRequestData<Response>(
             requestId = requestId,
             isForDebugging = isForDebugging,
             factory = factory,
+            timeout = timeout
         )
 }

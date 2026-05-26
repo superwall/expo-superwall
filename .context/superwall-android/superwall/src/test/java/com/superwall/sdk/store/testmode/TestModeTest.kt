@@ -28,13 +28,13 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class TestModeManagerTest {
+class TestModeTest {
     private fun makeStorage(): Storage = mockk(relaxed = true)
 
     private fun makeManager(
         storage: Storage = makeStorage(),
         isTestEnvironment: Boolean = false,
-    ): TestModeManager = TestModeManager(storage, isTestEnvironment)
+    ): TestMode = TestMode(storage, isTestEnvironment)
 
     private fun makeConfig(
         bundleIdConfig: String? = null,
@@ -64,7 +64,7 @@ class TestModeManagerTest {
         )
 
     /** Activates test mode via ALWAYS behavior so session data can be written. */
-    private fun activateTestMode(manager: TestModeManager) {
+    private fun activateTestMode(manager: TestMode) {
         manager.evaluateTestMode(
             makeConfig(),
             "com.app",
@@ -78,7 +78,7 @@ class TestModeManagerTest {
 
     @Test
     fun `evaluateTestMode activates for applicationId mismatch`() {
-        Given("a TestModeManager with a config that has a different applicationId") {
+        Given("a TestMode with a config that has a different applicationId") {
             val manager = makeManager()
             val config = makeConfig(bundleIdConfig = "com.expected.app")
 
@@ -98,7 +98,7 @@ class TestModeManagerTest {
 
     @Test
     fun `evaluateTestMode does not activate for matching bundleId`() {
-        Given("a TestModeManager with a config that has the same applicationId") {
+        Given("a TestMode with a config that has the same applicationId") {
             val manager = makeManager()
             val config = makeConfig(bundleIdConfig = "com.myapp")
 
@@ -149,7 +149,7 @@ class TestModeManagerTest {
 
     @Test
     fun `evaluateTestMode activates for userId match`() {
-        Given("a TestModeManager with a config containing a matching userId") {
+        Given("a TestMode with a config containing a matching userId") {
             val manager = makeManager()
             val config =
                 makeConfig(
@@ -174,7 +174,7 @@ class TestModeManagerTest {
 
     @Test
     fun `evaluateTestMode activates for aliasId match`() {
-        Given("a TestModeManager with a config containing a matching aliasId") {
+        Given("a TestMode with a config containing a matching aliasId") {
             val manager = makeManager()
             val config =
                 makeConfig(
@@ -225,7 +225,7 @@ class TestModeManagerTest {
 
     @Test
     fun `evaluateTestMode does not activate when no conditions match`() {
-        Given("a TestModeManager with a config with non-matching users") {
+        Given("a TestMode with a config with non-matching users") {
             val manager = makeManager()
             val config =
                 makeConfig(
@@ -490,7 +490,7 @@ class TestModeManagerTest {
 
     @Test
     fun `shouldShowFreeTrial applies UseDefault correctly`() {
-        Given("a TestModeManager with UseDefault override") {
+        Given("a TestMode with UseDefault override") {
             val manager = makeManager()
             activateTestMode(manager)
             manager.setFreeTrialOverride(FreeTrialOverride.UseDefault)
@@ -504,7 +504,7 @@ class TestModeManagerTest {
 
     @Test
     fun `shouldShowFreeTrial applies ForceAvailable correctly`() {
-        Given("a TestModeManager with ForceAvailable override") {
+        Given("a TestMode with ForceAvailable override") {
             val manager = makeManager()
             activateTestMode(manager)
             manager.setFreeTrialOverride(FreeTrialOverride.ForceAvailable)
@@ -518,7 +518,7 @@ class TestModeManagerTest {
 
     @Test
     fun `shouldShowFreeTrial applies ForceUnavailable correctly`() {
-        Given("a TestModeManager with ForceUnavailable override") {
+        Given("a TestMode with ForceUnavailable override") {
             val manager = makeManager()
             activateTestMode(manager)
             manager.setFreeTrialOverride(FreeTrialOverride.ForceUnavailable)
@@ -532,7 +532,7 @@ class TestModeManagerTest {
 
     @Test
     fun `shouldShowFreeTrial returns default when inactive`() {
-        Given("a TestModeManager that is inactive") {
+        Given("a TestMode that is inactive") {
             val manager = makeManager()
 
             Then("it returns the original value regardless") {
@@ -548,7 +548,7 @@ class TestModeManagerTest {
 
     @Test
     fun `fakePurchase adds entitlement IDs`() {
-        Given("a TestModeManager with active test mode") {
+        Given("a TestMode with active test mode") {
             val storage = makeStorage()
             val manager = makeManager(storage)
             activateTestMode(manager)
@@ -572,7 +572,7 @@ class TestModeManagerTest {
 
     @Test
     fun `fakePurchase accumulates entitlements across calls`() {
-        Given("a TestModeManager with existing entitlements") {
+        Given("a TestMode with existing entitlements") {
             val manager = makeManager()
             activateTestMode(manager)
             manager.fakePurchase(listOf(SuperwallEntitlementRef("premium", null)))
@@ -593,7 +593,7 @@ class TestModeManagerTest {
 
     @Test
     fun `setEntitlements replaces existing entitlements`() {
-        Given("a TestModeManager with existing entitlements") {
+        Given("a TestMode with existing entitlements") {
             val storage = makeStorage()
             val manager = makeManager(storage)
             activateTestMode(manager)
@@ -612,7 +612,7 @@ class TestModeManagerTest {
 
     @Test
     fun `setEntitlements with empty set writes false`() {
-        Given("a TestModeManager with active test mode") {
+        Given("a TestMode with active test mode") {
             val storage = makeStorage()
             val manager = makeManager(storage)
             activateTestMode(manager)
@@ -630,7 +630,7 @@ class TestModeManagerTest {
 
     @Test
     fun `resetEntitlements clears all and writes false`() {
-        Given("a TestModeManager with entitlements") {
+        Given("a TestMode with entitlements") {
             val storage = makeStorage()
             val manager = makeManager(storage)
             activateTestMode(manager)
@@ -653,7 +653,7 @@ class TestModeManagerTest {
 
     @Test
     fun `buildSubscriptionStatus returns Active with entitlements`() {
-        Given("a TestModeManager with entitlements set") {
+        Given("a TestMode with entitlements set") {
             val manager = makeManager()
             activateTestMode(manager)
             manager.setEntitlements(setOf("premium", "pro"))
@@ -674,7 +674,7 @@ class TestModeManagerTest {
 
     @Test
     fun `buildSubscriptionStatus returns Inactive when empty`() {
-        Given("a TestModeManager with no entitlements") {
+        Given("a TestMode with no entitlements") {
             val manager = makeManager()
 
             When("buildSubscriptionStatus is called") {
@@ -693,7 +693,7 @@ class TestModeManagerTest {
 
     @Test
     fun `setProducts stores products`() {
-        Given("a TestModeManager with active test mode") {
+        Given("a TestMode with active test mode") {
             val manager = makeManager()
             activateTestMode(manager)
             val products =
@@ -716,7 +716,7 @@ class TestModeManagerTest {
 
     @Test
     fun `setTestProducts stores test product map`() {
-        Given("a TestModeManager with active test mode") {
+        Given("a TestMode with active test mode") {
             val manager = makeManager()
             activateTestMode(manager)
             val sp = mockk<StoreProduct>(relaxed = true)
@@ -739,7 +739,7 @@ class TestModeManagerTest {
 
     @Test
     fun `allEntitlements aggregates from all products`() {
-        Given("a TestModeManager with products that have entitlements") {
+        Given("a TestMode with products that have entitlements") {
             val manager = makeManager()
             activateTestMode(manager)
             manager.setProducts(
@@ -775,7 +775,7 @@ class TestModeManagerTest {
 
     @Test
     fun `allEntitlements returns empty when no products`() {
-        Given("a TestModeManager with no products") {
+        Given("a TestMode with no products") {
             val manager = makeManager()
 
             Then("allEntitlements returns empty set") {
@@ -786,7 +786,7 @@ class TestModeManagerTest {
 
     @Test
     fun `entitlementsForProduct returns entitlements for given product`() {
-        Given("a TestModeManager with a product that has entitlements") {
+        Given("a TestMode with a product that has entitlements") {
             val manager = makeManager()
             val product =
                 makeSuperwallProduct(
@@ -816,7 +816,7 @@ class TestModeManagerTest {
 
     @Test
     fun `setOverriddenSubscriptionStatus stores and clears status`() {
-        Given("a TestModeManager with active test mode") {
+        Given("a TestMode with active test mode") {
             val manager = makeManager()
             activateTestMode(manager)
 
@@ -845,7 +845,7 @@ class TestModeManagerTest {
 
     @Test
     fun `clearTestModeState resets all fields`() {
-        Given("a TestModeManager with active test mode") {
+        Given("a TestMode with active test mode") {
             val storage = makeStorage()
             val manager = makeManager(storage)
             val config =
@@ -883,7 +883,7 @@ class TestModeManagerTest {
 
     @Test
     fun `state transitions from Inactive to Active and back`() {
-        Given("a fresh TestModeManager") {
+        Given("a fresh TestMode") {
             val manager = makeManager()
 
             Then("initial state is Inactive") {
@@ -924,7 +924,7 @@ class TestModeManagerTest {
 
     @Test
     fun `session data is only accessible when active`() {
-        Given("a fresh TestModeManager") {
+        Given("a fresh TestMode") {
             val manager = makeManager()
 
             Then("session data returns defaults when inactive") {
@@ -960,6 +960,95 @@ class TestModeManagerTest {
             }
         }
     }
+
+    // endregion
+
+    // region activate() — UI flow wiring
+
+    @Test
+    fun `activate refreshes products by calling getSuperwallProducts and filters to Android`() =
+        kotlinx.coroutines.test.runTest {
+            val storage = makeStorage()
+            val androidProduct = makeSuperwallProduct("prod-android")
+            val iosProduct =
+                SuperwallProduct(
+                    identifier = "prod-ios",
+                    platform = SuperwallProductPlatform.IOS,
+                    price = SuperwallProductPrice(amount = 999, currency = "USD"),
+                )
+            val response =
+                com.superwall.sdk.store.testmode.models.SuperwallProductsResponse(
+                    data = listOf(androidProduct, iosProduct),
+                )
+            var getProductsCalls = 0
+            val manager =
+                TestMode(
+                    storage = storage,
+                    isTestEnvironment = false,
+                    getSuperwallProducts = {
+                        getProductsCalls++
+                        com.superwall.sdk.misc.Either.Success(response)
+                    },
+                    // No activity available → activate short-circuits the modal step.
+                    activityProvider = { null },
+                    activityTracker = { null },
+                )
+            activateTestMode(manager)
+
+            // justActivated = false → only refreshes products, never tries the modal.
+            manager.activate(makeConfig(), justActivated = false)
+
+            assertEquals(1, getProductsCalls)
+            assertEquals(
+                "Only Android products should be registered",
+                listOf("prod-android"),
+                manager.products.map { it.identifier },
+            )
+        }
+
+    @Test
+    fun `activate with empty product response leaves the catalog empty`() =
+        kotlinx.coroutines.test.runTest {
+            val storage = makeStorage()
+            val manager =
+                TestMode(
+                    storage = storage,
+                    isTestEnvironment = false,
+                    getSuperwallProducts = {
+                        com.superwall.sdk.misc.Either.Success(
+                            com.superwall.sdk.store.testmode.models.SuperwallProductsResponse(data = emptyList()),
+                        )
+                    },
+                )
+            activateTestMode(manager)
+
+            manager.activate(makeConfig(), justActivated = false)
+
+            assertTrue(manager.products.isEmpty())
+        }
+
+    @Test
+    fun `activate swallows network failure and leaves products unchanged`() =
+        kotlinx.coroutines.test.runTest {
+            val storage = makeStorage()
+            val manager =
+                TestMode(
+                    storage = storage,
+                    isTestEnvironment = false,
+                    getSuperwallProducts = {
+                        com.superwall.sdk.misc.Either.Failure(
+                            com.superwall.sdk.network.NetworkError.Unknown(),
+                        )
+                    },
+                )
+            activateTestMode(manager)
+            // Seed a product so we can verify the failure path leaves it untouched.
+            manager.setProducts(listOf(makeSuperwallProduct("prev")))
+
+            manager.activate(makeConfig(), justActivated = false)
+
+            assertEquals(listOf("prev"), manager.products.map { it.identifier })
+        }
 
     // endregion
 }

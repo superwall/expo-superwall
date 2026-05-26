@@ -5,6 +5,7 @@ import Then
 import When
 import com.superwall.sdk.misc.Either
 import com.superwall.sdk.misc.IOScope
+import com.superwall.sdk.models.customer.CustomerInfo
 import com.superwall.sdk.models.events.EventData
 import com.superwall.sdk.models.paywall.Paywall
 import com.superwall.sdk.models.paywall.PaywallIdentifier
@@ -86,6 +87,7 @@ class PaywallRequestManagerTest {
                 coEvery { factory.makeDeviceInfo() } returns DeviceInfo("123", "en_US")
 
                 coEvery { factory.activePaywallId() } returns null
+                coEvery { factory.currentCustomerInfo() } returns CustomerInfo.empty()
 
                 When("getting the paywall") {
                     val result = paywallRequestManager.getPaywall(request)
@@ -130,6 +132,7 @@ class PaywallRequestManagerTest {
                 coEvery { factory.makeDeviceInfo() } returns DeviceInfo("123", "en_US")
 
                 coEvery { factory.activePaywallId() } returns null
+                coEvery { factory.currentCustomerInfo() } returns CustomerInfo.empty()
 
                 // Make first request to cache the paywall
                 paywallRequestManager.getPaywall(request)
@@ -177,6 +180,7 @@ class PaywallRequestManagerTest {
                 coEvery { factory.makeDeviceInfo() } returns DeviceInfo("123", "en_US")
 
                 coEvery { factory.activePaywallId() } returns null
+                coEvery { factory.currentCustomerInfo() } returns CustomerInfo.empty()
 
                 When("making multiple concurrent requests") {
                     val results =
@@ -203,6 +207,7 @@ class PaywallRequestManagerTest {
     fun test_preload_active_paywall() =
         runTest {
             manager(this@runTest.coroutineContext)
+            every { factory.currentCustomerInfo() } returns CustomerInfo.empty()
             Given("a preload request for an active paywall") {
                 val paywallId = "test_paywall"
                 val originalExperiment =

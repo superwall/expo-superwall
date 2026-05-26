@@ -2,7 +2,10 @@ package com.superwall.superapp
 
 import android.app.ComponentCaller
 import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.os.Bundle
+import android.view.GestureDetector
+import android.view.MotionEvent
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import com.superwall.sdk.Superwall
@@ -16,10 +19,31 @@ class MainActivity : AppCompatActivity() {
         (applicationContext as MainApplication).events
     }
 
+    private var gestureDetector: GestureDetector? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         (application as MainApplication).activity = WeakReference(this)
+
+        // Double-tap anywhere to open timeline viewer (debug only)
+        val isDebug = applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
+        if (isDebug) {
+            gestureDetector = GestureDetector(
+                this,
+                object : GestureDetector.SimpleOnGestureListener() {
+                    override fun onDoubleTap(e: MotionEvent): Boolean {
+                        startActivity(
+                            Intent(
+                                this@MainActivity,
+                                com.superwall.superapp.test.TimelineViewerActivity::class.java,
+                            ),
+                        )
+                        return true
+                    }
+                },
+            )
+        }
 
         // Setup deep linking handling
         respondToDeepLinks()
@@ -133,6 +157,11 @@ class MainActivity : AppCompatActivity() {
         return true
     }
      */
+
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        gestureDetector?.onTouchEvent(ev)
+        return super.dispatchTouchEvent(ev)
+    }
 
     //region Deep Links
 

@@ -3,12 +3,15 @@ package com.superwall.sdk.models.customer
 import com.superwall.sdk.models.entitlements.Entitlement
 import com.superwall.sdk.models.entitlements.SubscriptionStatus
 import com.superwall.sdk.models.product.Store
+import com.superwall.sdk.network.JsonFactory
 import com.superwall.sdk.storage.LatestDeviceCustomerInfo
 import com.superwall.sdk.storage.LatestRedemptionResponse
 import com.superwall.sdk.storage.Storage
+import com.superwall.sdk.storage.core_data.convertFromJsonElement
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kotlinx.serialization.json.jsonObject
 
 /**
  * A class that contains the latest subscription and entitlement info about the customer.
@@ -45,6 +48,19 @@ data class CustomerInfo(
                 .filter { it.isActive }
                 .map { it.productId }
                 .toSet()
+
+    /**
+     * Serializes the full CustomerInfo into a params map suitable for templates and analytics.
+     *
+     * Returns an empty map when [isPlaceholder] is true — callers should not send partial data
+     * before CustomerInfo has loaded.
+     */
+    fun toParams(): Map<String, Any?> {
+        if (isPlaceholder) return emptyMap()
+        val obj = JsonFactory.JSON.encodeToJsonElement(serializer(), this).jsonObject
+        return obj
+            .mapValues { (_, value) -> value.convertFromJsonElement() }
+    }
 
     override fun toString(): String =
         buildString {
@@ -127,14 +143,16 @@ data class CustomerInfo(
                 when (subscriptionStatus) {
                     is SubscriptionStatus.Active ->
                         subscriptionStatus.entitlements.filter { it.store == Store.PLAY_STORE }
+
                     SubscriptionStatus.Inactive,
                     SubscriptionStatus.Unknown,
-                    -> emptyList()
+                        -> emptyList()
                 }
 
             // Merge: active from external controller + all web + inactive device
             // This gives us complete history while respecting external controller as source of truth
-            val allEntitlements = externalEntitlements + webCustomerInfo.entitlements + inactiveDeviceEntitlements
+            val allEntitlements =
+                externalEntitlements + webCustomerInfo.entitlements + inactiveDeviceEntitlements
             val finalEntitlements = mergeEntitlementsPrioritized(allEntitlements).sortedBy { it.id }
 
             return CustomerInfo(

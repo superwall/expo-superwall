@@ -19,6 +19,7 @@ internal open class DefaultWebviewClient(
     private val forUrl: String = "",
     private val ioScope: CoroutineScope,
     private val onWebViewCrash: (view: WebView, RenderProcessGoneDetail) -> Unit = { v, d -> },
+    private val localResourceHandler: LocalResourceHandler? = null,
 ) : WebViewClient() {
     val webviewClientEvents: MutableSharedFlow<WebviewClientEvent> =
         MutableSharedFlow(extraBufferCapacity = 10, replay = 2)
@@ -27,6 +28,16 @@ internal open class DefaultWebviewClient(
         view: WebView?,
         request: WebResourceRequest?,
     ): Boolean = true
+
+    override fun shouldInterceptRequest(
+        view: WebView?,
+        request: WebResourceRequest?,
+    ): WebResourceResponse? {
+        val url = request?.url ?: return super.shouldInterceptRequest(view, request)
+        val handler = localResourceHandler ?: return super.shouldInterceptRequest(view, request)
+        if (!handler.isLocalResourceUrl(url)) return super.shouldInterceptRequest(view, request)
+        return handler.handleRequest(url)
+    }
 
     override fun onPageStarted(
         view: WebView?,

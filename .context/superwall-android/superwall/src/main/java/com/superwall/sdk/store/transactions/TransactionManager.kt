@@ -47,7 +47,7 @@ import com.superwall.sdk.store.StoreManager
 import com.superwall.sdk.store.abstractions.product.RawStoreProduct
 import com.superwall.sdk.store.abstractions.product.StoreProduct
 import com.superwall.sdk.store.abstractions.transactions.StoreTransaction
-import com.superwall.sdk.store.testmode.TestModeManager
+import com.superwall.sdk.store.testmode.TestMode
 import com.superwall.sdk.store.testmode.TestModeTransactionHandler
 import com.superwall.sdk.web.openRestoreOnWeb
 import kotlinx.coroutines.flow.asSharedFlow
@@ -79,7 +79,7 @@ class TransactionManager(
     private val refreshReceipt: () -> Unit,
     private val updateState: (cacheKey: String, update: PaywallViewState.Updates) -> Unit,
     private val notifyOfTransactionComplete: suspend (paywallCacheKey: String, trialEndDate: Long?, productId: String) -> Unit,
-    private val testModeManager: TestModeManager? = null,
+    private val testMode: TestMode? = null,
     private val testModeTransactionHandler: TestModeTransactionHandler? = null,
     private val setSubscriptionStatus: ((SubscriptionStatus) -> Unit)? = null,
 ) {
@@ -299,13 +299,13 @@ class TransactionManager(
             }
 
         // Test mode intercept: simulate purchase without real billing
-        if (testModeManager?.isTestMode == true && testModeTransactionHandler != null) {
+        if (testMode?.isTestMode == true && testModeTransactionHandler != null) {
             prepareToPurchase(product, purchaseSource)
             val result = testModeTransactionHandler.handlePurchase(product, purchaseSource)
             when (result) {
                 is PurchaseResult.Purchased -> {
                     // In test mode, set subscription status directly (no real receipt to verify)
-                    val status = testModeManager.buildSubscriptionStatus()
+                    val status = testMode.buildSubscriptionStatus()
                     setSubscriptionStatus?.invoke(status)
                     trackTransactionDidSucceed(null, product, purchaseSource, product.hasFreeTrial)
                     if (shouldDismiss && purchaseSource is PurchaseSource.Internal) {
@@ -831,10 +831,10 @@ class TransactionManager(
         log(message = "Attempting Restore")
 
         // Test mode intercept: simulate restore without real billing
-        if (testModeManager?.isTestMode == true && testModeTransactionHandler != null) {
+        if (testMode?.isTestMode == true && testModeTransactionHandler != null) {
             val result = testModeTransactionHandler.handleRestore()
             if (result is RestorationResult.Restored) {
-                val status = testModeManager.buildSubscriptionStatus()
+                val status = testMode.buildSubscriptionStatus()
                 setSubscriptionStatus?.invoke(status)
             }
             return result

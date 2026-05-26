@@ -1,38 +1,25 @@
 package com.superwall.sdk.store.abstractions.product.receipt
 
-import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 
-@Serializable(with = LatestSubscriptionStateSerializer::class)
+@Serializable
 enum class LatestSubscriptionState {
+    @SerialName("grace_period")
     GRACE_PERIOD,
+
+    @SerialName("expired")
     EXPIRED,
+
+    @SerialName("subscribed")
     SUBSCRIBED,
+
+    @SerialName("billing_retry")
     BILLING_RETRY,
+
+    @SerialName("revoked")
     REVOKED,
+
+    @SerialName("unknown")
     UNKNOWN,
-}
-
-object LatestSubscriptionStateSerializer : KSerializer<LatestSubscriptionState> {
-    override val descriptor: SerialDescriptor =
-        PrimitiveSerialDescriptor("LatestSubscriptionState", PrimitiveKind.STRING)
-
-    override fun serialize(
-        encoder: Encoder,
-        value: LatestSubscriptionState,
-    ) {
-        encoder.encodeString(value.name)
-    }
-
-    override fun deserialize(decoder: Decoder): LatestSubscriptionState {
-        val value = decoder.decodeString()
-        return LatestSubscriptionState.entries.find {
-            it.name.equals(value, ignoreCase = true)
-        } ?: LatestSubscriptionState.UNKNOWN
-    }
 }

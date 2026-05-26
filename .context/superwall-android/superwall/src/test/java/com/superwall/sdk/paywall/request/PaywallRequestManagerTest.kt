@@ -3,6 +3,7 @@ package com.superwall.sdk.paywall.request
 import com.superwall.sdk.analytics.internal.trackable.TrackableSuperwallEvent
 import com.superwall.sdk.misc.Either
 import com.superwall.sdk.misc.IOScope
+import com.superwall.sdk.models.customer.CustomerInfo
 import com.superwall.sdk.models.paywall.Paywall
 import com.superwall.sdk.models.product.ProductItem
 import com.superwall.sdk.models.triggers.Experiment
@@ -52,6 +53,7 @@ class PaywallRequestManagerTest {
                 every { makeDeviceInfo() } returns deviceInfo
                 every { makeStaticPaywall(any(), any()) } returns null
                 every { activePaywallId() } returns null
+                every { currentCustomerInfo() } returns CustomerInfo.empty()
             }
 
         ioScope = IOScope(Dispatchers.Unconfined)
@@ -410,6 +412,7 @@ class PaywallRequestManagerTest {
                 mockk<ProductItem> {
                     every { name } returns "primary"
                     every { fullProductId } returns "com.example.product1"
+                    every { type } returns mockk<ProductItem.StoreProductType.PlayStore>(relaxed = true)
                 }
             val storeProduct = mockk<StoreProduct>(relaxed = true)
 
@@ -424,6 +427,231 @@ class PaywallRequestManagerTest {
 
             assertNotNull(result)
             coVerify { storeManager.getProducts(any(), paywall, request) }
+        }
+
+    @Test
+    fun test_cachedPaywall_retriesProducts_whenProductsLoadFailed() =
+        runTest {
+            val loadingInfo =
+                mockk<Paywall.LoadingInfo>(relaxed = true) {
+                    every { failAt } returns java.util.Date()
+                }
+            val paywall =
+                mockk<Paywall>(relaxed = true) {
+                    every { identifier } returns "test_paywall"
+                    every { responseLoadingInfo } returns
+                        mockk(relaxed = true) {
+                            every { startAt } returns null
+                            every { endAt } returns null
+                        }
+                    every { productsLoadingInfo } returns loadingInfo
+                    every { productItems } returns emptyList()
+                    every { productIds } returns listOf("product1:basePlan1:sw-auto")
+                    every { getInfo(any()) } returns mockk<PaywallInfo>()
+                }
+            val request =
+                mockk<PaywallRequest> {
+                    every { responseIdentifiers } returns ResponseIdentifiers(paywallId = "test_paywall")
+                    every { eventData } returns null
+                    every { overrides } returns PaywallRequest.Overrides(products = null, isFreeTrial = null)
+                    every { isDebuggerLaunched } returns false
+                    every { presentationSourceType } returns null
+                }
+
+            // First call: products fail (empty productsByFullId)
+            coEvery { network.getPaywall(any(), any()) } returns Either.Success(paywall)
+            coEvery { storeManager.getProducts(any(), any(), any()) } returns
+                mockk {
+                    every { productItems } returns emptyList()
+                    every { productsByFullId } returns emptyMap()
+                    every { this@mockk.paywall } returns null
+                }
+
+            requestManager.getPaywall(request)
+
+            // Second call should hit cache and retry addProducts because failAt is set
+            requestManager.getPaywall(request)
+
+            // Network only called once (cached), but storeManager.getProducts called twice (initial + retry)
+            coVerify(exactly = 1) { network.getPaywall(any(), any()) }
+            coVerify(exactly = 2) { storeManager.getProducts(any(), any(), any()) }
+        }
+
+    @Test
+    fun test_cachedPaywall_skipsRetry_whenProductsLoadSucceeded() =
+        runTest {
+            val paywall =
+                mockk<Paywall>(relaxed = true) {
+                    every { identifier } returns "test_paywall"
+                    every { responseLoadingInfo } returns
+                        mockk(relaxed = true) {
+                            every { startAt } returns null
+                            every { endAt } returns null
+                        }
+                    every { productsLoadingInfo } returns
+                        mockk(relaxed = true) {
+                            every { failAt } returns null
+                        }
+                    every { productItems } returns emptyList()
+                    every { productIds } returns listOf("product1:basePlan1:sw-auto")
+                    every { getInfo(any()) } returns mockk<PaywallInfo>()
+                }
+            val request =
+                mockk<PaywallRequest> {
+                    every { responseIdentifiers } returns ResponseIdentifiers(paywallId = "test_paywall")
+                    every { eventData } returns null
+                    every { overrides } returns PaywallRequest.Overrides(products = null, isFreeTrial = null)
+                    every { isDebuggerLaunched } returns false
+                    every { presentationSourceType } returns null
+                }
+
+            coEvery { network.getPaywall(any(), any()) } returns Either.Success(paywall)
+            coEvery { storeManager.getProducts(any(), any(), any()) } returns
+                mockk {
+                    every { productItems } returns emptyList()
+                    every { productsByFullId } returns mapOf("product1:basePlan1:sw-auto" to mockk())
+                    every { this@mockk.paywall } returns null
+                }
+
+            // First call populates cache with products
+            requestManager.getPaywall(request)
+            // Second call should use cache WITHOUT retrying products
+            requestManager.getPaywall(request)
+
+            coVerify(exactly = 1) { network.getPaywall(any(), any()) }
+            // Only called once during initial fetch, not on cache hit
+            coVerify(exactly = 1) { storeManager.getProducts(any(), any(), any()) }
+        }
+
+    @Test
+    fun test_preloadFailure_thenPresentationRetries() =
+        runTest {
+            val loadingInfo =
+                mockk<Paywall.LoadingInfo>(relaxed = true) {
+                    every { failAt } returns java.util.Date()
+                }
+            val paywall =
+                mockk<Paywall>(relaxed = true) {
+                    every { identifier } returns "test_paywall"
+                    every { responseLoadingInfo } returns
+                        mockk(relaxed = true) {
+                            every { startAt } returns null
+                            every { endAt } returns null
+                        }
+                    every { productsLoadingInfo } returns loadingInfo
+                    every { productItems } returns emptyList()
+                    every { productIds } returns listOf("product1:basePlan1:sw-auto")
+                    every { getInfo(any()) } returns mockk<PaywallInfo>()
+                }
+
+            val preloadRequest =
+                mockk<PaywallRequest> {
+                    every { responseIdentifiers } returns ResponseIdentifiers(paywallId = "test_paywall")
+                    every { eventData } returns null
+                    every { overrides } returns PaywallRequest.Overrides(products = null, isFreeTrial = null)
+                    every { isDebuggerLaunched } returns false
+                    every { presentationSourceType } returns null
+                }
+
+            coEvery { network.getPaywall(any(), any()) } returns Either.Success(paywall)
+            // Preload: products fail
+            coEvery { storeManager.getProducts(any(), any(), any()) } returns
+                mockk {
+                    every { productItems } returns emptyList()
+                    every { productsByFullId } returns emptyMap()
+                    every { this@mockk.paywall } returns null
+                }
+
+            // Preload call
+            requestManager.getPaywall(preloadRequest, isPreloading = true)
+
+            // Presentation call (same paywallId, isPreloading=false) should retry products
+            val presentRequest =
+                mockk<PaywallRequest> {
+                    every { responseIdentifiers } returns ResponseIdentifiers(paywallId = "test_paywall")
+                    every { eventData } returns null
+                    every { overrides } returns PaywallRequest.Overrides(products = null, isFreeTrial = null)
+                    every { isDebuggerLaunched } returns false
+                    every { presentationSourceType } returns null
+                }
+
+            requestManager.getPaywall(presentRequest, isPreloading = false)
+
+            // Network called once (preload), cache hit on presentation
+            coVerify(exactly = 1) { network.getPaywall(any(), any()) }
+            // Products fetched twice: preload (fail) + presentation (retry)
+            coVerify(exactly = 2) { storeManager.getProducts(any(), any(), any()) }
+        }
+
+    @Test
+    fun test_cachedPaywall_transientRetryFailure_preservesFailAt() =
+        runTest {
+            // Use a real LoadingInfo so we can observe failAt mutations
+            val loadingInfo = Paywall.LoadingInfo(failAt = java.util.Date())
+            val paywall =
+                mockk<Paywall>(relaxed = true) {
+                    every { identifier } returns "test_paywall"
+                    every { responseLoadingInfo } returns
+                        mockk(relaxed = true) {
+                            every { startAt } returns null
+                            every { endAt } returns null
+                        }
+                    every { productsLoadingInfo } returns loadingInfo
+                    every { productItems } returns emptyList()
+                    every { productIds } returns listOf("product1:basePlan1:sw-auto")
+                    every { getInfo(any()) } returns mockk<PaywallInfo>()
+                }
+            val request =
+                mockk<PaywallRequest> {
+                    every { responseIdentifiers } returns ResponseIdentifiers(paywallId = "test_paywall")
+                    every { eventData } returns null
+                    every { overrides } returns PaywallRequest.Overrides(products = null, isFreeTrial = null)
+                    every { isDebuggerLaunched } returns false
+                    every { presentationSourceType } returns null
+                }
+
+            val emptyProductsResponse =
+                mockk<com.superwall.sdk.store.GetProductsResponse> {
+                    every { productItems } returns emptyList()
+                    every { productsByFullId } returns emptyMap()
+                    every { this@mockk.paywall } returns null
+                }
+
+            coEvery { network.getPaywall(any(), any()) } returns Either.Success(paywall)
+
+            // First call: initial load. StoreManager sets failAt (simulated via loadingInfo already having failAt set).
+            coEvery { storeManager.getProducts(any(), any(), any()) } returns emptyProductsResponse
+
+            requestManager.getPaywall(request)
+
+            // Now simulate the retry where StoreManager hits another transient error
+            // and re-sets failAt on the paywall during getProducts
+            coEvery { storeManager.getProducts(any(), any(), any()) } answers {
+                // Simulate StoreManager setting failAt on transient error
+                loadingInfo.failAt = java.util.Date()
+                emptyProductsResponse
+            }
+
+            // Second call hits cache, sees failAt != null, retries products
+            val result = requestManager.getPaywall(request)
+
+            assertTrue(result is Either.Success)
+            // failAt should NOT have been cleared since the retry also failed
+            assertNotNull(
+                "failAt should remain set after a transient retry failure",
+                loadingInfo.failAt,
+            )
+
+            // Third call should still retry products (failAt is still set)
+            var thirdCallRetried = false
+            coEvery { storeManager.getProducts(any(), any(), any()) } answers {
+                thirdCallRetried = true
+                // This time products succeed — don't set failAt
+                emptyProductsResponse
+            }
+
+            requestManager.getPaywall(request)
+            assertTrue("Third call should still retry since failAt was preserved", thirdCallRetried)
         }
 
     @Test

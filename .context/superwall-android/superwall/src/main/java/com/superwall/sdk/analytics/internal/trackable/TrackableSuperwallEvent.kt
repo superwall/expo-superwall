@@ -1,6 +1,7 @@
 package com.superwall.sdk.analytics.internal.trackable
 
 import com.superwall.sdk.analytics.superwall.SuperwallEvent
+import com.superwall.sdk.paywall.view.webview.messaging.PageViewData
 import com.superwall.sdk.analytics.superwall.TransactionProduct
 import com.superwall.sdk.config.models.Survey
 import com.superwall.sdk.config.models.SurveyOption
@@ -492,6 +493,27 @@ sealed class InternalSuperwallEvent(
             get() {
                 return paywallInfo.audienceFilterParams()
             }
+    }
+
+    class PaywallPageView(
+        val paywallInfo: PaywallInfo,
+        val data: PageViewData,
+    ) : InternalSuperwallEvent(SuperwallEvent.PaywallPageView(paywallInfo, data)) {
+        override val audienceFilterParams: Map<String, Any>
+            get() = paywallInfo.audienceFilterParams()
+
+        override suspend fun getSuperwallParameters(): HashMap<String, Any> {
+            val params = HashMap(paywallInfo.eventParams())
+            params["page_node_id"] = data.pageNodeId
+            params["flow_position"] = data.flowPosition
+            params["page_name"] = data.pageName
+            params["navigation_node_id"] = data.navigationNodeId
+            params["navigation_type"] = data.navigationType
+            data.previousPageNodeId?.let { params["previous_page_node_id"] = it }
+            data.previousFlowPosition?.let { params["previous_flow_position"] = it }
+            data.timeOnPreviousPageMs?.let { params["time_on_previous_page_ms"] = it }
+            return params
+        }
     }
 
     class Transaction(

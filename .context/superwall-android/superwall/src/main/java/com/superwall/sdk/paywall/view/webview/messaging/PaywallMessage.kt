@@ -11,6 +11,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.int
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -127,6 +128,10 @@ sealed class PaywallMessage {
         val name: String,
         val behavior: CustomCallbackBehavior,
         val variables: Map<String, Any>?,
+    ) : PaywallMessage()
+
+    data class PageView(
+        val data: PageViewData,
     ) : PaywallMessage()
 
     data class HapticFeedback(
@@ -255,6 +260,20 @@ private fun parsePaywallMessage(json: JsonObject): PaywallMessage {
                 requestId = requestId,
             )
         }
+
+        "page_view" ->
+            PaywallMessage.PageView(
+                PageViewData(
+                    pageNodeId = json["page_node_id"]!!.jsonPrimitive.content,
+                    flowPosition = json["flow_position"]!!.jsonPrimitive.int,
+                    pageName = json["page_name"]!!.jsonPrimitive.content,
+                    navigationNodeId = json["navigation_node_id"]!!.jsonPrimitive.content,
+                    previousPageNodeId = json["previous_page_node_id"]?.jsonPrimitive?.contentOrNull,
+                    previousFlowPosition = json["previous_flow_position"]?.jsonPrimitive?.intOrNull,
+                    navigationType = json["type"]!!.jsonPrimitive.content,
+                    timeOnPreviousPageMs = json["time_on_previous_page_ms"]?.jsonPrimitive?.intOrNull,
+                ),
+            )
 
         "haptic_feedback" -> {
             val style =
