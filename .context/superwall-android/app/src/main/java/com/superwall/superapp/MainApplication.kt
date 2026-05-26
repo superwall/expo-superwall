@@ -17,6 +17,8 @@ import com.superwall.sdk.logger.LogScope
 import com.superwall.sdk.models.entitlements.SubscriptionStatus
 import com.superwall.sdk.paywall.presentation.register
 import com.superwall.superapp.purchase.RevenueCatPurchaseController
+import com.superwall.superapp.test.EventTimeline
+import com.superwall.superapp.test.TimelineStore
 import kotlinx.coroutines.flow.MutableSharedFlow
 import java.lang.ref.WeakReference
 
@@ -70,6 +72,7 @@ class MainApplication :
     }
 
     val events = MutableSharedFlow<SuperwallEventInfo>()
+    val liveTimeline = EventTimeline().also { TimelineStore.register("Live", it) }
 
     fun configureWithAutomaticInitialization() {
         Superwall.configure(
@@ -158,6 +161,7 @@ class MainApplication :
                 "\tEvent name:" + eventInfo.event.rawName + "" +
                 ",\n\tParams:" + eventInfo.params + "\n",
         )
+        liveTimeline.record(eventInfo)
     }
 
     override fun subscriptionStatusDidChange(

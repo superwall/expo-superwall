@@ -15,6 +15,7 @@ import com.superwall.sdk.misc.map
 import com.superwall.sdk.misc.mapError
 import com.superwall.sdk.misc.onError
 import com.superwall.sdk.misc.then
+import com.superwall.sdk.models.customer.CustomerInfo
 import com.superwall.sdk.models.events.EventData
 import com.superwall.sdk.models.paywall.Paywall
 import com.superwall.sdk.network.Network
@@ -36,6 +37,8 @@ interface PaywallRequestManagerDepFactory :
     DeviceInfoFactory,
     ConfigManagerFactory {
     fun activePaywallId(): String?
+
+    fun currentCustomerInfo(): CustomerInfo
 }
 
 class PaywallRequestManager(
@@ -81,6 +84,25 @@ class PaywallRequestManager(
                     !request.isDebuggerLaunched
                 ) {
                     if (!(isPreloading && paywall.identifier == factory.activePaywallId())) {
+                        // If products failed to load previously (e.g. billing was unavailable
+                        // during preload), retry loading them now.
+                        // Synchronize to avoid TOCTOU race: two concurrent requests
+                        // both observing failAt != null and triggering duplicate addProducts.
+                        val shouldRetry =
+                            synchronized(paywall.productsLoadingInfo) {
+                                if (paywall.productsLoadingInfo.failAt != null && paywall.productIds.isNotEmpty()) {
+                                    paywall.productsLoadingInfo.failAt = null
+                                    true
+                                } else {
+                                    false
+                                }
+                            }
+                        if (shouldRetry) {
+                            paywall = addProducts(paywall, request)
+                            if (paywall.productsLoadingInfo.failAt == null) {
+                                paywallsByHash[requestHash] = paywall
+                            }
+                        }
                         return@withContext updatePaywall(paywall, request)
                     } else {
                         return@withContext paywall
@@ -323,6 +345,8 @@ class PaywallRequestManager(
                     productItems = result.productItems,
                     productsByFullId = result.productsByFullId,
                     isFreeTrialAvailableOverride = request.overrides.isFreeTrial,
+                    customerInfo = factory.currentCustomerInfo(),
+                    introOfferEligibility = paywall.introOfferEligibility,
                 )
             paywall.productVariables = outcome.productVariables
             paywall.isFreeTrialAvailable = outcome.isFreeTrialAvailable

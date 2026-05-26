@@ -20,6 +20,8 @@ import com.superwall.sdk.analytics.superwall.SuperwallEvent
 import com.superwall.sdk.config.models.ConfigurationStatus
 import com.superwall.sdk.paywall.view.ShimmerView
 import com.superwall.superapp.MainActivity
+import com.superwall.superapp.test.EventTimeline
+import com.superwall.superapp.test.TimelineStore
 import com.superwall.superapp.test.UITestInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -94,6 +96,7 @@ fun Dropshots.screenshotFlow(
     val flow = ScreenshotTestFlow(testInfo).apply(flow)
     val scenario = ActivityScenario.launch(MainActivity::class.java)
     val testCase = testInfo
+
     println("-----------")
     println("Executing test case: ${testCase.number}")
     println("Description:\n ${testCase.description}")
@@ -129,6 +132,8 @@ fun Dropshots.screenshotFlow(
             throw e
         } finally {
             scope.cancel()
+            writeTimelineToFile(testCase)
+            TimelineStore.remove("Test #${testCase.number}")
         }
     }
     closeActivity()
@@ -284,3 +289,34 @@ suspend fun CoroutineScope.delayFor(duration: Duration) =
     async(Dispatchers.IO) {
         delay(duration)
     }.await()
+
+// --- EventTimeline extensions ---
+
+/** Access the timeline for this test info. */
+val UITestInfo.eventTimeline: EventTimeline get() = timeline
+
+/** Assert that the duration from timeline start to event T is under the given limit. */
+inline fun <reified T : SuperwallEvent> EventTimeline.assertDurationToUnder(limit: Duration) {
+    val actual = durationTo<T>()
+        ?: error("Event ${T::class.simpleName} was never recorded")
+    assert(actual <= limit) {
+        "Expected ${T::class.simpleName} within $limit but took $actual"
+    }
+}
+
+/** Assert that the duration between events A and B is under the given limit. */
+inline fun <reified A : SuperwallEvent, reified B : SuperwallEvent> EventTimeline.assertDurationBetweenUnder(limit: Duration) {
+    val actual = durationBetween<A, B>()
+        ?: error("One or both events (${A::class.simpleName}, ${B::class.simpleName}) were never recorded")
+    assert(actual <= limit) {
+        "Expected ${A::class.simpleName} -> ${B::class.simpleName} within $limit but took $actual"
+    }
+}
+
+/** Print a human-readable summary of all captured events to logcat. */
+fun EventTimeline.printSummary(tag: String = "EventTimeline") {
+    allEvents().forEachIndexed { i, event ->
+        Log.i(tag, "#$i [${event.elapsed}] ${event.eventName} (${event.eventType}) params=${event.params}")
+    }
+    Log.i(tag, "Total duration: ${totalDuration()}")
+}

@@ -15,6 +15,7 @@ import com.superwall.sdk.models.paywall.Paywall
 import com.superwall.sdk.models.product.ProductVariable
 import com.superwall.sdk.paywall.view.PaywallViewState
 import com.superwall.sdk.paywall.view.delegate.PaywallLoadingState
+import com.superwall.sdk.paywall.view.webview.messaging.PageViewData
 import com.superwall.sdk.paywall.view.webview.messaging.PaywallMessage
 import com.superwall.sdk.paywall.view.webview.messaging.PaywallMessageHandler
 import com.superwall.sdk.paywall.view.webview.messaging.PaywallMessageHandlerDelegate
@@ -644,4 +645,173 @@ class PaywallMessageHandlerTest {
             }
         }
     }
+
+    @Test
+    fun parsePageView_allFields() =
+        runTest {
+            Given("a wrapped message containing a page_view event with all fields") {
+                val json =
+                    """
+                {
+                    "version": 1,
+                    "payload": {
+                        "events": [
+                            {
+                                "event_name": "page_view",
+                                "page_node_id": "node-123",
+                                "flow_position": 2,
+                                "page_name": "Pricing",
+                                "navigation_node_id": "nav-456",
+                                "previous_page_node_id": "node-000",
+                                "previous_flow_position": 1,
+                                "type": "forward",
+                                "time_on_previous_page_ms": 3500
+                            }
+                        ]
+                    }
+                }
+                    """.trimIndent()
+
+                When("the message is parsed") {
+                    val result = parseWrappedPaywallMessages(json)
+
+                    Then("it returns a PageView message with correct data") {
+                        assert(result.isSuccess)
+                        val wrapped = result.getOrThrow()
+                        assertEquals(1, wrapped.payload.messages.size)
+                        val message = wrapped.payload.messages[0]
+                        assert(message is PaywallMessage.PageView)
+                        val pageView = (message as PaywallMessage.PageView).data
+                        assertEquals("node-123", pageView.pageNodeId)
+                        assertEquals(2, pageView.flowPosition)
+                        assertEquals("Pricing", pageView.pageName)
+                        assertEquals("nav-456", pageView.navigationNodeId)
+                        assertEquals("node-000", pageView.previousPageNodeId)
+                        assertEquals(1, pageView.previousFlowPosition)
+                        assertEquals("forward", pageView.navigationType)
+                        assertEquals(3500, pageView.timeOnPreviousPageMs)
+                    }
+                }
+            }
+        }
+
+    @Test
+    fun parsePageView_optionalFieldsNull() =
+        runTest {
+            Given("a wrapped message containing a page_view event without optional fields") {
+                val json =
+                    """
+                {
+                    "version": 1,
+                    "payload": {
+                        "events": [
+                            {
+                                "event_name": "page_view",
+                                "page_node_id": "node-first",
+                                "flow_position": 0,
+                                "page_name": "Welcome",
+                                "navigation_node_id": "nav-001",
+                                "type": "entry"
+                            }
+                        ]
+                    }
+                }
+                    """.trimIndent()
+
+                When("the message is parsed") {
+                    val result = parseWrappedPaywallMessages(json)
+
+                    Then("optional fields are null") {
+                        assert(result.isSuccess)
+                        val pageView = (result.getOrThrow().payload.messages[0] as PaywallMessage.PageView).data
+                        assertEquals("node-first", pageView.pageNodeId)
+                        assertEquals(0, pageView.flowPosition)
+                        assertEquals("Welcome", pageView.pageName)
+                        assertEquals("entry", pageView.navigationType)
+                        assertEquals(null, pageView.previousPageNodeId)
+                        assertEquals(null, pageView.previousFlowPosition)
+                        assertEquals(null, pageView.timeOnPreviousPageMs)
+                    }
+                }
+            }
+        }
+
+    @Test
+    fun handlePageView_tracksInternalEvent() =
+        runTest {
+            Given("a PaywallMessageHandler with a delegate") {
+                val paywall = Paywall.stub()
+                val state = PaywallViewState(paywall = paywall, locale = "en-US")
+                val delegate = FakeDelegate(state)
+                val trackedEvents =
+                    mutableListOf<com.superwall.sdk.analytics.internal.trackable.TrackableSuperwallEvent>()
+                val handler =
+                    createHandler(
+                        track = { event -> trackedEvents.add(event) },
+                    )
+                handler.messageHandler = delegate
+
+                When("a PageView message is handled") {
+                    handler.handle(
+                        PaywallMessage.PageView(
+                            PageViewData(
+                                pageNodeId = "node-abc",
+                                flowPosition = 1,
+                                pageName = "Checkout",
+                                navigationNodeId = "nav-xyz",
+                                previousPageNodeId = "node-prev",
+                                previousFlowPosition = 0,
+                                navigationType = "forward",
+                                timeOnPreviousPageMs = 2000,
+                            ),
+                        ),
+                    )
+                    advanceUntilIdle()
+
+                    Then("a PaywallPageView event is tracked") {
+                        assertEquals(1, trackedEvents.size)
+                        val event =
+                            trackedEvents[0]
+                                as com.superwall.sdk.analytics.internal.trackable.InternalSuperwallEvent.PaywallPageView
+                        assertEquals("node-abc", event.data.pageNodeId)
+                        assertEquals(1, event.data.flowPosition)
+                        assertEquals("Checkout", event.data.pageName)
+                        assertEquals("forward", event.data.navigationType)
+                        assertEquals(2000, event.data.timeOnPreviousPageMs)
+                    }
+                }
+            }
+        }
+
+    @Test
+    fun parsePageView_missingRequiredField_fails() =
+        runTest {
+            Given("a wrapped message with page_view missing required page_node_id") {
+                val json =
+                    """
+                {
+                    "version": 1,
+                    "payload": {
+                        "events": [
+                            {
+                                "event_name": "page_view",
+                                "flow_position": 0,
+                                "page_name": "Welcome",
+                                "navigation_node_id": "nav-001",
+                                "type": "entry"
+                            }
+                        ]
+                    }
+                }
+                    """.trimIndent()
+
+                When("the message is parsed") {
+                    val result = parseWrappedPaywallMessages(json)
+
+                    Then("parsing fails") {
+                        assert(result.isFailure)
+                    }
+                }
+            }
+        }
 }

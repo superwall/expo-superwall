@@ -18,8 +18,11 @@ import com.superwall.sdk.paywall.request.PaywallRequest
 import com.superwall.sdk.store.abstractions.product.StoreProduct
 import com.superwall.sdk.store.abstractions.product.receipt.ReceiptManager
 import com.superwall.sdk.store.coordinator.ProductsFetcher
-import com.superwall.sdk.store.testmode.TestModeManager
+import com.superwall.sdk.store.testmode.TestMode
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.awaitAll
 import java.util.Date
+import java.util.concurrent.ConcurrentHashMap
 
 class StoreManager(
     val purchaseController: InternalPurchaseController,
@@ -28,12 +31,12 @@ class StoreManager(
     private val track: suspend (InternalSuperwallEvent) -> Unit = {
         Superwall.instance.track(it)
     },
-    var testModeManager: TestModeManager? = null,
+    var testMode: TestMode? = null,
 ) : ProductsFetcher,
     StoreKit {
     val receiptManager by lazy(receiptManagerFactory)
 
-    private var productsByFullId: MutableMap<String, StoreProduct> = mutableMapOf()
+    private var productsByFullId: ConcurrentHashMap<String, ProductState> = ConcurrentHashMap()
 
     private data class ProductProcessingResult(
         val fullProductIdsToLoad: Set<String>,
@@ -75,22 +78,14 @@ class StoreManager(
                 productItems = emptyList(),
             )
 
-        val products: Set<StoreProduct>
-        try {
-            products = billing.awaitGetProducts(processingResult.fullProductIdsToLoad)
-        } catch (error: Throwable) {
-            throw error
-        }
-
         val productsById = processingResult.substituteProductsById.toMutableMap()
+        val fetchResult = fetchOrAwaitProducts(processingResult.fullProductIdsToLoad)
 
-        for (product in products) {
-            val fullProductIdentifier = product.fullIdentifier
-            productsById[fullProductIdentifier] = product
-            cacheProduct(fullProductIdentifier, product)
+        for ((id, product) in fetchResult) {
+            productsById[id] = product
         }
 
-        return products.map { it.fullIdentifier to it }.toMap()
+        return productsById
     }
 
     override suspend fun getProducts(
@@ -105,9 +100,13 @@ class StoreManager(
                 productItems = paywall.productItems,
             )
 
-        var products: Set<StoreProduct> = setOf()
+        val productsById = processingResult.substituteProductsById.toMutableMap()
+
         try {
-            products = billing.awaitGetProducts(processingResult.fullProductIdsToLoad)
+            val fetchResult = fetchOrAwaitProducts(processingResult.fullProductIdsToLoad)
+            for ((id, product) in fetchResult) {
+                productsById[id] = product
+            }
         } catch (error: Throwable) {
             paywall.productsLoadingInfo.failAt = Date()
             val paywallInfo = paywall.getInfo(request?.eventData)
@@ -126,19 +125,105 @@ class StoreManager(
             }
         }
 
-        val productsById = processingResult.substituteProductsById.toMutableMap()
-
-        for (product in products) {
-            val fullProductIdentifier = product.fullIdentifier
-            productsById[fullProductIdentifier] = product
-            cacheProduct(fullProductIdentifier, product)
-        }
-
         return GetProductsResponse(
             productsByFullId = productsById,
             productItems = processingResult.productItems,
             paywall = paywall,
         )
+    }
+
+    private suspend fun fetchOrAwaitProducts(fullProductIds: Set<String>): Map<String, StoreProduct> {
+        val testProducts = testMode?.takeIf { it.isTestMode }?.testProductsByFullId.orEmpty()
+        val testHits: Map<String, StoreProduct> =
+            if (testProducts.isEmpty()) {
+                emptyMap()
+            } else {
+                fullProductIds.mapNotNull { id -> testProducts[id]?.let { id to it } }.toMap()
+            }
+        val remainingIds = fullProductIds - testHits.keys
+        if (remainingIds.isEmpty()) return testHits
+
+        val cached = mutableMapOf<String, StoreProduct>()
+        val loading = mutableListOf<CompletableDeferred<StoreProduct>>()
+        val newDeferreds = mutableMapOf<String, CompletableDeferred<StoreProduct>>()
+
+        for (id in remainingIds) {
+            val state =
+                productsByFullId.getOrPut(id) {
+                    val deferred = CompletableDeferred<StoreProduct>()
+                    newDeferreds[id] = deferred
+                    ProductState.Loading(deferred)
+                }
+            when (state) {
+                is ProductState.Loaded -> cached[id] = state.product
+                is ProductState.Loading -> {
+                    if (id !in newDeferreds) loading.add(state.deferred)
+                }
+
+                is ProductState.Error -> {
+                    // Error state already exists — replace atomically for retry
+                    val deferred = CompletableDeferred<StoreProduct>()
+                    if (productsByFullId.replace(id, state, ProductState.Loading(deferred))) {
+                        newDeferreds[id] = deferred
+                    } else {
+                        (productsByFullId[id] as? ProductState.Loading)?.deferred?.let {
+                            loading.add(it)
+                        }
+                    }
+                }
+            }
+        }
+
+        // Await all in-flight products in parallel
+        val awaited =
+            try {
+                loading
+                    .awaitAll()
+                    .associateBy { it.fullIdentifier }
+            } catch (e: Throwable) {
+                // In-flight fetch failed; clean up new deferreds
+                newDeferreds.forEach { (id, deferred) ->
+                    productsByFullId[id] = ProductState.Error(e)
+                    deferred.completeExceptionally(e)
+                }
+                throw e
+            }
+
+        val fetched = fetchNewProducts(newDeferreds)
+
+        return testHits + cached + awaited + fetched
+    }
+
+    private suspend fun fetchNewProducts(deferreds: Map<String, CompletableDeferred<StoreProduct>>): Map<String, StoreProduct> {
+        if (deferreds.isEmpty()) return emptyMap()
+
+        return try {
+            val products = billing.awaitGetProducts(deferreds.keys)
+            val fetched = products.associateBy { it.fullIdentifier }
+
+            fetched.forEach { (id, product) ->
+                productsByFullId[id] = ProductState.Loaded(product)
+                deferreds[id]?.complete(product)
+            }
+
+            // Mark products not returned by billing as errors
+            (deferreds.keys - fetched.keys).forEach { id ->
+                val error = Exception("Product $id not found in store")
+                // Only set error if not already successfully cached by an external caller
+                if (productsByFullId[id] !is ProductState.Loaded) {
+                    productsByFullId[id] = ProductState.Error(error)
+                }
+                deferreds[id]?.completeExceptionally(error)
+            }
+
+            fetched
+        } catch (error: Throwable) {
+            deferreds.forEach { (id, deferred) ->
+                productsByFullId[id] = ProductState.Error(error)
+                deferred.completeExceptionally(error)
+            }
+            throw error
+        }
     }
 
     private fun removeAndStore(
@@ -234,26 +319,31 @@ class StoreManager(
         fullProductIdentifier: String,
         storeProduct: StoreProduct,
     ) {
-        productsByFullId[fullProductIdentifier] = storeProduct
+        val existing = productsByFullId[fullProductIdentifier]
+        productsByFullId[fullProductIdentifier] = ProductState.Loaded(storeProduct)
+        // Complete any pending deferred so awaiters get the product
+        if (existing is ProductState.Loading) {
+            existing.deferred.complete(storeProduct)
+        }
     }
 
     override fun getProductFromCache(productId: String): StoreProduct? {
         // Check test products first when in test mode
-        testModeManager?.let { manager ->
+        testMode?.let { manager ->
             if (manager.isTestMode) {
                 manager.testProductsByFullId[productId]?.let { return it }
             }
         }
-        return productsByFullId[productId]
+        return (productsByFullId[productId] as? ProductState.Loaded)?.product
     }
 
     override fun hasCached(productId: String): Boolean {
-        testModeManager?.let { manager ->
+        testMode?.let { manager ->
             if (manager.isTestMode && manager.testProductsByFullId.containsKey(productId)) {
                 return true
             }
         }
-        return productsByFullId.contains(productId)
+        return productsByFullId[productId] is ProductState.Loaded
     }
 
     override suspend fun consume(purchaseToken: String): Result<String> = billing.consume(purchaseToken)

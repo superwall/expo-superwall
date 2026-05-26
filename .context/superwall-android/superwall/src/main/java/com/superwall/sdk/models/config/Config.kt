@@ -29,6 +29,7 @@ data class Config(
     @SerialName("build_id") val buildId: String,
     @SerialName("bundle_id_config") val bundleIdConfig: String? = null,
     @SerialName("test_mode_user_ids") val testModeUserIds: List<TestStoreUser>? = null,
+    @SerialName("prioritized_campaign_id") val prioritizedCampaignId: String? = null,
 ) : SerializableEntity {
     init {
         locales = localizationConfig.locales.map { it.locale }.toSet()

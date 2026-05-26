@@ -14,6 +14,8 @@ internal typealias ExecuteRequestOnUIThreadFunction = (delayInMillis: Long, onEr
 private const val MAX_RETRIES_DEFAULT = 3
 private const val RETRY_TIMER_START_MILLISECONDS = 878L // So it gets close to 15 minutes in last retry
 internal const val RETRY_TIMER_MAX_TIME_MILLISECONDS = 1000L * 60L * 15L // 15 minutes
+private const val FOREGROUND_BACKOFF_START_MILLISECONDS = 250L
+private const val FOREGROUND_BACKOFF_MAX_ATTEMPTS = 2
 
 internal interface UseCaseParams {
     val appInBackground: Boolean
@@ -33,6 +35,7 @@ internal abstract class BillingClientUseCase<T>(
     private val maxRetries: Int = MAX_RETRIES_DEFAULT
     private var retryAttempt: Int = 0
     private var retryBackoffMilliseconds = RETRY_TIMER_START_MILLISECONDS
+    private var foregroundBackoffAttempt: Int = 0
 
     fun run(delayMilliseconds: Long = 0) {
         executeRequestOnUIThread(delayMilliseconds) { connectionError ->
@@ -144,11 +147,28 @@ internal abstract class BillingClientUseCase<T>(
             } else {
                 onError(billingResult)
             }
+        } else if (retryAttempt < maxRetries) {
+            Logger.debug(
+                logLevel = LogLevel.warn,
+                scope = LogScope.productsManager,
+                message = "Billing unavailable in foreground. Retry ${retryAttempt + 1}/$maxRetries (immediate).",
+            )
+            retryAttempt++
+            executeAsync()
+        } else if (foregroundBackoffAttempt < FOREGROUND_BACKOFF_MAX_ATTEMPTS) {
+            val delay = FOREGROUND_BACKOFF_START_MILLISECONDS shl foregroundBackoffAttempt
+            Logger.debug(
+                logLevel = LogLevel.warn,
+                scope = LogScope.productsManager,
+                message = "Billing unavailable in foreground. Backoff retry ${foregroundBackoffAttempt + 1}/$FOREGROUND_BACKOFF_MAX_ATTEMPTS in ${delay}ms.",
+            )
+            foregroundBackoffAttempt++
+            run(delay)
         } else {
             Logger.debug(
                 logLevel = LogLevel.error,
                 scope = LogScope.productsManager,
-                message = "Billing is unavailable. App is in foreground. Won't retry.",
+                message = "Billing unavailable. Foreground retries exhausted.",
             )
             onError(billingResult)
         }

@@ -4,11 +4,9 @@ import com.superwall.sdk.And
 import com.superwall.sdk.Given
 import com.superwall.sdk.Then
 import com.superwall.sdk.When
-import com.superwall.sdk.config.ConfigManager
-import com.superwall.sdk.config.models.ConfigState
 import com.superwall.sdk.config.options.SuperwallOptions
 import com.superwall.sdk.misc.IOScope
-import com.superwall.sdk.models.config.Config
+import com.superwall.sdk.misc.primitives.StateActor
 import com.superwall.sdk.network.device.DeviceHelper
 import com.superwall.sdk.storage.AliasId
 import com.superwall.sdk.storage.AppUserId
@@ -18,9 +16,9 @@ import com.superwall.sdk.storage.Storage
 import com.superwall.sdk.storage.UserAttributes
 import io.mockk.every
 import io.mockk.mockk
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -38,16 +36,32 @@ import org.junit.Test
  */
 class IdentityManagerUserAttributesTest {
     private lateinit var storage: Storage
-    private lateinit var configManager: ConfigManager
     private lateinit var deviceHelper: DeviceHelper
     private var resetCalled = false
     private var trackedEvents: MutableList<Any> = mutableListOf()
+
+    private fun installPrintlnDebug(actor: StateActor<IdentityContext, IdentityState>, name: String) {
+        actor.onUpdate { reducer, next ->
+            next(reducer)
+            println("[$name] update -> $reducer")
+        }
+        actor.onAction { action, next ->
+            println("[$name] action -> $action")
+            next()
+        }
+        actor.onActionExecution { action, next ->
+            try {
+                next()
+            } finally {
+                println("[$name] action done -> $action")
+            }
+        }
+    }
 
     @Before
     fun setup() =
         runTest {
             storage = mockk(relaxed = true)
-            configManager = mockk(relaxed = true)
             deviceHelper = mockk(relaxed = true)
             resetCalled = false
             trackedEvents = mutableListOf()
@@ -58,8 +72,6 @@ class IdentityManagerUserAttributesTest {
             every { storage.read(UserAttributes) } returns null
             every { storage.read(DidTrackFirstSeen) } returns null
             every { deviceHelper.appInstalledAtString } returns "2024-01-01"
-            every { configManager.options } returns SuperwallOptions()
-            every { configManager.configState } returns MutableStateFlow(ConfigState.None)
         }
 
     private fun createManager(
@@ -75,15 +87,28 @@ class IdentityManagerUserAttributesTest {
         existingAttributes?.let { every { storage.read(UserAttributes) } returns it }
 
         return IdentityManager(
-            deviceHelper = deviceHelper,
             storage = storage,
-            configManager = configManager,
+            options = { SuperwallOptions() },
             ioScope = IOScope(scope.coroutineContext),
-            neverCalledStaticConfig = { false },
             notifyUserChange = {},
             completeReset = { resetCalled = true },
-            track = { trackedEvents.add(it) },
+            tracker = { trackedEvents.add(it) },
+            webPaywallRedeemer = { mockk(relaxed = true) },
+            actor = testActor(),
+            sdkContext = mockk(relaxed = true),
         )
+    }
+
+    private fun testActor(): StateActor<IdentityContext, IdentityState> {
+        val actor =
+            StateActor<IdentityContext, IdentityState>(
+                createInitialIdentityState(storage, "2024-01-01"),
+                CoroutineScope(Dispatchers.Unconfined),
+            )
+        installPrintlnDebug(actor, name = "IdentityTest")
+        IdentityPendingInterceptor.install(actor)
+        IdentityPersistenceInterceptor.install(actor, storage)
+        return actor
     }
 
     private fun createManagerWithScope(
@@ -99,14 +124,15 @@ class IdentityManagerUserAttributesTest {
         existingAttributes?.let { every { storage.read(UserAttributes) } returns it }
 
         return IdentityManager(
-            deviceHelper = deviceHelper,
             storage = storage,
-            configManager = configManager,
+            options = { SuperwallOptions() },
             ioScope = ioScope,
-            neverCalledStaticConfig = { false },
             notifyUserChange = {},
             completeReset = { resetCalled = true },
-            track = { trackedEvents.add(it) },
+            tracker = { trackedEvents.add(it) },
+            webPaywallRedeemer = { mockk(relaxed = true) },
+            actor = testActor(),
+            sdkContext = mockk(relaxed = true),
         )
     }
 
@@ -122,7 +148,7 @@ class IdentityManagerUserAttributesTest {
                     }
 
                 // Allow scope.launch from init's mergeUserAttributes to complete
-                Thread.sleep(200)
+                manager.awaitLatestIdentity()
 
                 Then("userAttributes contains aliasId") {
                     val attrs = manager.userAttributes
@@ -148,17 +174,13 @@ class IdentityManagerUserAttributesTest {
     fun `fresh install - identify adds appUserId to userAttributes`() =
         runTest {
             Given("a fresh install") {
-                val configState =
-                    MutableStateFlow<ConfigState>(ConfigState.Retrieved(Config.stub()))
-                every { configManager.configState } returns configState
                 val testScope = IOScope(this@runTest.coroutineContext)
 
                 val manager = createManagerWithScope(testScope)
 
                 When("identify is called with a new userId") {
                     manager.identify("user-123")
-                    Thread.sleep(200)
-                    advanceUntilIdle()
+                    manager.awaitLatestIdentity()
                 }
 
                 Then("userAttributes contains appUserId") {
@@ -238,9 +260,7 @@ class IdentityManagerUserAttributesTest {
                         "appUserId" to "user-123",
                         "applicationInstalledAt" to "2024-01-01",
                     )
-                val configState =
-                    MutableStateFlow<ConfigState>(ConfigState.Retrieved(Config.stub()))
-                every { configManager.configState } returns configState
+
                 val testScope = IOScope(this@runTest.coroutineContext)
 
                 val manager =
@@ -254,8 +274,7 @@ class IdentityManagerUserAttributesTest {
 
                 When("identify is called with the SAME userId") {
                     manager.identify("user-123")
-                    Thread.sleep(200)
-                    advanceUntilIdle()
+                    manager.awaitLatestIdentity()
                 }
 
                 Then("userAttributes still contains aliasId") {
@@ -288,7 +307,7 @@ class IdentityManagerUserAttributesTest {
                     }
 
                 // Allow any async merges to complete
-                Thread.sleep(200)
+                manager.awaitLatestIdentity()
 
                 Then("aliasId individual field is correct") {
                     assertEquals("stored-alias", manager.aliasId)
@@ -322,9 +341,6 @@ class IdentityManagerUserAttributesTest {
     fun `BUG - returning user with empty storage, same identify, then setUserAttributes`() =
         runTest {
             Given("UserAttributes failed to load, individual IDs exist") {
-                val configState =
-                    MutableStateFlow<ConfigState>(ConfigState.Retrieved(Config.stub()))
-                every { configManager.configState } returns configState
                 val testScope = IOScope(this@runTest.coroutineContext)
 
                 val manager =
@@ -338,14 +354,12 @@ class IdentityManagerUserAttributesTest {
 
                 When("identify is called with the SAME userId (early return, no saveIds)") {
                     manager.identify("user-123")
-                    Thread.sleep(200)
-                    advanceUntilIdle()
+                    manager.awaitLatestIdentity()
                 }
 
                 And("setUserAttributes is called with custom data") {
                     manager.mergeUserAttributes(mapOf("name" to "John"))
-                    Thread.sleep(200)
-                    advanceUntilIdle()
+                    manager.awaitLatestIdentity()
                 }
 
                 Then("userAttributes should contain the custom attribute") {
@@ -388,8 +402,7 @@ class IdentityManagerUserAttributesTest {
 
                 When("setUserAttributes is called without any identify") {
                     manager.mergeUserAttributes(mapOf("name" to "John"))
-                    Thread.sleep(200)
-                    advanceUntilIdle()
+                    manager.awaitLatestIdentity()
                 }
 
                 Then("userAttributes contains custom attribute") {
@@ -431,11 +444,11 @@ class IdentityManagerUserAttributesTest {
                     )
 
                 When("reset is called") {
-                    manager.reset(duringIdentify = false)
+                    manager.reset()
                 }
 
                 // Allow async operations
-                Thread.sleep(200)
+                manager.awaitLatestIdentity()
 
                 Then("userAttributes contains the NEW aliasId") {
                     val attrs = manager.userAttributes
@@ -467,9 +480,6 @@ class IdentityManagerUserAttributesTest {
     fun `reset during identify followed by new identify populates userAttributes`() =
         runTest {
             Given("a user identified as user-A") {
-                val configState =
-                    MutableStateFlow<ConfigState>(ConfigState.Retrieved(Config.stub()))
-                every { configManager.configState } returns configState
                 val testScope = IOScope(this@runTest.coroutineContext)
 
                 val manager =
@@ -489,8 +499,7 @@ class IdentityManagerUserAttributesTest {
 
                 When("identify is called with a DIFFERENT userId (triggers reset)") {
                     manager.identify("user-B")
-                    Thread.sleep(300)
-                    advanceUntilIdle()
+                    manager.awaitLatestIdentity()
                 }
 
                 Then("appUserId is user-B") {
@@ -521,17 +530,13 @@ class IdentityManagerUserAttributesTest {
     fun `setUserAttributes does not remove identity fields`() =
         runTest {
             Given("a fresh install where init merge has completed") {
-                val configState =
-                    MutableStateFlow<ConfigState>(ConfigState.Retrieved(Config.stub()))
-                every { configManager.configState } returns configState
                 val testScope = IOScope(this@runTest.coroutineContext)
 
                 val manager = createManagerWithScope(testScope)
 
                 // First identify to get appUserId into attributes
                 manager.identify("user-123")
-                Thread.sleep(200)
-                advanceUntilIdle()
+                manager.awaitLatestIdentity()
 
                 val attrsBefore = manager.userAttributes
                 assertNotNull(
@@ -544,8 +549,7 @@ class IdentityManagerUserAttributesTest {
                     manager.mergeUserAttributes(
                         mapOf("name" to "John", "email" to "john@example.com"),
                     )
-                    Thread.sleep(200)
-                    advanceUntilIdle()
+                    manager.awaitLatestIdentity()
                 }
 
                 Then("custom attributes are added") {
@@ -572,19 +576,14 @@ class IdentityManagerUserAttributesTest {
         runTest {
             Given("a manager with identity fields in userAttributes") {
                 val testScope = IOScope(this@runTest.coroutineContext)
-                val configState =
-                    MutableStateFlow<ConfigState>(ConfigState.Retrieved(Config.stub()))
-                every { configManager.configState } returns configState
 
                 val manager = createManagerWithScope(testScope)
                 manager.identify("user-123")
-                Thread.sleep(200)
-                advanceUntilIdle()
+                manager.awaitLatestIdentity()
 
                 When("setUserAttributes is called with aliasId = null") {
                     manager.mergeUserAttributes(mapOf("aliasId" to null))
-                    Thread.sleep(200)
-                    advanceUntilIdle()
+                    manager.awaitLatestIdentity()
                 }
 
                 Then("aliasId is removed from userAttributes") {
@@ -608,15 +607,11 @@ class IdentityManagerUserAttributesTest {
     fun `after identify - aliasId field and userAttributes aliasId are consistent`() =
         runTest {
             Given("a fresh install") {
-                val configState =
-                    MutableStateFlow<ConfigState>(ConfigState.Retrieved(Config.stub()))
-                every { configManager.configState } returns configState
                 val testScope = IOScope(this@runTest.coroutineContext)
 
                 val manager = createManagerWithScope(testScope)
                 manager.identify("user-123")
-                Thread.sleep(200)
-                advanceUntilIdle()
+                manager.awaitLatestIdentity()
 
                 Then("aliasId field matches userAttributes aliasId") {
                     assertEquals(
@@ -661,10 +656,10 @@ class IdentityManagerUserAttributesTest {
                     )
 
                 When("reset is called") {
-                    manager.reset(duringIdentify = false)
+                    manager.reset()
                 }
 
-                Thread.sleep(200)
+                manager.awaitLatestIdentity()
 
                 Then("aliasId field matches userAttributes aliasId") {
                     assertEquals(
@@ -707,7 +702,7 @@ class IdentityManagerUserAttributesTest {
                     }
 
                 // Allow init merge to complete
-                Thread.sleep(200)
+                manager.awaitLatestIdentity()
 
                 Then("userAttributes contains the newly generated aliasId") {
                     val attrs = manager.userAttributes
@@ -740,7 +735,7 @@ class IdentityManagerUserAttributesTest {
                     }
 
                 // Allow any async operations to complete
-                Thread.sleep(200)
+                manager.awaitLatestIdentity()
 
                 Then("the individual fields are correct") {
                     assertEquals("stored-alias", manager.aliasId)

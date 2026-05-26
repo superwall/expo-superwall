@@ -1,5 +1,6 @@
 package com.superwall.sdk.paywall.view
 
+import com.superwall.sdk.models.customer.CustomerInfo
 import com.superwall.sdk.models.paywall.Paywall
 import com.superwall.sdk.models.paywall.PaywallPresentationStyle
 import com.superwall.sdk.models.triggers.TriggerRuleOccurrence
@@ -17,6 +18,7 @@ import java.util.Date
 data class PaywallViewState(
     val paywall: Paywall,
     val locale: String,
+    val customerInfo: CustomerInfo = CustomerInfo.empty(),
     val request: PresentationRequest? = null,
     val presentationStyle: PaywallPresentationStyle = paywall.presentation.style,
     val paywallStatePublisher: MutableSharedFlow<PaywallState>? = null,
@@ -45,7 +47,10 @@ data class PaywallViewState(
     val lastOpen: Date? = null,
 ) {
     val info: PaywallInfo
-        get() = paywall.getInfo(request?.presentationInfo?.eventData)
+        get() =
+            paywall
+                .getInfo(request?.presentationInfo?.eventData)
+                .copy(customerInfo = customerInfo)
 
     internal val cacheKey: String = PaywallCacheLogic.key(paywall.identifier, locale)
 
@@ -91,6 +96,12 @@ data class PaywallViewState(
                 // Update productItems via setter to also refresh related fields.
                 merged.productItems = from.productItems
                 state.copy(paywall = merged)
+            })
+
+        class SetCustomerInfo(
+            val customerInfo: CustomerInfo,
+        ) : Updates({ state ->
+                state.copy(customerInfo = customerInfo)
             })
 
         class SetRequest(
@@ -140,8 +151,8 @@ data class PaywallViewState(
 
         object ResetPresentationPreparations : Updates({ state ->
             state.copy(
-                presentationWillPrepare = false,
-                presentationDidFinishPrepare = true,
+                presentationWillPrepare = true,
+                presentationDidFinishPrepare = false,
             )
         })
 

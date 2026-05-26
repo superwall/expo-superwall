@@ -13,12 +13,14 @@ import com.superwall.sdk.models.triggers.Trigger
 import com.superwall.sdk.paywall.manager.PaywallManager
 import com.superwall.sdk.paywall.presentation.rule_logic.javascript.RuleEvaluator
 import com.superwall.sdk.paywall.request.ResponseIdentifiers
-import com.superwall.sdk.paywall.view.webview.webViewExists
+import com.superwall.sdk.paywall.view.webview.WebviewChecker
 import com.superwall.sdk.storage.LocalStorage
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.delay
+import java.util.concurrent.atomic.AtomicReference
 
 class PaywallPreload(
     val factory: Factory,
@@ -35,11 +37,32 @@ class PaywallPreload(
 
     private var currentPreloadingTask: Job? = null
 
+    /**
+     * Fingerprint of the device/store/subscription state of the most recent
+     * preload that actually *started* (i.e. wasn't dropped by the "already
+     * running" guard). Compared by ConfigManager.recheckPreloadIfNeeded to
+     * decide whether attribute changes warrant a re-preload. Atomic so concurrent
+     * rechecks don't both claim the same dispatch slot.
+     */
+    internal val lastFingerprint: AtomicReference<String?> = AtomicReference(null)
+
     suspend fun preloadAllPaywalls(
         config: Config,
         context: Context,
+        fingerprint: String? = null,
     ) {
-        if (currentPreloadingTask != null) {
+        if (fingerprint != null) {
+            val previous = lastFingerprint.get()
+            // Already preloaded this exact state, or another caller raced ahead.
+            if (previous == fingerprint) return
+            if (!lastFingerprint.compareAndSet(previous, fingerprint)) return
+            // CAS won; if the preload below is dropped, roll back so future
+            // rechecks can retry.
+            if (currentPreloadingTask != null) {
+                lastFingerprint.compareAndSet(fingerprint, previous)
+                return
+            }
+        } else if (currentPreloadingTask != null) {
             return
         }
 
@@ -52,9 +75,35 @@ class PaywallPreload(
                         preloadingDisabled = config.preloadingDisabled,
                     )
                 val confirmedAssignments = storage.getConfirmedAssignments()
+
+                // If there's a prioritized campaign, preload its paywalls first.
+                var remainingTriggers = triggers
+                val prioritizedCampaignId = config.prioritizedCampaignId
+                if (prioritizedCampaignId != null) {
+                    val prioritizedTriggers =
+                        triggers.filter { trigger ->
+                            trigger.rules.any { it.experimentGroupId == prioritizedCampaignId }
+                        }.toSet()
+                    if (prioritizedTriggers.isNotEmpty()) {
+                        val prioritizedIds =
+                            ConfigLogic.getAllActiveTreatmentPaywallIds(
+                                triggers = prioritizedTriggers,
+                                confirmedAssignments = confirmedAssignments,
+                                unconfirmedAssignments = assignments.unconfirmedAssignments,
+                                expressionEvaluator = expressionEvaluator,
+                            )
+                        preloadPaywalls(paywallIdentifiers = prioritizedIds)
+                        remainingTriggers = triggers - prioritizedTriggers
+
+                        // Delay before preloading the rest to avoid resource contention.
+                        delay(5000)
+                    }
+                }
+
+                // Then preload all remaining paywalls.
                 val paywallIds =
                     ConfigLogic.getAllActiveTreatmentPaywallIds(
-                        triggers = triggers,
+                        triggers = remainingTriggers,
                         confirmedAssignments = confirmedAssignments,
                         unconfirmedAssignments = assignments.unconfirmedAssignments,
                         expressionEvaluator = expressionEvaluator,
@@ -89,7 +138,7 @@ class PaywallPreload(
             ),
         )
 
-        val webviewExists = webViewExists()
+        val webviewExists = WebviewChecker.webviewExists
         if (webviewExists) {
             scope.launchWithTracking {
                 // List to hold all the Deferred objects
@@ -181,8 +230,12 @@ class PaywallPreload(
                         oldCacheKey != null && keyChanged
                     }.map { it.identifier } - presentedPaywallId
 
-        changedIds.toSet().filterNotNull().forEach {
+        val toRemove = changedIds.toSet().filterNotNull()
+        toRemove.forEach {
             paywallManager.removePaywallView(it)
+        }
+        if (toRemove.isNotEmpty()) {
+            lastFingerprint.set(null)
         }
     }
 }

@@ -48,6 +48,11 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.timeout
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -68,6 +73,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.seconds
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [33])
@@ -904,6 +910,144 @@ class PaywallViewTest {
             }
         }
     }
+
+    // ===== Timeout Flow Tests =====
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun timeout_doesNotFire_whenReadyArrivesBeforeDeadline() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            Dispatchers.setMain(dispatcher)
+            try {
+                Given("a PaywallController starting in Unknown state") {
+                    val state = PaywallViewState(paywall = Paywall.stub(), locale = "en-US")
+                    val controller = PaywallView.PaywallController(state)
+                    var timeoutFired = false
+                    var readyReceived = false
+
+                    When("Ready arrives before the timeout") {
+                        val job =
+                            launch {
+                                controller.currentState
+                                    .filter { it.loadingState == PaywallLoadingState.Ready }
+                                    .map { Result.success(it.loadingState) }
+                                    .timeout(5.seconds)
+                                    .catch { err ->
+                                        emit(Result.failure(err))
+                                    }.first()
+                                    .onSuccess {
+                                        readyReceived = true
+                                    }.onFailure {
+                                        timeoutFired = true
+                                    }
+                            }
+
+                        // Set Ready before timeout
+                        controller.updateState(
+                            PaywallViewState.Updates.SetLoadingState(PaywallLoadingState.Ready),
+                        )
+                        advanceUntilIdle()
+                        job.join()
+
+                        Then("Ready is received and timeout does not fire") {
+                            assertTrue("Expected Ready to be received", readyReceived)
+                            assertFalse("Expected timeout NOT to fire", timeoutFired)
+                        }
+                    }
+                }
+            } finally {
+                Dispatchers.resetMain()
+            }
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun timeout_fires_whenReadyDoesNotArrive() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            Dispatchers.setMain(dispatcher)
+            try {
+                Given("a PaywallController that stays in Unknown state") {
+                    val state = PaywallViewState(paywall = Paywall.stub(), locale = "en-US")
+                    val controller = PaywallView.PaywallController(state)
+                    var timeoutFired = false
+                    var readyReceived = false
+
+                    When("the timeout elapses without Ready") {
+                        val job =
+                            launch {
+                                controller.currentState
+                                    .filter { it.loadingState == PaywallLoadingState.Ready }
+                                    .map { Result.success(it.loadingState) }
+                                    .timeout(1.seconds)
+                                    .catch { err ->
+                                        emit(Result.failure(err))
+                                    }.first()
+                                    .onSuccess {
+                                        readyReceived = true
+                                    }.onFailure {
+                                        timeoutFired = true
+                                    }
+                            }
+
+                        advanceUntilIdle()
+                        job.join()
+
+                        Then("timeout fires and no Ready is received") {
+                            assertTrue("Expected timeout to fire", timeoutFired)
+                            assertFalse("Expected Ready NOT to be received", readyReceived)
+                        }
+                    }
+                }
+            } finally {
+                Dispatchers.resetMain()
+            }
+        }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Test
+    fun timeout_doesNotThrow_noSuchElementException() =
+        runTest {
+            val dispatcher = StandardTestDispatcher(testScheduler)
+            Dispatchers.setMain(dispatcher)
+            try {
+                Given("a PaywallController that stays in Unknown state") {
+                    val state = PaywallViewState(paywall = Paywall.stub(), locale = "en-US")
+                    val controller = PaywallView.PaywallController(state)
+                    var caughtException: Throwable? = null
+
+                    When("the timeout elapses") {
+                        val job =
+                            launch {
+                                try {
+                                    controller.currentState
+                                        .filter { it.loadingState == PaywallLoadingState.Ready }
+                                        .map { Result.success(it.loadingState) }
+                                        .timeout(1.seconds)
+                                        .catch { err ->
+                                            emit(Result.failure(err))
+                                        }.first()
+                                } catch (e: Throwable) {
+                                    caughtException = e
+                                }
+                            }
+
+                        advanceUntilIdle()
+                        job.join()
+
+                        Then("no NoSuchElementException is thrown") {
+                            assertNull(
+                                "Expected no exception but got: $caughtException",
+                                caughtException,
+                            )
+                        }
+                    }
+                }
+            } finally {
+                Dispatchers.resetMain()
+            }
+        }
 
     private object TestVariablesFactory : com.superwall.sdk.dependencies.VariablesFactory {
         override suspend fun makeJsonVariables(

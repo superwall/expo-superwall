@@ -35,6 +35,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.children
+import androidx.core.view.doOnLayout
 import androidx.core.view.updateLayoutParams
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetBehavior.BottomSheetCallback
@@ -448,7 +449,12 @@ class SuperwallPaywallActivity : AppCompatActivity() {
         initBottomSheetBehavior(isModal, height)
         val container =
             activityView.findViewById<FrameLayout>(com.superwall.sdk.R.id.container)
-        activityView.setOnClickListener { finish() }
+        activityView.setOnClickListener {
+            paywallView()?.dismiss(
+                result = PaywallResult.Declined(),
+                closeReason = PaywallCloseReason.ManualClose,
+            ) ?: finish()
+        }
         container.addView(paywallView)
         container.requestLayout()
         val radius =
@@ -559,30 +565,21 @@ class SuperwallPaywallActivity : AppCompatActivity() {
             }
         }
         bottomSheetBehavior.skipCollapsed = true
+        // Start hidden so the sheet slides up from the bottom
+        bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
 
-        val setState = {
-            if (!isModal) {
-                // Expanded by default
-                bottomSheetBehavior.state = BottomSheetBehavior.STATE_HALF_EXPANDED
-            } else {
-                bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
-            }
+        val targetState = if (!isModal) {
+            BottomSheetBehavior.STATE_HALF_EXPANDED
+        } else {
+            BottomSheetBehavior.STATE_EXPANDED
         }
 
-        // Check if we need to delay state change for Samsung devices on Android 14
-        val isSamsungAndroid14 =
-            Build.VERSION.SDK_INT == Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
-                (
-                    Build.MANUFACTURER.equals("samsung", ignoreCase = true) ||
-                        Build.BRAND.equals("samsung", ignoreCase = true)
-                )
-
-        if (isSamsungAndroid14) {
-            // Post state change to next frame after layout is complete
-            // This fixes timing issues on Samsung devices with Android 14
-            content.post { setState() }
-        } else {
-            setState()
+        // Wait for layout to complete before expanding, so the slide-up
+        // animation runs correctly on all devices (including Samsung).
+        content.doOnLayout {
+            content.post {
+                bottomSheetBehavior.state = targetState
+            }
         }
         content.invalidate()
         var currentWebViewScroll = 0
@@ -615,7 +612,10 @@ class SuperwallPaywallActivity : AppCompatActivity() {
                         if (isModal && newState == BottomSheetBehavior.STATE_HALF_EXPANDED) {
                             bottomSheetBehavior.state = BottomSheetBehavior.STATE_EXPANDED
                         } else if (newState == BottomSheetBehavior.STATE_HIDDEN) {
-                            finish()
+                            paywallView()?.dismiss(
+                                result = PaywallResult.Declined(),
+                                closeReason = PaywallCloseReason.ManualClose,
+                            ) ?: finish()
                         }
                     }
                 }
@@ -667,6 +667,22 @@ class SuperwallPaywallActivity : AppCompatActivity() {
     }
 
     private fun hideBottomSheetAndFinish() {
+        val content = contentView as? ViewGroup
+        if (content != null && content is CoordinatorLayout && content.childCount > 0) {
+            val bottomSheetBehavior = BottomSheetBehavior.from(content.getChildAt(0))
+            // Remove the callback so the STATE_HIDDEN transition below
+            // doesn't re-enter finish() via paywallView().dismiss().
+            bottomSheetCallback?.let {
+                bottomSheetBehavior.removeBottomSheetCallback(it)
+                bottomSheetCallback = null
+            }
+            // Post the state change so the slide-down animation runs
+            // correctly on all devices (including Samsung).
+            content.post {
+                bottomSheetBehavior.state = BottomSheetBehavior.STATE_HIDDEN
+            }
+        }
+
         val colorFrom = Color.argb(200, 0, 0, 0)
         val colorTo = Color.argb(0, 0, 0, 0)
 
@@ -705,7 +721,7 @@ class SuperwallPaywallActivity : AppCompatActivity() {
 
         val paywallVc = paywallView() ?: return
         mainScope.launch {
-            paywallVc.beforeOnDestroy()
+            paywallVc.beforeOnDestroy(forceCleanup = isFinishing)
         }
     }
 
@@ -715,7 +731,7 @@ class SuperwallPaywallActivity : AppCompatActivity() {
         val paywallVc = paywallView() ?: return
 
         mainScope.launch {
-            paywallVc.destroyed()
+            paywallVc.destroyed(forceCleanup = isFinishing)
         }
     }
 

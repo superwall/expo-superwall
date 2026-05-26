@@ -135,7 +135,13 @@ project.afterEvaluate {
 
         // Create combined report task that includes BOTH unit tests and instrumentation tests
         tasks.register('jacocoTestReport', JacocoReport) {
-            dependsOn 'testDebugUnitTest'
+            // compileDebugKotlin / compileDebugJavaWithJavac are listed explicitly so
+            // the JacocoReport task declares a producer dependency on the class
+            // directories it reads via fileTree(...). Without this, Gradle 8 strict
+            // task validation fails when this task runs without testDebugUnitTest in
+            // the same graph (e.g. the CI coverage-report job, which downloads the
+            // .exec from an artifact and excludes testDebugUnitTest).
+            dependsOn 'testDebugUnitTest', 'compileDebugKotlin', 'compileDebugJavaWithJavac'
             // Note: Instrumentation tests must be run separately before generating the combined report
             // Run: ./gradlew :superwall:connectedDebugAndroidTest
 

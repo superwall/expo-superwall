@@ -110,3 +110,25 @@ dependencies {
     debugImplementation(libs.ui.tooling)
     debugImplementation(libs.ui.test.manifest)
 }
+
+tasks.register<Exec>("pullEventTimelines") {
+    description = "Pull event timeline JSON files from the device after instrumentation tests"
+    group = "verification"
+    val outputDir = layout.buildDirectory.dir("outputs/event-timelines").get().asFile
+    doFirst {
+        outputDir.mkdirs()
+    }
+    commandLine(
+        "adb", "pull",
+        "/sdcard/Download/superwall-event-timelines/.",
+        outputDir.absolutePath,
+    )
+    isIgnoreExitValue = true
+}
+
+tasks.register<Exec>("clearEventTimelines") {
+    description = "Clear event timeline files from the device"
+    group = "verification"
+    commandLine("adb", "shell", "rm", "-rf", "/sdcard/Download/superwall-event-timelines/")
+    isIgnoreExitValue = true
+}

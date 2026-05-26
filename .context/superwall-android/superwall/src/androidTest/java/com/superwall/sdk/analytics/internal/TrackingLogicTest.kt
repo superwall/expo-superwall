@@ -64,6 +64,13 @@ class TrackingLogicTest {
                                 override fun experimentalProperties(): Map<String, Any> = emptyMap()
 
                                 override fun makeSuperwallOptions(): SuperwallOptions = SuperwallOptions()
+
+                                override fun customerInfoFlow() =
+                                    kotlinx.coroutines.flow.MutableStateFlow(
+                                        com.superwall.sdk.models.customer.CustomerInfo.empty(),
+                                    )
+
+                                override fun activeEntitlements() = emptySet<com.superwall.sdk.models.entitlements.Entitlement>()
                             },
                     ),
                 ) {

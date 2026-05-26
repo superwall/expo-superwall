@@ -91,7 +91,7 @@ class AttributionProviderIntegrationTest {
                     assertEquals("meta_user_123", attributionProps["meta"])
                     assertEquals("amp_user_456", attributionProps["amplitude"])
                     assertEquals("mp_distinct_789", attributionProps["mixpanel"])
-                    assertEquals("gclid_abc123", attributionProps["google_ads"])
+                    assertEquals("gclid_abc123", attributionProps["googleAds"])
                     assertEquals("adjust_123", attributionProps["adjustId"])
                     assertEquals("amp_device_456", attributionProps["amplitudeDeviceId"])
                     assertEquals("firebase_789", attributionProps["firebaseAppInstanceId"])
@@ -122,7 +122,7 @@ class AttributionProviderIntegrationTest {
 
                     assertEquals("meta_user_123", attributionProps["meta"])
                     assertEquals("amp_user_456", attributionProps["amplitude"])
-                    assertEquals("gclid_test_123", attributionProps["google_ads"])
+                    assertEquals("gclid_test_123", attributionProps["googleAds"])
                     assertEquals(3, attributionProps.size)
 
                     And("the attribution props should persist") {

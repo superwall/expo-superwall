@@ -5,6 +5,7 @@ import com.superwall.sdk.network.NetworkRequestData.HttpMethod
 import com.superwall.sdk.network.session.CustomHttpUrlConnection
 import kotlinx.serialization.Serializable
 import java.util.UUID
+import kotlin.time.Duration
 
 abstract class NetworkService {
     abstract val customHttpUrlConnection: CustomHttpUrlConnection
@@ -23,6 +24,8 @@ abstract class NetworkService {
         isForDebugging: Boolean = false,
         requestId: String = UUID.randomUUID().toString(),
         retryCount: Int = NetworkConsts.retryCount(),
+        noinline isRetryingCallback: (suspend () -> Unit)? = null,
+        timeout: Duration? = null
     ): Either<T, NetworkError> where T : @Serializable Any =
         customHttpUrlConnection.request(
             buildRequestData = {
@@ -37,9 +40,11 @@ abstract class NetworkService {
                         ),
                     method = HttpMethod.GET,
                     factory = this::makeHeaders,
+                    timeout = timeout
                 )
             },
             retryCount = retryCount,
+            isRetryingCallback = isRetryingCallback,
         )
 
     suspend inline fun <reified T> post(
@@ -48,6 +53,7 @@ abstract class NetworkService {
         body: ByteArray? = null,
         requestId: String = UUID.randomUUID().toString(),
         retryCount: Int = 6,
+        timeout: Duration? = null
     ): Either<T, NetworkError> where T : @Serializable Any =
         customHttpUrlConnection.request<T>(
             buildRequestData = {
@@ -62,6 +68,7 @@ abstract class NetworkService {
                         ),
                     method = HttpMethod.POST,
                     factory = this::makeHeaders,
+                    timeout = timeout
                 )
             },
             retryCount = retryCount,

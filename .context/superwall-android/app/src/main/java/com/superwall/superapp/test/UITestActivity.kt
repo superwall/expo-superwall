@@ -1,14 +1,18 @@
 package com.superwall.superapp.test
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -22,6 +26,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -50,12 +55,16 @@ class UITestInfo(
     private val events = MutableSharedFlow<SuperwallEvent?>(extraBufferCapacity = 100, replay = 3)
     private val message = MutableSharedFlow<Any?>(extraBufferCapacity = 10, replay = 10)
 
+    val timeline = EventTimeline()
+
     fun events() = events
 
     fun messages() = message
 
     val test: suspend Context.() -> Unit = {
         val scope = CoroutineScope(Dispatchers.IO)
+        timeline.clear()
+        TimelineStore.register("Test #$number", timeline)
         delay(100)
         Superwall.instance.delegate =
             object : SuperwallDelegate {
@@ -65,6 +74,7 @@ class UITestInfo(
                         "\tEvent name:" + eventInfo.event.rawName + "" +
                             ",\n\tParams:" + eventInfo.params + "\n",
                     )
+                    timeline.record(eventInfo)
                     scope.launch {
                         events.emit(eventInfo.event)
                     }
@@ -106,60 +116,74 @@ fun UITestTable() {
     val context = LocalContext.current
     val mainTextColor =
         if (isSystemInDarkTheme()) {
-            Color.White // Set the color for dark mode
+            Color.White
         } else {
-            Color.Black // Set the color for light mode
+            Color.Black
         }
 
-    LazyColumn {
-        items(UITestHandler.tests.toList()) { item ->
-            val index = tests.indexOf(item)
-            Column {
-                Row(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onDoubleTap = {
+                        context.startActivity(
+                            Intent(context, TimelineViewerActivity::class.java),
+                        )
+                    },
+                )
+            },
+    ) {
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            items(UITestHandler.tests.toList()) { item ->
+                val index = tests.indexOf(item)
+                Column {
+                    Row(
                         modifier =
                             Modifier
-                                .weight(2f)
-                                .padding(horizontal = 8.dp),
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(
-                            color = mainTextColor,
-                            text = item.testCaseType.titleText(item.number),
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(bottom = 8.dp),
-                        )
-                        Text(
-                            text = "${item.description}",
-                            style = TextStyle(color = Color.Gray),
-                        )
-                    }
-                    Button(
-                        onClick = {
-                            scope.launch {
-                                launch(Dispatchers.IO) {
-                                    item.test(context)
+                        Column(
+                            modifier =
+                                Modifier
+                                    .weight(2f)
+                                    .padding(horizontal = 8.dp),
+                        ) {
+                            Text(
+                                color = mainTextColor,
+                                text = item.testCaseType.titleText(item.number),
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(bottom = 8.dp),
+                            )
+                            Text(
+                                text = "${item.description}",
+                                style = TextStyle(color = Color.Gray),
+                            )
+                        }
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    launch(Dispatchers.IO) {
+                                        item.test(context)
+                                    }
                                 }
-                            }
-                        },
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Text("Launch $index")
+                            },
+                            modifier = Modifier.weight(1f),
+                        ) {
+                            Text("Launch $index")
+                        }
                     }
+                    Divider(
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .height(0.5.dp),
+                        color = Color.LightGray,
+                    )
                 }
-                Divider(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .height(0.5.dp),
-                    color = Color.LightGray,
-                )
             }
         }
     }

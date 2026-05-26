@@ -48,7 +48,7 @@ class Converters {
     fun sanitizeMap(map: Map<String, Any>): Map<String, Any> =
         map.filterValues { value ->
             when (value) {
-                is String, is Number, is Boolean, is List<*>, is Map<*, *> -> true
+                is String, is Number, is Boolean, is Date, is List<*>, is Map<*, *> -> true
                 else -> false
             }
         }
@@ -97,7 +97,15 @@ fun Any?.convertToJsonElement(): JsonElement =
                 },
             )
 
-        else -> throw IllegalArgumentException("Unsupported type: ${this!!::class}")
+        else -> {
+            // Fallback: handle Date by Java class check in case R8 optimizes away the
+            // instanceof check above. Any other unknown types are converted to null.
+            if (Date::class.java.isInstance(this)) {
+                JsonPrimitive((this as Date).time)
+            } else {
+                JsonNull
+            }
+        }
     }
 
 // Helper function to convert JsonElement back to basic types

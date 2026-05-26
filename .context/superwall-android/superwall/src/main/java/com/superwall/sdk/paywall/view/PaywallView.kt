@@ -25,7 +25,9 @@ import com.superwall.sdk.R
 import com.superwall.sdk.analytics.internal.trackable.InternalSuperwallEvent
 import com.superwall.sdk.analytics.superwall.SuperwallEvents
 import com.superwall.sdk.config.options.PaywallOptions
+import com.superwall.sdk.config.options.computedShouldPreload
 import com.superwall.sdk.dependencies.AttributesFactory
+import com.superwall.sdk.dependencies.CustomerInfoFactory
 import com.superwall.sdk.dependencies.DelegateAdapterFactory
 import com.superwall.sdk.dependencies.DeviceHelperFactory
 import com.superwall.sdk.dependencies.EnrichmentFactory
@@ -153,6 +155,7 @@ class PaywallView(
         EnrichmentFactory,
         TrackingFactory,
         DelegateAdapterFactory,
+        CustomerInfoFactory,
         PresentationFactory
     //region Public properties
 
@@ -214,10 +217,13 @@ class PaywallView(
     //region Initialization
 
     private var stateListener: Job? = null
+    private var customerInfoListener: Job? = null
 
     private fun stopStateListener() {
         stateListener?.cancel()
         stateListener = null
+        customerInfoListener?.cancel()
+        customerInfoListener = null
     }
 
     private fun startStateListener() {
@@ -229,6 +235,12 @@ class PaywallView(
                     .map { it.loadingState }
                     .distinctUntilChanged { old, new -> old::class == new::class }
                     .collectLatest { loadingStateDidChange() }
+            }
+        customerInfoListener =
+            ioScope.launch {
+                factory.customerInfoFlow().collect {
+                    controller.updateState(PaywallViewState.Updates.SetCustomerInfo(it))
+                }
             }
     }
 
@@ -299,9 +311,13 @@ class PaywallView(
                     "Timeout triggered - paywall wasn't loaded in ${timeout.inWholeSeconds} seconds"
                 controller.currentState
                     .filter { it.loadingState == PaywallLoadingState.Ready }
+                    .map { Result.success(it.loadingState) }
                     .timeout(timeout)
-                    .catch {
-                        if (it is TimeoutCancellationException) {
+                    .catch { err ->
+                        emit(Result.failure<PaywallLoadingState>(err))
+                    }.first()
+                    .onFailure { e ->
+                        if (e is TimeoutCancellationException) {
                             state.paywallStatePublisher?.emit(
                                 PaywallState.PresentationError(
                                     PaywallErrors.Timeout(msg),
@@ -309,20 +325,20 @@ class PaywallView(
                             )
                             mainScope.launch {
                                 updateState(WebLoadingFailed)
-
-                                val trackedEvent =
-                                    InternalSuperwallEvent.PaywallWebviewLoad(
-                                        state =
-                                            InternalSuperwallEvent.PaywallWebviewLoad.State.Fail(
-                                                WebviewError.Timeout(msg),
-                                                listOf(info.url.value),
-                                            ),
-                                        paywallInfo = info,
-                                    )
-                                factory.track(trackedEvent)
                             }
+
+                            val trackedEvent =
+                                InternalSuperwallEvent.PaywallWebviewLoad(
+                                    state =
+                                        InternalSuperwallEvent.PaywallWebviewLoad.State.Fail(
+                                            WebviewError.Timeout(msg),
+                                            listOf(info.url.value),
+                                        ),
+                                    paywallInfo = info,
+                                )
+                            factory.track(trackedEvent)
                         }
-                    }.first()
+                    }
             }
         }
 
@@ -372,19 +388,19 @@ class PaywallView(
         factory
             .delegate()
             .willPresentPaywall(info)
-        /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            try {
-                // Temporary disabled
-                // webView.setRendererPriorityPolicy(RENDERER_PRIORITY_IMPORTANT, true)
-            } catch (e: Throwable) {
-                Logger.debug(
-                    LogLevel.info,
-                    LogScope.paywallView,
-                    "Cannot set webview priority when beginning presentation",
-                    error = e,
-                )
-            }
-        }*/
+            /*if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                try {
+                    // Temporary disabled
+                    // webView.setRendererPriorityPolicy(RENDERER_PRIORITY_IMPORTANT, true)
+                } catch (e: Throwable) {
+                    Logger.debug(
+                        LogLevel.info,
+                        LogScope.paywallView,
+                        "Cannot set webview priority when beginning presentation",
+                        error = e,
+                    )
+                }
+            }*/
         webView.scrollTo(0, 0)
         if (loadingState is PaywallLoadingState.Ready) {
             webView.messageHandler.handle(PaywallMessage.TemplateParamsAndUserAttributes)
@@ -394,8 +410,8 @@ class PaywallView(
         }
     }
 
-    fun beforeOnDestroy() {
-        if (state.isBrowserViewPresented) {
+    fun beforeOnDestroy(forceCleanup: Boolean = false) {
+        if (state.isBrowserViewPresented && !forceCleanup) {
             return
         }
         factory.updatePaywallInfo(info)
@@ -404,8 +420,8 @@ class PaywallView(
             .willDismissPaywall(info)
     }
 
-    suspend fun destroyed() {
-        if (state.isBrowserViewPresented) {
+    suspend fun destroyed(forceCleanup: Boolean = false) {
+        if (state.isBrowserViewPresented && !forceCleanup) {
             return
         }
 
@@ -432,6 +448,7 @@ class PaywallView(
         state.paywallStatePublisher?.emit(PaywallState.Dismissed(info, result))
 
         if (!state.callbackInvoked) {
+            controller.updateState(CallbackInvoked)
             callback?.onFinished(
                 paywall = this,
                 result = result,
@@ -558,9 +575,9 @@ class PaywallView(
         }
     }
 
-    //endregion
+//endregion
 
-    //region Lifecycle
+//region Lifecycle
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
@@ -584,7 +601,7 @@ class PaywallView(
     }
 
     // Lets the view know that presentation has finished.
-    // Only called once per presentation.
+// Only called once per presentation.
     fun onViewCreated() {
         state.viewCreatedCompletion?.invoke(true)
         controller.updateState(ClearViewCreatedCompletion)
@@ -648,9 +665,9 @@ class PaywallView(
         }
     }
 
-    //endregion
+//endregion
 
-    //region Presentation
+//region Presentation
 
     private fun dismiss(presentationIsAnimated: Boolean) {
         // TODO: SW-2162 Implement animation support
@@ -685,7 +702,7 @@ class PaywallView(
                 state = InternalSuperwallEvent.ShimmerLoad.State.Started,
                 paywallId = state.paywall.identifier,
                 visibleDuration = null,
-                preloadingEnabled = factory.makeSuperwallOptions().paywalls.shouldPreload,
+                preloadingEnabled = factory.makeSuperwallOptions().computedShouldPreload(deviceHelper.deviceTier),
                 delay =
                     state.paywall.presentation.delay
                         .toDouble(),
@@ -738,7 +755,7 @@ class PaywallView(
                     delay =
                         state.paywall.presentation.delay
                             .toDouble(),
-                    preloadingEnabled = factory.makeSuperwallOptions().paywalls.shouldPreload,
+                    preloadingEnabled = factory.makeSuperwallOptions().computedShouldPreload(deviceHelper.deviceTier),
                 )
             factory.track(trackedEvent)
         }
@@ -782,9 +799,9 @@ class PaywallView(
         }
     }
 
-    //endregion
+//endregion
 
-    //region State
+//region State
 
     internal fun loadingStateDidChange() {
         if (state.isPresented) {

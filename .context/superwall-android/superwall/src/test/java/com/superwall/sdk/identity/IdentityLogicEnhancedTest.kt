@@ -108,7 +108,7 @@ class IdentityLogicEnhancedTest {
     }
 
     @Test
-    fun `mergeAttributes filters null values from lists`() {
+    fun `mergeAttributes preserves null values in lists`() {
         val newAttributes = mapOf("items" to listOf("a", null, "b", null, "c"))
 
         val result =
@@ -119,11 +119,11 @@ class IdentityLogicEnhancedTest {
             )
 
         val items = result["items"] as List<*>
-        assertEquals(listOf("a", "b", "c"), items)
+        assertEquals(listOf("a", null, "b", null, "c"), items)
     }
 
     @Test
-    fun `mergeAttributes filters null values from maps`() {
+    fun `mergeAttributes preserves null values in maps`() {
         val newAttributes =
             mapOf(
                 "metadata" to
@@ -144,7 +144,7 @@ class IdentityLogicEnhancedTest {
         @Suppress("UNCHECKED_CAST")
         val metadata = result["metadata"] as Map<*, *>
         assertTrue(metadata.containsKey("key1"))
-        assertFalse(metadata.containsKey("key2"))
+        assertTrue(metadata.containsKey("key2"))
         assertTrue(metadata.containsKey("key3"))
     }
 

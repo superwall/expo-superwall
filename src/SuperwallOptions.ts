@@ -58,6 +58,19 @@ export type TransactionBackgroundView = "spinner" | "none"
 export type TestModeBehavior = "automatic" | "whenEnabledForUser" | "never" | "always"
 
 /**
+ * @category Types
+ * @since 1.2.0
+ * A local asset that can be registered with Superwall and served to the paywall webview
+ * via the `swlocal://<id>` URL scheme.
+ *
+ * Accepts:
+ * - A Metro `require()` result (e.g. `require("./hero.png")`) — resolved through `expo-asset`.
+ * - A string URI: `file://`, `content://`, or an absolute path.
+ * - An `{ uri: string }` object (matches `Image` source).
+ */
+export type LocalResource = number | string | { uri: string }
+
+/**
  * @category Models
  * @since 0.0.15
  * Defines the messaging of the alert presented to the user when restoring a transaction fails.
@@ -184,6 +197,27 @@ export interface PartialSuperwallOptions {
    * @platform iOS and Android
    */
   testModeBehavior?: TestModeBehavior
+  /**
+   * A mapping of local resource IDs to local assets. The paywall webview can reference
+   * these via the `swlocal://<id>` URL scheme.
+   *
+   * Resolved at configure time. Pass a Metro `require()`, a file URI string, or `{ uri }`.
+   *
+   * ```ts
+   * <SuperwallProvider
+   *   apiKeys={...}
+   *   options={{
+   *     localResources: {
+   *       "hero-image": require("./assets/hero.png"),
+   *       "logo": { uri: FileSystem.documentDirectory + "logo.png" },
+   *     }
+   *   }}
+   * />
+   * ```
+   *
+   * @platform iOS and Android
+   */
+  localResources?: Record<string, LocalResource>
 }
 
 /**
