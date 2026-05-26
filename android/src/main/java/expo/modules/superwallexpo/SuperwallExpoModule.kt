@@ -28,6 +28,7 @@ import com.superwall.sdk.paywall.presentation.result.PresentationResult
 import com.superwall.sdk.config.models.ConfigurationStatus
 import com.superwall.sdk.paywall.presentation.register
 import com.superwall.sdk.paywall.presentation.dismiss
+import com.superwall.sdk.paywall.view.webview.PaywallResource
 import com.superwall.sdk.paywall.presentation.get_presentation_result.getPresentationResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -167,6 +168,9 @@ class SuperwallExpoModule : Module() {
           }
         }
 
+        @Suppress("UNCHECKED_CAST")
+        val localResourcesMap = options?.get("localResources") as? Map<String, String>
+
         Superwall.configure(
           apiKey = apiKey,
           applicationContext = appContext.reactContext?.applicationContext as Application,
@@ -176,6 +180,11 @@ class SuperwallExpoModule : Module() {
           completion = {
             Superwall.instance.setPlatformWrapper("Expo", version = sdkVersion ?: "0.0.0")
             Superwall.instance.delegate = SuperwallDelegateBridge()
+            if (localResourcesMap != null) {
+              Superwall.instance.localResources = localResourcesMap.mapValues { (_, value) ->
+                PaywallResource.FromUri(Uri.parse(value))
+              }
+            }
             if (promiseSettled.compareAndSet(false, true)) {
               promise.resolve(true)
             }

@@ -3,6 +3,7 @@ import { create } from "zustand"
 import { useShallow } from "zustand/shallow"
 import pkg from "../package.json"
 import type { PresentationResult } from "./compat/lib/PresentationResult"
+import { resolveLocalResources } from "./localResources"
 import SuperwallExpoModule from "./SuperwallExpoModule"
 import type {
   EntitlementsInfo,
@@ -232,16 +233,20 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     set({ isLoading: true, configurationError: null })
 
     try {
-      const { manualPurchaseManagement, manualPurchaseManagment, ...restOptions } = options || {}
+      const { manualPurchaseManagement, manualPurchaseManagment, localResources, ...restOptions } =
+        options || {}
 
       // Support both spellings for backward compatibility
       const isManualPurchaseManagement =
         manualPurchaseManagement ?? manualPurchaseManagment ?? false
 
+      const resolvedLocalResources = await resolveLocalResources(localResources)
+
       // Deep merge partial options with defaults to ensure all required fields are present
       const mergedOptions = {
         ...DefaultSuperwallOptions,
         ...restOptions,
+        ...(resolvedLocalResources ? { localResources: resolvedLocalResources } : {}),
         paywalls: {
           ...DefaultSuperwallOptions.paywalls,
           ...restOptions.paywalls,
