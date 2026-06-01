@@ -13,6 +13,67 @@ import type {
 import { DefaultSuperwallOptions, type PartialSuperwallOptions } from "./SuperwallOptions"
 import { filterUndefined } from "./utils/filterUndefined"
 
+const CONFIGURE_WAIT_TIMEOUT_MS = 10_000
+let configurePromise: Promise<void> | null = null
+
+const nextTick = () => new Promise((resolve) => setTimeout(resolve, 0))
+
+const timeoutError = () =>
+  new Error(`Timed out waiting ${CONFIGURE_WAIT_TIMEOUT_MS}ms for Superwall configure to complete.`)
+
+const withConfigureTimeout = (promise: Promise<void>, timeoutMs: number): Promise<void> =>
+  new Promise((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(timeoutError())
+    }, timeoutMs)
+
+    promise.then(
+      () => {
+        clearTimeout(timeout)
+        resolve()
+      },
+      (error) => {
+        clearTimeout(timeout)
+        reject(error)
+      },
+    )
+  })
+
+async function awaitConfigured(): Promise<void> {
+  if (useSuperwallStore.getState().isConfigured) {
+    return
+  }
+
+  const startedAt = Date.now()
+
+  while (!configurePromise) {
+    const { isConfigured, configurationError } = useSuperwallStore.getState()
+
+    if (isConfigured) {
+      return
+    }
+
+    if (configurationError) {
+      throw new Error(configurationError)
+    }
+
+    if (Date.now() - startedAt >= CONFIGURE_WAIT_TIMEOUT_MS) {
+      throw timeoutError()
+    }
+
+    await nextTick()
+  }
+
+  const remainingTimeout = Math.max(0, CONFIGURE_WAIT_TIMEOUT_MS - (Date.now() - startedAt))
+
+  await withConfigureTimeout(configurePromise, remainingTimeout)
+
+  const { isConfigured, configurationError } = useSuperwallStore.getState()
+  if (!isConfigured) {
+    throw new Error(configurationError ?? "Superwall configure did not complete.")
+  }
+}
+
 /**
  * @category Models
  * @since 0.0.15
@@ -231,7 +292,7 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   configure: async (apiKey, options) => {
     set({ isLoading: true, configurationError: null })
 
-    try {
+    const task = (async () => {
       const { manualPurchaseManagement, manualPurchaseManagment, ...restOptions } = options || {}
 
       // Support both spellings for backward compatibility
@@ -273,6 +334,12 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
         user: currentUser as UserAttributes,
         subscriptionStatus,
       })
+    })()
+
+    configurePromise = task
+
+    try {
+      await task
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       set({
@@ -283,6 +350,7 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     }
   },
   identify: async (userId, options) => {
+    await awaitConfigured()
     await SuperwallExpoModule.identify(userId, options)
 
     // TODO: Instead of setting users after identify, we should set this based on an event
@@ -296,6 +364,7 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     set({ user: currentUser as UserAttributes, subscriptionStatus })
   },
   reset: async () => {
+    await awaitConfigured()
     await SuperwallExpoModule.reset()
 
     const currentUser = await SuperwallExpoModule.getUserAttributes()
@@ -304,39 +373,49 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     set({ user: currentUser as UserAttributes, subscriptionStatus })
   },
   registerPlacement: async (placement, params, handlerId = "default") => {
+    await awaitConfigured()
     await SuperwallExpoModule.registerPlacement(placement, params, handlerId)
   },
   getPresentationResult: async (placement, params) => {
+    await awaitConfigured()
     return SuperwallExpoModule.getPresentationResult(placement, params)
   },
   restorePurchases: async () => {
+    await awaitConfigured()
     return SuperwallExpoModule.restorePurchases()
   },
   dismiss: async () => {
+    await awaitConfigured()
     await SuperwallExpoModule.dismiss()
   },
   preloadAllPaywalls: async () => {
-    SuperwallExpoModule.preloadAllPaywalls()
+    await awaitConfigured()
+    await SuperwallExpoModule.preloadAllPaywalls()
   },
   preloadPaywalls: async (placements) => {
-    SuperwallExpoModule.preloadPaywalls(placements)
+    await awaitConfigured()
+    await SuperwallExpoModule.preloadPaywalls(placements)
   },
   setUserAttributes: async (attrs) => {
+    await awaitConfigured()
     await SuperwallExpoModule.setUserAttributes(filterUndefined(attrs))
 
     const currentUser = await SuperwallExpoModule.getUserAttributes()
     set({ user: currentUser as UserAttributes })
   },
   getUserAttributes: async () => {
+    await awaitConfigured()
     const attributes = await SuperwallExpoModule.getUserAttributes()
     set({ user: attributes as UserAttributes })
     return attributes
   },
   setLogLevel: async (level) => {
-    SuperwallExpoModule.setLogLevel(level)
+    await awaitConfigured()
+    await SuperwallExpoModule.setLogLevel(level)
   },
 
   setIntegrationAttributes: async (attributes) => {
+    await awaitConfigured()
     await SuperwallExpoModule.setIntegrationAttributes(attributes)
 
     const currentUser = await SuperwallExpoModule.getUserAttributes()
@@ -344,17 +423,21 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   },
 
   getIntegrationAttributes: async () => {
+    await awaitConfigured()
     return SuperwallExpoModule.getIntegrationAttributes()
   },
 
   setSubscriptionStatus: async (status) => {
+    await awaitConfigured()
     await SuperwallExpoModule.setSubscriptionStatus(status)
   },
   getDeviceAttributes: async () => {
+    await awaitConfigured()
     const attributes = await SuperwallExpoModule.getDeviceAttributes()
     return attributes
   },
   getEntitlements: async () => {
+    await awaitConfigured()
     const entitlements = await SuperwallExpoModule.getEntitlements()
     return entitlements as EntitlementsInfo
   },
