@@ -14,39 +14,24 @@ import { DefaultSuperwallOptions, type PartialSuperwallOptions } from "./Superwa
 import { filterUndefined } from "./utils/filterUndefined"
 
 const CONFIGURE_WAIT_TIMEOUT_MS = 10_000
-let configurePromise: Promise<void> | null = null
 
 const nextTick = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 const timeoutError = () =>
   new Error(`Timed out waiting ${CONFIGURE_WAIT_TIMEOUT_MS}ms for Superwall configure to complete.`)
 
-const withConfigureTimeout = (promise: Promise<void>, timeoutMs: number): Promise<void> =>
-  new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      reject(timeoutError())
-    }, timeoutMs)
-
-    promise.then(
-      () => {
-        clearTimeout(timeout)
-        resolve()
-      },
-      (error) => {
-        clearTimeout(timeout)
-        reject(error)
-      },
-    )
-  })
-
+/**
+ * Blocks a native call until Superwall has finished configuring.
+ *
+ * Returns as soon as `isConfigured` flips true, throws if configuration failed
+ * (`configurationError`), or throws after CONFIGURE_WAIT_TIMEOUT_MS if configure
+ * never completes. Waiting is derived purely from store state, so it stays
+ * correct no matter when configure() runs relative to the gated call.
+ */
 async function awaitConfigured(): Promise<void> {
-  if (useSuperwallStore.getState().isConfigured) {
-    return
-  }
-
   const startedAt = Date.now()
 
-  while (!configurePromise) {
+  for (;;) {
     const { isConfigured, configurationError } = useSuperwallStore.getState()
 
     if (isConfigured) {
@@ -62,15 +47,6 @@ async function awaitConfigured(): Promise<void> {
     }
 
     await nextTick()
-  }
-
-  const remainingTimeout = Math.max(0, CONFIGURE_WAIT_TIMEOUT_MS - (Date.now() - startedAt))
-
-  await withConfigureTimeout(configurePromise, remainingTimeout)
-
-  const { isConfigured, configurationError } = useSuperwallStore.getState()
-  if (!isConfigured) {
-    throw new Error(configurationError ?? "Superwall configure did not complete.")
   }
 }
 
@@ -292,7 +268,7 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   configure: async (apiKey, options) => {
     set({ isLoading: true, configurationError: null })
 
-    const task = (async () => {
+    try {
       const { manualPurchaseManagement, manualPurchaseManagment, ...restOptions } = options || {}
 
       // Support both spellings for backward compatibility
@@ -334,12 +310,6 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
         user: currentUser as UserAttributes,
         subscriptionStatus,
       })
-    })()
-
-    configurePromise = task
-
-    try {
-      await task
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error)
       set({

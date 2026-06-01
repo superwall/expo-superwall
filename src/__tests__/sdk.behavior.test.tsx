@@ -78,6 +78,8 @@ const {
   __resetSuperwallEventBridgeForTests,
 }: typeof import("../internal/superwallEventBridge") = require("../internal/superwallEventBridge")
 
+const originalConfigure = useSuperwallStore.getState().configure
+
 describe("SDK behavior regressions", () => {
   let consoleErrorSpy: jest.SpyInstance
   let consoleLogSpy: jest.SpyInstance
@@ -94,6 +96,7 @@ describe("SDK behavior regressions", () => {
       configurationError: null,
       user: null,
       subscriptionStatus: { status: "UNKNOWN" },
+      configure: originalConfigure,
     })
   })
 
