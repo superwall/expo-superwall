@@ -23,12 +23,15 @@ class BaseHostService(
         requestId: String,
     ): Map<String, String> = factory.makeHeaders(isForDebugging, requestId)
 
-    suspend fun config(requestId: String) =
-        get<Config>(
-            "static_config",
-            requestId = requestId,
-            queryItems = listOf(URLQueryItem("pk", factory.storage.apiKey)),
-        )
+    suspend fun config(
+        requestId: String,
+        isRetryingCallback: (suspend () -> Unit)? = null,
+    ) = get<Config>(
+        "static_config",
+        requestId = requestId,
+        queryItems = listOf(URLQueryItem("pk", factory.storage.apiKey)),
+        isRetryingCallback = isRetryingCallback,
+    )
 
     suspend fun assignments() = get<ConfirmedAssignmentResponse>("assignments")
 

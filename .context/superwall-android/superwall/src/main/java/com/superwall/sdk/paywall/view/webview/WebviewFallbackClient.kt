@@ -26,7 +26,8 @@ internal class WebviewFallbackClient(
     private val loadUrl: (PaywallWebviewUrl) -> Unit,
     private val stopLoading: () -> Unit,
     private val onCrashed: (view: WebView, RenderProcessGoneDetail) -> Unit,
-) : DefaultWebviewClient("", ioScope, onCrashed) {
+    localResourceHandler: LocalResourceHandler? = null,
+) : DefaultWebviewClient("", ioScope, onCrashed, localResourceHandler) {
     private class MaxAttemptsReachedException : Exception("Max attempts reached")
 
     private var failureCount = 0

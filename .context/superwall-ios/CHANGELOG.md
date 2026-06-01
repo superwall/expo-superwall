@@ -2,6 +2,53 @@
 
 The changelog for `SuperwallKit`. Also see the [releases](https://github.com/superwall/Superwall-iOS/releases) on GitHub.
 
+## 4.15.3
+
+### Fixes
+
+- Fixes computed period prices (`weeklyPrice`, `dailyPrice`) being off by a small amount for products whose subscription period is expressed in days.
+
+## 4.15.2
+
+### Enhancements
+
+- Improves Apple Search Ads attribution capture rate.
+
+### Fixes
+
+- Changes the Superscript spm package repo source to a new lightweight repo meaning that the download of the package is way faster.
+- Filters out the all-zeros IDFA sentinel (returned when App Tracking Transparency is denied) so it no longer pollutes the `idfa` attribute on attribution payloads.
+
+## 4.15.1
+
+### Enhancements
+
+- Adds an `onCustomCallback` parameter to `getPaywall`.
+- `SuperwallOptions.localResources` now accepts UIImage's from xcasset files, e.g. `UIImage(named: "my-image")`.
+- Exposes abandoned transaction product params in audience filters.
+
+### Fixes
+
+- Sanitizes email user attribute.
+
+## 4.15.0
+
+### Enhancements
+
+- Adds support for custom store products. This allows you to purchase products that are on stores outside of the App Store using the `PurchaseController`.
+- Adds `formUnion` override when unioning sets of `Entitlement` objects.
+
+### Fixes
+
+- Fixes issue where test mode products had trial price data missing.
+- Fixed computed period prices (`weeklyPrice`, `dailyPrice`, `monthlyPrice`, `yearlyPrice`) displaying incorrectly rounded values on StoreKit 2 in production. For example, a £4.99/week product could show as £5.00/week. This was caused by Apple's `priceFormatStyle` applying storefront-specific rounding to computed values.
+
+## 4.14.2
+
+### Enhancements
+
+- Adds multipage paywall navigation tracking by tracking a `paywall_page_view` event, which contains information about the page view.
+
 ## 4.14.1
 
 ### Enhancements
@@ -14,7 +61,9 @@ The changelog for `SuperwallKit`. Also see the [releases](https://github.com/sup
 - Makes `device.isSandbox` more reliable.
 - Fixes the web restore alert not showing the "Yes" action button and "Cancel" incorrectly triggering the restore action.
 - Fixes a rare issue where a user's subscription could remain active after a refund, preventing paywalls from being shown.
-- Fixed trial eligibility for Stripe products.
+- Fixes trial eligibility for Stripe paywalls and tracks `freeTrial_start`.
+- Fixes an issue where `transaction_complete` could be missing transaction information when a crossgrade occurred while using a purchase controller.
+- Fixes terminated webviews refreshing in a loop on low RAM devices.
 
 ## 4.14.0
 

@@ -263,6 +263,12 @@ extension SuperwallEvent {
       return ["event": "stripeCheckoutComplete", "paywallInfo": paywallInfo.toJson()]
     case .stripeCheckoutFail(let paywallInfo):
       return ["event": "stripeCheckoutFail", "paywallInfo": paywallInfo.toJson()]
+    case .paywallPageView(let paywallInfo, let data):
+      return [
+        "event": "paywallPageView",
+        "paywallInfo": paywallInfo.toJson(),
+        "data": data.toJson()
+      ]
     default:
       return ["event": "unknown"]
     }

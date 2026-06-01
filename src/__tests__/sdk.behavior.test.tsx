@@ -147,8 +147,17 @@ describe("SDK behavior regressions", () => {
     })
   })
 
-  it("does not run the placement feature immediately and runs it on skip", async () => {
-    const registerPlacement = jest.fn().mockResolvedValue(undefined)
+  it("runs the placement feature when the native register promise resolves (Non-Gated dismiss, skip, purchased)", async () => {
+    // Mirror native semantics: the promise only resolves when the SDK invokes
+    // its feature closure — i.e. when access should be granted. Gated declines
+    // never resolve the promise.
+    let resolveRegister: (() => void) | undefined
+    const registerPlacement = jest.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveRegister = resolve
+        }),
+    )
     const feature = jest.fn()
     let placementApi: ReturnType<typeof usePlacement> | undefined
 
@@ -168,114 +177,53 @@ describe("SDK behavior regressions", () => {
       )
     })
 
-    await act(async () => {
+    // Non-Gated dismiss (regression for #185): native fires feature closure on
+    // dismiss-without-purchase, so the promise resolves and feature must run.
+    let pending = act(async () => {
       await placementApi!.registerPlacement({
-        placement: "test-placement",
+        placement: "non-gated-placement",
         feature,
       })
     })
 
     expect(feature).not.toHaveBeenCalled()
-
-    const handlerId = registerPlacement.mock.calls[0][2]
-
     act(() => {
-      emit("onPaywallSkip", {
-        skippedReason: { type: "NoAudienceMatch" },
-        handlerId,
-      })
+      resolveRegister?.()
     })
-
+    await pending
     expect(feature).toHaveBeenCalledTimes(1)
-    act(() => {
-      renderer!.unmount()
-    })
-  })
 
-  it("runs the placement feature only for purchased/restored dismissals", async () => {
-    const registerPlacement = jest.fn().mockResolvedValue(undefined)
-    const feature = jest.fn()
-    let placementApi: ReturnType<typeof usePlacement> | undefined
-
-    useSuperwallStore.setState({ registerPlacement })
-
-    function Harness() {
-      placementApi = usePlacement()
-      return null
-    }
-
-    let renderer: TestRenderer.ReactTestRenderer
-    act(() => {
-      renderer = TestRenderer.create(
-        <SuperwallContext.Provider value={true}>
-          <Harness />
-        </SuperwallContext.Provider>,
-      )
-    })
-
-    await act(async () => {
+    // Skip: native also resolves the promise via its feature closure.
+    pending = act(async () => {
       await placementApi!.registerPlacement({
-        placement: "declined-placement",
+        placement: "skipped-placement",
         feature,
       })
     })
-
-    let handlerId = registerPlacement.mock.calls[0][2]
-
     act(() => {
-      emit("onPaywallDismiss", {
-        paywallInfoJson: { name: "declined" },
-        result: { type: "declined" },
-        handlerId,
-      })
+      resolveRegister?.()
     })
+    await pending
+    expect(feature).toHaveBeenCalledTimes(2)
 
-    expect(feature).not.toHaveBeenCalled()
-
-    await act(async () => {
-      await placementApi!.registerPlacement({
-        placement: "purchased-placement",
+    // Gated decline: native never invokes the feature closure, so the promise
+    // never resolves and feature never runs. We assert by ticking the event
+    // loop without resolving the pending promise.
+    let unresolved = true
+    placementApi!
+      .registerPlacement({
+        placement: "gated-placement",
         feature,
       })
-    })
-
-    handlerId = registerPlacement.mock.calls[1][2]
-
-    act(() => {
-      emit("onPaywallDismiss", {
-        paywallInfoJson: { name: "purchased" },
-        result: { type: "purchased", productId: "pro" },
-        handlerId,
+      .then(() => {
+        unresolved = false
       })
-    })
-
-    expect(feature).toHaveBeenCalledTimes(1)
-
     await act(async () => {
-      await placementApi!.registerPlacement({
-        placement: "errored-placement",
-        feature,
-      })
+      await Promise.resolve()
     })
+    expect(unresolved).toBe(true)
+    expect(feature).toHaveBeenCalledTimes(2)
 
-    handlerId = registerPlacement.mock.calls[2][2]
-
-    act(() => {
-      emit("onPaywallError", {
-        errorString: "boom",
-        handlerId,
-      })
-    })
-
-    act(() => {
-      emit("onPaywallDismiss", {
-        paywallInfoJson: { name: "post-error" },
-        result: { type: "restored" },
-        handlerId,
-      })
-    })
-
-    expect(feature).toHaveBeenCalledTimes(1)
     act(() => {
       renderer!.unmount()
     })

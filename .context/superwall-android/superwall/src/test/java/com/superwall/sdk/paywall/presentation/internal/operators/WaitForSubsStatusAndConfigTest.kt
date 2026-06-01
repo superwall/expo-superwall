@@ -43,8 +43,7 @@ class WaitForSubsStatusAndConfigTest {
                 every { dependencyContainer.configManager.configState } returns configState
 
                 val identityManager = mockk<com.superwall.sdk.identity.IdentityManager>(relaxed = true)
-                every { identityManager.hasIdentity } returns
-                    MutableSharedFlow<Boolean>(replay = 1, extraBufferCapacity = 1).also { it.tryEmit(true) }
+                coEvery { identityManager.awaitLatestIdentity() } returns mockk(relaxed = true)
                 every { dependencyContainer.identityManager } returns identityManager
 
                 val request =
@@ -82,8 +81,7 @@ class WaitForSubsStatusAndConfigTest {
                 every { dependencyContainer.configManager.configState } returns configState
 
                 val identityManager = mockk<com.superwall.sdk.identity.IdentityManager>(relaxed = true)
-                every { identityManager.hasIdentity } returns
-                    MutableSharedFlow<Boolean>(replay = 1, extraBufferCapacity = 1).also { it.tryEmit(true) }
+                coEvery { identityManager.awaitLatestIdentity() } returns mockk(relaxed = true)
                 every { dependencyContainer.identityManager } returns identityManager
 
                 mockkStatic("com.superwall.sdk.analytics.internal.TrackingKt")

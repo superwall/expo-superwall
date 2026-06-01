@@ -5,6 +5,7 @@ import com.superwall.sdk.config.models.SurveyOption
 import com.superwall.sdk.models.customer.CustomerInfo
 import com.superwall.sdk.models.triggers.TriggerResult
 import com.superwall.sdk.paywall.presentation.PaywallInfo
+import com.superwall.sdk.paywall.view.webview.messaging.PageViewData
 import com.superwall.sdk.paywall.presentation.internal.PaywallPresentationRequestStatus
 import com.superwall.sdk.paywall.presentation.internal.PaywallPresentationRequestStatusReason
 import com.superwall.sdk.paywall.view.webview.WebviewError
@@ -136,6 +137,15 @@ sealed class SuperwallEvent {
     ) : SuperwallEvent() {
         override val rawName: String
             get() = "paywall_open"
+    }
+
+    // / When a page view occurs in a multi-page paywall.
+    data class PaywallPageView(
+        val paywallInfo: PaywallInfo,
+        val data: PageViewData,
+    ) : SuperwallEvent() {
+        override val rawName: String
+            get() = SuperwallEvents.PaywallPageView.rawName
     }
 
     // / When a paywall is closed.

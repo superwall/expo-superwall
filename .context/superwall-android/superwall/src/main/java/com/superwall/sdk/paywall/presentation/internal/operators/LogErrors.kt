@@ -36,6 +36,6 @@ internal suspend fun Superwall.logErrors(
     Logger.debug(
         logLevel = LogLevel.info,
         scope = LogScope.paywallPresentation,
-        message = "Skipped paywall presentation: ${error.message}, ${error.stackTraceToString()}",
+        message = "Skipped paywall presentation: ${if (error is PaywallPresentationRequestStatusReason) "${error.description} - ${error.info}" else error.message}, ${error.stackTraceToString()}",
     )
 }

@@ -246,26 +246,23 @@ object ConfigLogic {
 
         // Loop through all the rules and check their preloading behavior
         triggerRulesPerCampaign.forEach { campaignRules ->
-            campaignRules.forEach { rule ->
-                allExperimentIds.add(rule.experiment.id)
+            allExperimentIds.addAll(campaignRules.map { it.experiment.id })
+            val ifTrueRules = campaignRules
+                .filter { it.preload.behavior == TriggerPreloadBehavior.IF_TRUE }
 
-                // Check the preloading behavior of each rule
-                when (rule.preload.behavior) {
-                    TriggerPreloadBehavior.IF_TRUE -> {
-                        val outcome =
-                            expressionEvaluator.evaluateExpression(
-                                rule = rule,
-                                eventData = null,
-                            )
-                        if (outcome is TriggerRuleOutcome.NoMatch) {
-                            skippedExperimentIds.add(rule.experiment.id)
-                        }
-                    }
-
-                    TriggerPreloadBehavior.ALWAYS -> {}
-                    TriggerPreloadBehavior.NEVER -> skippedExperimentIds.add(rule.experiment.id)
-                }
+            val firstIfTrueMatch = ifTrueRules.firstOrNull {
+                expressionEvaluator.evaluateExpression(
+                    rule = it,
+                    eventData = null,
+                ) is TriggerRuleOutcome.Match
             }
+            val skippedIfTrueRules = ifTrueRules.map { it.experiment.id }.filter { rule ->
+                rule != firstIfTrueMatch?.experiment?.id
+            }
+            val skippedNeverRules = campaignRules.filter {
+                it.preload.behavior == TriggerPreloadBehavior.NEVER
+            }.map { it.experiment.id }
+            skippedExperimentIds.addAll(skippedIfTrueRules + skippedNeverRules)
         }
 
         // Remove any confirmed experiment IDs that are no longer part of a trigger
@@ -320,12 +317,13 @@ object ConfigLogic {
     }
 
     // Returns entitlements mapped by product ID
-    fun extractEntitlementsByProductId(from: List<ProductItem>) = from.associate { it.fullProductId to it.entitlements }
+    fun extractEntitlementsByProductId(from: List<ProductItem>) =
+        from.associate { it.fullProductId to it.entitlements }
 
     // Returns entitlements mapped by product ID for CrossplatformProduct
     fun extractEntitlementsByProductIdFromCrossplatform(from: List<CrossplatformProduct>) =
         from.associate {
             it.fullProductId to
-                it.entitlements.toSet()
+                    it.entitlements.toSet()
         }
 }

@@ -92,5 +92,7 @@ fun PaywallInfo.toJson(): Map<String, Any?> {
 
   map["state"] = this.state
 
+  map["customerInfo"] = this.customerInfo.toJson()
+
   return map
 }

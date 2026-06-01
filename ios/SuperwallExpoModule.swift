@@ -354,6 +354,13 @@ public class SuperwallExpoModule: Module {
       promise.resolve(nil)
     }
 
+    AsyncFunction("restorePurchases") { (promise: Promise) in
+      Task {
+        let result = await Superwall.shared.restorePurchases()
+        promise.resolve(result.toJson())
+      }
+    }
+
     AsyncFunction("dismiss") { (promise: Promise) in
       Superwall.shared.dismiss {
         promise.resolve(nil)
@@ -404,6 +411,10 @@ public class SuperwallExpoModule: Module {
     AsyncFunction("getIntegrationAttributes") { (promise: Promise) in
       let attributes = Superwall.shared.integrationAttributes
       promise.resolve(attributes)
+    }
+
+    AsyncFunction("consume") { (_: String, promise: Promise) in
+      promise.resolve(nil)
     }
   }
 }

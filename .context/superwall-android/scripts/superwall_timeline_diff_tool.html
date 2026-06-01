@@ -1,0 +1,465 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap');
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#0d0f12;
+  --surface:#14171c;
+  --surface2:#1c2028;
+  --border:#252830;
+  --border2:#2e3340;
+  --text:#e2e5ec;
+  --text2:#8a8f9e;
+  --text3:#555a68;
+  --accent:#4f8ef7;
+  --accent2:#7c5af0;
+  --green:#3ecf8e;
+  --amber:#f7a84f;
+  --red:#f7554f;
+  --purple:#9f7af0;
+}
+
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;min-height:100vh;display:flex;flex-direction:column}
+
+/* INPUT SCREEN */
+#input-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px;gap:20px}
+
+.input-header{text-align:center;margin-bottom:4px}
+.input-header h1{font-size:18px;font-weight:600;color:var(--text);letter-spacing:-0.3px}
+.input-header p{color:var(--text3);font-size:12px;margin-top:4px;font-family:'JetBrains Mono',monospace}
+
+.paste-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:900px}
+
+.paste-col{display:flex;flex-direction:column;gap:8px}
+.paste-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:var(--text3);display:flex;align-items:center;gap:6px}
+.paste-label .dot{width:6px;height:6px;border-radius:50%}
+.dot-a{background:var(--accent)}
+.dot-b{background:var(--accent2)}
+
+textarea{
+  background:var(--surface);
+  border:1px solid var(--border2);
+  border-radius:8px;
+  color:var(--text2);
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;
+  padding:12px;
+  resize:vertical;
+  min-height:200px;
+  width:100%;
+  line-height:1.5;
+  transition:border-color 0.15s;
+  outline:none;
+}
+textarea:focus{border-color:var(--accent);color:var(--text)}
+textarea::placeholder{color:var(--text3)}
+
+.compare-btn{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border:none;
+  border-radius:8px;
+  color:#fff;
+  cursor:pointer;
+  font-family:'DM Sans',sans-serif;
+  font-size:13px;
+  font-weight:600;
+  padding:11px 32px;
+  transition:opacity 0.15s,transform 0.1s;
+  letter-spacing:-0.1px;
+}
+.compare-btn:hover{opacity:0.9;transform:translateY(-1px)}
+.compare-btn:active{transform:translateY(0)}
+
+.err{color:var(--red);font-size:11px;font-family:'JetBrains Mono',monospace;text-align:center;min-height:16px}
+
+/* VIEWER SCREEN */
+#viewer-screen{display:none;flex-direction:column;height:100vh;overflow:hidden}
+
+.viewer-header{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0}
+.viewer-header h1{font-size:13px;font-weight:600;color:var(--text);letter-spacing:-0.2px}
+.header-sep{color:var(--text3);font-size:11px}
+
+.col-labels{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0}
+.col-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.7px;color:var(--text3);display:flex;align-items:center;gap:6px}
+
+.back-btn{
+  background:var(--surface2);
+  border:1px solid var(--border2);
+  border-radius:5px;
+  color:var(--text2);
+  cursor:pointer;
+  font-size:11px;
+  font-family:'DM Sans',sans-serif;
+  padding:4px 10px;
+  margin-left:auto;
+}
+.back-btn:hover{border-color:var(--border2);color:var(--text)}
+
+.scroll-area{overflow-y:auto;flex:1;padding:8px 12px}
+
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+
+/* EVENTS */
+.evt{border:1px solid var(--border);border-radius:6px;margin-bottom:5px;overflow:hidden;background:var(--surface);cursor:pointer;transition:border-color 0.1s}
+.evt:hover{border-color:var(--border2)}
+.evt.open{border-color:var(--border2)}
+
+.evt-head{display:flex;align-items:center;gap:6px;padding:6px 9px}
+.cat-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.evt-name{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.diff-tag{font-size:9px;font-weight:600;padding:1px 5px;border-radius:3px;flex-shrink:0;text-transform:uppercase;letter-spacing:0.5px}
+.evt-ms{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text3);flex-shrink:0;margin-left:auto}
+.chev{font-size:10px;color:var(--text3);flex-shrink:0;transition:transform 0.12s;margin-left:4px}
+.evt.open .chev{transform:rotate(90deg)}
+
+.evt-props{display:none;border-top:1px solid var(--border);padding:7px 9px;background:var(--bg)}
+.evt.open .evt-props{display:block}
+.prop-row{display:flex;gap:8px;margin-bottom:3px;font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.5}
+.prop-k{color:var(--text3);flex-shrink:0;min-width:120px}
+.prop-v{color:var(--text2);word-break:break-all}
+
+.spacer-slot{height:30px;margin-bottom:5px;display:flex;align-items:center;justify-content:center}
+.spacer-inner{font-size:10px;color:var(--text3);border:1px dashed var(--border);border-radius:4px;padding:2px 8px;font-family:'JetBrains Mono',monospace}
+
+/* stats bar */
+.stats-bar{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0}
+.stat-row{display:flex;gap:10px;flex-wrap:wrap}
+.stat{font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text3)}
+.stat span{color:var(--text2)}
+
+/* legend */
+.legend{display:flex;gap:12px;flex-wrap:wrap;padding:6px 12px;border-bottom:1px solid var(--border);background:var(--surface);flex-shrink:0}
+.leg{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text3)}
+.leg .cat-dot{width:6px;height:6px}
+</style>
+</head>
+<body>
+
+<div id="input-screen">
+  <div class="input-header">
+    <h1>Timeline Diff</h1>
+    <p>// paste two superwall event JSON arrays</p>
+  </div>
+  <div class="paste-grid">
+    <div class="paste-col">
+      <div class="paste-label"><div class="dot dot-a"></div>Run A (left)</div>
+      <textarea id="json-a" placeholder='[{"eventName":"app_install",...}]'></textarea>
+    </div>
+    <div class="paste-col">
+      <div class="paste-label"><div class="dot dot-b"></div>Run B (right)</div>
+      <textarea id="json-b" placeholder='[{"eventName":"app_install",...}]'></textarea>
+    </div>
+  </div>
+  <div class="err" id="err"></div>
+  <button class="compare-btn" onclick="compare()">Compare →</button>
+</div>
+
+<div id="viewer-screen">
+  <div class="viewer-header">
+    <h1>Timeline Diff</h1>
+    <span class="header-sep">//</span>
+    <span id="header-info" style="font-size:11px;color:var(--text3);font-family:'JetBrains Mono',monospace"></span>
+    <button class="back-btn" onclick="reset()">← back</button>
+  </div>
+  <div class="stats-bar">
+    <div class="stat-row" id="stats-a"></div>
+    <div class="stat-row" id="stats-b"></div>
+  </div>
+  <div class="col-labels">
+    <div class="col-label"><div class="dot dot-a"></div><span id="label-a">Run A</span></div>
+    <div class="col-label"><div class="dot dot-b"></div><span id="label-b">Run B</span></div>
+  </div>
+  <div class="legend">
+    <div class="leg"><div class="cat-dot" style="background:#3ecf8e"></div>lifecycle</div>
+    <div class="leg"><div class="cat-dot" style="background:#4f8ef7"></div>config</div>
+    <div class="leg"><div class="cat-dot" style="background:#9f7af0"></div>paywall</div>
+    <div class="leg"><div class="cat-dot" style="background:#f7554f"></div>identity</div>
+    <div class="leg"><div class="cat-dot" style="background:#f7a84f"></div>redemption</div>
+    <div class="leg"><div class="cat-dot" style="background:#555a68"></div>attributes</div>
+  </div>
+  <div class="scroll-area">
+    <div class="compare-grid">
+      <div id="col-a"></div>
+      <div id="col-b"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CAT_COLORS = {
+  lifecycle: '#3ecf8e',
+  config:    '#4f8ef7',
+  paywall:   '#9f7af0',
+  identity:  '#f7554f',
+  redemption:'#f7a84f',
+  attributes:'#555a68',
+};
+
+function catOf(n) {
+  if (/app_install|app_open|app_launch|first_seen|session_start|enrichment|subscriptionStatus/.test(n)) return 'lifecycle';
+  if (/config/.test(n)) return 'config';
+  if (/paywall|shimmer|trigger/.test(n)) return 'paywall';
+  if (/identity|reset/.test(n)) return 'identity';
+  if (/redemption|customerInfo/.test(n)) return 'redemption';
+  return 'attributes';
+}
+
+function fmtMs(ms) {
+  return ms >= 10000 ? (ms/1000).toFixed(1)+'s' : ms >= 1000 ? (ms/1000).toFixed(2)+'s' : ms+'ms';
+}
+
+// Simple diff tags based on comparing same-name events
+function getDiffTags(eventsA, eventsB) {
+  const tagsA = new Map(); // index -> {label, bg, text}
+  const tagsB = new Map();
+
+  const namesA = eventsA.map(e => e.eventName);
+  const namesB = eventsB.map(e => e.eventName);
+
+  // Find events unique to each side
+  const countsA = {}, countsB = {};
+  namesA.forEach(n => countsA[n] = (countsA[n]||0)+1);
+  namesB.forEach(n => countsB[n] = (countsB[n]||0)+1);
+
+  // Double enrichment detection
+  const enrichA = eventsA.filter(e => e.eventName === 'enrichment_start');
+  const enrichB = eventsB.filter(e => e.eventName === 'enrichment_start');
+  if (enrichA.length > 1) {
+    let count = 0;
+    eventsA.forEach((e,i) => { if(e.eventName==='enrichment_start'){ count++; if(count>1) tagsA.set(i,{label:'double!',bg:'#3a1a1a',text:'#f7554f'}); }});
+  }
+  if (enrichB.length > 1) {
+    let count = 0;
+    eventsB.forEach((e,i) => { if(e.eventName==='enrichment_start'){ count++; if(count>1) tagsB.set(i,{label:'double!',bg:'#3a1a1a',text:'#f7554f'}); }});
+  }
+
+  // Extra events (present in A but not B, and vice versa)
+  const onlyA = new Set(Object.keys(countsA).filter(n => !countsB[n]));
+  const onlyB = new Set(Object.keys(countsB).filter(n => !countsA[n]));
+  eventsA.forEach((e,i) => { if(onlyA.has(e.eventName) && !tagsA.has(i)) tagsA.set(i,{label:'only A',bg:'#1a1a2e',text:'#4f8ef7'}); });
+  eventsB.forEach((e,i) => { if(onlyB.has(e.eventName) && !tagsB.has(i)) tagsB.set(i,{label:'only B',bg:'#1a1a2e',text:'#4f8ef7'}); });
+
+  // Config fetch speed comparison
+  const cfA = eventsA.find(e => e.eventName==='config_refresh');
+  const cfB = eventsB.find(e => e.eventName==='config_refresh');
+  if (cfA && cfB) {
+    const dA = parseInt(cfA.params?.fetch_duration||0);
+    const dB = parseInt(cfB.params?.fetch_duration||0);
+    if (dA > dB * 1.3) {
+      const ia = eventsA.indexOf(cfA);
+      if (!tagsA.has(ia)) tagsA.set(ia, {label:'slower',bg:'#2a1e0a',text:'#f7a84f'});
+    }
+    if (dB > dA * 1.3) {
+      const ib = eventsB.indexOf(cfB);
+      if (!tagsB.has(ib)) tagsB.set(ib, {label:'slower',bg:'#2a1e0a',text:'#f7a84f'});
+    }
+  }
+
+  // Order anomaly: enrichment_start before app_open
+  const esA = eventsA.findIndex(e=>e.eventName==='enrichment_start');
+  const aoA = eventsA.findIndex(e=>e.eventName==='app_open');
+  if (esA>=0 && aoA>=0 && esA < aoA && !tagsA.has(esA)) tagsA.set(esA, {label:'order ↕',bg:'#0d1a2e',text:'#4f8ef7'});
+
+  const esB = eventsB.findIndex(e=>e.eventName==='enrichment_start');
+  const aoB = eventsB.findIndex(e=>e.eventName==='app_open');
+  if (esB>=0 && aoB>=0 && esB < aoB && !tagsB.has(esB)) tagsB.set(esB, {label:'order ↕',bg:'#0d1a2e',text:'#4f8ef7'});
+
+  // redemption_start after paywall_open
+  eventsA.forEach((e,i) => {
+    if (e.eventName === 'redemption_start') {
+      const poIdx = eventsA.findIndex(x=>x.eventName==='paywall_open');
+      if (poIdx>=0 && i > poIdx && !tagsA.has(i)) tagsA.set(i, {label:'after open!',bg:'#3a0a0a',text:'#f7554f'});
+    }
+  });
+  eventsB.forEach((e,i) => {
+    if (e.eventName === 'redemption_start') {
+      const poIdx = eventsB.findIndex(x=>x.eventName==='paywall_open');
+      if (poIdx>=0 && i > poIdx && !tagsB.has(i)) tagsB.set(i, {label:'after open!',bg:'#3a0a0a',text:'#f7554f'});
+    }
+  });
+
+  return { tagsA, tagsB };
+}
+
+function buildEvt(ev, tag) {
+  const cat = catOf(ev.eventName);
+  const color = CAT_COLORS[cat];
+  const params = ev.params || {};
+  const filteredParams = Object.entries(params).filter(([k]) => !['is_superwall','app_session_id'].includes(k));
+
+  const div = document.createElement('div');
+  div.className = 'evt';
+
+  const head = document.createElement('div');
+  head.className = 'evt-head';
+
+  const dot = document.createElement('div');
+  dot.className = 'cat-dot';
+  dot.style.background = color;
+
+  const name = document.createElement('div');
+  name.className = 'evt-name';
+  name.title = ev.eventName;
+  name.textContent = ev.eventName;
+
+  head.appendChild(dot);
+
+  if (tag) {
+    const t = document.createElement('span');
+    t.className = 'diff-tag';
+    t.style.background = tag.bg;
+    t.style.color = tag.text;
+    t.style.border = '1px solid ' + tag.text + '44';
+    t.textContent = tag.label;
+    head.appendChild(t);
+  }
+
+  head.appendChild(name);
+
+  const ms = document.createElement('div');
+  ms.className = 'evt-ms';
+  ms.textContent = fmtMs(ev.elapsedMs || 0);
+  head.appendChild(ms);
+
+  if (filteredParams.length > 0) {
+    const chev = document.createElement('div');
+    chev.className = 'chev';
+    chev.textContent = '›';
+    head.appendChild(chev);
+  }
+
+  const propsDiv = document.createElement('div');
+  propsDiv.className = 'evt-props';
+  filteredParams.forEach(([k, v]) => {
+    const row = document.createElement('div');
+    row.className = 'prop-row';
+    const kEl = document.createElement('div');
+    kEl.className = 'prop-k';
+    kEl.textContent = k;
+    const vEl = document.createElement('div');
+    vEl.className = 'prop-v';
+    const str = String(v);
+    vEl.textContent = str.length > 200 ? str.slice(0, 200) + '…' : str;
+    row.appendChild(kEl);
+    row.appendChild(vEl);
+    propsDiv.appendChild(row);
+  });
+
+  div.appendChild(head);
+  div.appendChild(propsDiv);
+
+  head.addEventListener('click', () => {
+    if (filteredParams.length === 0) return;
+    div.classList.toggle('open');
+  });
+
+  return div;
+}
+
+function buildSpacer(label) {
+  const div = document.createElement('div');
+  div.className = 'spacer-slot';
+  const inner = document.createElement('div');
+  inner.className = 'spacer-inner';
+  inner.textContent = label || '—';
+  div.appendChild(inner);
+  return div;
+}
+
+function getStats(events) {
+  const total = events.length;
+  const last = events[events.length - 1];
+  const duration = last ? (last.elapsedMs || 0) : 0;
+  const cf = events.find(e => e.eventName === 'config_refresh');
+  const fetchDur = cf ? cf.params?.fetch_duration : null;
+  const enrichments = events.filter(e => e.eventName === 'enrichment_start').length;
+  const sdk = (() => {
+    const da = events.find(e => e.eventName === 'device_attributes');
+    return da?.params?.sdkVersion || '?';
+  })();
+  return { total, duration, fetchDur, enrichments, sdk };
+}
+
+function compare() {
+  const rawA = document.getElementById('json-a').value.trim();
+  const rawB = document.getElementById('json-b').value.trim();
+  const errEl = document.getElementById('err');
+  errEl.textContent = '';
+
+  let eventsA, eventsB;
+  try { eventsA = JSON.parse(rawA); } catch(e) { errEl.textContent = 'Run A: invalid JSON'; return; }
+  try { eventsB = JSON.parse(rawB); } catch(e) { errEl.textContent = 'Run B: invalid JSON'; return; }
+  if (!Array.isArray(eventsA) || !Array.isArray(eventsB)) { errEl.textContent = 'Both inputs must be JSON arrays'; return; }
+
+  const { tagsA, tagsB } = getDiffTags(eventsA, eventsB);
+
+  // Stats
+  const sA = getStats(eventsA);
+  const sB = getStats(eventsB);
+
+  document.getElementById('stats-a').innerHTML =
+    `<div class="stat">events <span>${sA.total}</span></div>` +
+    `<div class="stat">duration <span>${fmtMs(sA.duration)}</span></div>` +
+    `<div class="stat">config fetch <span>${sA.fetchDur ? sA.fetchDur+'ms' : '?'}</span></div>` +
+    `<div class="stat">enrichments <span>${sA.enrichments}</span></div>` +
+    `<div class="stat">sdk <span>${sA.sdk}</span></div>`;
+
+  document.getElementById('stats-b').innerHTML =
+    `<div class="stat">events <span>${sB.total}</span></div>` +
+    `<div class="stat">duration <span>${fmtMs(sB.duration)}</span></div>` +
+    `<div class="stat">config fetch <span>${sB.fetchDur ? sB.fetchDur+'ms' : '?'}</span></div>` +
+    `<div class="stat">enrichments <span>${sB.enrichments}</span></div>` +
+    `<div class="stat">sdk <span>${sB.sdk}</span></div>`;
+
+  document.getElementById('header-info').textContent = `A:${eventsA.length} events  ·  B:${eventsB.length} events`;
+
+  const colA = document.getElementById('col-a');
+  const colB = document.getElementById('col-b');
+  colA.innerHTML = '';
+  colB.innerHTML = '';
+
+  // Align by event name — greedy matching
+  const usedB = new Set();
+  const pairsA = eventsA.map((ev, i) => {
+    const matchIdx = eventsB.findIndex((eb, j) => !usedB.has(j) && eb.eventName === ev.eventName);
+    if (matchIdx >= 0) { usedB.add(matchIdx); return { ev, tag: tagsA.get(i)||null, matchIdx }; }
+    return { ev, tag: tagsA.get(i)||null, matchIdx: -1 };
+  });
+
+  const unmatchedB = eventsB.map((ev, j) => ({ ev, j, tag: tagsB.get(j)||null })).filter(x => !usedB.has(x.j));
+
+  // Simple side-by-side: just render both columns independently with alignment hints
+  eventsA.forEach((ev, i) => {
+    colA.appendChild(buildEvt(ev, tagsA.get(i)||null));
+  });
+  eventsB.forEach((ev, i) => {
+    colB.appendChild(buildEvt(ev, tagsB.get(i)||null));
+  });
+
+  // Pad shorter column
+  const lenA = eventsA.length;
+  const lenB = eventsB.length;
+  if (lenA > lenB) {
+    for (let i = 0; i < lenA - lenB; i++) colB.appendChild(buildSpacer('—'));
+  } else if (lenB > lenA) {
+    for (let i = 0; i < lenB - lenA; i++) colA.appendChild(buildSpacer('—'));
+  }
+
+  document.getElementById('input-screen').style.display = 'none';
+  const vs = document.getElementById('viewer-screen');
+  vs.style.display = 'flex';
+}
+
+function reset() {
+  document.getElementById('viewer-screen').style.display = 'none';
+  document.getElementById('input-screen').style.display = 'flex';
+}
+</script>
+</body>
+</html>

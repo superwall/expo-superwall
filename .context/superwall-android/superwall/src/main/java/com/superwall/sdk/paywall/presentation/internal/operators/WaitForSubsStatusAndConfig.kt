@@ -144,7 +144,5 @@ internal suspend fun waitForEntitlementsAndConfig(
         }
     }
 
-// Get the identity. This may or may not wait depending on whether the dev
-// specifically wants to wait for assignments.
-    dependencyContainer.identityManager.hasIdentity.first()
+    dependencyContainer.identityManager.awaitLatestIdentity()
 }

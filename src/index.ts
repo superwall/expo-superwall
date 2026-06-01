@@ -1,10 +1,18 @@
 export * from "./CustomPurchaseControllerProvider"
+export {
+  PresentationResult,
+  PresentationResultHoldout,
+  PresentationResultNoAudienceMatch,
+  PresentationResultPaywall,
+  PresentationResultPaywallNotAvailable,
+  PresentationResultPlacementNotFound,
+  PresentationResultUserIsSubscribed,
+} from "./compat/lib/PresentationResult"
 export * from "./components"
-export * from "./components"
-
 export { default as SuperwallExpoModule } from "./SuperwallExpoModule"
 export type * from "./SuperwallExpoModule.types"
 export type {
+  LocalResource,
   LoggingOptions,
   NetworkEnvironment,
   PartialSuperwallOptions,

@@ -5,15 +5,21 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 enum class LatestPeriodType {
-    @SerialName("TRIAL")
+    @SerialName("trial")
     TRIAL,
 
-    @SerialName("SUBSCRIPTION")
+    @SerialName("code")
+    CODE,
+
+    @SerialName("subscription")
     SUBSCRIPTION,
 
-    @SerialName("PROMOTIONAL")
+    @SerialName("promotional")
     PROMOTIONAL,
 
-    @SerialName("REVOKED")
+    @SerialName("winback")
+    WINBACK,
+
+    @SerialName("revoked")
     REVOKED,
 }

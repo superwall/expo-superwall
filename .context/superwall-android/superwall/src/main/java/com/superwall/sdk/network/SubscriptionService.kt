@@ -13,6 +13,7 @@ import com.superwall.sdk.store.testmode.models.SuperwallProductsResponse
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
+import kotlin.time.Duration.Companion.seconds
 
 class SubscriptionService(
     override val host: String,
@@ -31,6 +32,7 @@ class SubscriptionService(
             namingStrategy = null
             explicitNulls = false
             ignoreUnknownKeys = true
+            coerceInputValues = true
         }
 
     suspend fun redeemToken(
@@ -57,6 +59,7 @@ class SubscriptionService(
                         attributionProps,
                     ),
                 ).toByteArray(),
+        timeout = 10.seconds
     )
 
     suspend fun webEntitlementsByUserId(
@@ -65,12 +68,14 @@ class SubscriptionService(
     ) = get<WebEntitlements>(
         "users/${userId?.value ?: deviceId.value}/entitlements",
         queryItems = listOf(URLQueryItem("deviceId", deviceId.value)),
+        timeout = 5.seconds
     )
 
     suspend fun webEntitlementsByDeviceId(deviceId: DeviceVendorId) =
         get<WebEntitlements>(
             "users/${deviceId.value}/entitlements",
             queryItems = listOf(URLQueryItem("deviceId", deviceId.value)),
+            timeout = 5.seconds
         )
 
     suspend fun getProducts() = get<SuperwallProductsResponse>("products")

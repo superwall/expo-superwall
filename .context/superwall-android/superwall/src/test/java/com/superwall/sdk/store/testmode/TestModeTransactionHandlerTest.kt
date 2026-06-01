@@ -20,8 +20,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TestModeTransactionHandlerTest {
-    private fun makeTestModeManager(): TestModeManager {
-        val manager = TestModeManager(mockk(relaxed = true))
+    private fun makeTestMode(): TestMode {
+        val manager = TestMode(mockk(relaxed = true))
         // Activate test mode so session data can be written
         val config = mockk<com.superwall.sdk.models.config.Config>(relaxed = true)
         manager.evaluateTestMode(config, "com.app", null, null, TestModeBehavior.ALWAYS)
@@ -48,7 +48,7 @@ class TestModeTransactionHandlerTest {
     @Test
     fun `findSuperwallProductForId returns matching product`() {
         Given("a TestModeTransactionHandler with products") {
-            val manager = makeTestModeManager()
+            val manager = makeTestMode()
             manager.setProducts(
                 listOf(
                     makeProduct("com.test.monthly"),
@@ -71,7 +71,7 @@ class TestModeTransactionHandlerTest {
     @Test
     fun `findSuperwallProductForId returns null for unknown id`() {
         Given("a TestModeTransactionHandler with products") {
-            val manager = makeTestModeManager()
+            val manager = makeTestMode()
             manager.setProducts(listOf(makeProduct("com.test.monthly")))
             val handler = TestModeTransactionHandler(manager, mockk(relaxed = true))
 
@@ -88,7 +88,7 @@ class TestModeTransactionHandlerTest {
     @Test
     fun `entitlementsForProduct returns entitlement set`() {
         Given("a handler with products that have entitlements") {
-            val manager = makeTestModeManager()
+            val manager = makeTestMode()
             manager.setProducts(
                 listOf(
                     makeProduct(
@@ -118,7 +118,7 @@ class TestModeTransactionHandlerTest {
     @Test
     fun `entitlementsForProduct returns empty set for unknown product`() {
         Given("a handler with products") {
-            val manager = makeTestModeManager()
+            val manager = makeTestMode()
             manager.setProducts(listOf(makeProduct("com.test.monthly")))
             val handler = TestModeTransactionHandler(manager, mockk(relaxed = true))
 
@@ -135,7 +135,7 @@ class TestModeTransactionHandlerTest {
     @Test
     fun `entitlementsForProduct returns empty set for product without entitlements`() {
         Given("a handler with a product that has no entitlements") {
-            val manager = makeTestModeManager()
+            val manager = makeTestMode()
             manager.setProducts(
                 listOf(
                     makeProduct("com.test.basic", entitlements = emptyList()),

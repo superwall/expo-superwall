@@ -15,6 +15,9 @@ import com.superwall.sdk.BuildConfig
 import com.superwall.sdk.Superwall
 import com.superwall.sdk.analytics.DefaultClassifierDataFactory
 import com.superwall.sdk.analytics.DeviceClassifier
+import com.superwall.sdk.analytics.Tier
+import com.superwall.sdk.dependencies.ActiveEntitlementsFactory
+import com.superwall.sdk.dependencies.CustomerInfoFactory
 import com.superwall.sdk.dependencies.ExperimentalPropertiesFactory
 import com.superwall.sdk.dependencies.IdentityInfoFactory
 import com.superwall.sdk.dependencies.IdentityManagerFactory
@@ -81,7 +84,9 @@ class DeviceHelper(
         StoreTransactionFactory,
         IdentityManagerFactory,
         ExperimentalPropertiesFactory,
-        OptionsFactory
+        OptionsFactory,
+        CustomerInfoFactory,
+        ActiveEntitlementsFactory
 
     private val json =
         Json {
@@ -266,6 +271,7 @@ class DeviceHelper(
     val deviceId: String
         get() = DeviceVendorId(VendorId(vendorId)).value
 
+    val deviceTier: Tier by lazy { classifier.deviceTier() }
     var platformWrapper: String = ""
     var platformWrapperVersion: String = ""
 
@@ -468,6 +474,40 @@ class DeviceHelper(
                 "UNKNOWN"
             }
 
+    /**
+     * Stable fingerprint of the device/store/subscription/storage fields that can
+     * affect which paywalls IF_TRUE rules preload. Compared by value to decide
+     * whether to re-run preload after a state change. Excludes iOS-only fields
+     * (storeFrontCountryCode/Id/Currency, appTransactionId) and configure-time
+     * localResourceIds.
+     */
+    suspend fun preloadFingerprint(): String {
+        val customerInfoSnapshot = factory.customerInfoFlow().value.toString()
+        val activeEntitlements =
+            factory
+                .activeEntitlements()
+                .sortedBy { it.id }
+                .joinToString(",") { "${it.id}:${it.type.raw}" }
+        val activeProducts = factory.activeProductIds().sorted().joinToString(",")
+        val reviewRequests = reviewRequestsTotal().toString()
+
+        return listOf(
+            locale,
+            languageCode,
+            regionCode,
+            currencyCode,
+            currencySymbol,
+            secondsFromGMT,
+            interfaceStyle,
+            if (interfaceStyleOverride == null) "automatic" else "manual",
+            reviewRequests,
+            activeEntitlements,
+            customerInfoSnapshot,
+            activeProducts,
+            isSandbox.toString(),
+        ).joinToString("|")
+    }
+
     suspend fun getDeviceAttributes(
         sinceEvent: EventData?,
         computedPropertyRequests: List<ComputedPropertyRequest>,
@@ -572,8 +612,7 @@ class DeviceHelper(
                 appBuildStringNumber = appBuildString.toInt(),
                 interfaceStyleMode = if (interfaceStyleOverride == null) "automatic" else "manual",
                 capabilities = capabilities.map { it.name },
-                capabilitiesConfig =
-                    capabilities.toJson(factory.json()),
+                capabilitiesConfig = capabilities.toJson(),
                 platformWrapper = platformWrapper,
                 platformWrapperVersion = platformWrapperVersion,
                 appVersionPadded = appVersionPadded,
@@ -651,7 +690,7 @@ class DeviceHelper(
     }
 }
 
-private fun String.asPadded(): String {
+internal fun String.asPadded(): String {
     val components = split("-")
     if (components.isEmpty()) {
         return ""
@@ -671,7 +710,7 @@ private fun String.asPadded(): String {
         // Pad beta number and add to appendix
         if (appendixComponents.size > 1) {
             appendixVersion =
-                String.format("%03d", appendixComponents[1].toIntOrNull() ?: 0)
+                String.format(Locale.US, "%03d", appendixComponents[1].toIntOrNull() ?: 0)
             appendix += ".$appendixVersion"
         }
     }
@@ -680,15 +719,15 @@ private fun String.asPadded(): String {
     val versionComponents = versionNumber.split(".")
     var newVersion = ""
     if (versionComponents.isNotEmpty()) {
-        val major = String.format("%03d", versionComponents[0].toIntOrNull() ?: 0)
+        val major = String.format(Locale.US, "%03d", versionComponents[0].toIntOrNull() ?: 0)
         newVersion += major
     }
     if (versionComponents.size > 1) {
-        val minor = String.format("%03d", versionComponents[1].toIntOrNull() ?: 0)
+        val minor = String.format(Locale.US, "%03d", versionComponents[1].toIntOrNull() ?: 0)
         newVersion += ".$minor"
     }
     if (versionComponents.size > 2) {
-        val patch = String.format("%03d", versionComponents[2].toIntOrNull() ?: 0)
+        val patch = String.format(Locale.US, "%03d", versionComponents[2].toIntOrNull() ?: 0)
         newVersion += ".$patch"
     }
 

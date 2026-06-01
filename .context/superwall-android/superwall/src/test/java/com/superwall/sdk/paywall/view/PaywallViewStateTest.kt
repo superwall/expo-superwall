@@ -442,16 +442,45 @@ class PaywallViewStateTest {
     }
 
     @Test
-    fun resetPresentationPreparations_resets_flags() {
+    fun resetPresentationPreparations_resets_flags_to_initial_values() {
         Given("a state with preparations done") {
             val state = makeState().copy(presentationWillPrepare = false, presentationDidFinishPrepare = true)
 
             When("ResetPresentationPreparations is applied") {
                 val newState = PaywallViewState.Updates.ResetPresentationPreparations.transform(state)
 
-                Then("flags reset to initial values") {
-                    assertEquals(false, newState.presentationWillPrepare)
-                    assertEquals(true, newState.presentationDidFinishPrepare)
+                Then("flags reset to initial values ready for next presentation") {
+                    assertEquals(true, newState.presentationWillPrepare)
+                    assertEquals(false, newState.presentationDidFinishPrepare)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun cachedPaywall_secondPresentation_allowsPreparation() {
+        Given("a state simulating a cached paywall after first dismiss") {
+            // Simulate first presentation completing
+            val afterFirstPresent = PaywallViewState.Updates.SetPresentedAndFinished.transform(makeState())
+            assertEquals(true, afterFirstPresent.presentationDidFinishPrepare)
+
+            // Simulate dismiss resetting preparations
+            val afterDismiss = PaywallViewState.Updates.ResetPresentationPreparations.transform(afterFirstPresent)
+
+            When("a new request is set for the second presentation") {
+                val req = makeRequest()
+                val publisher = MutableSharedFlow<com.superwall.sdk.paywall.presentation.internal.state.PaywallState>()
+                val afterSetRequest = PaywallViewState.Updates.SetRequest(req, publisher, null).transform(afterDismiss)
+
+                Then("presentation flags allow presentationWillBegin to run") {
+                    assertEquals(true, afterSetRequest.presentationWillPrepare)
+                    assertEquals(false, afterSetRequest.presentationDidFinishPrepare)
+                }
+
+                Then("PresentationWillBegin guard condition passes") {
+                    // The guard is: if (!presentationWillPrepare || presentationDidFinishPrepare) return
+                    val wouldReturnEarly = !afterSetRequest.presentationWillPrepare || afterSetRequest.presentationDidFinishPrepare
+                    assertEquals(false, wouldReturnEarly)
                 }
             }
         }

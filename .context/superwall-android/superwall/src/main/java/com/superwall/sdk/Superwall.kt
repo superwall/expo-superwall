@@ -1,8 +1,10 @@
 package com.superwall.sdk
 
 import android.app.Application
+import android.content.ComponentCallbacks2
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import androidx.work.WorkManager
 import com.android.billingclient.api.BillingResult
@@ -57,6 +59,7 @@ import com.superwall.sdk.paywall.view.PaywallViewState
 import com.superwall.sdk.paywall.view.SuperwallPaywallActivity
 import com.superwall.sdk.paywall.view.delegate.PaywallLoadingState
 import com.superwall.sdk.paywall.view.delegate.PaywallViewEventCallback
+import com.superwall.sdk.paywall.view.webview.PaywallResource
 import com.superwall.sdk.paywall.view.webview.messaging.PaywallWebEvent
 import com.superwall.sdk.paywall.view.webview.messaging.PaywallWebEvent.Closed
 import com.superwall.sdk.paywall.view.webview.messaging.PaywallWebEvent.Custom
@@ -208,6 +211,25 @@ class Superwall(
             options.paywalls.overrideProductsByName = value
         }
 
+    /**
+     * A mapping of local resource IDs to local paywall resources.
+     *
+     * Use this to serve paywall assets (images, videos, Lottie animations) from local files
+     * instead of fetching them over the network. When a paywall references a `localResourceId`,
+     * the SDK will look up the corresponding resource in this map.
+     *
+     * ```kotlin
+     * Superwall.instance.localResources = mapOf(
+     *     "hero-video" to PaywallResource.FromUri(Uri.fromFile(File(context.filesDir, "onboarding.mp4"))),
+     *     "hero-image" to PaywallResource.FromResources(R.drawable.hero),
+     *     "bg-animation" to PaywallResource.FromResources(R.raw.lottie_bg),
+     * )
+     * ```
+     *
+     * Paywall HTML usage: `<video src="swlocal://hero-video" autoplay></video>`
+     */
+    var localResources: Map<String, PaywallResource> = emptyMap()
+
     internal val _customerInfo: MutableStateFlow<CustomerInfo> =
         MutableStateFlow(CustomerInfo.empty())
 
@@ -275,7 +297,7 @@ class Superwall(
      * @param subscriptionStatus The entitlement status of the user.
      */
     fun setSubscriptionStatus(subscriptionStatus: SubscriptionStatus) {
-        if (dependencyContainer.testModeManager.isTestMode) {
+        if (dependencyContainer.testMode.isTestMode) {
             Logger.debug(
                 LogLevel.warn,
                 LogScope.superwallCore,
@@ -297,7 +319,7 @@ class Superwall(
      * @param entitlements A list of entitlements.
      * */
     fun setSubscriptionStatus(vararg entitlements: String) {
-        if (dependencyContainer.testModeManager.isTestMode) {
+        if (dependencyContainer.testMode.isTestMode) {
             Logger.debug(
                 LogLevel.warn,
                 LogScope.superwallCore,
@@ -325,7 +347,7 @@ class Superwall(
         if (dependencyContainer.makeHasExternalPurchaseController()) {
             return
         }
-        if (dependencyContainer.testModeManager.isTestMode) {
+        if (dependencyContainer.testMode.isTestMode) {
             return
         }
         val webEntitlements = dependencyContainer.entitlements.web
@@ -361,7 +383,8 @@ class Superwall(
     /**
      * Properties stored about the device session, set internally by Superwall
      * */
-    suspend fun deviceAttributes(): Map<String, Any?> = dependencyContainer.makeSessionDeviceAttributes()
+    suspend fun deviceAttributes(): Map<String, Any?> =
+        dependencyContainer.makeSessionDeviceAttributes()
 
     /**
      * Gets the current integration identifiers as a map.
@@ -447,7 +470,7 @@ class Superwall(
 
     val configurationStateListener: Flow<ConfigurationStatus>
         get() =
-            dependencyContainer.configManager.configState.asSharedFlow().map {
+            dependencyContainer.configManager.configState.map {
                 when (it) {
                     is ConfigState.Retrieved -> ConfigurationStatus.Configured
                     is ConfigState.Failed -> ConfigurationStatus.Failed
@@ -612,14 +635,12 @@ class Superwall(
         }
     }
 
+    @Volatile
     private lateinit var _dependencyContainer: DependencyContainer
 
     internal val dependencyContainer: DependencyContainer
-        get() {
-            synchronized(this) {
-                return _dependencyContainer
-            }
-        }
+        get() = _dependencyContainer
+
 
     // / Used to serially execute register calls.
     internal val serialTaskManager = SerialTaskManager()
@@ -662,7 +683,9 @@ class Superwall(
                         }
                         // Implicitly wait
                         dependencyContainer.configManager.fetchConfiguration()
-                        dependencyContainer.identityManager.configure()
+                        dependencyContainer.identityManager.configure(
+                            neverCalledStaticConfig = dependencyContainer.storage.neverCalledStaticConfig,
+                        )
                     }.toResult().fold({
                         CoroutineScope(Dispatchers.Main).launch {
                             completion?.invoke(Result.success(Unit))
@@ -685,8 +708,29 @@ class Superwall(
     // / Listens to config and the subscription status
     private fun addListeners() {
         ioScope.launchWithTracking {
-            entitlements.status // Removes duplicates by default
-                .drop(1) // Drops the first item
+            entitlements.status
+                // Default StateFlow equality re-fires when entitlement product fields get
+                // enriched (productIds, latestProductId) even though the user-facing
+                // status is unchanged. Dedupe ignoring product identifiers — see
+                // Entitlement.isDistinct.
+                .distinctUntilChanged { old, new ->
+                    when {
+                        old === new -> true
+                        old is SubscriptionStatus.Active && new is SubscriptionStatus.Active -> {
+                            if (old.entitlements.size != new.entitlements.size) {
+                                false
+                            } else {
+                                val newById = new.entitlements.associateBy { it.id }
+                                old.entitlements.all { o ->
+                                    val n = newById[o.id] ?: return@all false
+                                    !o.isDistinct(n)
+                                }
+                            }
+                        }
+                        else -> old::class == new::class
+                    }
+                }
+                .drop(1) // Drops the cached/initial emission
                 .collect { newValue ->
                     // Save and handle the new value
                     val oldValue =
@@ -699,6 +743,7 @@ class Superwall(
                     )
                     val event = InternalSuperwallEvent.SubscriptionStatusDidChange(newValue)
                     track(event)
+                    dependencyContainer.configManager.recheckPreloadIfNeeded()
                 }
         }
         ioScope.launchWithTracking {
@@ -714,8 +759,33 @@ class Superwall(
                     dependencyContainer.storage.write(LatestCustomerInfo, new)
                     dependencyContainer.delegateAdapter.customerInfoDidChange(old!!, new)
                     track(CustomerInfoDidChange(old, new))
+                    dependencyContainer.configManager.recheckPreloadIfNeeded()
                 }
         }
+        registerConfigurationChangeListener()
+    }
+
+    private var configurationChangeListener: ComponentCallbacks2? = null
+
+    private fun registerConfigurationChangeListener() {
+        // Locale / region / language / timezone / interfaceStyle (when overrides
+        // are off) all reflect Android Configuration. ComponentCallbacks2 fires on
+        // changes and runs on the main thread; bounce through ioScope to call the
+        // suspend recheck.
+        val listener =
+            object : ComponentCallbacks2 {
+                override fun onConfigurationChanged(newConfig: Configuration) {
+                    ioScope.launchWithTracking {
+                        dependencyContainer.configManager.recheckPreloadIfNeeded()
+                    }
+                }
+
+                override fun onLowMemory() = Unit
+
+                override fun onTrimMemory(level: Int) = Unit
+            }
+        configurationChangeListener = listener
+        context.applicationContext.registerComponentCallbacks(listener)
     }
 
     /**
@@ -759,6 +829,7 @@ class Superwall(
             dependencyContainer.deviceHelper.interfaceStyleOverride = interfaceStyle
             ioScope.launch {
                 track(InternalSuperwallEvent.DeviceAttributes(dependencyContainer.makeSessionDeviceAttributes()))
+                dependencyContainer.configManager.recheckPreloadIfNeeded()
             }
         }
     }
@@ -807,18 +878,26 @@ class Superwall(
     }
 
     /**
-     * Asynchronously resets. Presentation of paywalls is suspended until reset completes.
+     * Coordinates reset through the identity actor. Presentation of paywalls is
+     * suspended until reset completes.
      */
-    internal fun reset(duringIdentify: Boolean) {
+    internal fun reset(duringIdentify: Boolean = false) {
         withErrorTracking {
-            dependencyContainer.identityManager.reset(duringIdentify)
-            dependencyContainer.storage.reset()
-            dependencyContainer.paywallManager.resetCache()
-            presentationItems.reset()
-            dependencyContainer.configManager.reset()
-            dependencyContainer.reedemer.clear(RedemptionOwnershipType.AppUser)
-            ioScope.launch {
-                track(InternalSuperwallEvent.Reset)
+            if (!duringIdentify) {
+                // Public reset — delegate to identity actor which coordinates
+                // dropping readiness, running cleanup, and restoring readiness.
+                dependencyContainer.identityManager.reset()
+            } else {
+                // Called from identity actor's completeReset during identify
+                // or full reset — just do cleanup without touching identity.
+                dependencyContainer.storage.reset()
+                dependencyContainer.paywallManager.resetCache()
+                presentationItems.reset()
+                dependencyContainer.configManager.reset()
+                dependencyContainer.reedemer.clear(RedemptionOwnershipType.AppUser)
+                ioScope.launch {
+                    track(InternalSuperwallEvent.Reset)
+                }
             }
         }
     }
@@ -855,6 +934,11 @@ class Superwall(
             // Note: We intentionally do NOT unregister the activity lifecycle callbacks here
             // because the activity provider will be retained and reused in the next configure call.
             // This ensures the current activity is still tracked across hot reload cycles.
+
+            configurationChangeListener?.let {
+                context.applicationContext.unregisterComponentCallbacks(it)
+                configurationChangeListener = null
+            }
         }
     }
 
@@ -1174,7 +1258,7 @@ class Superwall(
                     scope = LogScope.superwallCore,
                     message =
                         "You are trying to observe purchases but the SuperwallOption shouldObservePurchases is " +
-                            "false. Please set it to true to be able to observe purchases.",
+                                "false. Please set it to true to be able to observe purchases.",
                 )
                 return@launchWithTracking
             }
@@ -1380,6 +1464,7 @@ class Superwall(
                                                 type = paywallEvent.type.rawValue,
                                             ),
                                         )
+                                        dependencyContainer.configManager.recheckPreloadIfNeeded()
                                     }
                                 }
 
@@ -1388,18 +1473,13 @@ class Superwall(
                                     val url =
                                         "https://play.google.com/store/apps/details?id=$packageName"
                                     (
-                                        activityProvider?.getCurrentActivity()
-                                            ?: paywallView.encapsulatingActivity?.get()
-                                    )?.startActivity(
-                                        Intent(Intent.ACTION_VIEW, Uri.parse(url)),
-                                    )
+                                            activityProvider?.getCurrentActivity()
+                                                ?: paywallView.encapsulatingActivity?.get()
+                                            )?.startActivity(
+                                            Intent(Intent.ACTION_VIEW, Uri.parse(url)),
+                                        )
                                 }
                             }
-                            dismiss(
-                                paywallView,
-                                result = Declined(),
-                                closeReason = PaywallCloseReason.SystemLogic,
-                            )
                         } catch (e: Exception) {
                             Logger.debug(
                                 logLevel = LogLevel.error,
@@ -1415,13 +1495,13 @@ class Superwall(
                     val paywallActivity =
 
                         (
-                            paywallView
-                                ?.encapsulatingActivity
-                                ?.get()
-                                ?: dependencyContainer
-                                    .activityProvider
-                                    ?.getCurrentActivity()
-                        ) as SuperwallPaywallActivity?
+                                paywallView
+                                    ?.encapsulatingActivity
+                                    ?.get()
+                                    ?: dependencyContainer
+                                        .activityProvider
+                                        ?.getCurrentActivity()
+                                ) as? SuperwallPaywallActivity?
                     // Cancel any existing fallback notification of the same type before scheduling
                     // the dynamic notification from the paywall
                     paywallActivity?.attemptToScheduleNotifications(
@@ -1432,7 +1512,7 @@ class Superwall(
                         Logger.debug(
                             LogLevel.error,
                             LogScope.paywallView,
-                            message = "No paywall activity alive to schedule notifications",
+                            message = "No superwall paywall activity alive to schedule notifications",
                         )
                     }
                 }

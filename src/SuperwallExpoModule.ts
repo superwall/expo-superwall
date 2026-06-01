@@ -1,7 +1,9 @@
 import { NativeModule, requireNativeModule } from "expo"
+import type { PresentationResult } from "./compat/lib/PresentationResult"
 import type {
   EntitlementsInfo,
   IntegrationAttributes,
+  RestorationResultResponse,
   SuperwallExpoModuleEvents,
 } from "./SuperwallExpoModule.types"
 
@@ -56,13 +58,15 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
     data?: Record<string, any>,
   ): Promise<void>
 
+  restorePurchases(): Promise<RestorationResultResponse>
+
   dismiss(): Promise<void>
   confirmAllAssignments(): Promise<any[]>
 
   getPresentationResult(
     placement: string,
     params?: Map<string, any> | Record<string, any>,
-  ): Promise<any>
+  ): Promise<PresentationResult>
 
   getDeviceAttributes(): Promise<Record<string, any>>
 
@@ -73,6 +77,8 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
 
   setIntegrationAttributes(attributes: IntegrationAttributes): Promise<void>
   getIntegrationAttributes(): Promise<Record<string, string>>
+
+  consume(purchaseToken: string): Promise<string>
 }
 
 export default requireNativeModule<SuperwallExpoModule>("SuperwallExpo")

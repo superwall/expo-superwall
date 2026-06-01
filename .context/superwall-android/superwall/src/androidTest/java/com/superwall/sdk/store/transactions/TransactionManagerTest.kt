@@ -309,29 +309,24 @@ class TransactionManagerTest {
                     Then("The purchase is successful") {
                         assert(result is PurchaseResult.Purchased)
                         coVerify { storeManager.loadPurchasedProducts(any()) }
-                        And("Verify event order") {
+                        And("Verify transaction events") {
                             val transactionEvents =
                                 events.value.filterIsInstance<InternalSuperwallEvent.Transaction>()
 
-                            assert(
-                                transactionEvents.first().superwallPlacement
-                                    is SuperwallEvent.TransactionStart,
-                            )
-                            assert(transactionEvents.first().product?.fullIdentifier == "product1")
-                            assert(
-                                transactionEvents.last().superwallPlacement
-                                    is SuperwallEvent.TransactionComplete,
-                            )
-                            assert(
-                                (
-                                    transactionEvents.last().superwallPlacement
-                                        as SuperwallEvent.TransactionComplete
-                                ).transaction!!
-                                    .originalTransactionIdentifier != null,
-                            )
+                            val start =
+                                transactionEvents
+                                    .single { it.superwallPlacement is SuperwallEvent.TransactionStart }
+                            assert(start.product?.fullIdentifier == "product1")
+
+                            val complete =
+                                transactionEvents
+                                    .mapNotNull { it.superwallPlacement as? SuperwallEvent.TransactionComplete }
+                                    .single()
+                            assert(complete.transaction!!.originalTransactionIdentifier != null)
+
                             val purchase =
                                 events.value.filterIsInstance<InternalSuperwallEvent.NonRecurringProductPurchase>()
-                            assert(purchase.first().product?.fullIdentifier == "product1")
+                            assert(purchase.any { it.product?.fullIdentifier == "product1" })
                         }
                     }
                 }
@@ -419,16 +414,18 @@ class TransactionManagerTest {
                     Then("The purchase is successful") {
                         assert(result is PurchaseResult.Purchased)
                         coVerify { storeManager.loadPurchasedProducts(any()) }
-                        And("Verify event order") {
+                        And("Verify transaction events") {
                             val transactionEvents =
                                 events.value.filterIsInstance<InternalSuperwallEvent.Transaction>()
-                            assert(transactionEvents.first().superwallPlacement is SuperwallEvent.TransactionStart)
-                            val complete = transactionEvents.last().superwallPlacement
-                            assert(complete is SuperwallEvent.TransactionComplete)
-                            assert((complete as SuperwallEvent.TransactionComplete).transaction!!.originalTransactionIdentifier != null)
+                            assert(transactionEvents.any { it.superwallPlacement is SuperwallEvent.TransactionStart })
+                            val complete =
+                                transactionEvents
+                                    .mapNotNull { it.superwallPlacement as? SuperwallEvent.TransactionComplete }
+                                    .single()
+                            assert(complete.transaction!!.originalTransactionIdentifier != null)
                             val purchase =
                                 events.value.filterIsInstance<InternalSuperwallEvent.NonRecurringProductPurchase>()
-                            assert(purchase.first().product?.fullIdentifier == "product1")
+                            assert(purchase.any { it.product?.fullIdentifier == "product1" })
                         }
                     }
                 }
@@ -772,8 +769,8 @@ class TransactionManagerTest {
                             val restoreEvents =
                                 events.value.filterIsInstance<InternalSuperwallEvent.Restore>()
                             assert(restoreEvents.size == 2)
-                            assert(restoreEvents[0].state is InternalSuperwallEvent.Restore.State.Start)
-                            assert(restoreEvents[1].state is InternalSuperwallEvent.Restore.State.Complete)
+                            assert(restoreEvents.any{ it.state is InternalSuperwallEvent.Restore.State.Start })
+                            assert(restoreEvents.any{ it.state is InternalSuperwallEvent.Restore.State.Complete })
                         }
                     }
                 }
@@ -802,8 +799,8 @@ class TransactionManagerTest {
                             val restoreEvents =
                                 events.value.filterIsInstance<InternalSuperwallEvent.Restore>()
                             assert(restoreEvents.size == 2)
-                            assert(restoreEvents[0].state is InternalSuperwallEvent.Restore.State.Start)
-                            assert(restoreEvents[1].state is InternalSuperwallEvent.Restore.State.Complete)
+                            assert(restoreEvents.any { it.state is InternalSuperwallEvent.Restore.State.Start })
+                            assert(restoreEvents.any { it.state is InternalSuperwallEvent.Restore.State.Complete })
                         }
                     }
                 }
@@ -836,8 +833,8 @@ class TransactionManagerTest {
                             val restoreEvents =
                                 events.value.filterIsInstance<InternalSuperwallEvent.Restore>()
                             assert(restoreEvents.size == 2)
-                            assert(restoreEvents[0].state is InternalSuperwallEvent.Restore.State.Start)
-                            assert(restoreEvents[1].state is InternalSuperwallEvent.Restore.State.Failure)
+                            assert(restoreEvents.any { it.state is InternalSuperwallEvent.Restore.State.Start })
+                            assert(restoreEvents.any { it.state is InternalSuperwallEvent.Restore.State.Failure })
                         }
                     }
                 }
@@ -868,9 +865,11 @@ class TransactionManagerTest {
                             val restoreEvents =
                                 events.value.filterIsInstance<InternalSuperwallEvent.Restore>()
                             assert(restoreEvents.size == 2)
-                            assert(restoreEvents[0].state is InternalSuperwallEvent.Restore.State.Start)
-                            val failure: InternalSuperwallEvent.Restore.State.Failure =
-                                restoreEvents[1].state as InternalSuperwallEvent.Restore.State.Failure
+                            assert(restoreEvents.any { it.state is InternalSuperwallEvent.Restore.State.Start })
+                            val failure =
+                                restoreEvents
+                                    .mapNotNull { it.state as? InternalSuperwallEvent.Restore.State.Failure }
+                                    .single()
                             assert(failure.reason.contains("\"inactive\""))
                         }
                     }

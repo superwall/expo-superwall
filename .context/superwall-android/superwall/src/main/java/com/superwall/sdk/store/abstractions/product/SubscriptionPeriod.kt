@@ -106,7 +106,10 @@ data class SubscriptionPeriod(
         val periodsPerDay: BigDecimal =
             when (this.unit) {
                 Unit.day -> BigDecimal.ONE
-                Unit.week -> BigDecimal(365).divide(BigDecimal(52), calculationScale, roundingMode)
+                // A week is exactly 7 days. Don't route through 365/52 — 52
+                // weeks is only 364 days, so that approximation makes a
+                // weekly product's daily price a cent off.
+                Unit.week -> BigDecimal(7)
                 Unit.month -> BigDecimal(365).divide(BigDecimal(12), calculationScale, roundingMode)
                 Unit.year -> BigDecimal(365)
             } * BigDecimal(this.value)
@@ -117,7 +120,9 @@ data class SubscriptionPeriod(
     fun pricePerWeek(price: BigDecimal): BigDecimal {
         val periodsPerWeek: BigDecimal =
             when (this.unit) {
-                Unit.day -> BigDecimal(52).divide(BigDecimal(365), calculationScale, roundingMode)
+                // A day is exactly 1/7 of a week. The old 52/365 made a 7-day
+                // product resolve to 0.997 weeks, inflating its weekly price.
+                Unit.day -> BigDecimal.ONE.divide(BigDecimal(7), calculationScale, roundingMode)
                 Unit.week -> BigDecimal.ONE
                 Unit.month -> BigDecimal(52).divide(BigDecimal(12), calculationScale, roundingMode)
                 Unit.year -> BigDecimal(52)

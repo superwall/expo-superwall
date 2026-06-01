@@ -18,14 +18,30 @@ import { SuperwallEventInfo } from "./lib/SuperwallEventInfo"
 import { type PartialSuperwallOptions, SuperwallOptions } from "./lib/SuperwallOptions"
 
 export { PaywallResult } from "./lib/PaywallResult"
+export {
+  PresentationResult,
+  PresentationResultHoldout,
+  PresentationResultNoAudienceMatch,
+  PresentationResultPaywall,
+  PresentationResultPaywallNotAvailable,
+  PresentationResultPlacementNotFound,
+  PresentationResultUserIsSubscribed,
+} from "./lib/PresentationResult"
 
 import { EventEmitter } from "expo"
 import { version } from "../../package.json"
 import SuperwallExpoModule from "../SuperwallExpoModule"
+import type { RestorationResultResponse } from "../SuperwallExpoModule.types"
 import { filterUndefined } from "../utils/filterUndefined"
 
 export { ComputedPropertyRequest } from "./lib/ComputedPropertyRequest"
 export { ConfigurationStatus } from "./lib/ConfigurationStatus"
+export {
+  CustomerInfo,
+  type SubscriptionTransaction,
+  type NonSubscriptionTransaction,
+  type SubscriptionOfferType,
+} from "./lib/CustomerInfo"
 export { EntitlementsInfo } from "./lib/EntitlementsInfo"
 export { Experiment } from "./lib/Experiment"
 export { FeatureGatingBehavior } from "./lib/FeatureGatingBehavior"
@@ -49,7 +65,14 @@ export {
   PaywallSkippedReasonPlacementNotFound,
   PaywallSkippedReasonUserIsSubscribed,
 } from "./lib/PaywallSkippedReason"
-export { Product } from "./lib/Product"
+export {
+  Product,
+  ProductStore,
+  type AppStoreProductIdentifier,
+  type StripeProductIdentifier,
+  type PaddleProductIdentifier,
+  type CustomStoreProductIdentifier,
+} from "./lib/Product"
 export { PurchaseController } from "./lib/PurchaseController"
 export {
   PurchaseResult,
@@ -60,13 +83,18 @@ export {
 } from "./lib/PurchaseResult"
 export * from "./lib/RedemptionResults"
 export { RestorationResult } from "./lib/RestorationResult"
+export type { RestorationResultResponse } from "../SuperwallExpoModule.types"
 export { RestoreType } from "./lib/RestoreType"
 export { StoreProduct } from "./lib/StoreProduct"
 export { StoreTransaction } from "./lib/StoreTransaction"
 export { SubscriptionStatus } from "./lib/SubscriptionStatus"
 export { SuperwallDelegate } from "./lib/SuperwallDelegate"
 export { EventType, SuperwallEventInfo } from "./lib/SuperwallEventInfo"
-export { type PartialSuperwallOptions, SuperwallOptions, TestModeBehavior } from "./lib/SuperwallOptions"
+export {
+  type PartialSuperwallOptions,
+  SuperwallOptions,
+  TestModeBehavior,
+} from "./lib/SuperwallOptions"
 export { Survey } from "./lib/Survey"
 export { TriggerResult } from "./lib/TriggerResult"
 
@@ -208,7 +236,9 @@ export default class Superwall {
         return
       }
 
-      Promise.resolve(handler.onCustomCallbackHandler({ name: data.name, variables: data.variables })).then(
+      Promise.resolve(
+        handler.onCustomCallbackHandler({ name: data.name, variables: data.variables }),
+      ).then(
         (result) => {
           SuperwallExpoModule.didHandleCustomCallback(data.callbackId, result.status, result.data)
         },
@@ -220,41 +250,41 @@ export default class Superwall {
 
     // MARK: - SuperwallDelegate Listeners
     SuperwallExpoModule.addListener("subscriptionStatusDidChange", async (data) => {
-      Superwall.delegate?.subscriptionStatusDidChange(data.from, data.to)
+      Superwall.delegate?.subscriptionStatusDidChange?.(data.from, data.to)
     })
 
     SuperwallExpoModule.addListener("handleSuperwallEvent", async (data) => {
       const eventInfo = SuperwallEventInfo.fromJson(data.eventInfo)
-      Superwall.delegate?.handleSuperwallEvent(eventInfo)
+      Superwall.delegate?.handleSuperwallEvent?.(eventInfo)
     })
 
     SuperwallExpoModule.addListener("handleCustomPaywallAction", async (data) => {
       const name = data.name
-      Superwall.delegate?.handleCustomPaywallAction(name)
+      Superwall.delegate?.handleCustomPaywallAction?.(name)
     })
 
     SuperwallExpoModule.addListener("willDismissPaywall", async (data) => {
       const info = PaywallInfo.fromJson(data.info)
-      Superwall.delegate?.willDismissPaywall(info)
+      Superwall.delegate?.willDismissPaywall?.(info)
     })
 
     SuperwallExpoModule.addListener("willPresentPaywall", async (data) => {
       const info = PaywallInfo.fromJson(data.info)
-      Superwall.delegate?.willPresentPaywall(info)
+      Superwall.delegate?.willPresentPaywall?.(info)
     })
 
     SuperwallExpoModule.addListener("didDismissPaywall", async (data) => {
       const info = PaywallInfo.fromJson(data.info)
-      Superwall.delegate?.didDismissPaywall(info)
+      Superwall.delegate?.didDismissPaywall?.(info)
     })
 
     SuperwallExpoModule.addListener("didPresentPaywall", async (data) => {
       const info = PaywallInfo.fromJson(data.info)
-      Superwall.delegate?.didPresentPaywall(info)
+      Superwall.delegate?.didPresentPaywall?.(info)
     })
 
     SuperwallExpoModule.addListener("handleLog", async (data) => {
-      Superwall.delegate?.handleLog(
+      Superwall.delegate?.handleLog?.(
         data.level,
         data.scope,
         data.message || undefined,
@@ -265,21 +295,21 @@ export default class Superwall {
 
     SuperwallExpoModule.addListener("paywallWillOpenDeepLink", async (data) => {
       const url = new URL(data.url)
-      Superwall.delegate?.paywallWillOpenDeepLink(url)
+      Superwall.delegate?.paywallWillOpenDeepLink?.(url)
     })
 
     SuperwallExpoModule.addListener("paywallWillOpenURL", async (data) => {
       const url = new URL(data.url)
-      Superwall.delegate?.paywallWillOpenURL(url)
+      Superwall.delegate?.paywallWillOpenURL?.(url)
     })
 
     SuperwallExpoModule.addListener("willRedeemLink", async () => {
-      Superwall.delegate?.willRedeemLink()
+      Superwall.delegate?.willRedeemLink?.()
     })
 
     SuperwallExpoModule.addListener("didRedeemLink", async (data) => {
       const result = RedemptionResults.fromJson(data)
-      Superwall.delegate?.didRedeemLink(result)
+      Superwall.delegate?.didRedeemLink?.(result)
     })
 
     SuperwallExpoModule.addListener("subscriptionStatusDidChange", async (data) => {
@@ -708,6 +738,19 @@ export default class Superwall {
   }
 
   /**
+   * Programmatically restores purchases.
+   *
+   * Use this to trigger a restore from outside a paywall context,
+   * e.g. from a "Restore Purchases" button in app settings.
+   *
+   * @returns {Promise<RestorationResultResponse>} A promise that resolves with the restoration result.
+   */
+  async restorePurchases(): Promise<RestorationResultResponse> {
+    await this.awaitConfig()
+    return await SuperwallExpoModule.restorePurchases()
+  }
+
+  /**
    * Dismisses the presented paywall, if one exists.
    *
    * @returns {Promise<void>} A promise that resolves once the paywall has been dismissed,
@@ -737,5 +780,16 @@ export default class Superwall {
   async getIntegrationAttributes(): Promise<Record<string, string>> {
     await this.awaitConfig()
     return SuperwallExpoModule.getIntegrationAttributes()
+  }
+
+  /**
+   * Consumes a Google Play purchase token so the item can be purchased again.
+   * Android-only; rejects on iOS.
+   * @param purchaseToken - The Google Play purchase token to consume.
+   * @returns The consumed purchase token on success.
+   */
+  async consume(purchaseToken: string): Promise<string> {
+    await this.awaitConfig()
+    return SuperwallExpoModule.consume(purchaseToken)
   }
 }

@@ -143,6 +143,8 @@ class RequestExecutor(
         if (components?.bodyData != null) {
             connection.doInput = true
         }
+        connection.connectTimeout = timeout?.inWholeMilliseconds?.toInt()?:0
+        connection.readTimeout = timeout?.inWholeMilliseconds?.toInt()?:0
 
         if (components?.bodyData != null) {
             val outputStream = connection.outputStream

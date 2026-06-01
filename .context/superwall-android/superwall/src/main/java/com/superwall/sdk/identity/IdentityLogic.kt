@@ -36,14 +36,11 @@ object IdentityLogic {
                 transformedKey = transformedKey.replace("\$", "")
             }
 
-            when (val value = entry.value) {
-                is List<*> -> mergedAttributes[transformedKey] = value.filterNotNull()
-                is Map<*, *> -> {
-                    val nonNullMap = value.filterValues { it != null }
-                    mergedAttributes[transformedKey] = nonNullMap.filterKeys { it != null }
-                }
-                null -> mergedAttributes.remove(transformedKey)
-                else -> mergedAttributes[transformedKey] = value
+            val value = entry.value
+            if (value != null) {
+                mergedAttributes[transformedKey] = value
+            } else {
+                mergedAttributes.remove(transformedKey)
             }
         }
 

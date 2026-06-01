@@ -2,6 +2,94 @@
 
 The changelog for `Superwall`. Also see the [releases](https://github.com/superwall/Superwall-Android/releases) on GitHub.
 
+## 2.7.15
+
+## Enhancements
+- Improves preloading logic to reduce number of preloaded paywalls for certain campaign types
+- Improve display of periodic price in some cases
+
+## Fixes
+- Fix dropping delegate events when an error occurs
+- Fix overenthusiastic delivery of `subscriptionStatus_didChange` events on minor changes
+
+## 2.7.14
+
+## Fixes
+
+- Fixes test mode products not being loaded properly in PW
+- Improve exponential backoff retry for Play Service unavailable
+- Fix Custom Info date serialization issues
+
+## 2.7.13
+
+## Fixes
+- Fix `device.appVersionPadded` and `device.sdkVersionPadded` emitting non-ASCII digits on devices whose default locale uses a non-Latin numbering system (e.g. `ar-EG`, `fa-IR`, `bn-BD`), which caused audience-rule version comparisons to misbucket affected users.
+- Ensures timeout applies to HttpUrlConnection for enrichment and subscription API's
+- Remove unnecessary sync access causing ANR lock in React Native
+
+## 2.7.12
+
+## Enhancements
+- Add customer info to paywall info and tracked events
+- Add stripe/paddle intro offer eligibility
+
+## Fixes
+- Fix dismiss animation for bottom sheets and modals on newer Samsung devices
+
+## 2.7.11
+
+## Enhancements
+- Improved startup performance and reduced blockage of caller threads
+- Add `PaywallOptions.preloadDeviceOverrides` - this allows you to override `shouldPreload` for different device tiers, i.e. disable it for low-end devices. For more details, see KDoc.
+
+## Fixes
+- Reduce CookieManager ANR potential
+- Fix concurrency issues with double onFinished calls being invoked
+
+## 2.7.10
+
+## Potentially impactful changes
+- Billing errors on register are now wrapped in `SubscriptionStatusTimeout` errors
+- This is used to clarify that the status is timing out due to billing errors. If you are depending on the `NoPaywallView` to distinguish between these, ensure you are checking for the proper status.
+
+## Enhancements
+- Adds onboarding analytics
+- Adds prioritized preloading support
+- Improved error handling
+
+## Fixes
+- Prevents paywalls from dismissing on return from deep link
+- Fixes deadlock in `SerialTaskManager`
+- Fix issues with bottom sheet on certain Samsung devices
+
+## 2.7.9
+
+## Fixes
+- Fix review dialog closing paywall
+
+## 2.7.8
+
+## Fixes
+- Fix serialization issue with R8 and dates
+- Fix scope cancellation for test mode
+
+## 2.7.7
+
+## Enhancements
+- Adds support for local resource loading in paywalls via `Superwall.instance.localResources`
+
+## Fixes
+- Fix issues with stripe period types failing to deserialize
+
+## 2.7.6
+
+## Fixes
+- Fix concurrency issue with early paywall displays and product loading
+- Improve edge case handling in billing
+- Improve paywall timeout cases and failAt stamping
+- Fix issue with param templating in re-presentation
+- Fix race issue with test mode
+
 ## 2.7.5
 
 ## Enhancements

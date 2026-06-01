@@ -1,5 +1,54 @@
 # Changelog
 
+## 1.1.3
+
+### Patch Changes
+
+- a8ba5af: Add localResources resolving for expo
+
+## 1.1.2
+
+### Patch Changes
+
+- a03889a: Ensure register callbacks resolve properly in all cases
+- 09f7538: Bump Android & iOS versions
+
+## 1.1.1
+
+### Patch Changes
+
+- b136375: Update Android version, resolve ANR when used without provider
+
+## 1.1.0
+
+### Minor Changes
+
+- 0c3396d: Bump native SDKs and expose new APIs.
+
+  **iOS — SuperwallKit 4.14.1 → 4.15.1**
+
+  - New `paywallPageView` event for multi-page paywall navigation tracking (with `PageViewData` payload).
+  - `PaywallInfo.presentationId` is now bridged so events within a single presentation can be correlated.
+  - Custom store products are fully bridged: `Product` now carries `store` (`APP_STORE` | `STRIPE` | `PADDLE` | `PLAY_STORE` | `SUPERWALL` | `CUSTOM` | `OTHER`) plus per-store identifier objects (`appStoreProduct`, `stripeProduct`, `paddleProduct`, `customProduct`). `onPurchase` also receives `store` so JS can route `CUSTOM` products to its own purchase logic instead of StoreKit.
+
+  **Android — Superwall-Android 2.7.11 → 2.7.12**
+
+  - Bridges the new `customerInfo` field on `PaywallInfo` (subscriptions, non-subscriptions, entitlements, userId).
+  - Picks up new intro-offer eligibility logic for Stripe/Paddle products and bottom-sheet dismiss fix on newer Samsung devices.
+
+## 1.0.11
+
+### Patch Changes
+
+- 975de31: Add android 'consume' method
+- 2204ee8: Bump Android version
+
+## 1.0.10
+
+### Patch Changes
+
+- 9d23138: Replace any in getPresentation result, improve chaining on delegate
+
 ## 1.0.9
 
 ### Patch Changes

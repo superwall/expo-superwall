@@ -4,9 +4,16 @@ import com.superwall.sdk.Superwall
 import com.superwall.sdk.analytics.internal.TrackingResult
 import com.superwall.sdk.analytics.internal.track
 import com.superwall.sdk.analytics.internal.trackable.Trackable
+import com.superwall.sdk.logger.LogLevel
+import com.superwall.sdk.logger.LogScope
+import com.superwall.sdk.logger.Logger
+import com.superwall.sdk.models.customer.CustomerInfo
+import com.superwall.sdk.models.entitlements.Entitlement
 import com.superwall.sdk.models.events.EventData
+import com.superwall.sdk.models.paywall.IntroOfferEligibility
 import com.superwall.sdk.models.product.ProductItem
 import com.superwall.sdk.models.product.ProductVariable
+import com.superwall.sdk.models.product.Store
 import com.superwall.sdk.models.triggers.Experiment
 import com.superwall.sdk.store.abstractions.product.StoreProduct
 
@@ -94,35 +101,111 @@ object PaywallLogic {
         productItems: List<ProductItem>,
         productsByFullId: Map<String, StoreProduct>,
         isFreeTrialAvailableOverride: Boolean?,
+        customerInfo: CustomerInfo,
+        introOfferEligibility: IntroOfferEligibility = IntroOfferEligibility.AUTOMATIC,
     ): ProductProcessingOutcome {
         val productVariables = mutableListOf<ProductVariable>()
-        var hasFreeTrial = false
 
         for (productItem in productItems) {
-            // Get storeProduct
-            val storeProduct = productsByFullId[productItem.fullProductId] ?: continue
-
-            val productVariable =
-                ProductVariable(
-                    name = productItem.name,
-                    attributes = storeProduct.attributes,
+            val storeProduct = productsByFullId[productItem.fullProductId]
+            if (storeProduct != null) {
+                productVariables.add(
+                    ProductVariable(
+                        name = productItem.name,
+                        attributes = storeProduct.attributes,
+                    ),
                 )
-
-            productVariables.add(productVariable)
-
-            if (!hasFreeTrial) {
-                hasFreeTrial = storeProduct.hasFreeTrial
             }
         }
 
-        // Use the override if it is set
-        isFreeTrialAvailableOverride?.let {
-            hasFreeTrial = it
-        }
+        val hasFreeTrial =
+            if (isFreeTrialAvailableOverride != null) {
+                isFreeTrialAvailableOverride
+            } else {
+                computeHasFreeTrial(productItems, productsByFullId, customerInfo, introOfferEligibility)
+            }
 
         return ProductProcessingOutcome(
             productVariables = productVariables,
             isFreeTrialAvailable = hasFreeTrial,
         )
+    }
+
+    private fun computeHasFreeTrial(
+        productItems: List<ProductItem>,
+        productsByFullId: Map<String, StoreProduct>,
+        customerInfo: CustomerInfo,
+        introOfferEligibility: IntroOfferEligibility,
+    ): Boolean =
+        productItems.any { productItem ->
+            when (val type = productItem.type) {
+                is ProductItem.StoreProductType.PlayStore,
+                is ProductItem.StoreProductType.AppStore,
+                is ProductItem.StoreProductType.Other,
+                -> productsByFullId[productItem.fullProductId]?.hasFreeTrial == true
+
+                is ProductItem.StoreProductType.Stripe ->
+                    isWebTrialAvailable(
+                        name = productItem.name,
+                        trialDays = type.product.trialDays,
+                        entitlements = productItem.entitlements,
+                        customerInfo = customerInfo,
+                        introOfferEligibility = introOfferEligibility,
+                    )
+
+                is ProductItem.StoreProductType.Paddle ->
+                    isWebTrialAvailable(
+                        name = productItem.name,
+                        trialDays = type.product.trialDays,
+                        entitlements = productItem.entitlements,
+                        customerInfo = customerInfo,
+                        introOfferEligibility = introOfferEligibility,
+                    )
+            }
+        }
+
+    private fun isWebTrialAvailable(
+        name: String,
+        trialDays: Int?,
+        entitlements: Set<Entitlement>,
+        customerInfo: CustomerInfo,
+        introOfferEligibility: IntroOfferEligibility,
+    ): Boolean {
+        if ((trialDays ?: 0) <= 0) return false
+
+        when (introOfferEligibility) {
+            IntroOfferEligibility.INELIGIBLE -> return false
+            IntroOfferEligibility.ELIGIBLE -> return true
+            IntroOfferEligibility.AUTOMATIC -> Unit
+        }
+
+        if (entitlements.isEmpty()) {
+            Logger.debug(
+                logLevel = LogLevel.warn,
+                scope = LogScope.paywallPresentation,
+                message = "$name has trialDays > 0 but no entitlements — skipping trial eligibility check",
+            )
+            return false
+        }
+
+        return !hasEverHadEntitlement(entitlements, customerInfo)
+    }
+
+    private fun hasEverHadEntitlement(
+        productEntitlements: Set<Entitlement>,
+        customerInfo: CustomerInfo,
+    ): Boolean {
+        // Placeholder guard: if data hasn't loaded yet, assume the trial was consumed
+        // to avoid falsely offering a trial.
+        if (customerInfo.isPlaceholder) return true
+
+        val relevantCustomerEntitlementIds =
+            customerInfo.entitlements
+                .asSequence()
+                .filter { it.latestProductId != null || it.store == Store.SUPERWALL || it.isActive }
+                .map { it.id }
+                .toSet()
+
+        return productEntitlements.any { it.id in relevantCustomerEntitlementIds }
     }
 }

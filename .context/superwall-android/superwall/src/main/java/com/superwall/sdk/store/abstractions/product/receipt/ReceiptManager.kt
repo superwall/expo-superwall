@@ -307,8 +307,10 @@ class ReceiptManager(
     private fun determinePeriodType(): String? =
         when (latestSubscriptionPeriodType) {
             LatestPeriodType.TRIAL -> "trial"
+            LatestPeriodType.CODE -> "code"
             LatestPeriodType.SUBSCRIPTION -> "normal"
             LatestPeriodType.PROMOTIONAL -> "intro"
+            LatestPeriodType.WINBACK -> "winback"
             LatestPeriodType.REVOKED -> "revoked"
             null -> null
         }

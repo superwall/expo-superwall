@@ -60,7 +60,8 @@ open class Network(
 
         return baseHostService
             .config(
-                requestId,
+                requestId = requestId,
+                isRetryingCallback = isRetryingCallback,
             ).map { config ->
                 config.requestId = requestId
                 config

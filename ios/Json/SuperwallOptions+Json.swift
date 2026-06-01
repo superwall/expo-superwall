@@ -48,6 +48,15 @@ extension SuperwallOptions {
     superwallOptions.maxConfigRetryCount = maxConfigRetryCount
     superwallOptions.testModeBehavior = testModeBehavior
 
+    if let localResourcesValue = dictionary["localResources"] as? [String: String] {
+      superwallOptions.localResources = localResourcesValue.compactMapValues { value in
+        if let url = URL(string: value), url.scheme != nil {
+          return url
+        }
+        return URL(fileURLWithPath: value)
+      }
+    }
+
     return superwallOptions
   }
 }
