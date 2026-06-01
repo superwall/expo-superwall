@@ -27,7 +27,7 @@ end
 expo_modules_core_contents = expo_modules_core_podspec ? File.read(expo_modules_core_podspec) : ''
 
 deployment_target = lambda do |platform, floor|
-  found = expo_modules_core_contents[/:#{platform}\s*=>\s*['"]([\d.]+)['"]/, 1]
+  found = expo_modules_core_contents[/:#{platform}\s*=>\s*(['"])([\d.]+)\1/, 2]
   [floor, found].compact.max_by { |version| Gem::Version.new(version) }
 end
 
