@@ -137,6 +137,14 @@ public class SuperwallExpoModule: Module {
       )
     }
 
+    AsyncFunction("refreshConfiguration") { (promise: Promise) in
+      DispatchQueue.main.async {
+        Superwall.shared.refreshConfiguration {
+          promise.resolve(nil)
+        }
+      }
+    }
+
     AsyncFunction("getConfigurationStatus") { (promise: Promise) in
       let configurationStatus = Superwall.shared.configurationStatus.toString()
       promise.resolve(configurationStatus)

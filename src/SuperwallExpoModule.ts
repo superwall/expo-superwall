@@ -23,6 +23,7 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
     usingPurchaseController?: boolean,
     sdkVersion?: string,
   ): Promise<void>
+  refreshConfiguration(): Promise<void>
 
   getConfigurationStatus(): Promise<string>
 
