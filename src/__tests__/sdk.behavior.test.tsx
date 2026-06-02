@@ -5,6 +5,11 @@ const mockHandleDeepLink = jest.fn().mockResolvedValue(false)
 const mockRefreshConfiguration = jest.fn().mockResolvedValue(undefined)
 const mockDidHandleBackPressed = jest.fn()
 const mockDidHandleCustomCallback = jest.fn().mockResolvedValue(undefined)
+const mockConfigure = jest.fn().mockResolvedValue(true)
+const mockGetUserAttributes = jest.fn().mockResolvedValue({})
+const mockGetSubscriptionStatus = jest.fn().mockResolvedValue({ status: "INACTIVE" })
+const mockSetSubscriptionStatus = jest.fn().mockResolvedValue(undefined)
+const mockSetIntegrationAttributes = jest.fn().mockResolvedValue(undefined)
 const mockAddListener = jest.fn(
   (eventName: string, listener: (payload: any) => void): { remove: () => void } => {
     const listeners = mockListeners.get(eventName) ?? new Set()
@@ -25,15 +30,20 @@ const mockAddListener = jest.fn(
 const emit = (eventName: string, payload: any) => {
   const listeners = mockListeners.get(eventName)
   if (!listeners) return
-  listeners.forEach((listener) => {
+  for (const listener of listeners) {
     listener(payload)
-  })
+  }
 }
 
 jest.mock("../SuperwallExpoModule", () => ({
   __esModule: true,
   default: {
     addListener: mockAddListener,
+    configure: mockConfigure,
+    getUserAttributes: mockGetUserAttributes,
+    getSubscriptionStatus: mockGetSubscriptionStatus,
+    setSubscriptionStatus: mockSetSubscriptionStatus,
+    setIntegrationAttributes: mockSetIntegrationAttributes,
     handleDeepLink: mockHandleDeepLink,
     refreshConfiguration: mockRefreshConfiguration,
     didHandleBackPressed: mockDidHandleBackPressed,
@@ -70,6 +80,8 @@ const {
   __resetSuperwallEventBridgeForTests,
 }: typeof import("../internal/superwallEventBridge") = require("../internal/superwallEventBridge")
 
+const originalConfigure = useSuperwallStore.getState().configure
+
 describe("SDK behavior regressions", () => {
   let consoleErrorSpy: jest.SpyInstance
   let consoleLogSpy: jest.SpyInstance
@@ -87,6 +99,7 @@ describe("SDK behavior regressions", () => {
       configurationError: null,
       user: null,
       subscriptionStatus: { status: "UNKNOWN" },
+      configure: originalConfigure,
     })
   })
 
@@ -460,6 +473,74 @@ describe("SDK behavior regressions", () => {
     act(() => {
       renderer!.unmount()
     })
+  })
+
+  it("waits for configure before setting subscription status", async () => {
+    let resolveConfigure: ((value: boolean) => void) | undefined
+    mockConfigure.mockReturnValueOnce(
+      new Promise<boolean>((resolve) => {
+        resolveConfigure = resolve
+      }),
+    )
+
+    const pendingSet = useSuperwallStore.getState().setSubscriptionStatus({ status: "INACTIVE" })
+
+    const pendingConfigure = useSuperwallStore.getState().configure("api-key")
+
+    await act(async () => {
+      await Promise.resolve()
+    })
+
+    expect(mockSetSubscriptionStatus).not.toHaveBeenCalled()
+
+    await act(async () => {
+      resolveConfigure?.(true)
+      await pendingConfigure
+      await pendingSet
+    })
+
+    expect(mockSetSubscriptionStatus).toHaveBeenCalledWith({ status: "INACTIVE" })
+  })
+
+  it("waits for configure before setting integration attributes", async () => {
+    let resolveConfigure: ((value: boolean) => void) | undefined
+    mockConfigure.mockReturnValueOnce(
+      new Promise<boolean>((resolve) => {
+        resolveConfigure = resolve
+      }),
+    )
+
+    const pendingAttributes = useSuperwallStore
+      .getState()
+      .setIntegrationAttributes({ adjustId: "adjust-123" })
+
+    const pendingConfigure = useSuperwallStore.getState().configure("api-key")
+
+    await act(async () => {
+      await Promise.resolve()
+    })
+
+    expect(mockSetIntegrationAttributes).not.toHaveBeenCalled()
+
+    await act(async () => {
+      resolveConfigure?.(true)
+      await pendingConfigure
+      await pendingAttributes
+    })
+
+    expect(mockSetIntegrationAttributes).toHaveBeenCalledWith({ adjustId: "adjust-123" })
+  })
+
+  it("rejects queued native calls when configure fails", async () => {
+    mockConfigure.mockRejectedValueOnce(new Error("native configure failed"))
+
+    const pendingSet = useSuperwallStore.getState().setSubscriptionStatus({ status: "INACTIVE" })
+
+    const pendingConfigure = useSuperwallStore.getState().configure("api-key")
+
+    await expect(pendingConfigure).resolves.toBeUndefined()
+    await expect(pendingSet).rejects.toThrow("native configure failed")
+    expect(mockSetSubscriptionStatus).not.toHaveBeenCalled()
   })
 
   it("replays buffered log and superwall events once after hooks mount", () => {

@@ -46,6 +46,11 @@ class SuperwallEvent {
           map["event"] = "paywallClose"
           map["paywallInfo"] = superwallPlacement.paywallInfo.toJson()
         }
+        is SuperwallEvent.PaywallPageView -> {
+          map["event"] = "paywallPageView"
+          map["paywallInfo"] = superwallPlacement.paywallInfo.toJson()
+          map["data"] = superwallPlacement.data.toJson()
+        }
         is SuperwallEvent.PaywallDecline -> {
           map["event"] = "paywallDecline"
           map["paywallInfo"] = superwallPlacement.paywallInfo.toJson()
