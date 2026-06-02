@@ -15,39 +15,60 @@ import { filterUndefined } from "./utils/filterUndefined"
 
 const CONFIGURE_WAIT_TIMEOUT_MS = 10_000
 
-const nextTick = () => new Promise((resolve) => setTimeout(resolve, 0))
-
-const timeoutError = () =>
-  new Error(`Timed out waiting ${CONFIGURE_WAIT_TIMEOUT_MS}ms for Superwall configure to complete.`)
-
 /**
  * Blocks a native call until Superwall has finished configuring.
  *
- * Returns as soon as `isConfigured` flips true, throws if configuration failed
- * (`configurationError`), or throws after CONFIGURE_WAIT_TIMEOUT_MS if configure
- * never completes. Waiting is derived purely from store state, so it stays
- * correct no matter when configure() runs relative to the gated call.
+ * Resolves as soon as `isConfigured` flips true, rejects if configuration failed
+ * (`configurationError`), and otherwise rejects after CONFIGURE_WAIT_TIMEOUT_MS.
+ * The timeout clock (re)starts when configure() begins — so a configure() called
+ * late still gets the full window — and the error distinguishes "never called"
+ * from "called but too slow". Subscribes to the store rather than polling.
  */
-async function awaitConfigured(): Promise<void> {
-  const startedAt = Date.now()
+function awaitConfigured(): Promise<void> {
+  const { isConfigured, configurationError } = useSuperwallStore.getState()
+  if (isConfigured) return Promise.resolve()
+  if (configurationError) return Promise.reject(new Error(configurationError))
 
-  for (;;) {
-    const { isConfigured, configurationError } = useSuperwallStore.getState()
+  return new Promise<void>((resolve, reject) => {
+    let timer: ReturnType<typeof setTimeout>
 
-    if (isConfigured) {
-      return
+    const settle = (fn: () => void) => {
+      clearTimeout(timer)
+      unsubscribe()
+      fn()
     }
 
-    if (configurationError) {
-      throw new Error(configurationError)
+    // Restart the clock when configure starts so a late configure() gets the full
+    // window instead of inheriting time already spent waiting before it ran.
+    const arm = () => {
+      clearTimeout(timer)
+      timer = setTimeout(() => {
+        const inFlight = useSuperwallStore.getState().isLoading
+        settle(() =>
+          reject(
+            new Error(
+              inFlight
+                ? `Superwall configure did not complete within ${CONFIGURE_WAIT_TIMEOUT_MS}ms.`
+                : `Superwall configure was not called within ${CONFIGURE_WAIT_TIMEOUT_MS}ms. Did you forget to call configure()?`,
+            ),
+          ),
+        )
+      }, CONFIGURE_WAIT_TIMEOUT_MS)
     }
 
-    if (Date.now() - startedAt >= CONFIGURE_WAIT_TIMEOUT_MS) {
-      throw timeoutError()
-    }
+    const unsubscribe = useSuperwallStore.subscribe((state, prev) => {
+      if (state.isConfigured) {
+        settle(resolve)
+      } else if (state.configurationError) {
+        const error = state.configurationError
+        settle(() => reject(new Error(error)))
+      } else if (state.isLoading && !prev.isLoading) {
+        arm()
+      }
+    })
 
-    await nextTick()
-  }
+    arm()
+  })
 }
 
 /**
