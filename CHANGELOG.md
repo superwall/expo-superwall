@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.4
+
+### Patch Changes
+
+- b23c170: Ensure that methods await for config finish before triggering
+- 0aa884e: Update podspec to pick proper iOS target
+
 ## 1.1.3
 
 ### Patch Changes
