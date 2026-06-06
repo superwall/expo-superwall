@@ -52,6 +52,7 @@ export class PaywallOptions {
   shouldPreload = false
   automaticallyDismiss = true
   transactionBackgroundView: TransactionBackgroundView = TransactionBackgroundView.spinner
+  shouldShowWebPurchaseConfirmationAlert = false
   onBackPressed?: (paywallInfo: PaywallInfo) => boolean
 
   constructor(init?: Partial<PaywallOptions>) {
@@ -64,6 +65,9 @@ export class PaywallOptions {
       }
       if (init.shouldPreload !== undefined) {
         this.shouldPreload = init.shouldPreload
+      }
+      if (init.shouldShowWebPurchaseConfirmationAlert !== undefined) {
+        this.shouldShowWebPurchaseConfirmationAlert = init.shouldShowWebPurchaseConfirmationAlert
       }
       if (init.automaticallyDismiss !== undefined) {
         this.automaticallyDismiss = init.automaticallyDismiss
@@ -92,6 +96,7 @@ export class PaywallOptions {
       shouldPreload: this.shouldPreload,
       automaticallyDismiss: this.automaticallyDismiss,
       transactionBackgroundView: this.transactionBackgroundView,
+      shouldShowWebPurchaseConfirmationAlert: this.shouldShowWebPurchaseConfirmationAlert,
     })
   }
 }
