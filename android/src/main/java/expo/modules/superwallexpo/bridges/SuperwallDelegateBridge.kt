@@ -95,7 +95,7 @@ class SuperwallDelegateBridge : SuperwallDelegate {
   }
 
   private fun sendEvent(name: String, body: Map<String, Any?>) {
-    SuperwallExpoModule.instance?.emitEvent(name, body)
+    SuperwallExpoModule.emitEvent(name, body)
   }
 
   override fun willRedeemLink() {

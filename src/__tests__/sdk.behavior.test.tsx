@@ -464,7 +464,7 @@ describe("SDK behavior regressions", () => {
     })
   })
 
-  it("does not buffer back press, custom callback, or purchase events", () => {
+  it("does not buffer back press or custom callback events", () => {
     emit("onBackPressed", {
       paywallInfo: { name: "buffered-back-press" },
     })
@@ -474,24 +474,18 @@ describe("SDK behavior regressions", () => {
       variables: { foo: "bar" },
       handlerId: "placement-a",
     })
-    emit("onPurchase", {
-      productId: "pro_monthly",
-      platform: "ios",
-    })
 
     const onBackPressed = jest.fn(() => true)
     const onCustomCallback = jest.fn(() => ({
       status: "success" as const,
       data: { ok: true },
     }))
-    const onPurchase = jest.fn()
 
     function Harness() {
       useSuperwallEvents({
         handlerId: "placement-a",
         onBackPressed,
         onCustomCallback,
-        onPurchase,
       })
       return null
     }
@@ -503,9 +497,43 @@ describe("SDK behavior regressions", () => {
 
     expect(onBackPressed).not.toHaveBeenCalled()
     expect(onCustomCallback).not.toHaveBeenCalled()
-    expect(onPurchase).not.toHaveBeenCalled()
     expect(mockDidHandleBackPressed).toHaveBeenCalledWith(false)
     expect(mockDidHandleCustomCallback).toHaveBeenCalledWith("callback-1", "failure", undefined)
+
+    act(() => {
+      renderer!.unmount()
+    })
+  })
+
+  it("buffers purchase events emitted before a handler subscribes", () => {
+    emit("onPurchase", {
+      productId: "pro_monthly",
+      platform: "ios",
+    })
+    emit("onPurchaseRestore", undefined)
+
+    const onPurchase = jest.fn()
+    const onPurchaseRestore = jest.fn()
+
+    function Harness() {
+      useSuperwallEvents({
+        onPurchase,
+        onPurchaseRestore,
+      })
+      return null
+    }
+
+    let renderer: TestRenderer.ReactTestRenderer
+    act(() => {
+      renderer = TestRenderer.create(<Harness />)
+    })
+
+    expect(onPurchase).toHaveBeenCalledTimes(1)
+    expect(onPurchase).toHaveBeenCalledWith({
+      productId: "pro_monthly",
+      platform: "ios",
+    })
+    expect(onPurchaseRestore).toHaveBeenCalledTimes(1)
 
     act(() => {
       renderer!.unmount()

@@ -23,10 +23,7 @@ type NativeEventName =
   | "onBackPressed"
   | "onCustomCallback"
 
-type BufferedEventName = Exclude<
-  NativeEventName,
-  "onPurchase" | "onPurchaseRestore" | "onBackPressed" | "onCustomCallback"
->
+type BufferedEventName = Exclude<NativeEventName, "onBackPressed" | "onCustomCallback">
 
 type Subscriber = {
   id: number
@@ -209,11 +206,6 @@ const handleImmediateNativeEvent = (
   eventName: Exclude<NativeEventName, BufferedEventName>,
   payload: any,
 ): void => {
-  if (eventName === "onPurchase" || eventName === "onPurchaseRestore") {
-    deliverLiveEvent(eventName, payload)
-    return
-  }
-
   if (eventName === "onBackPressed" || eventName === "onCustomCallback") {
     for (const subscriber of subscribers.values()) {
       if (deliverToSubscriber(subscriber, eventName, payload)) {
@@ -287,10 +279,10 @@ const installNativeListeners = (): void => {
     handleBufferedNativeEvent("didRedeemLink", payload)
   })
   SuperwallExpoModule.addListener("onPurchase", (payload) => {
-    handleImmediateNativeEvent("onPurchase", payload)
+    handleBufferedNativeEvent("onPurchase", payload)
   })
   SuperwallExpoModule.addListener("onPurchaseRestore", () => {
-    handleImmediateNativeEvent("onPurchaseRestore", undefined)
+    handleBufferedNativeEvent("onPurchaseRestore", undefined)
   })
   SuperwallExpoModule.addListener("onBackPressed", (payload) => {
     handleImmediateNativeEvent("onBackPressed", payload)
