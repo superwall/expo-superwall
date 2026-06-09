@@ -36,12 +36,25 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
 import android.util.Log
+import java.util.Collections
+import java.util.WeakHashMap
 import java.util.concurrent.CompletableFuture
 
 class SuperwallExpoModule : Module() {
 
   companion object {
     var instance: SuperwallExpoModule? = null
+    private val instances = Collections.newSetFromMap(WeakHashMap<SuperwallExpoModule, Boolean>())
+
+    // Events must reach every live module instance. More than one app context can
+    // exist at once (e.g. expo-dev-client's launcher plus the app), and `instance`
+    // may point at a module whose JS runtime never subscribed - sending only
+    // through it silently drops events like `onPurchase`, leaving the native
+    // purchase future incomplete forever.
+    fun emitEvent(name: String, body: Map<String, Any?>?) {
+      val liveInstances = synchronized(instances) { instances.toList() }
+      liveInstances.forEach { it.sendEvent(name, body ?: emptyMap()) }
+    }
   }
 
   val scope = CoroutineScope(Dispatchers.Main)
@@ -50,10 +63,7 @@ class SuperwallExpoModule : Module() {
 
   init {
     instance = this
-  }
-
-  fun emitEvent(name: String, body: Map<String, Any?>?) {
-    SuperwallExpoModule.instance?.sendEvent(name, body?:emptyMap())
+    synchronized(instances) { instances.add(this) }
   }
 
   private val onPaywallPresent = "onPaywallPresent"

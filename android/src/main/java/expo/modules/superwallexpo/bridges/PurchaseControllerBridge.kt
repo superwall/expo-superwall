@@ -41,7 +41,7 @@ class PurchaseControllerBridge(): PurchaseController {
             "offerId" to offerId
         )
         
-        SuperwallExpoModule.instance?.emitEvent(
+        SuperwallExpoModule.emitEvent(
             "onPurchase",
             productData
         )
@@ -52,7 +52,7 @@ class PurchaseControllerBridge(): PurchaseController {
     override suspend fun restorePurchases(): RestorationResult {
         restorePromise = CompletableFuture()
 
-        SuperwallExpoModule.instance?.emitEvent("onPurchaseRestore", null)
+        SuperwallExpoModule.emitEvent("onPurchaseRestore", null)
 
         return restorePromise!!.await()
     }
