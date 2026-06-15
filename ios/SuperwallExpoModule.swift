@@ -19,6 +19,8 @@ private final class AtomicFlag {
 
 public class SuperwallExpoModule: Module {
   public static var shared: SuperwallExpoModule?
+  private static let instancesLock = NSLock()
+  private static let instances = NSHashTable<SuperwallExpoModule>.weakObjects()
 
   private let purchaseController = PurchaseControllerBridge.shared
   private var delegate: SuperwallDelegateBridge?
@@ -55,10 +57,23 @@ public class SuperwallExpoModule: Module {
   public required init(appContext: AppContext) {
     super.init(appContext: appContext)
     SuperwallExpoModule.shared = self
+    SuperwallExpoModule.instancesLock.lock()
+    SuperwallExpoModule.instances.add(self)
+    SuperwallExpoModule.instancesLock.unlock()
   }
 
+  // Events must reach every live module instance. More than one app context can
+  // exist at once (e.g. expo-dev-client's launcher plus the app), and `shared`
+  // may point at an instance whose JS runtime never subscribed - sending only
+  // through it silently drops events like `onPurchase`, leaving the native
+  // purchase continuation suspended forever.
   public static func emitEvent(_ name: String, _ data: [String: Any]?) {
-    SuperwallExpoModule.shared?.sendEvent(name, data ?? [:])
+    instancesLock.lock()
+    let liveInstances = instances.allObjects
+    instancesLock.unlock()
+    for instance in liveInstances {
+      instance.sendEvent(name, data ?? [:])
+    }
   }
 
   public func definition() -> ModuleDefinition {
