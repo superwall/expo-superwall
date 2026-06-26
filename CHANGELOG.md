@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.6
+
+### Patch Changes
+
+- 063189f: Update android version to 2.7.17
+
 ## 1.1.5
 
 ### Patch Changes
