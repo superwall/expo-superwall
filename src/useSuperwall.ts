@@ -181,6 +181,18 @@ export interface SuperwallStore {
     handlerId?: string | null,
   ) => Promise<void>
   /**
+   * Tracks an analytics event by name with optional parameters.
+   *
+   * This is a thin, fire-and-forget convenience alias for {@link registerPlacement}
+   * that performs no paywall handling — there are no feature/handler callbacks.
+   * Use it to send arbitrary analytics events, which are queryable via Superwall's
+   * Query API.
+   * @param event - The name of the event to track.
+   * @param params - Optional parameters to pass with the event.
+   * @returns A promise that resolves when the event has been tracked.
+   */
+  track: (event: string, params?: Record<string, any>) => Promise<void>
+  /**
    * Retrieves the presentation result for a given placement.
    * This can be used to understand what would happen if a placement were to be registered, without actually registering it.
    * @param placement - The ID of the placement.
@@ -371,6 +383,9 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   registerPlacement: async (placement, params, handlerId = "default") => {
     await awaitConfigured()
     await SuperwallExpoModule.registerPlacement(placement, params, handlerId)
+  },
+  track: async (event, params) => {
+    await get().registerPlacement(event, params)
   },
   getPresentationResult: async (placement, params) => {
     await awaitConfigured()
