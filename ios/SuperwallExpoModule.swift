@@ -402,6 +402,15 @@ public class SuperwallExpoModule: Module {
       }
     }
 
+    Function("setEventTrackingBehavior") { (behavior: String) in
+      switch behavior {
+      case "all": Superwall.shared.eventTrackingBehavior = .all
+      case "superwallOnly": Superwall.shared.eventTrackingBehavior = .superwallOnly
+      case "none": Superwall.shared.eventTrackingBehavior = .none
+      default: break
+      }
+    }
+
     AsyncFunction("setIntegrationAttributes") { (attributes: [String: String], promise: Promise) in
       var converted: [IntegrationAttribute: String] = [:]
 

@@ -24,6 +24,7 @@ extension IntegrationAttribute {
     case "posthogUserId": return .posthogUserId
     case "customerioId": return .customerioId
     case "appstackId": return .appstackId
+    case "singularDeviceId": return .singularDeviceId
     default: return nil
     }
   }

@@ -99,6 +99,7 @@ export type IntegrationAttribute =
   | "posthogUserId"
   | "customerioId"
   | "appstackId"
+  | "singularDeviceId"
 
 /**
  * Object with optional keys for third-party integration provider IDs.
