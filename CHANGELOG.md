@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0
+
+### Minor Changes
+
+- 694c1b1: Update native SDKs (iOS 4.16.1, Android 2.7.20) and add `eventTrackingBehavior` (deprecates `isExternalDataCollectionEnabled`), the `singularDeviceId` integration attribute, a runtime `setEventTrackingBehavior`, and `getStoreFrontCountryCode()`.
+
 ## 1.1.6
 
 ### Patch Changes
