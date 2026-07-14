@@ -1,6 +1,7 @@
 package expo.modules.superwallexpo.json
 
 
+import com.superwall.sdk.config.options.EventTrackingBehavior
 import com.superwall.sdk.config.options.PaywallOptions
 import com.superwall.sdk.config.options.SuperwallOptions
 import com.superwall.sdk.store.testmode.TestModeBehavior
@@ -12,6 +13,14 @@ fun superwallOptionsFromJson(json: Map<String, Any?>): SuperwallOptions {
   val options = SuperwallOptions()
   options.localeIdentifier = json["localeIdentifier"] as String?
   options.isExternalDataCollectionEnabled = (json["isExternalDataCollectionEnabled"] as Boolean?)?:true
+  (json["eventTrackingBehavior"] as String?)?.let {
+    options.eventTrackingBehavior = when (it) {
+      "all" -> EventTrackingBehavior.ALL
+      "superwallOnly" -> EventTrackingBehavior.SUPERWALL_ONLY
+      "none" -> EventTrackingBehavior.NONE
+      else -> options.eventTrackingBehavior
+    }
+  }
   options.isGameControllerEnabled = (json["isGameControllerEnabled"] as Boolean?)?:false
   options.passIdentifiersToPlayStore = (json["passIdentifiersToPlayStore"] as Boolean?)?:false
   options.enableExperimentalDeviceVariables = (json["enableExperimentalDeviceVariables"] as Boolean?)?:false

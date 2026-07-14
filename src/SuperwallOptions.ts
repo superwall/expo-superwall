@@ -58,6 +58,14 @@ export type TransactionBackgroundView = "spinner" | "none"
 export type TestModeBehavior = "automatic" | "whenEnabledForUser" | "never" | "always"
 
 /**
+ * Controls which events Superwall collects, for GDPR/data-collection control.
+ * - "all": collect all events (default)
+ * - "superwallOnly": only Superwall-internal events
+ * - "none": collect nothing
+ */
+export type EventTrackingBehavior = "all" | "superwallOnly" | "none"
+
+/**
  * @category Types
  * @since 1.2.0
  * A local asset that can be registered with Superwall and served to the paywall webview
@@ -115,7 +123,9 @@ export interface PaywallOptions {
 export interface SuperwallOptions {
   paywalls: PaywallOptions
   networkEnvironment: NetworkEnvironment
+  /** @deprecated Use {@link eventTrackingBehavior} instead. */
   isExternalDataCollectionEnabled: boolean
+  eventTrackingBehavior?: EventTrackingBehavior
   localeIdentifier?: string
   isGameControllerEnabled: boolean
   logging: LoggingOptions
@@ -162,7 +172,9 @@ export interface PartialSuperwallOptions {
     restoreFailed?: Partial<RestoreFailed>
   }
   networkEnvironment?: NetworkEnvironment
+  /** @deprecated Use {@link eventTrackingBehavior} instead. */
   isExternalDataCollectionEnabled?: boolean
+  eventTrackingBehavior?: EventTrackingBehavior
   localeIdentifier?: string
   isGameControllerEnabled?: boolean
   logging?: Partial<LoggingOptions>

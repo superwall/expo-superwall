@@ -48,6 +48,15 @@ extension SuperwallOptions {
     superwallOptions.maxConfigRetryCount = maxConfigRetryCount
     superwallOptions.testModeBehavior = testModeBehavior
 
+    if let eventTrackingBehaviorString = dictionary["eventTrackingBehavior"] as? String {
+      switch eventTrackingBehaviorString {
+      case "all": superwallOptions.eventTrackingBehavior = .all
+      case "superwallOnly": superwallOptions.eventTrackingBehavior = .superwallOnly
+      case "none": superwallOptions.eventTrackingBehavior = .none
+      default: break
+      }
+    }
+
     if let localResourcesValue = dictionary["localResources"] as? [String: String] {
       superwallOptions.localResources = localResourcesValue.compactMapValues { value in
         if let url = URL(string: value), url.scheme != nil {

@@ -11,7 +11,11 @@ import type {
   RestorationResultResponse,
   SubscriptionStatus,
 } from "./SuperwallExpoModule.types"
-import { DefaultSuperwallOptions, type PartialSuperwallOptions } from "./SuperwallOptions"
+import {
+  DefaultSuperwallOptions,
+  type EventTrackingBehavior,
+  type PartialSuperwallOptions,
+} from "./SuperwallOptions"
 import { filterUndefined } from "./utils/filterUndefined"
 
 const CONFIGURE_WAIT_TIMEOUT_MS = 10_000
@@ -235,6 +239,13 @@ export interface SuperwallStore {
   setLogLevel: (level: string) => Promise<void>
 
   /**
+   * Sets which events Superwall tracks at runtime, for GDPR/data-collection control.
+   * @param behavior - The desired event tracking behavior ("all", "superwallOnly", or "none").
+   * @returns A promise that resolves when the behavior is set.
+   */
+  setEventTrackingBehavior: (behavior: EventTrackingBehavior) => Promise<void>
+
+  /**
    * Sets attributes for third-party integrations.
    * @param attributes - Object mapping IntegrationAttribute string values to their IDs
    * @returns A promise that resolves when attributes are set
@@ -259,6 +270,12 @@ export interface SuperwallStore {
   setSubscriptionStatus: (status: SubscriptionStatus) => Promise<void>
 
   getDeviceAttributes: () => Promise<Record<string, any>>
+
+  /**
+   * Retrieves the App Store / Play Store storefront country code for the current device.
+   * @returns A promise that resolves with the storefront country code, or undefined if unavailable.
+   */
+  getStoreFrontCountryCode: () => Promise<string | undefined>
 
   /**
    * Retrieves the user's entitlements from Superwall's servers.
@@ -409,6 +426,10 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     await awaitConfigured()
     await SuperwallExpoModule.setLogLevel(level)
   },
+  setEventTrackingBehavior: async (behavior) => {
+    await awaitConfigured()
+    await SuperwallExpoModule.setEventTrackingBehavior(behavior)
+  },
 
   setIntegrationAttributes: async (attributes) => {
     await awaitConfigured()
@@ -431,6 +452,11 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     await awaitConfigured()
     const attributes = await SuperwallExpoModule.getDeviceAttributes()
     return attributes
+  },
+  getStoreFrontCountryCode: async () => {
+    await awaitConfigured()
+    const attributes = await SuperwallExpoModule.getDeviceAttributes()
+    return attributes?.["storeFrontCountryCode"] as string | undefined
   },
   getEntitlements: async () => {
     await awaitConfigured()

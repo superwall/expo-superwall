@@ -12,6 +12,7 @@ export * from "./components"
 export { default as SuperwallExpoModule } from "./SuperwallExpoModule"
 export type * from "./SuperwallExpoModule.types"
 export type {
+  EventTrackingBehavior,
   LocalResource,
   LoggingOptions,
   NetworkEnvironment,

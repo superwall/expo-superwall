@@ -37,6 +37,17 @@ export enum TestModeBehavior {
 }
 
 /**
+ * @category Enums
+ * @since 1.2.0
+ * Controls which events Superwall collects, for GDPR/data-collection control.
+ */
+export enum EventTrackingBehavior {
+  All = "all",
+  SuperwallOnly = "superwallOnly",
+  None = "none",
+}
+
+/**
  * @category Models
  * @since 0.0.15
  * Options for configuring logging behavior.
@@ -62,7 +73,9 @@ export class LoggingOptions {
 export interface PartialSuperwallOptions {
   paywalls?: Partial<PaywallOptions>
   networkEnvironment?: NetworkEnvironment
+  /** @deprecated Use {@link eventTrackingBehavior} instead. */
   isExternalDataCollectionEnabled?: boolean
+  eventTrackingBehavior?: EventTrackingBehavior
   localeIdentifier?: string
   isGameControllerEnabled?: boolean
   logging?: Partial<LoggingOptions>
@@ -84,7 +97,9 @@ export interface PartialSuperwallOptions {
 export class SuperwallOptions {
   paywalls: PaywallOptions = new PaywallOptions()
   networkEnvironment: NetworkEnvironment = NetworkEnvironment.Release
+  /** @deprecated Use {@link eventTrackingBehavior} instead. */
   isExternalDataCollectionEnabled = true
+  eventTrackingBehavior?: EventTrackingBehavior
   localeIdentifier?: string
   isGameControllerEnabled = false
   logging: LoggingOptions = new LoggingOptions()
@@ -150,6 +165,7 @@ export class SuperwallOptions {
       paywalls: this.paywalls.toJson(),
       networkEnvironment: this.networkEnvironment,
       isExternalDataCollectionEnabled: this.isExternalDataCollectionEnabled,
+      eventTrackingBehavior: this.eventTrackingBehavior,
       localeIdentifier: this.localeIdentifier,
       isGameControllerEnabled: this.isGameControllerEnabled,
       logging: this.logging.toJson(),

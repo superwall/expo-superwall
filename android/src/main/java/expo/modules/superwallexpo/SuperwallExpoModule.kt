@@ -20,6 +20,7 @@ import com.superwall.sdk.identity.IdentityOptions
 import com.superwall.sdk.identity.identify
 import com.superwall.sdk.identity.setUserAttributes
 import com.superwall.sdk.config.options.SuperwallOptions
+import com.superwall.sdk.config.options.EventTrackingBehavior
 import com.superwall.sdk.logger.LogLevel
 import com.superwall.sdk.network.device.InterfaceStyle
 import com.superwall.sdk.paywall.presentation.PaywallPresentationHandler
@@ -493,6 +494,14 @@ class SuperwallExpoModule : Module() {
       val logLevel = LogLevel.values().find { it.toString().equals(level, ignoreCase = true) }
       if (logLevel != null) {
         Superwall.instance.logLevel = logLevel
+      }
+    }
+
+    Function("setEventTrackingBehavior") { behavior: String ->
+      when (behavior) {
+        "all" -> Superwall.instance.eventTrackingBehavior = EventTrackingBehavior.ALL
+        "superwallOnly" -> Superwall.instance.eventTrackingBehavior = EventTrackingBehavior.SUPERWALL_ONLY
+        "none" -> Superwall.instance.eventTrackingBehavior = EventTrackingBehavior.NONE
       }
     }
 

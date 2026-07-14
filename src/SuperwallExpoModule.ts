@@ -73,6 +73,7 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
   preloadAllPaywalls(): void
 
   setLogLevel(level: string): void
+  setEventTrackingBehavior(behavior: string): void
 
   setIntegrationAttributes(attributes: IntegrationAttributes): Promise<void>
   getIntegrationAttributes(): Promise<Record<string, string>>

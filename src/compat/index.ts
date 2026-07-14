@@ -15,7 +15,11 @@ import { RedemptionResults } from "./lib/RedemptionResults"
 import { SubscriptionStatus } from "./lib/SubscriptionStatus"
 import type { SuperwallDelegate } from "./lib/SuperwallDelegate"
 import { SuperwallEventInfo } from "./lib/SuperwallEventInfo"
-import { type PartialSuperwallOptions, SuperwallOptions } from "./lib/SuperwallOptions"
+import {
+  type EventTrackingBehavior,
+  type PartialSuperwallOptions,
+  SuperwallOptions,
+} from "./lib/SuperwallOptions"
 
 export { PaywallResult } from "./lib/PaywallResult"
 export {
@@ -34,13 +38,14 @@ import SuperwallExpoModule from "../SuperwallExpoModule"
 import type { RestorationResultResponse } from "../SuperwallExpoModule.types"
 import { filterUndefined } from "../utils/filterUndefined"
 
+export type { RestorationResultResponse } from "../SuperwallExpoModule.types"
 export { ComputedPropertyRequest } from "./lib/ComputedPropertyRequest"
 export { ConfigurationStatus } from "./lib/ConfigurationStatus"
 export {
   CustomerInfo,
-  type SubscriptionTransaction,
   type NonSubscriptionTransaction,
   type SubscriptionOfferType,
+  type SubscriptionTransaction,
 } from "./lib/CustomerInfo"
 export { EntitlementsInfo } from "./lib/EntitlementsInfo"
 export { Experiment } from "./lib/Experiment"
@@ -66,12 +71,12 @@ export {
   PaywallSkippedReasonUserIsSubscribed,
 } from "./lib/PaywallSkippedReason"
 export {
+  type AppStoreProductIdentifier,
+  type CustomStoreProductIdentifier,
+  type PaddleProductIdentifier,
   Product,
   ProductStore,
-  type AppStoreProductIdentifier,
   type StripeProductIdentifier,
-  type PaddleProductIdentifier,
-  type CustomStoreProductIdentifier,
 } from "./lib/Product"
 export { PurchaseController } from "./lib/PurchaseController"
 export {
@@ -83,7 +88,6 @@ export {
 } from "./lib/PurchaseResult"
 export * from "./lib/RedemptionResults"
 export { RestorationResult } from "./lib/RestorationResult"
-export type { RestorationResultResponse } from "../SuperwallExpoModule.types"
 export { RestoreType } from "./lib/RestoreType"
 export { StoreProduct } from "./lib/StoreProduct"
 export { StoreTransaction } from "./lib/StoreTransaction"
@@ -762,6 +766,10 @@ export default class Superwall {
 
   async setLogLevel(level: LogLevel): Promise<void> {
     await SuperwallExpoModule.setLogLevel(level.toString())
+  }
+
+  async setEventTrackingBehavior(behavior: EventTrackingBehavior): Promise<void> {
+    await SuperwallExpoModule.setEventTrackingBehavior(behavior.toString())
   }
 
   /**

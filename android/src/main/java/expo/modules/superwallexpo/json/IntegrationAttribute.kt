@@ -25,6 +25,7 @@ fun attributionProviderFromString(provider: String): AttributionProvider? {
     "posthogUserId" -> AttributionProvider.POSTHOG_USER_ID
     "customerioId" -> AttributionProvider.CUSTOMERIO_ID
     "appstackId" -> AttributionProvider.APPSTACK
+    "singularDeviceId" -> AttributionProvider.SINGULAR_DEVICE_ID
     else -> null
   }
 }
