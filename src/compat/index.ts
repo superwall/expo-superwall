@@ -824,6 +824,20 @@ export default class Superwall {
     await SuperwallExpoModule.dismiss()
   }
 
+  /**
+   * Shows or hides the loading spinner on the presented paywall.
+   *
+   * Useful when a custom paywall action starts asynchronous work and you want the paywall
+   * to look busy until it finishes. Does nothing if no paywall is currently presented.
+   *
+   * @param isHidden - `false` to show the spinner, `true` to hide it again.
+   * @returns {Promise<void>} A promise that resolves once the native SDK has been told.
+   */
+  async togglePaywallSpinner(isHidden: boolean): Promise<void> {
+    await this.awaitConfig()
+    SuperwallExpoModule.togglePaywallSpinner(isHidden)
+  }
+
   async setLogLevel(level: LogLevel): Promise<void> {
     await SuperwallExpoModule.setLogLevel(level.toString())
   }

@@ -64,6 +64,7 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
   restorePurchases(): Promise<RestorationResultResponse>
 
   dismiss(): Promise<void>
+  togglePaywallSpinner(isHidden: boolean): void
   confirmAllAssignments(): Promise<any[]>
 
   getPresentationResult(

@@ -16,6 +16,7 @@ const mockGetCustomerInfo = jest.fn().mockResolvedValue({
 })
 const mockSetSubscriptionStatus = jest.fn().mockResolvedValue(undefined)
 const mockSetIntegrationAttributes = jest.fn().mockResolvedValue(undefined)
+const mockTogglePaywallSpinner = jest.fn()
 const mockAddListener = jest.fn(
   (eventName: string, listener: (payload: any) => void): { remove: () => void } => {
     const listeners = mockListeners.get(eventName) ?? new Set()
@@ -63,6 +64,7 @@ jest.mock("../SuperwallExpoModule", () => ({
     handleDeepLink: mockHandleDeepLink,
     didHandleBackPressed: mockDidHandleBackPressed,
     didHandleCustomCallback: mockDidHandleCustomCallback,
+    togglePaywallSpinner: mockTogglePaywallSpinner,
   },
 }))
 
@@ -346,6 +348,39 @@ describe("SDK behavior regressions", () => {
     })
 
     expect(mockSetIntegrationAttributes).toHaveBeenCalledWith({ adjustId: "adjust-123" })
+  })
+
+  it("waits for configure before toggling the paywall spinner", async () => {
+    let resolveConfigure: ((value: boolean) => void) | undefined
+    mockConfigure.mockReturnValueOnce(
+      new Promise<boolean>((resolve) => {
+        resolveConfigure = resolve
+      }),
+    )
+
+    const pendingToggle = useSuperwallStore.getState().togglePaywallSpinner(false)
+
+    const pendingConfigure = useSuperwallStore.getState().configure("api-key")
+
+    await act(async () => {
+      await Promise.resolve()
+    })
+
+    expect(mockTogglePaywallSpinner).not.toHaveBeenCalled()
+
+    await act(async () => {
+      resolveConfigure?.(true)
+      await pendingConfigure
+      await pendingToggle
+    })
+
+    expect(mockTogglePaywallSpinner).toHaveBeenCalledWith(false)
+
+    await act(async () => {
+      await useSuperwallStore.getState().togglePaywallSpinner(true)
+    })
+
+    expect(mockTogglePaywallSpinner).toHaveBeenLastCalledWith(true)
   })
 
   it("seeds customerInfo after configure and applies customerInfoDidChange updates", async () => {

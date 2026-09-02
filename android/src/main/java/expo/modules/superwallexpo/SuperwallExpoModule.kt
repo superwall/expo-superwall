@@ -495,6 +495,10 @@ class SuperwallExpoModule : Module() {
       }
     }
 
+    Function("togglePaywallSpinner") { isHidden: Boolean ->
+      Superwall.instance.togglePaywallSpinner(isHidden)
+    }
+
     AsyncFunction("confirmAllAssignments") { promise: Promise ->
       ioScope.launch {
         Superwall.instance.confirmAllAssignments().fold({

@@ -407,6 +407,10 @@ public class SuperwallExpoModule: Module {
       }
     }
 
+    Function("togglePaywallSpinner") { (isHidden: Bool) in
+      Superwall.shared.togglePaywallSpinner(isHidden: isHidden)
+    }
+
     AsyncFunction("confirmAllAssignments") { (promise: Promise) in
       Superwall.shared.confirmAllAssignments { assignments in
         promise.resolve(assignments.map { $0.toJson() })
