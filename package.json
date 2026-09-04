@@ -68,7 +68,7 @@
     "expo-module.config.json",
     "scripts"
   ],
-  "packageManager": "yarn@4.7.0",
+  "packageManager": "yarn@4.18.0",
   "dependencies": {
     "zustand": "^5.0.9"
   }
