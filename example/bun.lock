@@ -13,6 +13,7 @@
         "expo-blur": "~14.1.5",
         "expo-constants": "~17.1.6",
         "expo-dev-client": "~5.2.1",
+        "expo-fmt-consteval-fix": "^1.0.0",
         "expo-font": "~13.3.1",
         "expo-haptics": "~14.1.4",
         "expo-image": "~2.3.0",
@@ -813,6 +814,8 @@
     "expo-dev-menu-interface": ["expo-dev-menu-interface@1.10.0", "", { "peerDependencies": { "expo": "*" } }, "sha512-NxtM/qot5Rh2cY333iOE87dDg1S8CibW+Wu4WdLua3UMjy81pXYzAGCZGNOeY7k9GpNFqDPNDXWyBSlk9r2pBg=="],
 
     "expo-file-system": ["expo-file-system@18.1.10", "", { "peerDependencies": { "expo": "*", "react-native": "*" } }, "sha512-SyaWg+HitScLuyEeSG9gMSDT0hIxbM9jiZjSBP9l9zMnwZjmQwsusE6+7qGiddxJzdOhTP4YGUfvEzeeS0YL3Q=="],
+
+    "expo-fmt-consteval-fix": ["expo-fmt-consteval-fix@1.0.0", "", { "peerDependencies": { "@expo/config-plugins": ">=7.0.0" } }, "sha512-O4mqiOS7QzzmWT1irknAiHoJiw/wcVhwGKZaiEiVjggV9/+k1caQqfQxsZNqtQho+LLDKeFvWw+2ir2fOk+P2A=="],
 
     "expo-font": ["expo-font@13.3.1", "", { "dependencies": { "fontfaceobserver": "^2.1.0" }, "peerDependencies": { "expo": "*", "react": "*" } }, "sha512-d+xrHYvSM9WB42wj8vP9OOFWyxed5R1evphfDb6zYBmC1dA9Hf89FpT7TNFtj2Bk3clTnpmVqQTCYbbA2P3CLg=="],
 
