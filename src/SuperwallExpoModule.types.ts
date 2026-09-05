@@ -2578,6 +2578,67 @@ export type RestorationResultResponse =
   | { result: "failed"; errorMessage: string | null }
 
 /**
+ * Represents the result of a standalone purchase attempt via {@link SuperwallExpoModule.purchase}.
+ * - `purchased`: The purchase completed successfully.
+ * - `cancelled`: The user cancelled the purchase.
+ * - `pending`: The purchase is pending (e.g., awaiting approval).
+ * - `failed`: The purchase failed, with an accompanying error message.
+ */
+export type PurchaseResultResponse =
+  | { type: "purchased" }
+  | { type: "cancelled" }
+  | { type: "pending" }
+  | { type: "failed"; error?: string }
+
+/**
+ * Represents a store product returned by {@link SuperwallExpoModule.products}.
+ * Matches the JSON shape produced by the native `StoreProduct.toJson()` on both iOS and Android.
+ */
+export interface ProductResponse {
+  productIdentifier: string
+  localizedPrice: string
+  localizedSubscriptionPeriod: string
+  period: string
+  periodWeeks: number
+  periodWeeksString: string
+  periodMonths: number
+  periodMonthsString: string
+  periodYears: number
+  periodYearsString: string
+  periodDays: number
+  periodDaysString: string
+  dailyPrice: string
+  weeklyPrice: string
+  monthlyPrice: string
+  yearlyPrice: string
+  hasFreeTrial: boolean
+  trialPeriodEndDateString: string
+  localizedTrialPeriodPrice: string
+  trialPeriodPrice: number
+  trialPeriodDays: number
+  trialPeriodDaysString: string
+  trialPeriodWeeks: number
+  trialPeriodWeeksString: string
+  trialPeriodMonths: number
+  trialPeriodMonthsString: string
+  trialPeriodYears: number
+  trialPeriodYearsString: string
+  trialPeriodText: string
+  locale: string
+  languageCode?: string | null
+  currencyCode?: string | null
+  currencySymbol?: string | null
+  regionCode?: string | null
+  price: number
+  trialPeriodEndDate?: string | null
+  isFamilyShareable?: boolean
+  introOfferToken?: string | null
+  subscriptionGroupIdentifier?: string | null
+  fullIdentifier?: string
+  subscriptionPeriod?: { value: number; unit: string } | null
+}
+
+/**
  * Defines the events emitted by the native Superwall Expo module that can be listened to.
  * These events provide a way to react to various SDK activities and user interactions.
  * Use `SuperwallExpoModule.addListener(eventName, callback)` to subscribe.

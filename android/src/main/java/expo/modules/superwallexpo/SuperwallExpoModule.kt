@@ -556,5 +556,35 @@ class SuperwallExpoModule : Module() {
         })
       }
     }
+
+    AsyncFunction("purchase") { productId: String, promise: Promise ->
+      ioScope.launch {
+        try {
+          val result = Superwall.instance.purchase(productId)
+          scope.launch {
+            promise.resolve(purchaseResultToJson(result))
+          }
+        } catch (error: Exception) {
+          scope.launch {
+            promise.reject(CodedException(error))
+          }
+        }
+      }
+    }
+
+    AsyncFunction("products") { productIds: List<String>, promise: Promise ->
+      ioScope.launch {
+        try {
+          val products = Superwall.instance.getProducts(productIds)
+          scope.launch {
+            promise.resolve(products.map { it.toJson() })
+          }
+        } catch (error: Exception) {
+          scope.launch {
+            promise.reject(CodedException(error))
+          }
+        }
+      }
+    }
   }
 }

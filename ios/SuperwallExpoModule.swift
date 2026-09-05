@@ -452,5 +452,32 @@ public class SuperwallExpoModule: Module {
     AsyncFunction("consume") { (_: String, promise: Promise) in
       promise.resolve(nil)
     }
+
+    AsyncFunction("purchase") { (productId: String, promise: Promise) in
+      Task {
+        do {
+          let products = try await Superwall.shared.products(for: Set([productId]))
+          guard let storeProduct = products.first else {
+            promise.reject(PurchaseResultError(message: "Product not found for identifier: \(productId)"))
+            return
+          }
+          let result = await Superwall.shared.purchase(storeProduct)
+          promise.resolve(result.toJson())
+        } catch {
+          promise.reject(error)
+        }
+      }
+    }
+
+    AsyncFunction("products") { (productIds: [String], promise: Promise) in
+      Task {
+        do {
+          let products = try await Superwall.shared.products(for: Set(productIds))
+          promise.resolve(products.map { $0.toJson() })
+        } catch {
+          promise.reject(error)
+        }
+      }
+    }
   }
 }

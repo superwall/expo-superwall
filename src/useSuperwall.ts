@@ -8,6 +8,8 @@ import SuperwallExpoModule from "./SuperwallExpoModule"
 import type {
   EntitlementsInfo,
   IntegrationAttributes,
+  ProductResponse,
+  PurchaseResultResponse,
   RestorationResultResponse,
   SubscriptionStatus,
 } from "./SuperwallExpoModule.types"
@@ -200,6 +202,20 @@ export interface SuperwallStore {
    * @returns A promise that resolves with a {@link RestorationResultResponse} indicating success or failure.
    */
   restorePurchases: () => Promise<RestorationResultResponse>
+
+  /**
+   * Initiates a purchase for a given product identifier.
+   * @param productId - The product identifier to purchase.
+   * @returns A promise that resolves with a {@link PurchaseResultResponse} indicating the outcome.
+   */
+  purchase: (productId: string) => Promise<PurchaseResultResponse>
+
+  /**
+   * Fetches product details for an array of product identifiers.
+   * @param productIds - An array of product identifiers.
+   * @returns A promise that resolves with an array of product objects.
+   */
+  products: (productIds: string[]) => Promise<ProductResponse[]>
 
   /**
    * Dismisses any currently presented Superwall paywall.
@@ -396,6 +412,14 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   restorePurchases: async () => {
     await awaitConfigured()
     return SuperwallExpoModule.restorePurchases()
+  },
+  purchase: async (productId) => {
+    await awaitConfigured()
+    return SuperwallExpoModule.purchase(productId)
+  },
+  products: async (productIds) => {
+    await awaitConfigured()
+    return SuperwallExpoModule.products(productIds)
   },
   dismiss: async () => {
     await awaitConfigured()

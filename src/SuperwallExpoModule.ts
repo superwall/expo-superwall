@@ -3,6 +3,8 @@ import type { PresentationResult } from "./compat/lib/PresentationResult"
 import type {
   EntitlementsInfo,
   IntegrationAttributes,
+  ProductResponse,
+  PurchaseResultResponse,
   RestorationResultResponse,
   SuperwallExpoModuleEvents,
 } from "./SuperwallExpoModule.types"
@@ -79,6 +81,9 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
   getIntegrationAttributes(): Promise<Record<string, string>>
 
   consume(purchaseToken: string): Promise<string>
+
+  purchase(productId: string): Promise<PurchaseResultResponse>
+  products(productIds: string[]): Promise<ProductResponse[]>
 }
 
 export default requireNativeModule<SuperwallExpoModule>("SuperwallExpo")
