@@ -14,6 +14,7 @@ import com.superwall.sdk.Superwall
 import com.superwall.sdk.delegate.SuperwallDelegate
 import com.superwall.sdk.delegate.PurchaseResult
 import com.superwall.sdk.delegate.RestorationResult
+import com.superwall.sdk.models.customer.CustomerInfo
 import com.superwall.sdk.models.entitlements.SubscriptionStatus
 import com.superwall.sdk.models.entitlements.Entitlement
 import com.superwall.sdk.identity.IdentityOptions
@@ -33,6 +34,7 @@ import com.superwall.sdk.paywall.view.webview.PaywallResource
 import com.superwall.sdk.paywall.presentation.get_presentation_result.getPresentationResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
@@ -95,6 +97,10 @@ class SuperwallExpoModule : Module() {
   private val handleLog = "handleLog"
   private val willRedeemLink = "willRedeemLink"
   private val didRedeemLink = "didRedeemLink"
+
+  // Customer Info Events
+  private val customerInfoDidChange = "customerInfoDidChange"
+
   val purchaseController = PurchaseControllerBridge.instance
 
   override fun definition() = ModuleDefinition {
@@ -124,7 +130,10 @@ class SuperwallExpoModule : Module() {
       paywallWillOpenDeepLink,
       handleLog,
       willRedeemLink,
-      didRedeemLink
+      didRedeemLink,
+
+      // Customer info events
+      customerInfoDidChange
     )
 
     View(SuperwallExpoPaywallView::class) {
@@ -343,6 +352,17 @@ class SuperwallExpoModule : Module() {
         promise.reject(CodedException(error))
       }
       }
+
+    AsyncFunction("getCustomerInfo") { promise: Promise ->
+      ioScope.launch {
+        try {
+          val customerInfo = Superwall.instance.customerInfo.first { it != CustomerInfo.empty() }
+          scope.launch { promise.resolve(customerInfo.toJson()) }
+        } catch (error: Throwable) {
+          scope.launch { promise.reject(CodedException(error)) }
+        }
+      }
+    }
 
     AsyncFunction("getSubscriptionStatus") { promise: Promise ->
       try {

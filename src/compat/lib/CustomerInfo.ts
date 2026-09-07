@@ -4,7 +4,8 @@ import { Entitlement } from "./Entitlement"
  * @category Models
  * Offer type that applied to a {@link SubscriptionTransaction}.
  *
- * @platform Android
+ * iOS only delivers `"trial"`, `"code"`, `"promotional"` and `"winback"`;
+ * `"subscription"` and `"revoked"` are Android-only values.
  */
 export type SubscriptionOfferType =
   | "trial"
@@ -17,8 +18,6 @@ export type SubscriptionOfferType =
 /**
  * @category Models
  * A subscription transaction in the customer's purchase history.
- *
- * @platform Android — currently only delivered by the Android SDK (2.7.12+).
  */
 export interface SubscriptionTransaction {
   transactionId: string
@@ -40,8 +39,6 @@ export interface SubscriptionTransaction {
 /**
  * @category Models
  * A non-subscription (one-time / consumable) transaction.
- *
- * @platform Android — currently only delivered by the Android SDK (2.7.12+).
  */
 export interface NonSubscriptionTransaction {
   transactionId: string
@@ -56,8 +53,9 @@ export interface NonSubscriptionTransaction {
 /**
  * @category Models
  * Snapshot of the customer's subscription and entitlement state.
- *
- * @platform Android — currently only delivered by the Android SDK (2.7.12+).
+ * Snapshots are immutable and don't auto-update — fetch a fresh one with
+ * `Superwall.shared.getCustomerInfo()` or implement the
+ * `customerInfoDidChange` delegate method to stay current.
  */
 export class CustomerInfo {
   userId: string

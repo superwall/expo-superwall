@@ -1,6 +1,7 @@
 import type {
   CustomCallback,
   CustomCallbackResult,
+  CustomerInfo,
   LogLevel,
   LogScope,
   PaywallInfo,
@@ -46,6 +47,15 @@ export interface SuperwallEventCallbacks {
    * @param status - The new subscription status. See {@link SubscriptionStatus}.
    */
   onSubscriptionStatusChange?: (status: SubscriptionStatus) => void
+
+  /**
+   * Called when the customer's purchase and subscription info changes
+   * (e.g. after a purchase, restore, renewal, expiration or web redemption).
+   * Not called for the initial value — use `getCustomerInfo()` to seed state.
+   * @param from - The previous customer info snapshot. See {@link CustomerInfo}.
+   * @param to - The new customer info snapshot. See {@link CustomerInfo}.
+   */
+  onCustomerInfoChange?: (from: CustomerInfo, to: CustomerInfo) => void
 
   /**
    * Called for all Superwall internal events. This is a general-purpose event handler.

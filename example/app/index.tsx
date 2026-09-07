@@ -9,6 +9,7 @@ export default function OuterApp() {
       <Link href="/custom-purchase">Custom Purchase Controller</Link>
       <Link href="/revenuecat">RevenueCat Integration</Link>
       <Link href="/integration-attributes">Integration Attributes</Link>
+      <Link href="/customer-info">Customer Info</Link>
       <Link href="/article-paywall">Inline Article Paywall</Link>
     </View>
   )

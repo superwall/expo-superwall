@@ -54,6 +54,9 @@ public class SuperwallExpoModule: Module {
   private let willRedeemLink = "willRedeemLink"
   private let didRedeemLink = "didRedeemLink"
 
+  // Customer Info Events
+  private let customerInfoDidChange = "customerInfoDidChange"
+
   public required init(appContext: AppContext) {
     super.init(appContext: appContext)
     SuperwallExpoModule.shared = self
@@ -100,7 +103,10 @@ public class SuperwallExpoModule: Module {
       paywallWillOpenDeepLink,
       handleLog,
       willRedeemLink,
-      didRedeemLink
+      didRedeemLink,
+
+      // Customer info events
+      customerInfoDidChange
     )
 
     View(SuperwallExpoPaywallView.self) {
@@ -272,6 +278,13 @@ public class SuperwallExpoModule: Module {
         promise.resolve(entitlements)
       } catch {
         promise.reject(error)
+      }
+    }
+
+    AsyncFunction("getCustomerInfo") { (promise: Promise) in
+      Task {
+        let customerInfo = await Superwall.shared.getCustomerInfo()
+        promise.resolve(customerInfo.toJson())
       }
     }
 

@@ -431,7 +431,8 @@ export interface CustomStoreProductIdentifier {
 /**
  * The offer type that applied to a {@link SubscriptionTransaction}.
  *
- * @platform Android
+ * iOS only delivers `"trial"`, `"code"`, `"promotional"` and `"winback"`;
+ * `"subscription"` and `"revoked"` are Android-only values.
  */
 export type SubscriptionOfferType =
   | "trial"
@@ -443,8 +444,6 @@ export type SubscriptionOfferType =
 
 /**
  * A subscription transaction recorded in the customer's purchase history.
- *
- * @platform Android — currently only delivered by the Android SDK.
  */
 export interface SubscriptionTransaction {
   /** The unique identifier for the transaction. */
@@ -475,8 +474,6 @@ export interface SubscriptionTransaction {
 
 /**
  * A non-subscription (one-time / consumable) transaction in the customer's purchase history.
- *
- * @platform Android — currently only delivered by the Android SDK.
  */
 export interface NonSubscriptionTransaction {
   /** The unique identifier for the transaction. */
@@ -495,9 +492,8 @@ export interface NonSubscriptionTransaction {
 
 /**
  * The latest subscription and entitlement state for the customer.
- * Snapshots are immutable and don't auto-update.
- *
- * @platform Android — currently only delivered by the Android SDK.
+ * Snapshots are immutable and don't auto-update — fetch a fresh snapshot with
+ * `getCustomerInfo()` or subscribe to `customerInfoDidChange` to stay current.
  */
 export interface CustomerInfo {
   /** The user ID at the time the snapshot was taken. */
@@ -2627,6 +2623,18 @@ export type SuperwallExpoModuleEvents = {
   subscriptionStatusDidChange: (params: {
     from: SubscriptionStatus
     to: SubscriptionStatus
+  }) => void
+  /**
+   * Emitted when the customer's purchase and subscription info changes
+   * (e.g. after a purchase, restore, renewal, expiration or web redemption).
+   * Not emitted for the initial value — call `getCustomerInfo()` to seed state.
+   * @param params - Event parameters.
+   * @param params.from - The previous customer info snapshot. See {@link CustomerInfo}.
+   * @param params.to - The new customer info snapshot. See {@link CustomerInfo}.
+   */
+  customerInfoDidChange: (params: {
+    from: CustomerInfo
+    to: CustomerInfo
   }) => void
   /**
    * Emitted for various internal Superwall events, providing a detailed stream of SDK activity.
