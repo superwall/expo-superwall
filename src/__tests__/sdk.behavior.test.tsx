@@ -41,6 +41,14 @@ const emit = (eventName: string, payload: any) => {
   }
 }
 
+// Mocked so the suite doesn't load the real ESM module, which jest can't
+// require on Node < 24.9. Nothing here exercises real asset resolution.
+jest.mock("expo-asset", () => ({
+  Asset: {
+    fromModule: jest.fn(() => ({ localUri: "file:///mock", uri: "file:///mock" })),
+  },
+}))
+
 jest.mock("../SuperwallExpoModule", () => ({
   __esModule: true,
   default: {
