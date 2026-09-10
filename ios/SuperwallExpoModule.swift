@@ -345,7 +345,10 @@ public class SuperwallExpoModule: Module {
         promise.resolve(false)
         return
       }
-      let result = Superwall.shared.handleDeepLink(url)
+      // Use the static overload: it stores the URL and replays it once configuration
+      // completes. The deprecated instance method routes immediately with no guard, so a
+      // cold-start deep link is dropped before the SDK is ready.
+      let result = Superwall.handleDeepLink(url)
       promise.resolve(result)
     }
 
