@@ -16,3 +16,15 @@ fun purchaseResultFromJson(json: Map<String, Any>): PurchaseResult {
         else -> PurchaseResult.Failed("Unknown Purchase Result type")
     }
 }
+
+fun purchaseResultToJson(result: PurchaseResult): Map<String, Any?> {
+    return when (result) {
+        is PurchaseResult.Purchased -> mapOf("type" to "purchased")
+        is PurchaseResult.Cancelled -> mapOf("type" to "cancelled")
+        is PurchaseResult.Pending -> mapOf("type" to "pending")
+        is PurchaseResult.Failed -> mapOf(
+            "type" to "failed",
+            "error" to (result.error?.message ?: "Unknown error")
+        )
+    }
+}

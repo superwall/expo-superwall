@@ -6,6 +6,7 @@ export default function OuterApp() {
     <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 16 }}>
       <Link href="/compat">Compat SDK Demo</Link>
       <Link href="/new">Hooks SDK Demo</Link>
+      <Link href="/standalone-purchase">Standalone Purchase</Link>
       <Link href="/custom-purchase">Custom Purchase Controller</Link>
       <Link href="/revenuecat">RevenueCat Integration</Link>
       <Link href="/integration-attributes">Integration Attributes</Link>

@@ -29,4 +29,17 @@ extension PurchaseResult {
       return nil
     }
   }
+
+  func toJson() -> [String: Any] {
+    switch self {
+    case .purchased:
+      return ["type": "purchased"]
+    case .cancelled:
+      return ["type": "cancelled"]
+    case .pending:
+      return ["type": "pending"]
+    case .failed(let error):
+      return ["type": "failed", "error": error.localizedDescription]
+    }
+  }
 }

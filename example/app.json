@@ -22,6 +22,7 @@
       "package": "com.superwall.superapp"
     },
     "plugins": [
+      "expo-fmt-consteval-fix",
       "expo-router",
       "expo-web-browser"
     ],
