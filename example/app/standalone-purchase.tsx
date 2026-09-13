@@ -1,52 +1,83 @@
 import { SuperwallLoaded, SuperwallLoading, SuperwallProvider, useSuperwall } from "expo-superwall"
 import { useState } from "react"
-import { ActivityIndicator, Alert, Button, Text, TextInput, View } from "react-native"
+import { ActivityIndicator, Button, ScrollView, Text, TextInput } from "react-native"
 
 const API_KEY = "pk_e361c8a9662281f4249f2fa11d1a63854615fa80e15e7a4d"
 
 function ScreenContent() {
   const { purchase, products } = useSuperwall()
-  const [productId, setProductId] = useState("com.example.monthly")
+  const [productId, setProductId] = useState("superwall_pro_3999")
   const [result, setResult] = useState<string | null>(null)
+  const [pendingAction, setPendingAction] = useState<"products" | "purchase" | null>(null)
 
   const handleProducts = async () => {
+    setPendingAction("products")
+    setResult(null)
     try {
-      const res = await products([productId])
+      const res = await products([productId.trim()])
       setResult(JSON.stringify(res, null, 2))
-    } catch (e: any) {
-      Alert.alert("Error", e.message)
+    } catch (error) {
+      setResult(`Fetch products failed: ${String(error)}`)
+    } finally {
+      setPendingAction(null)
     }
   }
 
   const handlePurchase = async () => {
+    setPendingAction("purchase")
+    setResult(null)
     try {
-      const res = await purchase(productId)
+      const res = await purchase(productId.trim())
       setResult(JSON.stringify(res, null, 2))
-    } catch (e: any) {
-      Alert.alert("Error", e.message)
+    } catch (error) {
+      setResult(`Purchase failed: ${String(error)}`)
+    } finally {
+      setPendingAction(null)
     }
   }
 
   return (
-    <View style={{ flex: 1, padding: 20, gap: 12 }}>
+    <ScrollView
+      contentContainerStyle={{ padding: 20, gap: 12 }}
+      keyboardShouldPersistTaps="handled"
+    >
       <Text style={{ fontSize: 16, fontWeight: "600" }}>Standalone Purchase Test</Text>
+      <Text>
+        Enter a product ID configured for this app. Fetch Products reads its store details; Purchase
+        opens the store purchase flow without presenting a paywall.
+      </Text>
 
       <TextInput
         value={productId}
+        accessibilityLabel="Product ID"
+        testID="purchase-product-id"
         onChangeText={setProductId}
+        autoCapitalize="none"
+        autoCorrect={false}
+        editable={pendingAction === null}
         placeholder="Product ID"
         style={{ borderWidth: 1, borderColor: "#ccc", padding: 12, borderRadius: 8 }}
       />
 
-      <Button title="Fetch Products" onPress={handleProducts} />
-      <Button title="Purchase" onPress={handlePurchase} />
+      <Button
+        title={pendingAction === "products" ? "Fetching Products…" : "Fetch Products"}
+        testID="fetch-products"
+        disabled={pendingAction !== null || !productId.trim()}
+        onPress={handleProducts}
+      />
+      <Button
+        title={pendingAction === "purchase" ? "Purchasing…" : "Purchase"}
+        testID="purchase-product"
+        disabled={pendingAction !== null || !productId.trim()}
+        onPress={handlePurchase}
+      />
 
       {result && (
-        <Text selectable style={{ fontSize: 12 }}>
+        <Text selectable testID="purchase-test-result" style={{ fontSize: 12 }}>
           {result}
         </Text>
       )}
-    </View>
+    </ScrollView>
   )
 }
 

@@ -190,7 +190,8 @@ const deliverBufferedEvent = (bufferedEvent: BufferedEvent): boolean => {
 
 const flushBufferedEvents = (): void => {
   for (let index = 0; index < bufferedEvents.length; ) {
-    if (deliverBufferedEvent(bufferedEvents[index])) {
+    const bufferedEvent = bufferedEvents[index]
+    if (bufferedEvent && deliverBufferedEvent(bufferedEvent)) {
       bufferedEvents.splice(index, 1)
       continue
     }

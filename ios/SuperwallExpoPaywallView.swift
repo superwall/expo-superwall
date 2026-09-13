@@ -1,4 +1,5 @@
 import ExpoModulesCore
+import React
 import SuperwallKit
 
 /// A React Native host view for a paywall retrieved through Superwall's `getPaywall` API.

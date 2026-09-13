@@ -24,7 +24,7 @@ fun purchaseResultToJson(result: PurchaseResult): Map<String, Any?> {
         is PurchaseResult.Pending -> mapOf("type" to "pending")
         is PurchaseResult.Failed -> mapOf(
             "type" to "failed",
-            "error" to (result.error?.message ?: "Unknown error")
+            "error" to result.errorMessage
         )
     }
 }

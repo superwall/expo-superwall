@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "scheme": "superwall-ui-test-app",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.superwall.Advanced"
@@ -15,7 +14,6 @@
       "adaptiveIcon": {
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
       "package": "com.superwall.superapp"
     },
     "plugins": [

@@ -79,12 +79,22 @@ function ScreenContent() {
       </View>
 
       <View style={{ gap: 8 }}>
-        <Button title="Refresh Customer Info" onPress={handleRefresh} />
+        <Button
+          title="Refresh Customer Info"
+          testID="refresh-customer-info"
+          onPress={handleRefresh}
+        />
         <Button
           title="Show Paywall (test)"
+          testID="customer-info-show-paywall"
           onPress={() => registerPlacement({ placement: "test" })}
         />
-        <Button title="Restore Purchases" onPress={handleRestore} color="#388e3c" />
+        <Button
+          title="Restore Purchases"
+          testID="customer-info-restore"
+          onPress={handleRestore}
+          color="#388e3c"
+        />
       </View>
 
       {/* Change log */}

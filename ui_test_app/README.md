@@ -2,16 +2,14 @@
 
 This is an [Expo](https://expo.dev) application specifically for running UI tests for the `expo-superwall` SDK, likely using [Maestro](https://maestro.mobile.dev/). It is created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
+This app uses Expo SDK 57, React Native 0.86.3, and React 19.2.3. Native iOS builds require Xcode 26.4 or later and iOS 16.4 or later. Rebuild your development client after upgrading.
+
 ## Get started
 
 1. **Install dependencies**
 
-   Use your preferred package manager:
+   Use Bun to match the committed lockfile and CI:
    ```bash
-   npm install
-   # or
-   yarn install
-   # or
    bun install
    ```
 

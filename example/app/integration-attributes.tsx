@@ -2,7 +2,8 @@ import { SuperwallLoaded, SuperwallLoading, SuperwallProvider, useUser } from "e
 import { useState } from "react"
 import { ActivityIndicator, Button, ScrollView, Text, TextInput, View } from "react-native"
 
-const API_KEY = "pk_a5959912ceb3087d55c7ea63001202335adfbb54e0f70475"
+const IOS_API_KEY = "pk_e361c8a9662281f4249f2fa11d1a63854615fa80e15e7a4d"
+const ANDROID_API_KEY = "pk_6d16c4c892b1e792490ab8bfe831f1ad96e7c18aee7a5257"
 
 function ScreenContent() {
   const { setIntegrationAttributes, getIntegrationAttributes, user } = useUser()
@@ -272,10 +273,7 @@ function ScreenContent() {
 export default function IntegrationAttributesPage() {
   return (
     <SuperwallProvider
-      apiKeys={{
-        ios: API_KEY,
-        android: "pk_6d16c4c892b1e792490ab8bfe831f1ad96e7c18aee7a5257",
-      }}
+      apiKeys={{ ios: IOS_API_KEY, android: ANDROID_API_KEY }}
     >
       <SuperwallLoading>
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>

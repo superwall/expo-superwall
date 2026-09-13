@@ -22,7 +22,7 @@ import {
   SuperwallOptions,
 } from "./lib/SuperwallOptions"
 
-export { PaywallResult } from "./lib/PaywallResult"
+export type { PaywallResult } from "./lib/PaywallResult"
 export {
   PresentationResult,
   PresentationResultHoldout,
