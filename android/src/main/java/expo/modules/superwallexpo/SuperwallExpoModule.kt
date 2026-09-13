@@ -56,7 +56,18 @@ class SuperwallExpoModule : Module() {
     // purchase future incomplete forever.
     fun emitEvent(name: String, body: Map<String, Any?>?) {
       val liveInstances = synchronized(instances) { instances.toList() }
-      liveInstances.forEach { it.sendEvent(name, body ?: emptyMap()) }
+      liveInstances.forEach { it.trySendEvent(name, body ?: emptyMap()) }
+    }
+  }
+
+  // The Superwall SDK can call back on this module after the Expo module registry
+  // has been invalidated (e.g. CurrentActivityTracker logging during activity
+  // destroy). `sendEvent` then throws from `AppContext.eventEmitter`; dropping the
+  // undeliverable event is better than crashing the process mid-teardown.
+  internal fun trySendEvent(name: String, body: Map<String, Any?>) {
+    try {
+      sendEvent(name, body)
+    } catch (_: Exception) {
     }
   }
 
@@ -135,6 +146,16 @@ class SuperwallExpoModule : Module() {
       // Customer info events
       customerInfoDidChange
     )
+
+    OnDestroy {
+      // Once this module's app context is torn down its event emitter is gone.
+      // Deregister eagerly so `emitEvent` stops fanning out to it, rather than
+      // waiting for the WeakHashMap entry to be garbage-collected.
+      synchronized(instances) { instances.remove(this@SuperwallExpoModule) }
+      if (instance === this@SuperwallExpoModule) {
+        instance = null
+      }
+    }
 
     View(SuperwallExpoPaywallView::class) {
       Name("PaywallView")
@@ -272,7 +293,7 @@ class SuperwallExpoModule : Module() {
           mapOf(
             "paywallInfoJson" to paywallInfo.toJson(),
           "handlerId" to handlerId)
-          sendEvent(onPaywallPresent, data)
+          trySendEvent(onPaywallPresent, data)
         }
 
 
@@ -284,7 +305,7 @@ class SuperwallExpoModule : Module() {
           "result" to result.toJson(),
           "handlerId" to handlerId)
           
-          sendEvent(onPaywallDismiss, data)
+          trySendEvent(onPaywallDismiss, data)
         }
 
         handler?.onError { error ->
@@ -293,7 +314,7 @@ class SuperwallExpoModule : Module() {
             "errorString" to error.localizedMessage,
           "handlerId" to handlerId,
           )
-          sendEvent(onPaywallError, data)
+          trySendEvent(onPaywallError, data)
         }
 
         handler?.onSkip { reason ->
@@ -301,7 +322,7 @@ class SuperwallExpoModule : Module() {
           mapOf(
             "skippedReason" to reason.toJson(),
              "handlerId" to handlerId)
-          sendEvent(onPaywallSkip, data)
+          trySendEvent(onPaywallSkip, data)
         }
 
         handler?.onCustomCallback { callback ->
@@ -316,7 +337,7 @@ class SuperwallExpoModule : Module() {
           )
           callback.variables?.let { data["variables"] = it }
 
-          sendEvent(onCustomCallback, data)
+          trySendEvent(onCustomCallback, data)
 
           future.await()
         }
