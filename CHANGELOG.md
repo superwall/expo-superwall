@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.4.0
+
+### Minor Changes
+
+- e14e857: Bridge `getCustomerInfo()` and the `customerInfoDidChange` event from the native SDKs.
+
+  - `getCustomerInfo()` resolves with the customer's subscription transactions, non-subscription transactions and entitlements, waiting until real data has loaded on both platforms.
+  - New `customerInfoDidChange` native event with `{ from, to }` snapshots, exposed as `onCustomerInfoChange` in `useSuperwallEvents` and as a `SuperwallDelegate` method in the compat SDK.
+  - Reactive `customerInfo` state on `useSuperwall`/`useUser`, seeded after configuration, cleared and reseeded across `identify`/`reset`, and kept in sync via the change event.
+
+### Patch Changes
+
+- bc3ac15: Bridge `togglePaywallSpinner` to Expo. Both native SDKs expose it as the companion to `handleCustomPaywallAction`, but it was never wired up, so there was no way to show the paywall's spinner while a custom action did async work. Available on the `useSuperwall` store and on the compat `Superwall` class.
+- e98f19d: Bump expo version, ensure react view controller doesn't break, ensure Android uses safe message sending
+
 ## 1.3.0
 
 ### Minor Changes
