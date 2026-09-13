@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#ffffff",
   },
   fullScreenPlaceholder: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -392,7 +392,7 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
   },
   paywallPlaceholder: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     alignItems: "center",
     gap: 10,
     justifyContent: "center",
@@ -416,7 +416,7 @@ const styles = StyleSheet.create({
     lineHeight: 32,
   },
   blur: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     top: 76,
   },
   debugStatus: {

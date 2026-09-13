@@ -1,0 +1,102 @@
+{
+  "appPolicies": {
+    "eula": "",
+    "policies": [
+      {
+        "locale": "en_US",
+        "policyText": "",
+        "policyURL": ""
+      }
+    ]
+  },
+  "identifier": "B1522F78-9AA7-4893-826B-190AB6D03C70",
+  "nonRenewingSubscriptions": [],
+  "products": [],
+  "settings": {
+    "_askToBuyEnabled": false,
+    "_billingGracePeriodEnabled": false,
+    "_billingIssuesEnabled": false,
+    "_compatibilityTimeRate": {
+      "3": 6
+    },
+    "_disableDialogs": false,
+    "_failTransactionsEnabled": false,
+    "_locale": "en_US",
+    "_renewalBillingIssuesEnabled": false,
+    "_storefront": "USA",
+    "_storeKitErrors": [
+      {
+        "enabled": false,
+        "name": "Load Products"
+      },
+      {
+        "enabled": false,
+        "name": "Purchase"
+      },
+      {
+        "enabled": false,
+        "name": "Verification"
+      },
+      {
+        "enabled": false,
+        "name": "App Store Sync"
+      },
+      {
+        "enabled": false,
+        "name": "Subscription Status"
+      },
+      {
+        "enabled": false,
+        "name": "App Transaction"
+      },
+      {
+        "enabled": false,
+        "name": "Manage Subscriptions Sheet"
+      },
+      {
+        "enabled": false,
+        "name": "Refund Request Sheet"
+      },
+      {
+        "enabled": false,
+        "name": "Offer Code Redeem Sheet"
+      }
+    ],
+    "_timeRate": 1003
+  },
+  "subscriptionGroups": [
+    {
+      "id": "49A58F4B",
+      "localizations": [],
+      "name": "Superwall Pro",
+      "subscriptions": [
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "39.99",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "E02B772A",
+          "introductoryOffers": [],
+          "localizations": [
+            {
+              "description": "Access to pro features",
+              "displayName": "Pro Subscription",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "superwall_pro_3999",
+          "recurringSubscriptionPeriod": "P1Y",
+          "referenceName": "Pro",
+          "subscriptionGroupID": "49A58F4B",
+          "type": "RecurringSubscription",
+          "winbackOffers": []
+        }
+      ]
+    }
+  ],
+  "version": {
+    "major": 5,
+    "minor": 0
+  }
+}

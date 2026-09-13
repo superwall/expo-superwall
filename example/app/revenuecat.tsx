@@ -10,7 +10,8 @@ import { useEffect, useState } from "react"
 import { ActivityIndicator, Alert, Button, Platform, ScrollView, Text, View } from "react-native"
 import Purchases, { PURCHASES_ERROR_CODE } from "react-native-purchases"
 
-const API_KEY = "pk_a5959912ceb3087d55c7ea63001202335adfbb54e0f70475"
+const IOS_API_KEY = "pk_e361c8a9662281f4249f2fa11d1a63854615fa80e15e7a4d"
+const ANDROID_API_KEY = "pk_6d16c4c892b1e792490ab8bfe831f1ad96e7c18aee7a5257"
 
 // RevenueCat configuration keys
 const REVENUECAT_API_KEYS = {
@@ -310,10 +311,7 @@ export default function RevenueCatPage() {
       }}
     >
       <SuperwallProvider
-        apiKeys={{
-          ios: API_KEY,
-          android: "pk_6d16c4c892b1e792490ab8bfe831f1ad96e7c18aee7a5257",
-        }}
+        apiKeys={{ ios: IOS_API_KEY, android: ANDROID_API_KEY }}
       >
         <SuperwallLoading>
           <View style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 16 }}>

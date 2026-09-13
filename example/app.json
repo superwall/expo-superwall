@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "scheme": "expo-superwall-example",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "superwall.expo.example",
@@ -18,11 +17,9 @@
       "adaptiveIcon": {
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
       "package": "com.superwall.superapp"
     },
     "plugins": [
-      "expo-fmt-consteval-fix",
       "expo-router",
       "expo-web-browser"
     ],

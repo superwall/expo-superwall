@@ -584,7 +584,7 @@ class SuperwallExpoModule : Module() {
     AsyncFunction("purchase") { productId: String, promise: Promise ->
       ioScope.launch {
         try {
-          val result = Superwall.instance.purchase(productId)
+          val result = Superwall.instance.purchase(productId).getOrThrow()
           scope.launch {
             promise.resolve(purchaseResultToJson(result))
           }
@@ -599,9 +599,9 @@ class SuperwallExpoModule : Module() {
     AsyncFunction("products") { productIds: List<String>, promise: Promise ->
       ioScope.launch {
         try {
-          val products = Superwall.instance.getProducts(productIds)
+          val products = Superwall.instance.getProducts(*productIds.toTypedArray()).getOrThrow()
           scope.launch {
-            promise.resolve(products.map { it.toJson() })
+            promise.resolve(products.values.map { it.toJson() })
           }
         } catch (error: Exception) {
           scope.launch {
