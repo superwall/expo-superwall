@@ -5,8 +5,15 @@ const mockHandleDeepLink = jest.fn().mockResolvedValue(false)
 const mockDidHandleBackPressed = jest.fn()
 const mockDidHandleCustomCallback = jest.fn().mockResolvedValue(undefined)
 const mockConfigure = jest.fn().mockResolvedValue(true)
+const mockIdentify = jest.fn().mockResolvedValue(undefined)
 const mockGetUserAttributes = jest.fn().mockResolvedValue({})
 const mockGetSubscriptionStatus = jest.fn().mockResolvedValue({ status: "INACTIVE" })
+const mockGetCustomerInfo = jest.fn().mockResolvedValue({
+  userId: "",
+  subscriptions: [],
+  nonSubscriptions: [],
+  entitlements: [],
+})
 const mockSetSubscriptionStatus = jest.fn().mockResolvedValue(undefined)
 const mockSetIntegrationAttributes = jest.fn().mockResolvedValue(undefined)
 const mockAddListener = jest.fn(
@@ -34,13 +41,23 @@ const emit = (eventName: string, payload: any) => {
   }
 }
 
+// Mocked so the suite doesn't load the real ESM module, which jest can't
+// require on Node < 24.9. Nothing here exercises real asset resolution.
+jest.mock("expo-asset", () => ({
+  Asset: {
+    fromModule: jest.fn(() => ({ localUri: "file:///mock", uri: "file:///mock" })),
+  },
+}))
+
 jest.mock("../SuperwallExpoModule", () => ({
   __esModule: true,
   default: {
     addListener: mockAddListener,
     configure: mockConfigure,
+    identify: mockIdentify,
     getUserAttributes: mockGetUserAttributes,
     getSubscriptionStatus: mockGetSubscriptionStatus,
+    getCustomerInfo: mockGetCustomerInfo,
     setSubscriptionStatus: mockSetSubscriptionStatus,
     setIntegrationAttributes: mockSetIntegrationAttributes,
     handleDeepLink: mockHandleDeepLink,
@@ -96,6 +113,7 @@ describe("SDK behavior regressions", () => {
       configurationError: null,
       user: null,
       subscriptionStatus: { status: "UNKNOWN" },
+      customerInfo: null,
       configure: originalConfigure,
     })
   })
@@ -328,6 +346,144 @@ describe("SDK behavior regressions", () => {
     })
 
     expect(mockSetIntegrationAttributes).toHaveBeenCalledWith({ adjustId: "adjust-123" })
+  })
+
+  it("seeds customerInfo after configure and applies customerInfoDidChange updates", async () => {
+    const seeded = {
+      userId: "user-1",
+      subscriptions: [],
+      nonSubscriptions: [],
+      entitlements: [],
+    }
+    mockGetCustomerInfo.mockResolvedValueOnce(seeded)
+
+    const cleanupListeners = useSuperwallStore.getState()._initListeners()
+
+    await act(async () => {
+      await useSuperwallStore.getState().configure("api-key")
+      // Let the non-blocking customer info seed settle.
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+
+    expect(mockGetCustomerInfo).toHaveBeenCalledTimes(1)
+    expect(useSuperwallStore.getState().customerInfo).toEqual(seeded)
+
+    const updated = {
+      userId: "user-1",
+      subscriptions: [
+        {
+          transactionId: "txn-1",
+          productId: "premium_annual",
+          purchaseDate: "2026-09-06T12:00:00Z",
+          willRenew: true,
+          isRevoked: false,
+          isInGracePeriod: false,
+          isInBillingRetryPeriod: false,
+          isActive: true,
+          expirationDate: "2027-09-06T12:00:00Z",
+          store: "APP_STORE",
+        },
+      ],
+      nonSubscriptions: [],
+      entitlements: [{ id: "premium", type: "SERVICE_LEVEL" }],
+    }
+
+    act(() => {
+      emit("customerInfoDidChange", { from: seeded, to: updated })
+    })
+
+    expect(useSuperwallStore.getState().customerInfo).toEqual(updated)
+
+    cleanupListeners()
+  })
+
+  it("clears customerInfo during identify and reseeds it for the new identity", async () => {
+    const previous = {
+      userId: "user-a",
+      subscriptions: [],
+      nonSubscriptions: [],
+      entitlements: [{ id: "premium", type: "SERVICE_LEVEL" }],
+    }
+    useSuperwallStore.setState({ isConfigured: true, customerInfo: previous })
+
+    const reseeded = {
+      userId: "user-b",
+      subscriptions: [],
+      nonSubscriptions: [],
+      entitlements: [],
+    }
+    let resolveFetch: ((value: unknown) => void) | undefined
+    mockGetCustomerInfo.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveFetch = resolve
+      }),
+    )
+
+    const pendingIdentify = useSuperwallStore.getState().identify("user-b")
+
+    await act(async () => {
+      await Promise.resolve()
+    })
+
+    // The previous identity's snapshot must be gone for the whole transition.
+    expect(useSuperwallStore.getState().customerInfo).toBeNull()
+
+    await act(async () => {
+      await pendingIdentify
+    })
+
+    // Still null: identify resolved but the reseed fetch is in flight.
+    expect(useSuperwallStore.getState().customerInfo).toBeNull()
+
+    await act(async () => {
+      resolveFetch?.(reseeded)
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+
+    expect(useSuperwallStore.getState().customerInfo).toEqual(reseeded)
+  })
+
+  it("routes customerInfoDidChange through useSuperwallEvents with from/to snapshots", () => {
+    const onCustomerInfoChange = jest.fn()
+    const from = {
+      userId: "user-1",
+      subscriptions: [],
+      nonSubscriptions: [],
+      entitlements: [],
+    }
+    const to = {
+      ...from,
+      entitlements: [{ id: "premium", type: "SERVICE_LEVEL" }],
+    }
+
+    // Emitted before any subscriber mounts, so it should buffer and replay.
+    emit("customerInfoDidChange", { from, to })
+
+    function Harness() {
+      useSuperwallEvents({ onCustomerInfoChange })
+      return null
+    }
+
+    let renderer: TestRenderer.ReactTestRenderer
+    act(() => {
+      renderer = TestRenderer.create(<Harness />)
+    })
+
+    expect(onCustomerInfoChange).toHaveBeenCalledTimes(1)
+    expect(onCustomerInfoChange).toHaveBeenCalledWith(from, to)
+
+    act(() => {
+      emit("customerInfoDidChange", { from: to, to: from })
+    })
+
+    expect(onCustomerInfoChange).toHaveBeenCalledTimes(2)
+    expect(onCustomerInfoChange).toHaveBeenLastCalledWith(to, from)
+
+    act(() => {
+      renderer!.unmount()
+    })
   })
 
   it("rejects queued native calls when configure fails", async () => {

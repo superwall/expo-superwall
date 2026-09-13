@@ -34,6 +34,12 @@ import { useSuperwall } from "./useSuperwall"
  *     (See `EntitlementsInfo` type in `SuperwallExpoModule.types.ts`).
  *   - `setSubscriptionStatus: (status: SubscriptionStatus) => Promise<void>`:
  *     Manually sets the subscription status of the user. This is typically called after a purchase or restore.
+ *   - `getCustomerInfo: () => Promise<CustomerInfo>`:
+ *     Retrieves the latest customer purchase and subscription info snapshot (subscription
+ *     transactions, non-subscription transactions and entitlements) and refreshes `customerInfo`.
+ *   - `customerInfo?: CustomerInfo | null`: The latest customer info snapshot. Seeded after
+ *     configuration and kept current via the native `customerInfoDidChange` event.
+ *     (See `CustomerInfo` type in `SuperwallExpoModule.types.ts`).
  *   - `subscriptionStatus?: SubscriptionStatus`: The current subscription status of the user.
  *     (See `SubscriptionStatus` type in `SuperwallExpoModule.types.ts`).
  *   - `user?: UserAttributes | null`: An object containing the current user's attributes
@@ -79,6 +85,8 @@ export const useUser = () => {
     setIntegrationAttributes,
     getIntegrationAttributes,
     getEntitlements,
+    getCustomerInfo,
+    customerInfo,
   } = useSuperwall((state) => ({
     identify: state.identify,
     user: state.user,
@@ -90,6 +98,8 @@ export const useUser = () => {
     setIntegrationAttributes: state.setIntegrationAttributes,
     getIntegrationAttributes: state.getIntegrationAttributes,
     getEntitlements: state.getEntitlements,
+    getCustomerInfo: state.getCustomerInfo,
+    customerInfo: state.customerInfo,
   }))
 
   const update = async (
@@ -114,6 +124,8 @@ export const useUser = () => {
     setIntegrationAttributes,
     getIntegrationAttributes,
     getEntitlements,
+    getCustomerInfo,
+    customerInfo,
     user,
   } as const
 }

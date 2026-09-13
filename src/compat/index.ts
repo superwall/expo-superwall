@@ -1,5 +1,6 @@
 import { Assignment } from "./lib/Assigments"
 import { ConfigurationStatus } from "./lib/ConfigurationStatus"
+import { CustomerInfo } from "./lib/CustomerInfo"
 import { EntitlementsInfo } from "./lib/EntitlementsInfo"
 import { IdentityOptions } from "./lib/IdentityOptions"
 import type { IntegrationAttributes } from "./lib/IntegrationAttributes"
@@ -263,6 +264,13 @@ export default class Superwall {
     // MARK: - SuperwallDelegate Listeners
     SuperwallExpoModule.addListener("subscriptionStatusDidChange", async (data) => {
       Superwall.delegate?.subscriptionStatusDidChange?.(data.from, data.to)
+    })
+
+    SuperwallExpoModule.addListener("customerInfoDidChange", async (data) => {
+      Superwall.delegate?.customerInfoDidChange?.(
+        CustomerInfo.fromJson(data.from),
+        CustomerInfo.fromJson(data.to),
+      )
     })
 
     SuperwallExpoModule.addListener("handleSuperwallEvent", async (data) => {
@@ -644,6 +652,23 @@ export default class Superwall {
     await this.awaitConfig()
     const subscriptionStatusData = await SuperwallExpoModule.getSubscriptionStatus()
     return SubscriptionStatus.fromJson(subscriptionStatusData)
+  }
+
+  /**
+   * Retrieves the latest customer purchase and subscription info, including
+   * subscription transactions, non-subscription transactions and entitlements.
+   *
+   * Waits until the SDK has loaded real customer data, so the resolved
+   * snapshot is never an unloaded placeholder. Implement
+   * {@link SuperwallDelegate.customerInfoDidChange} to be notified of
+   * subsequent changes.
+   *
+   * @returns {Promise<CustomerInfo>} A promise that resolves with a {@link CustomerInfo} snapshot.
+   */
+  async getCustomerInfo(): Promise<CustomerInfo> {
+    await this.awaitConfig()
+    const customerInfoJson = await SuperwallExpoModule.getCustomerInfo()
+    return CustomerInfo.fromJson(customerInfoJson)
   }
   /**
    * Sets the user interface style, which overrides the system setting.

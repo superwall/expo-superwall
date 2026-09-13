@@ -3,6 +3,7 @@ package expo.modules.superwallexpo.bridges
 import com.superwall.sdk.delegate.SuperwallDelegate
 import com.superwall.sdk.analytics.superwall.SuperwallEventInfo
 import com.superwall.sdk.paywall.presentation.PaywallInfo
+import com.superwall.sdk.models.customer.CustomerInfo
 import com.superwall.sdk.models.entitlements.SubscriptionStatus
 import com.superwall.sdk.models.internal.RedemptionResult
 import java.net.URI
@@ -19,6 +20,17 @@ class SuperwallDelegateBridge : SuperwallDelegate {
       "to" to newValue.toJson()
     )
     sendEvent("subscriptionStatusDidChange", data)
+  }
+
+  override fun customerInfoDidChange(
+    from: CustomerInfo,
+    to: CustomerInfo
+  ) {
+    val data = mapOf<String, Any>(
+      "from" to from.toJson(),
+      "to" to to.toJson()
+    )
+    sendEvent("customerInfoDidChange", data)
   }
 
   override fun handleSuperwallEvent(eventInfo: SuperwallEventInfo) {

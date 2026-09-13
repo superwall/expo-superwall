@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 // @ts-nocheck TS6133: Unused variable
+import type { CustomerInfo } from "./CustomerInfo"
 import type { PaywallInfo } from "./PaywallInfo"
 import type { RedemptionResult } from "./RedemptionResults"
 import type { SubscriptionStatus } from "./SubscriptionStatus"
@@ -19,6 +20,14 @@ export class SuperwallDelegate {
    * @param to The new subscription status.
    */
   subscriptionStatusDidChange(from: SubscriptionStatus, to: SubscriptionStatus): void {}
+  /**
+   * Called when the customer's purchase and subscription info changes
+   * (e.g. after a purchase, restore, renewal, expiration or web redemption).
+   * Not called for the initial value — use `getCustomerInfo()` to seed state.
+   * @param from The previous customer info snapshot.
+   * @param to The new customer info snapshot.
+   */
+  customerInfoDidChange(from: CustomerInfo, to: CustomerInfo): void {}
   /**
    * Called before the SDK attempts to redeem a promotional link.
    */

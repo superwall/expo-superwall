@@ -12,6 +12,17 @@ final class SuperwallDelegateBridge: SuperwallDelegate {
     sendEvent(withName: "subscriptionStatusDidChange", body: data)
   }
 
+  func customerInfoDidChange(
+    from oldValue: CustomerInfo,
+    to newValue: CustomerInfo
+  ) {
+    let data: [String: Any] = [
+      "from": oldValue.toJson(),
+      "to": newValue.toJson(),
+    ]
+    sendEvent(withName: "customerInfoDidChange", body: data)
+  }
+
   func handleSuperwallEvent(withInfo eventInfo: SuperwallEventInfo) {
     let data: [String: Any] = ["eventInfo": eventInfo.toJson()]
     sendEvent(withName: "handleSuperwallEvent", body: data)

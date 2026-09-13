@@ -1,6 +1,7 @@
 import { NativeModule, requireNativeModule } from "expo"
 import type { PresentationResult } from "./compat/lib/PresentationResult"
 import type {
+  CustomerInfo,
   EntitlementsInfo,
   IntegrationAttributes,
   ProductResponse,
@@ -32,6 +33,7 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
   reset(): Promise<void>
 
   getAssignments(): Promise<any[]>
+  getCustomerInfo(): Promise<CustomerInfo>
   getEntitlements(): Promise<EntitlementsInfo>
   getSubscriptionStatus(): Promise<SubscriptionStatus>
   setSubscriptionStatus(status: Record<string, any>): Promise<void>

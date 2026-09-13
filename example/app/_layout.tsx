@@ -55,6 +55,14 @@ export default function RootLayout() {
           headerShown: true
         }}
       />
+      <Stack.Screen
+        name="customer-info"
+        options={{
+          title: 'Customer Info',
+          headerShown: true,
+          headerBackButtonDisplayMode: 'minimal'
+        }}
+      />
     </Stack>
   );
 }
