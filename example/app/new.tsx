@@ -3,6 +3,7 @@ import {
   SuperwallLoading,
   SuperwallProvider,
   usePlacement,
+  useSuperwall,
   useSuperwallEvents,
   useUser,
 } from "expo-superwall"
@@ -16,6 +17,8 @@ function ScreenContent() {
   const { identify, user, signOut, update, refresh, subscriptionStatus, setSubscriptionStatus } =
     useUser()
 
+  const togglePaywallSpinner = useSuperwall((state) => state.togglePaywallSpinner)
+
   useSuperwallEvents({
     onLog: (log) => console.log(log),
   })
@@ -24,11 +27,21 @@ function ScreenContent() {
     onError: (err) => console.error(err),
     onPresent: (info) => console.log("Paywall presented", info),
     onDismiss: (info, result) => console.log("Paywall dismissed", info, result),
-    onCustomCallback: (callback) => {
+    onCustomCallback: async (callback) => {
       console.log("Custom callback:", callback)
-      return {
-        status: "success",
-        data: { message: "Custom callback executed" },
+
+      // Show the paywall's own spinner while we do async work, so the paywall
+      // looks busy instead of frozen. Hidden again in `finally` so a thrown
+      // error can't leave it spinning forever.
+      await togglePaywallSpinner(false)
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 2000))
+        return {
+          status: "success",
+          data: { message: "Custom callback executed" },
+        }
+      } finally {
+        await togglePaywallSpinner(true)
       }
     },
   })

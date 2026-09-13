@@ -243,6 +243,30 @@ export interface SuperwallStore {
   dismiss: () => Promise<void>
 
   /**
+   * Shows or hides the loading spinner on the currently presented paywall.
+   *
+   * Useful when a custom paywall action kicks off asynchronous work and you want the
+   * paywall to look busy until it finishes. Does nothing if no paywall is presented.
+   *
+   * @param isHidden - `false` to show the spinner, `true` to hide it again.
+   * @returns A promise that resolves once the native SDK has been told.
+   *
+   * @example
+   * usePlacement({
+   *   onCustomCallback: async ({ name }) => {
+   *     await togglePaywallSpinner(false)
+   *     try {
+   *       const data = await syncAccount(name)
+   *       return { status: "success", data }
+   *     } finally {
+   *       await togglePaywallSpinner(true)
+   *     }
+   *   },
+   * })
+   */
+  togglePaywallSpinner: (isHidden: boolean) => Promise<void>
+
+  /**
    * Preloads all paywalls configured in your Superwall dashboard.
    * @returns A promise that resolves when preloading is complete.
    */
@@ -467,6 +491,10 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   dismiss: async () => {
     await awaitConfigured()
     await SuperwallExpoModule.dismiss()
+  },
+  togglePaywallSpinner: async (isHidden) => {
+    await awaitConfigured()
+    SuperwallExpoModule.togglePaywallSpinner(isHidden)
   },
   preloadAllPaywalls: async () => {
     await awaitConfigured()
