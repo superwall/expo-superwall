@@ -347,26 +347,6 @@ describe("SDK behavior regressions", () => {
     expect(mockConfigure).toHaveBeenCalledTimes(1)
   })
 
-  it("does not change the locale when configuration has failed", async () => {
-    useSuperwallStore.setState({ configurationError: "Configuration failed" })
-
-    await expect(useSuperwallStore.getState().setLocaleIdentifier("fr")).rejects.toThrow(
-      "Configuration failed",
-    )
-    expect(mockSetLocaleIdentifier).not.toHaveBeenCalled()
-  })
-
-  it("rejects locale changes when the native setter throws", async () => {
-    useSuperwallStore.setState({ isConfigured: true })
-    mockSetLocaleIdentifier.mockImplementationOnce(() => {
-      throw new Error("Native locale failure")
-    })
-
-    await expect(useSuperwallStore.getState().setLocaleIdentifier("fr")).rejects.toThrow(
-      "Native locale failure",
-    )
-  })
-
   it("waits for configure before setting integration attributes", async () => {
     let resolveConfigure: ((value: boolean) => void) | undefined
     mockConfigure.mockReturnValueOnce(

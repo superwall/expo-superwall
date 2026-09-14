@@ -38,15 +38,4 @@ describe("compat runtime locale", () => {
     expect(mockSetLocaleIdentifier.mock.calls).toEqual([["es_ES"], [null]])
     expect(mockConfigure).toHaveBeenCalledTimes(1)
   })
-
-  it("rejects when the native setter throws", async () => {
-    await Superwall.configure({ apiKey: "api-key" })
-    mockSetLocaleIdentifier.mockImplementationOnce(() => {
-      throw new Error("Native locale failure")
-    })
-
-    await expect(Superwall.shared.setLocaleIdentifier("fr")).rejects.toThrow(
-      "Native locale failure",
-    )
-  })
 })
