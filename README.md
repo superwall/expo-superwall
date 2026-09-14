@@ -373,21 +373,6 @@ function MyAdvancedComponent() {
 }
 ```
 
-### Changing the paywall locale
-
-Use `setLocaleIdentifier` after configuration to change the locale used for audience filters and localized paywalls without reconfiguring Superwall.
-Pass `null` to return to the device locale.
-This updates the native SDK's locale override; it does not translate paywall content or force an already presented paywall to reload.
-
-```tsx
-const setLocaleIdentifier = useSuperwall((state) => state.setLocaleIdentifier);
-
-await setLocaleIdentifier("es_ES");
-await setLocaleIdentifier(null);
-```
-
-The compat API exposes the same operation through `Superwall.shared.setLocaleIdentifier(localeIdentifier)`.
-
 ### `useUser`
 
 **Purpose:**
