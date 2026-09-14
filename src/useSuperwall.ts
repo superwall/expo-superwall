@@ -306,7 +306,6 @@ export interface SuperwallStore {
    */
   setLocaleIdentifier: (localeIdentifier: string | null) => Promise<void>
 
-
   /**
    * Sets which events Superwall tracks at runtime, for GDPR/data-collection control.
    * @param behavior - The desired event tracking behavior ("all", "superwallOnly", or "none").
@@ -448,7 +447,7 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   identify: async (userId, options) => {
     await awaitConfigured()
 
-    // The previous identity's purchases must not leak into the new one. 
+    // The previous identity's purchases must not leak into the new one.
     set({ customerInfo: null })
 
     await SuperwallExpoModule.identify(userId, options)
@@ -537,7 +536,8 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   },
 
   setLocaleIdentifier: async (localeIdentifier) => {
-    SuperwallExpoModule.setLocaleIdentifier(localeIdentifier)
+    await awaitConfigured()
+    await SuperwallExpoModule.setLocaleIdentifier(localeIdentifier)
   },
 
   setIntegrationAttributes: async (attributes) => {

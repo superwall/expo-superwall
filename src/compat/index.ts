@@ -854,7 +854,8 @@ export default class Superwall {
    * @param localeIdentifier - The locale identifier (e.g., "en_US", "es_ES"), or `null` to reset to the device locale.
    */
   async setLocaleIdentifier(localeIdentifier: string | null): Promise<void> {
-    SuperwallExpoModule.setLocaleIdentifier(localeIdentifier)
+    await this.awaitConfig()
+    await SuperwallExpoModule.setLocaleIdentifier(localeIdentifier)
   }
 
   /**

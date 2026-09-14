@@ -17,6 +17,7 @@ const mockGetCustomerInfo = jest.fn().mockResolvedValue({
 const mockSetSubscriptionStatus = jest.fn().mockResolvedValue(undefined)
 const mockSetIntegrationAttributes = jest.fn().mockResolvedValue(undefined)
 const mockTogglePaywallSpinner = jest.fn()
+const mockSetLocaleIdentifier = jest.fn()
 const mockAddListener = jest.fn(
   (eventName: string, listener: (payload: any) => void): { remove: () => void } => {
     const listeners = mockListeners.get(eventName) ?? new Set()
@@ -65,6 +66,7 @@ jest.mock("../SuperwallExpoModule", () => ({
     didHandleBackPressed: mockDidHandleBackPressed,
     didHandleCustomCallback: mockDidHandleCustomCallback,
     togglePaywallSpinner: mockTogglePaywallSpinner,
+    setLocaleIdentifier: mockSetLocaleIdentifier,
   },
 }))
 
@@ -319,6 +321,50 @@ describe("SDK behavior regressions", () => {
     })
 
     expect(mockSetSubscriptionStatus).toHaveBeenCalledWith({ status: "INACTIVE" })
+  })
+
+  it("waits for configure before changing the locale and can reset to the device locale", async () => {
+    let resolveConfigure: ((value: boolean) => void) | undefined
+    mockConfigure.mockReturnValueOnce(
+      new Promise<boolean>((resolve) => {
+        resolveConfigure = resolve
+      }),
+    )
+
+    const pendingLocale = useSuperwallStore.getState().setLocaleIdentifier("es_ES")
+    const pendingConfigure = useSuperwallStore.getState().configure("api-key")
+    await Promise.resolve()
+
+    expect(mockSetLocaleIdentifier).not.toHaveBeenCalled()
+
+    resolveConfigure?.(true)
+    await pendingConfigure
+    await pendingLocale
+    expect(mockSetLocaleIdentifier).toHaveBeenCalledWith("es_ES")
+
+    await useSuperwallStore.getState().setLocaleIdentifier(null)
+    expect(mockSetLocaleIdentifier.mock.calls).toEqual([["es_ES"], [null]])
+    expect(mockConfigure).toHaveBeenCalledTimes(1)
+  })
+
+  it("does not change the locale when configuration has failed", async () => {
+    useSuperwallStore.setState({ configurationError: "Configuration failed" })
+
+    await expect(useSuperwallStore.getState().setLocaleIdentifier("fr")).rejects.toThrow(
+      "Configuration failed",
+    )
+    expect(mockSetLocaleIdentifier).not.toHaveBeenCalled()
+  })
+
+  it("rejects locale changes when the native setter throws", async () => {
+    useSuperwallStore.setState({ isConfigured: true })
+    mockSetLocaleIdentifier.mockImplementationOnce(() => {
+      throw new Error("Native locale failure")
+    })
+
+    await expect(useSuperwallStore.getState().setLocaleIdentifier("fr")).rejects.toThrow(
+      "Native locale failure",
+    )
   })
 
   it("waits for configure before setting integration attributes", async () => {
