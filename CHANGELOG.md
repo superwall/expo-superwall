@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.0
+
+### Minor Changes
+
+- 0e564f1: Expose `setLocaleIdentifier(string | null)` in the hooks and compat APIs to change the native locale override after configuration, or restore the device locale with `null`.
+
 ## 1.4.0
 
 ### Minor Changes
