@@ -344,7 +344,7 @@ class SuperwallExpoModule : Module() {
 
       Superwall.instance.register(
         placement = placement,
-        params = params,
+        params = params?.let { HashMap(it) },
         handler = handler
       ) {
         promise.resolve(null)
