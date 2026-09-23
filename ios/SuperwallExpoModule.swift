@@ -470,35 +470,46 @@ public class SuperwallExpoModule: Module {
       promise.resolve(attributes)
     }
 
-    AsyncFunction("consume") { (_: String, promise: Promise) in
-      promise.resolve(nil)
+    AsyncFunction("consume") { (purchaseToken: String, promise: Promise) in
+      // Consumables are finished by StoreKit on iOS, so there is nothing to consume.
+      promise.resolve(purchaseToken)
     }
 
     AsyncFunction("purchase") { (productId: String, promise: Promise) in
       Task {
-        do {
-          let products = try await Superwall.shared.products(for: Set([productId]))
-          guard let storeProduct = products.first else {
-            promise.reject(PurchaseResultError(message: "Product not found for identifier: \(productId)"))
-            return
-          }
-          let result = await Superwall.shared.purchase(storeProduct)
-          promise.resolve(result.toJson())
-        } catch {
-          promise.reject(error)
+        let products = await Superwall.shared.products(for: [productId])
+        guard let storeProduct = products.first(where: { $0.productIdentifier == productId }) else {
+          promise.resolve(
+            ["type": "failed", "error": "Product not found for identifier: \(productId)"]
+          )
+          return
         }
+        let result = await Superwall.shared.purchase(storeProduct)
+        promise.resolve(result.toJson())
       }
     }
 
     AsyncFunction("products") { (productIds: [String], promise: Promise) in
       Task {
-        do {
-          let products = try await Superwall.shared.products(for: Set(productIds))
-          promise.resolve(products.map { $0.toJson() })
-        } catch {
-          promise.reject(error)
-        }
+        let products = await Superwall.shared.products(for: Set(productIds))
+        let productsById = Dictionary(
+          products.map { ($0.productIdentifier, $0) },
+          uniquingKeysWith: { first, _ in first }
+        )
+        // Preserve the requested order and omit identifiers the store didn't return.
+        var seen = Set<String>()
+        let result = productIds
+          .filter { seen.insert($0).inserted }
+          .compactMap { productsById[$0]?.toJson() }
+        promise.resolve(result)
       }
+    }
+
+    AsyncFunction("queryInAppPurchases") { (promise: Promise) in
+      promise.reject(
+        "ERR_UNSUPPORTED",
+        "queryInAppPurchases is only available on Android."
+      )
     }
   }
 }
