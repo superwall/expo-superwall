@@ -9,6 +9,7 @@ import type {
   CustomerInfo,
   EntitlementsInfo,
   IntegrationAttributes,
+  OwnedInAppPurchase,
   ProductResponse,
   PurchaseResultResponse,
   RestorationResultResponse,
@@ -226,15 +227,34 @@ export interface SuperwallStore {
    * Initiates a purchase for a given product identifier.
    * @param productId - The product identifier to purchase.
    * @returns A promise that resolves with a {@link PurchaseResultResponse} indicating the outcome.
+   * If the product can't be found or the purchase fails, it resolves with a `failed` result
+   * containing the native error message rather than rejecting.
    */
   purchase: (productId: string) => Promise<PurchaseResultResponse>
 
   /**
    * Fetches product details for an array of product identifiers.
    * @param productIds - An array of product identifiers.
-   * @returns A promise that resolves with an array of product objects.
+   * @returns A promise that resolves with an array of product objects, in the order requested.
+   * Identifiers the store doesn't recognize are omitted.
    */
   products: (productIds: string[]) => Promise<ProductResponse[]>
+
+  /**
+   * Android only. Returns the one-time (in-app) products the user currently owns in the
+   * `PURCHASED` state, as reported by Google Play Billing. Grant the benefit, then call
+   * {@link consume} with each `purchaseToken`. Rejects on iOS.
+   * @returns A promise that resolves with the owned, purchased one-time products.
+   */
+  queryInAppPurchases: () => Promise<OwnedInAppPurchase[]>
+
+  /**
+   * Consumes a Google Play purchase token so the item can be purchased again.
+   * On iOS this is a no-op that resolves with the given token.
+   * @param purchaseToken - The Google Play purchase token to consume.
+   * @returns A promise that resolves with the consumed purchase token.
+   */
+  consume: (purchaseToken: string) => Promise<string>
 
   /**
    * Dismisses any currently presented Superwall paywall.
@@ -496,6 +516,14 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   products: async (productIds) => {
     await awaitConfigured()
     return SuperwallExpoModule.products(productIds)
+  },
+  queryInAppPurchases: async () => {
+    await awaitConfigured()
+    return SuperwallExpoModule.queryInAppPurchases()
+  },
+  consume: async (purchaseToken) => {
+    await awaitConfigured()
+    return SuperwallExpoModule.consume(purchaseToken)
   },
   dismiss: async () => {
     await awaitConfigured()

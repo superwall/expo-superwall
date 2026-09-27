@@ -11,6 +11,8 @@ import expo.modules.superwallexpo.bridges.PurchaseControllerBridge
 import expo.modules.superwallexpo.bridges.SuperwallDelegateBridge
 import expo.modules.superwallexpo.json.*
 import com.superwall.sdk.Superwall
+import com.superwall.sdk.billing.BillingError
+import com.superwall.sdk.store.abstractions.product.StoreProduct
 import com.superwall.sdk.delegate.SuperwallDelegate
 import com.superwall.sdk.delegate.PurchaseResult
 import com.superwall.sdk.delegate.RestorationResult
@@ -35,6 +37,8 @@ import com.superwall.sdk.paywall.presentation.get_presentation_result.getPresent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.runBlocking
@@ -608,32 +612,69 @@ class SuperwallExpoModule : Module() {
 
     AsyncFunction("purchase") { productId: String, promise: Promise ->
       ioScope.launch {
-        try {
-          val result = Superwall.instance.purchase(productId).getOrThrow()
-          scope.launch {
-            promise.resolve(purchaseResultToJson(result))
+        // Failures (including an unknown product) resolve as a "failed" result
+        // with the native error message, matching iOS.
+        val result = Superwall.instance.purchase(productId).fold(
+          { purchaseResultToJson(it) },
+          { error ->
+            purchaseResultToJson(
+              PurchaseResult.Failed(error.localizedMessage ?: error.toString())
+            )
           }
-        } catch (error: Exception) {
-          scope.launch {
-            promise.reject(CodedException(error))
-          }
-        }
+        )
+        scope.launch { promise.resolve(result) }
       }
     }
 
     AsyncFunction("products") { productIds: List<String>, promise: Promise ->
       ioScope.launch {
-        try {
-          val products = Superwall.instance.getProducts(*productIds.toTypedArray()).getOrThrow()
-          scope.launch {
-            promise.resolve(products.values.map { it.toJson() })
-          }
-        } catch (error: Exception) {
-          scope.launch {
-            promise.reject(CodedException(error))
-          }
+        val ids = productIds.distinct()
+        val result = if (ids.isEmpty()) {
+          Result.success(emptyMap<String, StoreProduct>())
+        } else {
+          Superwall.instance.getProducts(*ids.toTypedArray()).fold(
+            { Result.success(it) },
+            { batchError ->
+              // An identifier the store previously failed to return fails the whole
+              // batch, so retry each identifier on its own and omit unknown ones.
+              val individual = ids.map { id ->
+                async { Superwall.instance.getProducts(id) }
+              }.awaitAll()
+              val found = individual.mapNotNull { it.getOrNull() }
+                .fold(emptyMap<String, StoreProduct>()) { acc, map -> acc + map }
+              if (found.isEmpty() && batchError.isBillingError()) {
+                Result.failure(batchError)
+              } else {
+                Result.success(found)
+              }
+            }
+          )
         }
+        result.fold({ productsById ->
+          // Preserve the requested order.
+          val products = ids.mapNotNull { productsById[it]?.toJson() }
+          scope.launch { promise.resolve(products) }
+        }, { error ->
+          scope.launch { promise.reject(CodedException(error)) }
+        })
+      }
+    }
+
+    AsyncFunction("queryInAppPurchases") { promise: Promise ->
+      ioScope.launch {
+        runCatching {
+          val context = appContext.reactContext?.applicationContext
+            ?: throw IllegalStateException("React context is not available")
+          InAppPurchaseQuery.queryPurchased(context)
+        }.fold({ purchases ->
+          scope.launch { promise.resolve(purchases) }
+        }, { error ->
+          scope.launch { promise.reject(CodedException(error)) }
+        })
       }
     }
   }
 }
+
+private fun Throwable.isBillingError(): Boolean =
+  generateSequence(this) { it.cause }.any { it is BillingError }

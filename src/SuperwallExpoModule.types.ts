@@ -2578,13 +2578,35 @@ export type RestorationResultResponse =
  * - `purchased`: The purchase completed successfully.
  * - `cancelled`: The user cancelled the purchase.
  * - `pending`: The purchase is pending (e.g., awaiting approval).
- * - `failed`: The purchase failed, with an accompanying error message.
+ * - `failed`: The purchase failed, with an accompanying error message. This includes
+ *   the product not being found in the store.
  */
 export type PurchaseResultResponse =
   | { type: "purchased" }
   | { type: "cancelled" }
   | { type: "pending" }
   | { type: "failed"; error?: string }
+
+/**
+ * A one-time (in-app) Google Play purchase that the user currently owns, returned by
+ * {@link SuperwallExpoModule.queryInAppPurchases}. Only purchases in the `PURCHASED`
+ * state are included. Grant the benefit, then pass `purchaseToken` to `consume()` so
+ * the product can be bought again.
+ */
+export interface OwnedInAppPurchase {
+  /** The product identifiers included in this purchase. */
+  productIds: string[]
+  /** The Google Play purchase token. Pass this to `consume()`. */
+  purchaseToken: string
+  /** The Google Play order ID, if available. */
+  orderId: string | null
+  /** When the purchase was made, in milliseconds since the Unix epoch. */
+  purchaseTime: number
+  /** The quantity purchased. */
+  quantity: number
+  /** Whether the purchase has been acknowledged. */
+  isAcknowledged: boolean
+}
 
 /**
  * Represents a store product returned by {@link SuperwallExpoModule.products}.

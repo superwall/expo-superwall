@@ -37,6 +37,7 @@ import { EventEmitter } from "expo"
 import { version } from "../../package.json"
 import SuperwallExpoModule from "../SuperwallExpoModule"
 import type {
+  OwnedInAppPurchase,
   ProductResponse,
   PurchaseResultResponse,
   RestorationResultResponse,
@@ -44,6 +45,7 @@ import type {
 import { filterUndefined } from "../utils/filterUndefined"
 
 export type {
+  OwnedInAppPurchase,
   ProductResponse,
   PurchaseResultResponse,
   RestorationResultResponse,
@@ -799,6 +801,8 @@ export default class Superwall {
    *
    * @param {string} productId - The product identifier to purchase.
    * @returns {Promise<PurchaseResultResponse>} A promise that resolves with the purchase result.
+   * If the product can't be found or the purchase fails, it resolves with a `failed` result
+   * containing the native error message rather than rejecting.
    */
   static async purchase(productId: string): Promise<PurchaseResultResponse> {
     return SuperwallExpoModule.purchase(productId)
@@ -808,7 +812,8 @@ export default class Superwall {
    * Fetches product details for an array of product identifiers.
    *
    * @param {string[]} productIds - An array of product identifiers.
-   * @returns {Promise<ProductResponse[]>} A promise that resolves with an array of product objects.
+   * @returns {Promise<ProductResponse[]>} A promise that resolves with an array of product objects,
+   * in the order requested. Identifiers the store doesn't recognize are omitted.
    */
   static async products(productIds: string[]): Promise<ProductResponse[]> {
     return SuperwallExpoModule.products(productIds)
@@ -878,12 +883,26 @@ export default class Superwall {
 
   /**
    * Consumes a Google Play purchase token so the item can be purchased again.
-   * Android-only; rejects on iOS.
+   * On iOS this is a no-op that resolves with the given token.
    * @param purchaseToken - The Google Play purchase token to consume.
    * @returns The consumed purchase token on success.
    */
   async consume(purchaseToken: string): Promise<string> {
     await this.awaitConfig()
     return SuperwallExpoModule.consume(purchaseToken)
+  }
+
+  /**
+   * Android only. Returns the one-time (in-app) products the user currently owns in the
+   * `PURCHASED` state, as reported by Google Play Billing.
+   *
+   * Use this to find consumables that still need to be granted, then call {@link consume}
+   * with each `purchaseToken` once the benefit has been granted. Rejects on iOS.
+   *
+   * @returns {Promise<OwnedInAppPurchase[]>} The owned, purchased one-time products.
+   */
+  async queryInAppPurchases(): Promise<OwnedInAppPurchase[]> {
+    await this.awaitConfig()
+    return SuperwallExpoModule.queryInAppPurchases()
   }
 }

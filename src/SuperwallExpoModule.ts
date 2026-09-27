@@ -4,6 +4,7 @@ import type {
   CustomerInfo,
   EntitlementsInfo,
   IntegrationAttributes,
+  OwnedInAppPurchase,
   ProductResponse,
   PurchaseResultResponse,
   RestorationResultResponse,
@@ -88,6 +89,7 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
 
   purchase(productId: string): Promise<PurchaseResultResponse>
   products(productIds: string[]): Promise<ProductResponse[]>
+  queryInAppPurchases(): Promise<OwnedInAppPurchase[]>
 }
 
 export default requireNativeModule<SuperwallExpoModule>("SuperwallExpo")
