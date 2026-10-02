@@ -21,6 +21,11 @@
 #                        settings.
 # Variables:
 #   PI_MODEL           — optional model override.
+#
+# Testing: run it by hand with dry_run: true — it applies the bump and prints
+# the diff and the agent prompt, but pushes nothing, opens no PR and skips the
+# agent. Locally, local-ci (https://agent-ci.dev) can run it through a caller
+# workflow that uses this one via workflow_call with dry_run: true.
 name: Native SDK bump
 
 on:
@@ -37,6 +42,26 @@ on:
         description: Native version (blank = latest release)
         required: false
         type: string
+      dry_run:
+        description: Apply the bump and print the diff and agent prompt only — no push, PR or agent
+        required: false
+        type: boolean
+        default: false
+  # Same inputs for callers. Mainly so the workflow can be run locally with
+  # local-ci (https://agent-ci.dev), which cannot simulate dispatch events but
+  # does pass workflow_call inputs.
+  workflow_call:
+    inputs:
+      platform:
+        required: true
+        type: string
+      version:
+        required: false
+        type: string
+      dry_run:
+        required: false
+        type: boolean
+        default: false
 
 # One bump per platform at a time; an Android and an iOS bump may run together.
 concurrency:
@@ -57,9 +82,12 @@ jobs:
     timeout-minutes: 90
     env:
       GH_TOKEN: ${{ secrets.SDK_BOT_TOKEN || secrets.GITHUB_TOKEN }}
+      DRY_RUN: ${{ inputs.dry_run && 'true' || 'false' }}
     steps:
+      # Values flow between steps through $GITHUB_ENV rather than step
+      # outputs: same behaviour on GitHub, and it also works under local-ci,
+      # which resolves steps.*.outputs.* to empty strings.
       - name: Resolve target
-        id: target
         env:
           PLATFORM: ${{ github.event.client_payload.platform || inputs.platform }}
           VERSION: ${{ github.event.client_payload.version || inputs.version }}
@@ -79,12 +107,12 @@ jobs:
             echo "::error::'$VERSION' is not a stable x.y.z version"; exit 1
           fi
           {
-            echo "platform=$PLATFORM"
-            echo "repo=$REPO"
-            echo "label=$LABEL"
-            echo "version=$VERSION"
-            echo "branch=native-sdk/$PLATFORM-$VERSION"
-          } >> "$GITHUB_OUTPUT"
+            echo "PLATFORM=$PLATFORM"
+            echo "REPO=$REPO"
+            echo "LABEL=$LABEL"
+            echo "VERSION=$VERSION"
+            echo "BRANCH=native-sdk/$PLATFORM-$VERSION"
+          } >> "$GITHUB_ENV"
 
       - uses: actions/checkout@v4
         with:
@@ -92,11 +120,6 @@ jobs:
           token: ${{ secrets.SDK_BOT_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Read current pin
-        id: current
-        env:
-          PLATFORM: ${{ steps.target.outputs.platform }}
-          VERSION: ${{ steps.target.outputs.version }}
-          BRANCH: ${{ steps.target.outputs.branch }}
         run: |
           if [ "$PLATFORM" = android ]; then
             CURRENT="$(sed -nE 's/.*com\.superwall\.sdk:superwall-android:([^"]+)".*/\1/p' android/build.gradle)"
@@ -104,24 +127,22 @@ jobs:
             CURRENT="$(sed -nE "s/.*s\.dependency \"SuperwallKit\", '([^']+)'.*/\1/p" ios/SuperwallExpo.podspec)"
           fi
           [ -n "$CURRENT" ] || { echo "::error::Could not read the current $PLATFORM pin"; exit 1; }
-          echo "current=$CURRENT" >> "$GITHUB_OUTPUT"
+          echo "CURRENT=$CURRENT" >> "$GITHUB_ENV"
 
           SKIP=false
           if [ "$(printf '%s\n%s\n' "$CURRENT" "$VERSION" | sort -V | tail -1)" = "$CURRENT" ]; then
             echo "::notice::$PLATFORM is already at $CURRENT (>= $VERSION), nothing to do."
             SKIP=true
-          elif git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null; then
+          # Through the API rather than `git ls-remote`, which local-ci stubs to
+          # always succeed.
+          elif gh api --silent "repos/$GITHUB_REPOSITORY/git/ref/heads/$BRANCH" 2>/dev/null; then
             echo "::notice::Branch $BRANCH already exists, a bump PR was already opened."
             SKIP=true
           fi
-          echo "skip=$SKIP" >> "$GITHUB_OUTPUT"
+          echo "SKIP=$SKIP" >> "$GITHUB_ENV"
 
       - name: Fetch native source and release notes
-        if: steps.current.outputs.skip == 'false'
-        env:
-          REPO: ${{ steps.target.outputs.repo }}
-          VERSION: ${{ steps.target.outputs.version }}
-          CURRENT: ${{ steps.current.outputs.current }}
+        if: env.SKIP == 'false'
         run: |
           # Inside the workspace so the agent can read it, but excluded from git
           # so the agent's commits never pick it up.
@@ -136,13 +157,7 @@ jobs:
           cat "$RUNNER_TEMP/native-changelog.md"
 
       - name: Apply version bump
-        if: steps.current.outputs.skip == 'false'
-        id: bump
-        env:
-          PLATFORM: ${{ steps.target.outputs.platform }}
-          REPO: ${{ steps.target.outputs.repo }}
-          LABEL: ${{ steps.target.outputs.label }}
-          VERSION: ${{ steps.target.outputs.version }}
+        if: env.SKIP == 'false'
         run: |
           if [ "$PLATFORM" = android ]; then
             sed -i -E "s/(com\.superwall\.sdk:superwall-android:)[^\"]+\"/\1$VERSION\"/" android/build.gradle
@@ -160,17 +175,10 @@ jobs:
           Update native $LABEL SDK to $VERSION. [View $LABEL SDK release notes](https://github.com/$REPO/releases/tag/$VERSION).
           EOF
           git add .changeset
-          git --no-pager diff HEAD
+          git -c core.fileMode=false --no-pager diff HEAD
 
       - name: Open PR
-        if: steps.current.outputs.skip == 'false'
-        id: pr
-        env:
-          LABEL: ${{ steps.target.outputs.label }}
-          REPO: ${{ steps.target.outputs.repo }}
-          VERSION: ${{ steps.target.outputs.version }}
-          CURRENT: ${{ steps.current.outputs.current }}
-          BRANCH: ${{ steps.target.outputs.branch }}
+        if: env.SKIP == 'false' && env.DRY_RUN == 'false'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
@@ -191,33 +199,24 @@ jobs:
           } > "$RUNNER_TEMP/pr-body.md"
           gh pr create --base "$BASE_BRANCH" --head "$BRANCH" \
             --title "Bump $LABEL SDK to $VERSION" --body-file "$RUNNER_TEMP/pr-body.md"
-          echo "number=$(gh pr view "$BRANCH" --json number -q .number)" >> "$GITHUB_OUTPUT"
+          echo "PR=$(gh pr view "$BRANCH" --json number -q .number)" >> "$GITHUB_ENV"
 
       # Toolchain for the agent to validate its changes with.
       - uses: actions/setup-node@v4
-        if: steps.current.outputs.skip == 'false'
+        if: env.SKIP == 'false' && env.DRY_RUN == 'false'
         with:
           node-version: 24
       - uses: actions/setup-java@v4
-        if: steps.current.outputs.skip == 'false'
+        if: env.SKIP == 'false' && env.DRY_RUN == 'false'
         with:
           distribution: temurin
           java-version: '17'
       - name: Install dependencies
-        if: steps.current.outputs.skip == 'false'
+        if: env.SKIP == 'false' && env.DRY_RUN == 'false'
         run: corepack enable && yarn install
 
       - name: Build agent prompt
-        if: steps.current.outputs.skip == 'false'
-        id: prompt
-        env:
-          PLATFORM: ${{ steps.target.outputs.platform }}
-          LABEL: ${{ steps.target.outputs.label }}
-          REPO: ${{ steps.target.outputs.repo }}
-          VERSION: ${{ steps.target.outputs.version }}
-          CURRENT: ${{ steps.current.outputs.current }}
-          BRANCH: ${{ steps.target.outputs.branch }}
-          PR: ${{ steps.pr.outputs.number }}
+        if: env.SKIP == 'false'
         run: |
           if [ "$PLATFORM" = android ]; then
             PLATFORM_NOTES="The Android module lives in android/src/main/java/expo/modules/superwallexpo. It is only compiled as part of the example app, which is not set up on this runner, so be careful and precise with Kotlin and say in the PR description that Android was not compiled locally."
@@ -226,7 +225,7 @@ jobs:
           fi
           DELIM="PROMPT_$(openssl rand -hex 8)"
           {
-            echo "text<<$DELIM"
+            echo "AGENT_PROMPT<<$DELIM"
             cat <<EOF
           You are integrating a native Superwall SDK release into expo-superwall, the Expo module that wraps Superwall-Android and Superwall-iOS.
 
@@ -248,10 +247,18 @@ jobs:
           7. Push with the update_pull_request tool for PR #$PR — never create_pull_request, never push to $BASE_BRANCH, never edit .github/. Update the PR description: keep the existing text and release notes, and add an "Integration changes" section listing what you changed and why. If nothing beyond the bump is needed, change no files and only add that section explaining why no integration work is needed.
           EOF
             echo "$DELIM"
-          } >> "$GITHUB_OUTPUT"
+          } >> "$GITHUB_ENV"
+
+      - name: Dry-run summary
+        if: env.SKIP == 'false' && env.DRY_RUN == 'true'
+        run: |
+          echo "::notice::Dry run: nothing was pushed, no PR was opened, the agent did not run."
+          git -c core.fileMode=false --no-pager diff HEAD
+          echo "----- agent prompt -----"
+          printf '%s\n' "$AGENT_PROMPT"
 
       - name: Integrate with Pi
-        if: steps.current.outputs.skip == 'false'
+        if: env.SKIP == 'false' && env.DRY_RUN == 'false'
         id: pi
         continue-on-error: true
         uses: shaftoe/pi-coding-agent-action@v2.29.1
@@ -262,15 +269,14 @@ jobs:
           token: ${{ secrets.ANTHROPIC_API_KEY }}
           thinking_level: high
           auto_compaction: true
-          pr_number: ${{ steps.pr.outputs.number }}
-          prompt: ${{ steps.prompt.outputs.text }}
+          pr_number: ${{ env.PR }}
+          prompt: ${{ env.AGENT_PROMPT }}
 
       # The bump PR stands on its own; make it obvious that nobody reviewed the
       # release notes for API changes.
       - name: Flag failed integration
-        if: steps.current.outputs.skip == 'false' && steps.pi.outcome == 'failure'
+        if: env.SKIP == 'false' && env.DRY_RUN == 'false' && steps.pi.outcome == 'failure'
         env:
-          PR: ${{ steps.pr.outputs.number }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
           gh pr comment "$PR" --body "The integration agent failed ([run]($RUN_URL)). This PR only contains the version bump — check the release notes above for public API changes by hand before merging."
