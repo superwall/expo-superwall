@@ -90,6 +90,17 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
   purchase(productId: string): Promise<PurchaseResultResponse>
   products(productIds: string[]): Promise<ProductResponse[]>
   queryInAppPurchases(): Promise<OwnedInAppPurchase[]>
+
+  /** Android only. Resolves once the Customer Center is dismissed. */
+  presentCustomerCenter(
+    configuration: Record<string, any> | null,
+    handlerId: string,
+    asksBeforeRestoring: boolean,
+  ): Promise<void>
+  /** Android only. */
+  dismissCustomerCenter(): Promise<void>
+  /** Android only. */
+  didHandleCustomerCenterShouldRestorePurchases(requestId: string, proceed: boolean): void
 }
 
 export default requireNativeModule<SuperwallExpoModule>("SuperwallExpo")

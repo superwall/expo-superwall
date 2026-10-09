@@ -7,6 +7,7 @@ import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 import expo.modules.kotlin.exception.CodedException
 import expo.modules.kotlin.Promise
+import expo.modules.superwallexpo.bridges.CustomerCenterDelegateBridge
 import expo.modules.superwallexpo.bridges.PurchaseControllerBridge
 import expo.modules.superwallexpo.bridges.SuperwallDelegateBridge
 import expo.modules.superwallexpo.json.*
@@ -116,6 +117,16 @@ class SuperwallExpoModule : Module() {
   // Customer Info Events
   private val customerInfoDidChange = "customerInfoDidChange"
 
+  // Customer Center Events
+  private val onCustomerCenterAction = "onCustomerCenterAction"
+  private val onCustomerCenterSurveyComplete = "onCustomerCenterSurveyComplete"
+  private val onCustomerCenterRefundRequestComplete = "onCustomerCenterRefundRequestComplete"
+  private val onCustomerCenterShouldRestorePurchases = "onCustomerCenterShouldRestorePurchases"
+
+  // Whether a Customer Center presented through this module is on screen. Only touched on
+  // the main thread.
+  private var isCustomerCenterPresented = false
+
   val purchaseController = PurchaseControllerBridge.instance
 
   override fun definition() = ModuleDefinition {
@@ -148,7 +159,13 @@ class SuperwallExpoModule : Module() {
       didRedeemLink,
 
       // Customer info events
-      customerInfoDidChange
+      customerInfoDidChange,
+
+      // Customer Center events
+      onCustomerCenterAction,
+      onCustomerCenterSurveyComplete,
+      onCustomerCenterRefundRequestComplete,
+      onCustomerCenterShouldRestorePurchases
     )
 
     OnDestroy {
@@ -518,6 +535,59 @@ class SuperwallExpoModule : Module() {
           promise.resolve(null)
         }
       }
+    }
+
+    AsyncFunction("presentCustomerCenter") {
+      configuration: Map<String, Any>?,
+      handlerId: String,
+      asksBeforeRestoring: Boolean,
+      promise: Promise ->
+      scope.launch {
+        // The native SDK ignores a second presentation without calling `onDismiss`, so
+        // settle straight away rather than leave the promise pending.
+        if (isCustomerCenterPresented) {
+          promise.resolve(null)
+          return@launch
+        }
+        try {
+          val customerCenterConfiguration = configuration?.let { customerCenterConfigurationFromJson(it) }
+          val settled = java.util.concurrent.atomic.AtomicBoolean(false)
+          isCustomerCenterPresented = true
+          Superwall.instance.presentCustomerCenter(
+            configuration = customerCenterConfiguration,
+            delegate = CustomerCenterDelegateBridge(handlerId, asksBeforeRestoring),
+            onDismiss = {
+              isCustomerCenterPresented = false
+              if (settled.compareAndSet(false, true)) {
+                promise.resolve(null)
+              }
+            }
+          )
+        } catch (error: Throwable) {
+          isCustomerCenterPresented = false
+          promise.reject(CodedException(error))
+        }
+      }
+    }
+
+    AsyncFunction("dismissCustomerCenter") { promise: Promise ->
+      scope.launch {
+        try {
+          Superwall.instance.dismissCustomerCenter {
+            promise.resolve(null)
+          }
+        } catch (error: Throwable) {
+          promise.reject(CodedException(error))
+        }
+      }
+    }
+
+    Function("didHandleCustomerCenterShouldRestorePurchases") { requestId: String, proceed: Boolean ->
+      val pending = CustomerCenterDelegateBridge.pendingRestores.remove(requestId)
+      if (pending != null) {
+        scope.launch { pending(proceed) }
+      }
+      Unit
     }
 
     Function("togglePaywallSpinner") { isHidden: Boolean ->

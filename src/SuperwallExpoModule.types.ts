@@ -2255,6 +2255,231 @@ export interface StripeCheckoutFailEvent {
 }
 
 /**
+ * A row in the Customer Center that runs one action. `type` selects the action; `id`,
+ * `title` and `survey` are shared by every type.
+ *
+ * Android only. See {@link CustomerCenterConfiguration}.
+ */
+export type CustomerCenterPath = {
+  /**
+   * Stable identifier, reported as `pathId` on Customer Center events. Defaults to the
+   * type's name for built-in types, the URL's host and path for `url`, and the identifier
+   * for `custom`. Only needed to tell apart two paths that would otherwise share one.
+   */
+  id?: string
+  /** Row title. Omit to use the localized default for the type. */
+  title?: string
+  /** A survey shown before the action runs. */
+  survey?: CustomerCenterFeedbackSurvey
+} & (
+  | { type: "restore" }
+  | { type: "manageSubscription" }
+  | {
+      type: "refund"
+      /** Milliseconds since purchase during which a refund may be requested. */
+      windowMillis?: number
+    }
+  | {
+      type: "changePlan"
+      /** The subset of plans to offer. Omit to offer every plan. */
+      productIds?: string[]
+    }
+  | { type: "contactSupport" }
+  | {
+      type: "url"
+      url: string
+      /** What the row says. Required: a URL has no name the SDK could give it. */
+      title: string
+      /** `"inApp"` (default) opens an in-app browser tab; `"external"` hands the URL to another app. */
+      openMethod?: "inApp" | "external"
+    }
+  | {
+      type: "custom"
+      /** Passed back in the `custom` {@link CustomerCenterAction} when tapped. */
+      identifier: string
+    }
+)
+
+/**
+ * A single-choice survey shown before a Customer Center path's action runs.
+ *
+ * Android only.
+ */
+export interface CustomerCenterFeedbackSurvey {
+  id: string
+  /**
+   * Question text. Omit to use the localized "Why are you cancelling?" on a
+   * `manageSubscription` path, and no title on any other path.
+   */
+  title?: string
+  /**
+   * The answers. The built-in IDs `"too_expensive"`, `"dont_use"` and
+   * `"bought_by_mistake"` get a localized title when `title` is omitted.
+   */
+  options: { id: string; title?: string }[]
+}
+
+/**
+ * A Customer Center screen: a title, optional subtitle and an ordered list of paths.
+ *
+ * Android only.
+ */
+export interface CustomerCenterScreen {
+  /** Title. Omit to use the localized default for the screen. */
+  title?: string
+  /** Subtitle. Omit to use the localized default (no-purchases screen) or none (management screen). */
+  subtitle?: string
+  /** Ordered paths (actions) shown on the screen. */
+  paths: CustomerCenterPath[]
+}
+
+/**
+ * Configures the screens, actions, support options and appearance of the Customer Center.
+ * Every property is optional and falls back to the native default.
+ *
+ * Set the default with the `customerCenter` option when configuring Superwall, or pass one
+ * to `presentCustomerCenter()` for a single presentation.
+ *
+ * Android only: the Customer Center isn't available in the iOS SDK this version wraps.
+ */
+export interface CustomerCenterConfiguration {
+  /**
+   * The screen shown when the user has at least one subscription (active or expired) or
+   * purchase. Defaults to restore, change plan, refund, manage subscription (with a
+   * cancellation survey) and contact support.
+   */
+  managementScreen?: CustomerCenterScreen
+  /** The screen shown when the user has no purchases at all. Defaults to restore. */
+  noPurchasesScreen?: CustomerCenterScreen
+  /** Support-related settings. */
+  support?: {
+    /** Support email for the "Contact support" path. Omit to hide that path. */
+    email?: string
+    /** Latest published app version. When newer than the installed version, an update banner shows. */
+    latestAppVersion?: string
+    /** Whether to show the update banner. Defaults to `true`. */
+    warnsAboutUpdates?: boolean
+    /** Overrides the web subscription management page URL used for web-store subscriptions. */
+    webManagementUrl?: string
+  }
+  /** Colour overrides. */
+  appearance?: {
+    /**
+     * Tints buttons and links, as hex strings (`#RRGGBB` or `#RRGGBBAA`) for light and dark
+     * mode. Omit to use the theme's accent.
+     */
+    accent?: { light: string; dark: string }
+  }
+  /** Shows the account details section (user ID, original download date). Defaults to `true`. */
+  showsAccountDetails?: boolean
+  /** Warns when both a Google Play and a web subscription are active. Defaults to `true`. */
+  warnsAboutDuplicateSubscriptions?: boolean
+}
+
+/**
+ * An action the user selected in the Customer Center.
+ *
+ * Android only.
+ */
+export type CustomerCenterAction =
+  | { type: "restore" }
+  | { type: "manageSubscription" }
+  | { type: "refund" }
+  | { type: "changePlan" }
+  | { type: "contactSupport" }
+  | { type: "url"; url: string }
+  | { type: "custom"; identifier: string }
+
+/**
+ * Outcome of a refund request made from the Customer Center. Google Play takes refund
+ * requests on its own pages, so `"success"` means the request was handed to Google Play and
+ * `"error"` that it couldn't be. `"userCancelled"` is not reported on Android.
+ */
+export type CustomerCenterRefundStatus = "success" | "userCancelled" | "error"
+
+/**
+ * Which Customer Center screen was shown: `"management"` when the user has, or had, at
+ * least one purchase, `"noPurchases"` otherwise.
+ */
+export type CustomerCenterScreenType = "management" | "noPurchases"
+
+/**
+ * The purchase a Customer Center action applies to.
+ *
+ * Android only.
+ */
+export interface CustomerCenterPurchase {
+  /** The product purchased. `null` for an entitlement with no product behind it, such as a manually granted one. */
+  productId: string | null
+  /** Where the purchase was made. */
+  store: ProductStore
+  /** Every entitlement the purchase has unlocked, including any it no longer grants. */
+  entitlements: Entitlement[]
+  /** The subscription, when the purchase is one. */
+  subscription?: SubscriptionTransaction
+  /** The one-time purchase, when the purchase is one. */
+  nonSubscription?: NonSubscriptionTransaction
+}
+
+/**
+ * The Customer Center was presented. Android only.
+ */
+export interface CustomerCenterOpenEvent {
+  /** The Customer Center was presented. */
+  event: "customerCenterOpen"
+  /** Which screen was shown. */
+  screen: CustomerCenterScreenType
+}
+
+/**
+ * The Customer Center was dismissed. Android only.
+ */
+export interface CustomerCenterCloseEvent {
+  /** The Customer Center was dismissed. */
+  event: "customerCenterClose"
+}
+
+/**
+ * The user tapped a path in the Customer Center. Android only.
+ */
+export interface CustomerCenterActionEvent {
+  /** The user tapped a path in the Customer Center. */
+  event: "customerCenterAction"
+  /** The action the path runs. */
+  action: CustomerCenterAction
+  /** The tapped path's ID. */
+  pathId: string
+  /** The product the action applies to, if any. */
+  productId?: string
+}
+
+/**
+ * The user answered a Customer Center survey. Android only.
+ */
+export interface CustomerCenterSurveyResponseEvent {
+  /** The user answered a Customer Center survey. */
+  event: "customerCenterSurveyResponse"
+  surveyId: string
+  /** The ID of the chosen option. */
+  optionId: string
+  /** The action of the path the survey belongs to. */
+  action: CustomerCenterAction
+  pathId: string
+  /** The product the action applies to, if any. */
+  productId?: string
+}
+
+/**
+ * A refund request started from the Customer Center completed. Android only.
+ */
+export interface CustomerCenterRefundRequestEvent {
+  /** A refund request started from the Customer Center completed. */
+  event: "customerCenterRefundRequest"
+  productId: string
+  status: CustomerCenterRefundStatus
+}
+
+/**
  * Page-specific details for a multi-page paywall page view.
  */
 export interface PageViewData {
@@ -2376,6 +2601,11 @@ export type SuperwallEventType =
   | StripeCheckoutCompleteEvent["event"]
   | StripeCheckoutFailEvent["event"]
   | PaywallPageViewEvent["event"]
+  | CustomerCenterOpenEvent["event"]
+  | CustomerCenterCloseEvent["event"]
+  | CustomerCenterActionEvent["event"]
+  | CustomerCenterSurveyResponseEvent["event"]
+  | CustomerCenterRefundRequestEvent["event"]
 
 /**
  * Represents a Superwall event that can be tracked by the SDK.
@@ -2463,6 +2693,11 @@ export type SuperwallEvent =
   | StripeCheckoutCompleteEvent
   | StripeCheckoutFailEvent
   | PaywallPageViewEvent
+  | CustomerCenterOpenEvent
+  | CustomerCenterCloseEvent
+  | CustomerCenterActionEvent
+  | CustomerCenterSurveyResponseEvent
+  | CustomerCenterRefundRequestEvent
 
 /**
  * Contains information about a Superwall event, including the specific {@link SuperwallEvent}
@@ -2715,10 +2950,7 @@ export type SuperwallExpoModuleEvents = {
    * @param params.from - The previous customer info snapshot. See {@link CustomerInfo}.
    * @param params.to - The new customer info snapshot. See {@link CustomerInfo}.
    */
-  customerInfoDidChange: (params: {
-    from: CustomerInfo
-    to: CustomerInfo
-  }) => void
+  customerInfoDidChange: (params: { from: CustomerInfo; to: CustomerInfo }) => void
   /**
    * Emitted for various internal Superwall events, providing a detailed stream of SDK activity.
    * @param params - Event parameters.
@@ -2831,4 +3063,42 @@ export type SuperwallExpoModuleEvents = {
     variables?: Record<string, any>
     handlerId: string
   }) => void
+
+  // Customer Center Events (Android only)
+  /**
+   * Emitted when the user taps a path in a Customer Center presented with `presentCustomerCenter()`.
+   * @platform Android
+   */
+  onCustomerCenterAction: (params: {
+    handlerId: string
+    action: CustomerCenterAction
+    pathId: string
+    purchase: CustomerCenterPurchase | null
+  }) => void
+  /**
+   * Emitted when the user answers a survey in a presented Customer Center.
+   * @platform Android
+   */
+  onCustomerCenterSurveyComplete: (params: {
+    handlerId: string
+    surveyId: string
+    optionId: string
+    action: CustomerCenterAction
+    pathId: string
+  }) => void
+  /**
+   * Emitted when a refund request started from a presented Customer Center finishes.
+   * @platform Android
+   */
+  onCustomerCenterRefundRequestComplete: (params: {
+    handlerId: string
+    productId: string
+    status: CustomerCenterRefundStatus
+  }) => void
+  /**
+   * Emitted before a presented Customer Center restores purchases, when the presenter asked
+   * to be consulted. Answer with `didHandleCustomerCenterShouldRestorePurchases`.
+   * @platform Android
+   */
+  onCustomerCenterShouldRestorePurchases: (params: { handlerId: string; requestId: string }) => void
 }

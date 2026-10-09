@@ -1,3 +1,5 @@
+import { customerCenterConfigurationToJson } from "../../internal/customerCenter"
+import type { CustomerCenterConfiguration } from "../../SuperwallExpoModule.types"
 import { LogLevel } from "./LogLevel"
 import { LogScope } from "./LogScope"
 import { PaywallOptions } from "./PaywallOptions"
@@ -87,6 +89,7 @@ export interface PartialSuperwallOptions {
   maxConfigRetryCount?: number
   useMockReviews?: boolean
   testModeBehavior?: TestModeBehavior
+  customerCenter?: CustomerCenterConfiguration
 }
 
 /**
@@ -133,6 +136,12 @@ export class SuperwallOptions {
    * @platform iOS and Android
    */
   testModeBehavior: TestModeBehavior = TestModeBehavior.Automatic
+  /**
+   * Configures the Customer Center presented with `presentCustomerCenter()`. Undefined uses
+   * the native default.
+   * @platform Android only
+   */
+  customerCenter?: CustomerCenterConfiguration
 
   constructor(init?: PartialSuperwallOptions) {
     if (init) {
@@ -177,6 +186,9 @@ export class SuperwallOptions {
       maxConfigRetryCount: this.maxConfigRetryCount,
       useMockReviews: this.useMockReviews,
       testModeBehavior: this.testModeBehavior,
+      customerCenter: this.customerCenter
+        ? customerCenterConfigurationToJson(this.customerCenter)
+        : undefined,
     })
   }
 }

@@ -106,7 +106,13 @@ public class SuperwallExpoModule: Module {
       didRedeemLink,
 
       // Customer info events
-      customerInfoDidChange
+      customerInfoDidChange,
+
+      // Customer Center events (Android only, declared so JS can subscribe on both platforms)
+      "onCustomerCenterAction",
+      "onCustomerCenterSurveyComplete",
+      "onCustomerCenterRefundRequestComplete",
+      "onCustomerCenterShouldRestorePurchases"
     )
 
     View(SuperwallExpoPaywallView.self) {
@@ -510,6 +516,22 @@ public class SuperwallExpoModule: Module {
         "ERR_UNSUPPORTED",
         "queryInAppPurchases is only available on Android."
       )
+    }
+
+    // The Customer Center is Android-only in the SuperwallKit version this module wraps.
+    AsyncFunction("presentCustomerCenter") {
+      (configuration: [String: Any]?, handlerId: String, asksBeforeRestoring: Bool, promise: Promise) in
+      promise.reject(
+        "ERR_UNSUPPORTED",
+        "presentCustomerCenter is only available on Android."
+      )
+    }
+
+    AsyncFunction("dismissCustomerCenter") { (promise: Promise) in
+      promise.resolve(nil)
+    }
+
+    Function("didHandleCustomerCenterShouldRestorePurchases") { (requestId: String, proceed: Bool) in
     }
   }
 }

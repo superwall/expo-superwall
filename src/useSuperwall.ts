@@ -3,6 +3,12 @@ import { create } from "zustand"
 import { useShallow } from "zustand/shallow"
 import pkg from "../package.json"
 import type { PresentationResult } from "./compat/lib/PresentationResult"
+import {
+  customerCenterConfigurationToJson,
+  dismissCustomerCenter,
+  type PresentCustomerCenterOptions,
+  presentCustomerCenter,
+} from "./internal/customerCenter"
 import { resolveLocalResources } from "./localResources"
 import SuperwallExpoModule from "./SuperwallExpoModule"
 import type {
@@ -263,6 +269,26 @@ export interface SuperwallStore {
   dismiss: () => Promise<void>
 
   /**
+   * Android only. Presents the Customer Center, a self-service screen where users can view and
+   * restore their purchases, cancel or change a Google Play subscription, request a refund,
+   * manage a web subscription and contact support.
+   *
+   * Only one Customer Center can be presented at a time; calling this while one is presented
+   * does nothing and resolves straight away. Rejects on iOS.
+   *
+   * @param options - Optional per-presentation configuration and callbacks.
+   * @returns A promise that resolves once the Customer Center is dismissed.
+   */
+  presentCustomerCenter: (options?: PresentCustomerCenterOptions) => Promise<void>
+
+  /**
+   * Android only. Dismisses the Customer Center presented with {@link presentCustomerCenter}.
+   * Does nothing if none is presented, and resolves straight away on iOS.
+   * @returns A promise that resolves once the Customer Center has been dismissed.
+   */
+  dismissCustomerCenter: () => Promise<void>
+
+  /**
    * Shows or hides the loading spinner on the currently presented paywall.
    *
    * Useful when a custom paywall action kicks off asynchronous work and you want the
@@ -407,8 +433,13 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     set({ isLoading: true, configurationError: null })
 
     try {
-      const { manualPurchaseManagement, manualPurchaseManagment, localResources, ...restOptions } =
-        options || {}
+      const {
+        manualPurchaseManagement,
+        manualPurchaseManagment,
+        localResources,
+        customerCenter,
+        ...restOptions
+      } = options || {}
 
       // Support both spellings for backward compatibility
       const isManualPurchaseManagement =
@@ -421,6 +452,9 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
         ...DefaultSuperwallOptions,
         ...restOptions,
         ...(resolvedLocalResources ? { localResources: resolvedLocalResources } : {}),
+        ...(customerCenter
+          ? { customerCenter: customerCenterConfigurationToJson(customerCenter) }
+          : {}),
         paywalls: {
           ...DefaultSuperwallOptions.paywalls,
           ...restOptions.paywalls,
@@ -528,6 +562,14 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   dismiss: async () => {
     await awaitConfigured()
     await SuperwallExpoModule.dismiss()
+  },
+  presentCustomerCenter: async (options) => {
+    await awaitConfigured()
+    await presentCustomerCenter(options)
+  },
+  dismissCustomerCenter: async () => {
+    await awaitConfigured()
+    await dismissCustomerCenter()
   },
   togglePaywallSpinner: async (isHidden) => {
     await awaitConfigured()

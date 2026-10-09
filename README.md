@@ -342,6 +342,8 @@ The hook returns an object representing the Superwall store. If a `selector` fun
     -   `registerPlacement: (placement: string, params?: Record<string, any>, handlerId?: string | null) => Promise<void>`: Registers a placement. This may or may not present a paywall depending on campaign rules. `handlerId` is used internally by `usePlacement` to associate events.
     -   `getPresentationResult: (placement: string, params?: Record<string, any>) => Promise<PresentationResult>`: Gets the presentation result for a given placement.
     -   `dismiss: () => Promise<void>`: Dismisses any currently presented paywall.
+    -   `presentCustomerCenter: (options?: PresentCustomerCenterOptions) => Promise<void>`: **Android only.** Presents the Customer Center, where users can view and restore purchases, cancel or change a Google Play subscription, request a refund, manage a web subscription and contact support. Resolves once it is dismissed. `options` can override the `customerCenter` configure option for this presentation and take callbacks (`onAction`, `onSurveyComplete`, `onRefundRequestComplete`, `shouldRestorePurchases`). Rejects on iOS.
+    -   `dismissCustomerCenter: () => Promise<void>`: **Android only.** Dismisses the Customer Center. Does nothing on iOS.
     -   `togglePaywallSpinner: (isHidden: boolean) => Promise<void>`: Shows or hides the loading spinner on the currently presented paywall. Useful when a custom paywall action does asynchronous work. Does nothing if no paywall is presented.
     -   `preloadAllPaywalls: () => Promise<void>`: Preloads all paywalls.
     -   `preloadPaywalls: (placements: string[]) => Promise<void>`: Preloads paywalls for the specified placement IDs.
