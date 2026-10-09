@@ -7,9 +7,9 @@
 #   1. Deterministic bump: native pin plus a patch changeset (the changesets
 #      release workflow does the actual version bump) — committed and opened
 #      as a PR.
-#   2. Pi agent (shaftoe/pi-coding-agent-action) reads the native release notes
-#      for the whole skipped range and, if the public API changed, implements
-#      the Expo side and pushes it onto the same PR.
+#   2. Claude Code (anthropics/claude-code-action) reads the native release
+#      notes for the whole skipped range and, if the public API changed,
+#      implements the Expo side and pushes it onto the same PR.
 #
 # Secrets:
 #   ANTHROPIC_API_KEY  — for the agent.
@@ -20,7 +20,7 @@
 #                        and approve pull requests" must be enabled in the repo
 #                        settings.
 # Variables:
-#   PI_MODEL           — optional model override.
+#   AGENT_MODEL        — optional model override.
 #
 # Testing: run it by hand with dry_run: true — it applies the bump and prints
 # the diff and the agent prompt, but pushes nothing, opens no PR and skips the
@@ -244,7 +244,7 @@ jobs:
           4. Update docs (README.md and similar) that state the pinned $LABEL version $CURRENT so they say $VERSION — only where they describe the current pin.
           5. Describe customer-facing changes in .changeset/native-$PLATFORM-$VERSION.md (never edit CHANGELOG.md or package.json versions — changesets owns them). If you add public API, change its bump from patch to minor.
           6. Never commit code that does not compile. If part of the work cannot be done safely, leave it out and list it in the PR description as follow-up.
-          7. Push with the update_pull_request tool for PR #$PR — never create_pull_request, never push to $BASE_BRANCH, never edit .github/. Update the PR description: keep the existing text and release notes, and add an "Integration changes" section listing what you changed and why. If nothing beyond the bump is needed, change no files and only add that section explaining why no integration work is needed.
+          7. Commit your changes and push them with plain \`git push\` to $BRANCH, the checked-out branch of PR #$PR. Never create another branch or PR, never push to $BASE_BRANCH, never force push, never edit .github/. Then update the PR description with \`gh pr edit $PR --body-file <file>\`: start from \`gh pr view $PR --json body -q .body\`, keep the existing text and release notes, and add an "Integration changes" section listing what you changed and why. If nothing beyond the bump is needed, change no files and only add that section explaining why no integration work is needed.
           EOF
             echo "$DELIM"
           } >> "$GITHUB_ENV"
@@ -257,25 +257,29 @@ jobs:
           echo "----- agent prompt -----"
           printf '%s\n' "$AGENT_PROMPT"
 
-      - name: Integrate with Pi
+      # Bash is unrestricted: the agent needs yarn, git and gh, and already has
+      # GH_TOKEN in its environment, so a command allowlist would not narrow
+      # what it can reach.
+      - name: Integrate with Claude Code
         if: env.SKIP == 'false' && env.DRY_RUN == 'false'
-        id: pi
+        id: agent
         continue-on-error: true
-        uses: shaftoe/pi-coding-agent-action@v2.29.1
+        uses: anthropics/claude-code-action@v1
+        env:
+          CLAUDE_BRANCH: ${{ env.BRANCH }}
         with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.SDK_BOT_TOKEN || secrets.GITHUB_TOKEN }}
-          provider: anthropic
-          model: ${{ vars.PI_MODEL || 'claude-opus-5-5' }}
-          token: ${{ secrets.ANTHROPIC_API_KEY }}
-          thinking_level: high
-          auto_compaction: true
-          pr_number: ${{ env.PR }}
+          base_branch: ${{ env.BASE_BRANCH }}
           prompt: ${{ env.AGENT_PROMPT }}
+          claude_args: |
+            --model ${{ vars.AGENT_MODEL || 'claude-opus-5-5' }}
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash,TodoWrite"
 
       # The bump PR stands on its own; make it obvious that nobody reviewed the
       # release notes for API changes.
       - name: Flag failed integration
-        if: env.SKIP == 'false' && env.DRY_RUN == 'false' && steps.pi.outcome == 'failure'
+        if: env.SKIP == 'false' && env.DRY_RUN == 'false' && steps.agent.outcome == 'failure'
         env:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: |
