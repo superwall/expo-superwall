@@ -1,4 +1,4 @@
-import type { PaywallInfo } from "./SuperwallExpoModule.types"
+import type { CustomerCenterConfiguration, PaywallInfo } from "./SuperwallExpoModule.types"
 
 /**
  * @category Types
@@ -160,6 +160,12 @@ export interface SuperwallOptions {
    * @platform iOS and Android
    */
   testModeBehavior: TestModeBehavior
+  /**
+   * Configures the Customer Center presented with `presentCustomerCenter()`. Omit to use the
+   * native default. Can be overridden for a single presentation.
+   * @platform Android only
+   */
+  customerCenter?: CustomerCenterConfiguration
 }
 
 /**
@@ -209,6 +215,12 @@ export interface PartialSuperwallOptions {
    * @platform iOS and Android
    */
   testModeBehavior?: TestModeBehavior
+  /**
+   * Configures the Customer Center presented with `presentCustomerCenter()`. Omit to use the
+   * native default. Can be overridden for a single presentation.
+   * @platform Android only
+   */
+  customerCenter?: CustomerCenterConfiguration
   /**
    * A mapping of local resource IDs to local assets. The paywall webview can reference
    * these via the `swlocal://<id>` URL scheme.

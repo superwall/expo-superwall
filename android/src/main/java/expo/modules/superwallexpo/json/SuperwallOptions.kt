@@ -96,5 +96,9 @@ fun superwallOptionsFromJson(json: Map<String, Any?>): SuperwallOptions {
 
   options.paywalls = paywalls
 
+  (json["customerCenter"] as? Map<String, Any?>)?.let {
+    options.customerCenter = customerCenterConfigurationFromJson(it)
+  }
+
   return options
 }

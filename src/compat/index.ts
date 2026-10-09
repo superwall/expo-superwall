@@ -35,6 +35,11 @@ export {
 
 import { EventEmitter } from "expo"
 import { version } from "../../package.json"
+import {
+  dismissCustomerCenter,
+  type PresentCustomerCenterOptions,
+  presentCustomerCenter,
+} from "../internal/customerCenter"
 import SuperwallExpoModule from "../SuperwallExpoModule"
 import type {
   OwnedInAppPurchase,
@@ -44,7 +49,13 @@ import type {
 } from "../SuperwallExpoModule.types"
 import { filterUndefined } from "../utils/filterUndefined"
 
+export type { PresentCustomerCenterOptions } from "../internal/customerCenter"
 export type {
+  CustomerCenterAction,
+  CustomerCenterConfiguration,
+  CustomerCenterPurchase,
+  CustomerCenterRefundStatus,
+  CustomerCenterScreenType,
   OwnedInAppPurchase,
   ProductResponse,
   PurchaseResultResponse,
@@ -904,5 +915,32 @@ export default class Superwall {
   async queryInAppPurchases(): Promise<OwnedInAppPurchase[]> {
     await this.awaitConfig()
     return SuperwallExpoModule.queryInAppPurchases()
+  }
+
+  /**
+   * Android only. Presents the Customer Center, a self-service screen where users can view and
+   * restore their purchases, cancel or change a Google Play subscription, request a refund,
+   * manage a web subscription and contact support.
+   *
+   * Only one Customer Center can be presented at a time; calling this while one is presented
+   * does nothing and resolves straight away. Rejects on iOS.
+   *
+   * @param options - Optional per-presentation configuration and callbacks.
+   * @returns {Promise<void>} A promise that resolves once the Customer Center is dismissed.
+   */
+  async presentCustomerCenter(options?: PresentCustomerCenterOptions): Promise<void> {
+    await this.awaitConfig()
+    await presentCustomerCenter(options)
+  }
+
+  /**
+   * Android only. Dismisses the Customer Center presented with {@link presentCustomerCenter}.
+   * Does nothing if none is presented, and resolves straight away on iOS.
+   *
+   * @returns {Promise<void>} A promise that resolves once the Customer Center has been dismissed.
+   */
+  async dismissCustomerCenter(): Promise<void> {
+    await this.awaitConfig()
+    await dismissCustomerCenter()
   }
 }
