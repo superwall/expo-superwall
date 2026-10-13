@@ -3,6 +3,10 @@
 # Fired by the native repos' notify-wrappers.yml (repository_dispatch
 # `native-sdk-release`, payload {platform, version}), or by hand.
 #
+# There is at most one open bump PR per repo. A later release, for either
+# platform, is committed onto it (and the agent runs again for the new range)
+# instead of opening a second PR.
+#
 # Two stages, so a PR always exists even if the agent fails or finds nothing:
 #   1. Deterministic bump: native pin plus a patch changeset (the changesets
 #      release workflow does the actual version bump) — committed and opened
@@ -63,9 +67,10 @@ on:
         type: boolean
         default: false
 
-# One bump per platform at a time; an Android and an iOS bump may run together.
+# One bump at a time per repo: an Android and an iOS run both target the one
+# open bump PR, so they must not race to create or push to it.
 concurrency:
-  group: native-sdk-bump-${{ github.event.client_payload.platform || inputs.platform }}
+  group: native-sdk-bump
   cancel-in-progress: false
 
 permissions:
@@ -119,6 +124,26 @@ jobs:
           ref: ${{ env.BASE_BRANCH }}
           token: ${{ secrets.SDK_BOT_TOKEN || secrets.GITHUB_TOKEN }}
 
+      # One bump PR per repo. A release for the other platform, or a newer one
+      # for the same platform, lands on the bump PR that is already open instead
+      # of opening a second PR that would conflict with it on the version and
+      # CHANGELOG lines. The pin check below then runs against that PR's branch.
+      - name: Find open bump PR
+        run: |
+          EXISTING="$(gh pr list --state open --base "$BASE_BRANCH" --limit 100 \
+            --json number,headRefName \
+            -q '[.[] | select(.headRefName | startswith("native-sdk/"))] | sort_by(.number) | last // empty | "\(.number) \(.headRefName)"' \
+            || true)"
+          if [ -n "$EXISTING" ]; then
+            read -r PR BRANCH <<< "$EXISTING"
+            git fetch --quiet origin "$BRANCH"
+            git checkout --quiet -B "$BRANCH" "origin/$BRANCH"
+            echo "::notice::Updating open bump PR #$PR ($BRANCH)."
+            { echo "PR=$PR"; echo "BRANCH=$BRANCH"; echo "EXISTING_PR=true"; } >> "$GITHUB_ENV"
+          else
+            echo "EXISTING_PR=false" >> "$GITHUB_ENV"
+          fi
+
       - name: Read current pin
         run: |
           if [ "$PLATFORM" = android ]; then
@@ -131,12 +156,7 @@ jobs:
 
           SKIP=false
           if [ "$(printf '%s\n%s\n' "$CURRENT" "$VERSION" | sort -V | tail -1)" = "$CURRENT" ]; then
-            echo "::notice::$PLATFORM is already at $CURRENT (>= $VERSION), nothing to do."
-            SKIP=true
-          # Through the API rather than `git ls-remote`, which local-ci stubs to
-          # always succeed.
-          elif gh api --silent "repos/$GITHUB_REPOSITORY/git/ref/heads/$BRANCH" 2>/dev/null; then
-            echo "::notice::Branch $BRANCH already exists, a bump PR was already opened."
+            echo "::notice::$PLATFORM is already at $CURRENT (>= $VERSION) on $(git rev-parse --abbrev-ref HEAD), nothing to do."
             SKIP=true
           fi
           echo "SKIP=$SKIP" >> "$GITHUB_ENV"
@@ -177,30 +197,67 @@ jobs:
           git add .changeset
           git -c core.fileMode=false --no-pager diff HEAD
 
-      - name: Open PR
+      - name: Commit and open or update the bump PR
         if: env.SKIP == 'false' && env.DRY_RUN == 'false'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
-          git checkout -b "$BRANCH"
+          [ "$EXISTING_PR" = true ] || git checkout -b "$BRANCH"
           git commit -am "Bump $LABEL SDK to $VERSION"
-          git push -u origin "$BRANCH"
+          if [ "$EXISTING_PR" = true ]; then
+            git push origin "$BRANCH"
+          else
+            # A branch left behind by a closed bump PR would reject the push
+            # and block this version for good. Nothing else uses native-sdk/*.
+            git push --force -u origin "$BRANCH"
+          fi
+
+          # Title from what the branch changes against the base, so a PR that
+          # carries both platforms says so.
+          pins() {  # prints "<android> <ios>" pinned at git ref $1
+            echo "$(git show "$1:android/build.gradle" | sed -nE 's/.*com\.superwall\.sdk:superwall-android:([^"]+)".*/\1/p')" \
+                 "$(git show "$1:ios/SuperwallExpo.podspec" | sed -nE "s/.*s\.dependency \"SuperwallKit\", '([^']+)'.*/\1/p")"
+          }
+          read -r BASE_ANDROID BASE_IOS <<< "$(pins "origin/$BASE_BRANCH")"
+          read -r HEAD_ANDROID HEAD_IOS <<< "$(pins HEAD)"
+          PARTS=()
+          [ "$HEAD_ANDROID" != "$BASE_ANDROID" ] && PARTS+=("Android SDK to $HEAD_ANDROID")
+          [ "$HEAD_IOS" != "$BASE_IOS" ] && PARTS+=("iOS SDK to $HEAD_IOS")
+          if [ "${#PARTS[@]}" -eq 2 ]; then TITLE="Bump ${PARTS[0]} and ${PARTS[1]}"
+          elif [ "${#PARTS[@]}" -eq 1 ]; then TITLE="Bump ${PARTS[0]}"
+          else TITLE="Bump $LABEL SDK to $VERSION"; fi
 
           {
-            echo "Bumps the $LABEL SDK from \`$CURRENT\` to \`$VERSION\` (patch changeset for expo-superwall)."
-            echo
-            echo "Opened automatically by \`native-sdk-bump.yml\` after [$REPO $VERSION](https://github.com/$REPO/releases/tag/$VERSION) was released. An agent then checks the release notes below for public API changes and pushes any integration work onto this PR."
-            echo
             echo "<details><summary>$LABEL release notes ($CURRENT → $VERSION)</summary>"
             echo
             cat "$RUNNER_TEMP/native-changelog.md"
             echo
             echo "</details>"
-          } > "$RUNNER_TEMP/pr-body.md"
-          gh pr create --base "$BASE_BRANCH" --head "$BRANCH" \
-            --title "Bump $LABEL SDK to $VERSION" --body-file "$RUNNER_TEMP/pr-body.md"
-          echo "PR=$(gh pr view "$BRANCH" --json number -q .number)" >> "$GITHUB_ENV"
+          } > "$RUNNER_TEMP/release-notes.md"
 
+          if [ "$EXISTING_PR" = true ]; then
+            {
+              gh pr view "$PR" --json body -q .body
+              echo
+              echo "---"
+              echo
+              echo "**[$REPO $VERSION](https://github.com/$REPO/releases/tag/$VERSION) was released, so this PR now also bumps the $LABEL SDK from \`$CURRENT\` to \`$VERSION\`.**"
+              echo
+              cat "$RUNNER_TEMP/release-notes.md"
+            } > "$RUNNER_TEMP/pr-body.md"
+            gh pr edit "$PR" --title "$TITLE" --body-file "$RUNNER_TEMP/pr-body.md"
+          else
+            {
+              echo "Bumps the $LABEL SDK from \`$CURRENT\` to \`$VERSION\` (patch changeset for expo-superwall)."
+              echo
+              echo "Opened automatically by \`native-sdk-bump.yml\` after [$REPO $VERSION](https://github.com/$REPO/releases/tag/$VERSION) was released. An agent then checks the release notes below for public API changes and pushes any integration work onto this PR. Later native releases, for either platform, are added to this PR while it is open."
+              echo
+              cat "$RUNNER_TEMP/release-notes.md"
+            } > "$RUNNER_TEMP/pr-body.md"
+            gh pr create --base "$BASE_BRANCH" --head "$BRANCH" \
+              --title "$TITLE" --body-file "$RUNNER_TEMP/pr-body.md"
+            echo "PR=$(gh pr view "$BRANCH" --json number -q .number)" >> "$GITHUB_ENV"
+          fi
       # Toolchain for the agent to validate its changes with.
       - uses: actions/setup-node@v4
         if: env.SKIP == 'false' && env.DRY_RUN == 'false'
@@ -223,13 +280,18 @@ jobs:
           else
             PLATFORM_NOTES="The iOS module lives in ios/ (SuperwallExpoModule.swift, Bridges/, Json/). This runner is Linux: Swift cannot be compiled here, so be careful and precise with Swift and say in the PR description that iOS was not compiled locally."
           fi
+          if [ "$EXISTING_PR" = true ]; then
+            PR_NOTES="PR #$PR was already open for an earlier native release and may already contain integration work for it (see its description and commits). Keep all of it; only add what this release needs."
+          else
+            PR_NOTES=""
+          fi
           DELIM="PROMPT_$(openssl rand -hex 8)"
           {
             echo "AGENT_PROMPT<<$DELIM"
             cat <<EOF
           You are integrating a native Superwall SDK release into expo-superwall, the Expo module that wraps Superwall-Android and Superwall-iOS.
 
-          $REPO was bumped from $CURRENT to $VERSION. That mechanical bump (native pin plus .changeset/native-$PLATFORM-$VERSION.md) is already committed on PR #$PR (branch $BRANCH), which is checked out. Do not undo it.
+          $REPO was bumped from $CURRENT to $VERSION. That mechanical bump (native pin plus .changeset/native-$PLATFORM-$VERSION.md) is already committed on PR #$PR (branch $BRANCH), which is checked out. Do not undo it. $PR_NOTES
 
           The native SDK source is at .native-sdk/, checked out at tag $VERSION with full history. Use \`git -C .native-sdk diff $CURRENT $VERSION -- <paths>\` to see exactly how its public API changed. Do not modify anything under .native-sdk/ or .context/.
 
