@@ -1,3 +1,9 @@
+import type {
+  CustomerCenterAction,
+  CustomerCenterPresentationStyle,
+  CustomerCenterRefundStatus,
+  CustomerCenterScreenType,
+} from "../../SuperwallExpoModule.types"
 import type { Entitlement } from "./Entitlement"
 import { PaywallInfo } from "./PaywallInfo"
 import {
@@ -105,7 +111,7 @@ export enum EventType {
   integrationAttributes = "integrationAttributes",
   expressionResult = "expressionResult",
   reviewRequested = "reviewRequested",
-  reviewGranted = "reviewGranted", 
+  reviewGranted = "reviewGranted",
   reviewDenied = "reviewDenied",
   paywallResourceLoadFail = "paywallResourceLoadFail",
   networkDecodingFail = "networkDecodingFail",
@@ -116,7 +122,14 @@ export enum EventType {
   stripeCheckoutSubmit = "stripeCheckoutSubmit",
   stripeCheckoutComplete = "stripeCheckoutComplete",
   stripeCheckoutFail = "stripeCheckoutFail",
+  teleportOpen = "teleportOpen",
+  teleportReturn = "teleportReturn",
   paywallPageView = "paywallPageView",
+  customerCenterOpen = "customerCenterOpen",
+  customerCenterClose = "customerCenterClose",
+  customerCenterAction = "customerCenterAction",
+  customerCenterSurveyResponse = "customerCenterSurveyResponse",
+  customerCenterRefundRequest = "customerCenterRefundRequest",
 }
 
 /**
@@ -169,6 +182,22 @@ export class SuperwallEvent {
   userEnrichment?: Record<string, any>
   deviceEnrichment?: Record<string, any>
   pageViewData?: PageViewData
+  /** The Customer Center screen shown, for `customerCenterOpen`. */
+  customerCenterScreen?: CustomerCenterScreenType
+  /** iOS only. How the Customer Center was shown, for `customerCenterOpen`. */
+  customerCenterPresentation?: CustomerCenterPresentationStyle
+  /** The Customer Center action, for `customerCenterAction` and `customerCenterSurveyResponse`. */
+  customerCenterAction?: CustomerCenterAction
+  /** The tapped Customer Center path's ID. */
+  pathId?: string
+  /** The product a Customer Center event applies to, if any. */
+  productId?: string
+  /** The survey answered, for `customerCenterSurveyResponse`. */
+  surveyId?: string
+  /** The option chosen, for `customerCenterSurveyResponse`. */
+  optionId?: string
+  /** The refund request outcome, for `customerCenterRefundRequest`. */
+  refundStatus?: CustomerCenterRefundStatus
 
   private constructor(options: {
     type: EventType
@@ -205,6 +234,14 @@ export class SuperwallEvent {
     userEnrichment?: Record<string, any>
     deviceEnrichment?: Record<string, any>
     pageViewData?: PageViewData
+    customerCenterScreen?: CustomerCenterScreenType
+    customerCenterPresentation?: CustomerCenterPresentationStyle
+    customerCenterAction?: CustomerCenterAction
+    pathId?: string
+    productId?: string
+    surveyId?: string
+    optionId?: string
+    refundStatus?: CustomerCenterRefundStatus
   }) {
     Object.assign(this, options)
   }
@@ -239,6 +276,7 @@ export class SuperwallEvent {
       case EventType.expressionResult:
       case EventType.testModeModalOpen:
       case EventType.testModeModalClose:
+      case EventType.customerCenterClose:
         return new SuperwallEvent({ type: eventType })
       case EventType.shimmerViewComplete:
         return new SuperwallEvent({
@@ -441,11 +479,49 @@ export class SuperwallEvent {
           type: eventType,
           paywallInfo: PaywallInfo.fromJson(json.paywallInfo),
         })
+      case EventType.teleportOpen:
+        return new SuperwallEvent({
+          type: eventType,
+          paywallInfo: PaywallInfo.fromJson(json.paywallInfo),
+        })
+      case EventType.teleportReturn:
+        return new SuperwallEvent({
+          type: eventType,
+          paywallInfo: json.paywallInfo ? PaywallInfo.fromJson(json.paywallInfo) : undefined,
+        })
       case EventType.paywallPageView:
         return new SuperwallEvent({
           type: eventType,
           paywallInfo: PaywallInfo.fromJson(json.paywallInfo),
           pageViewData: json.data,
+        })
+      case EventType.customerCenterOpen:
+        return new SuperwallEvent({
+          type: eventType,
+          customerCenterScreen: json.screen,
+          customerCenterPresentation: json.presentation,
+        })
+      case EventType.customerCenterAction:
+        return new SuperwallEvent({
+          type: eventType,
+          customerCenterAction: json.action,
+          pathId: json.pathId,
+          productId: json.productId,
+        })
+      case EventType.customerCenterSurveyResponse:
+        return new SuperwallEvent({
+          type: eventType,
+          surveyId: json.surveyId,
+          optionId: json.optionId,
+          customerCenterAction: json.action,
+          pathId: json.pathId,
+          productId: json.productId,
+        })
+      case EventType.customerCenterRefundRequest:
+        return new SuperwallEvent({
+          type: eventType,
+          productId: json.productId,
+          refundStatus: json.status,
         })
       default:
         console.warn(`[Superwall] Unhandled event type in SuperwallEvent.fromJson: ${json.event}`)

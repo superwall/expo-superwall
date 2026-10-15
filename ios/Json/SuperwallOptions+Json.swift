@@ -57,6 +57,15 @@ extension SuperwallOptions {
       }
     }
 
+    if let customerCenterValue = dictionary["customerCenter"] as? [String: Any] {
+      superwallOptions.customerCenter = CustomerCenterConfiguration.fromJson(customerCenterValue)
+    }
+
+    // Only assign when given: assigning, even the default, overrides a TCF banner's answer.
+    if let adConsentValue = dictionary["adConsent"] as? [String: Any] {
+      superwallOptions.adConsent = AdConsent.fromJson(adConsentValue)
+    }
+
     if let localResourcesValue = dictionary["localResources"] as? [String: String] {
       superwallOptions.localResources = localResourcesValue.compactMapValues { value in
         if let url = URL(string: value), url.scheme != nil {
@@ -102,5 +111,21 @@ extension SuperwallOptions.Logging {
     logging.scopes = scopes
 
     return logging
+  }
+}
+
+extension AdConsent {
+  // Anything left out is granted, matching `AdConsent()`.
+  static func fromJson(_ dictionary: [String: Any]) -> AdConsent {
+    return AdConsent(
+      adUserData: AdConsentStatus.fromJson(dictionary["adUserData"] as? String),
+      adPersonalization: AdConsentStatus.fromJson(dictionary["adPersonalization"] as? String)
+    )
+  }
+}
+
+extension AdConsentStatus {
+  static func fromJson(_ json: String?) -> AdConsentStatus {
+    return json == "denied" ? .denied : .granted
   }
 }

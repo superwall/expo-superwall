@@ -9,9 +9,12 @@ export {
   PresentationResultUserIsSubscribed,
 } from "./compat/lib/PresentationResult"
 export * from "./components"
+export type { PresentCustomerCenterOptions } from "./internal/customerCenter"
 export { default as SuperwallExpoModule } from "./SuperwallExpoModule"
 export type * from "./SuperwallExpoModule.types"
 export type {
+  AdConsent,
+  AdConsentStatus,
   EventTrackingBehavior,
   LocalResource,
   LoggingOptions,

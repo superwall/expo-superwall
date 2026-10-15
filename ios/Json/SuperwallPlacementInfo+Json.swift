@@ -263,6 +263,50 @@ extension SuperwallEvent {
       return ["event": "stripeCheckoutComplete", "paywallInfo": paywallInfo.toJson()]
     case .stripeCheckoutFail(let paywallInfo):
       return ["event": "stripeCheckoutFail", "paywallInfo": paywallInfo.toJson()]
+    case .teleportOpen(let paywallInfo):
+      return ["event": "teleportOpen", "paywallInfo": paywallInfo.toJson()]
+    case .teleportReturn(let paywallInfo):
+      var json: [String: Any] = ["event": "teleportReturn"]
+      if let paywallInfo = paywallInfo {
+        json["paywallInfo"] = paywallInfo.toJson()
+      }
+      return json
+    case .customerCenterOpen(let screen, let presentation):
+      return [
+        "event": "customerCenterOpen",
+        "screen": screen.toJson(),
+        "presentation": presentation.toJson(),
+      ]
+    case .customerCenterClose:
+      return ["event": "customerCenterClose"]
+    case .customerCenterAction(let action, let pathId, let productId):
+      var json: [String: Any] = [
+        "event": "customerCenterAction",
+        "action": action.toJson(),
+        "pathId": pathId,
+      ]
+      if let productId = productId {
+        json["productId"] = productId
+      }
+      return json
+    case .customerCenterSurveyResponse(let surveyId, let optionId, let action, let pathId, let productId):
+      var json: [String: Any] = [
+        "event": "customerCenterSurveyResponse",
+        "surveyId": surveyId,
+        "optionId": optionId,
+        "action": action.toJson(),
+        "pathId": pathId,
+      ]
+      if let productId = productId {
+        json["productId"] = productId
+      }
+      return json
+    case .customerCenterRefundRequest(let productId, let status):
+      return [
+        "event": "customerCenterRefundRequest",
+        "productId": productId,
+        "status": status.toJson(),
+      ]
     case .paywallPageView(let paywallInfo, let data):
       return [
         "event": "paywallPageView",

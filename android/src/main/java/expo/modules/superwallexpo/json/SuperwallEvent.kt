@@ -273,6 +273,32 @@ class SuperwallEvent {
         is SuperwallEvent.TestModeModalClose -> {
           map["event"] = "testModeModalClose"
         }
+        is SuperwallEvent.CustomerCenterOpen -> {
+          map["event"] = "customerCenterOpen"
+          map["screen"] = superwallPlacement.screen.toJson()
+        }
+        is SuperwallEvent.CustomerCenterClose -> {
+          map["event"] = "customerCenterClose"
+        }
+        is SuperwallEvent.CustomerCenterAction -> {
+          map["event"] = "customerCenterAction"
+          map["action"] = superwallPlacement.action.toJson()
+          map["pathId"] = superwallPlacement.pathId
+          superwallPlacement.productId?.let { map["productId"] = it }
+        }
+        is SuperwallEvent.CustomerCenterSurveyResponse -> {
+          map["event"] = "customerCenterSurveyResponse"
+          map["surveyId"] = superwallPlacement.surveyId
+          map["optionId"] = superwallPlacement.optionId
+          map["action"] = superwallPlacement.action.toJson()
+          map["pathId"] = superwallPlacement.pathId
+          superwallPlacement.productId?.let { map["productId"] = it }
+        }
+        is SuperwallEvent.CustomerCenterRefundRequest -> {
+          map["event"] = "customerCenterRefundRequest"
+          map["productId"] = superwallPlacement.productId
+          map["status"] = superwallPlacement.status.toJson()
+        }
         else -> {}
       }
       return map
