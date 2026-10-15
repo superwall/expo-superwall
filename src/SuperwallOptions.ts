@@ -67,6 +67,34 @@ export type EventTrackingBehavior = "all" | "superwallOnly" | "none"
 
 /**
  * @category Types
+ * @since 1.6.0
+ * Whether a user has granted or denied consent for an advertising purpose.
+ */
+export type AdConsentStatus = "granted" | "denied"
+
+/**
+ * @category Types
+ * @since 1.6.0
+ * A user's consent for how their data is used for advertising, which Superwall passes on with
+ * the conversions it uploads to Google Ads and Meta. A purpose left out is `"granted"`.
+ *
+ * If ad consent is never set, the SDK uses the consent stored by an IAB TCF consent banner when
+ * GDPR applies, and otherwise defaults to granted. Apps with users in the EEA, UK or Switzerland
+ * that don't use a TCF banner should set it from their consent flow. Both purposes are reported
+ * as denied while `eventTrackingBehavior` is `"none"`, and personalization is reported as denied
+ * when the user hasn't allowed App Tracking Transparency, unless you set it yourself.
+ *
+ * iOS only.
+ */
+export interface AdConsent {
+  /** Consent to send user data to ad networks for advertising. */
+  adUserData?: AdConsentStatus
+  /** Consent for them to use that data for personalized advertising. */
+  adPersonalization?: AdConsentStatus
+}
+
+/**
+ * @category Types
  * @since 1.2.0
  * A local asset that can be registered with Superwall and served to the paywall webview
  * via the `swlocal://<id>` URL scheme.
@@ -163,9 +191,16 @@ export interface SuperwallOptions {
   /**
    * Configures the Customer Center presented with `presentCustomerCenter()`. Omit to use the
    * native default. Can be overridden for a single presentation.
-   * @platform Android only
+   * @platform iOS and Android
    */
   customerCenter?: CustomerCenterConfiguration
+  /**
+   * The user's ad consent, passed on with the conversions Superwall uploads to Google Ads and
+   * Meta. Omit to use a TCF consent banner's stored answer, or granted. Setting it, even to
+   * the default, overrides the banner. Change it at runtime with `setAdConsent()`.
+   * @platform iOS only
+   */
+  adConsent?: AdConsent
 }
 
 /**
@@ -218,9 +253,16 @@ export interface PartialSuperwallOptions {
   /**
    * Configures the Customer Center presented with `presentCustomerCenter()`. Omit to use the
    * native default. Can be overridden for a single presentation.
-   * @platform Android only
+   * @platform iOS and Android
    */
   customerCenter?: CustomerCenterConfiguration
+  /**
+   * The user's ad consent, passed on with the conversions Superwall uploads to Google Ads and
+   * Meta. Omit to use a TCF consent banner's stored answer, or granted. Setting it, even to
+   * the default, overrides the banner. Change it at runtime with `setAdConsent()`.
+   * @platform iOS only
+   */
+  adConsent?: AdConsent
   /**
    * A mapping of local resource IDs to local assets. The paywall webview can reference
    * these via the `swlocal://<id>` URL scheme.

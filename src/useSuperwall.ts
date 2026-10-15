@@ -22,6 +22,7 @@ import type {
   SubscriptionStatus,
 } from "./SuperwallExpoModule.types"
 import {
+  type AdConsent,
   DefaultSuperwallOptions,
   type EventTrackingBehavior,
   type PartialSuperwallOptions,
@@ -269,12 +270,14 @@ export interface SuperwallStore {
   dismiss: () => Promise<void>
 
   /**
-   * Android only. Presents the Customer Center, a self-service screen where users can view and
-   * restore their purchases, cancel or change a Google Play subscription, request a refund,
-   * manage a web subscription and contact support.
+   * Presents the Customer Center, a self-service screen where users can view and restore their
+   * purchases, manage, cancel or change a subscription, request a refund, manage a web
+   * subscription and contact support.
    *
    * Only one Customer Center can be presented at a time; calling this while one is presented
-   * does nothing and resolves straight away. Rejects on iOS.
+   * does nothing and resolves straight away. It also resolves straight away if the Customer
+   * Center couldn't be presented, for example on iOS when there's no view controller to
+   * present it from.
    *
    * @param options - Optional per-presentation configuration and callbacks.
    * @returns A promise that resolves once the Customer Center is dismissed.
@@ -282,8 +285,8 @@ export interface SuperwallStore {
   presentCustomerCenter: (options?: PresentCustomerCenterOptions) => Promise<void>
 
   /**
-   * Android only. Dismisses the Customer Center presented with {@link presentCustomerCenter}.
-   * Does nothing if none is presented, and resolves straight away on iOS.
+   * Dismisses the Customer Center presented with {@link presentCustomerCenter}.
+   * Does nothing if none is presented.
    * @returns A promise that resolves once the Customer Center has been dismissed.
    */
   dismissCustomerCenter: () => Promise<void>
@@ -358,6 +361,15 @@ export interface SuperwallStore {
    * @returns A promise that resolves when the behavior is set.
    */
   setEventTrackingBehavior: (behavior: EventTrackingBehavior) => Promise<void>
+
+  /**
+   * iOS only. Sets the user's ad consent at runtime, which Superwall passes on with the
+   * conversions it uploads to Google Ads and Meta. Overrides the `adConsent` configure option
+   * and any TCF consent banner's stored answer. Does nothing on Android.
+   * @param consent - The consent for each purpose. A purpose left out is `"granted"`.
+   * @returns A promise that resolves when the consent is set.
+   */
+  setAdConsent: (consent: AdConsent) => Promise<void>
 
   /**
    * Sets attributes for third-party integrations.
@@ -438,6 +450,7 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
         manualPurchaseManagment,
         localResources,
         customerCenter,
+        adConsent,
         ...restOptions
       } = options || {}
 
@@ -455,6 +468,7 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
         ...(customerCenter
           ? { customerCenter: customerCenterConfigurationToJson(customerCenter) }
           : {}),
+        ...(adConsent ? { adConsent: filterUndefined(adConsent) } : {}),
         paywalls: {
           ...DefaultSuperwallOptions.paywalls,
           ...restOptions.paywalls,
@@ -603,6 +617,12 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   setEventTrackingBehavior: async (behavior) => {
     await awaitConfigured()
     await SuperwallExpoModule.setEventTrackingBehavior(behavior)
+  },
+  setAdConsent: async (consent) => {
+    await awaitConfigured()
+    // Only the iOS module defines it.
+    if (typeof SuperwallExpoModule.setAdConsent !== "function") return
+    SuperwallExpoModule.setAdConsent(filterUndefined(consent) as Record<string, string>)
   },
 
   setLocaleIdentifier: async (localeIdentifier) => {

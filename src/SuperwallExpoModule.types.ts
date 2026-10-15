@@ -2255,10 +2255,34 @@ export interface StripeCheckoutFailEvent {
 }
 
 /**
+ * A paywall teleported the user to a web flow in the browser, such as its checkout page.
+ * iOS only.
+ */
+export interface TeleportOpenEvent {
+  /** A paywall teleported the user to a web flow in the browser. */
+  event: "teleportOpen"
+  /** Information about the paywall that opened the web flow. */
+  paywallInfo: PaywallInfo
+}
+
+/**
+ * A return link (`yourscheme://superwall/return` or
+ * `https://<subdomain>.superwall.link/app-link/superwall/return`) brought the user back to the
+ * app from a teleported web flow. Tracked instead of `deepLink`, and leaves the presented
+ * paywall open. iOS only.
+ */
+export interface TeleportReturnEvent {
+  /** A return link brought the user back to the app from a teleported web flow. */
+  event: "teleportReturn"
+  /** Information about the presented paywall, if one is presented. */
+  paywallInfo?: PaywallInfo
+}
+
+/**
  * A row in the Customer Center that runs one action. `type` selects the action; `id`,
  * `title` and `survey` are shared by every type.
  *
- * Android only. See {@link CustomerCenterConfiguration}.
+ * See {@link CustomerCenterConfiguration}.
  */
 export type CustomerCenterPath = {
   /**
@@ -2276,7 +2300,9 @@ export type CustomerCenterPath = {
   | { type: "manageSubscription" }
   | {
       type: "refund"
-      /** Milliseconds since purchase during which a refund may be requested. */
+      /**
+       * Milliseconds since purchase during which a refund may be requested.
+       */
       windowMillis?: number
     }
   | {
@@ -2302,8 +2328,6 @@ export type CustomerCenterPath = {
 
 /**
  * A single-choice survey shown before a Customer Center path's action runs.
- *
- * Android only.
  */
 export interface CustomerCenterFeedbackSurvey {
   id: string
@@ -2321,8 +2345,6 @@ export interface CustomerCenterFeedbackSurvey {
 
 /**
  * A Customer Center screen: a title, optional subtitle and an ordered list of paths.
- *
- * Android only.
  */
 export interface CustomerCenterScreen {
   /** Title. Omit to use the localized default for the screen. */
@@ -2340,7 +2362,7 @@ export interface CustomerCenterScreen {
  * Set the default with the `customerCenter` option when configuring Superwall, or pass one
  * to `presentCustomerCenter()` for a single presentation.
  *
- * Android only: the Customer Center isn't available in the iOS SDK this version wraps.
+ * Available on iOS and Android.
  */
 export interface CustomerCenterConfiguration {
   /**
@@ -2359,6 +2381,13 @@ export interface CustomerCenterConfiguration {
     latestAppVersion?: string
     /** Whether to show the update banner. Defaults to `true`. */
     warnsAboutUpdates?: boolean
+    /**
+     * Whether to look the latest published version up from the App Store when
+     * `latestAppVersion` isn't set. Skipped on TestFlight, sandbox and simulator builds.
+     * Defaults to `true`.
+     * @platform iOS only
+     */
+    checksAppStoreForUpdates?: boolean
     /** Overrides the web subscription management page URL used for web-store subscriptions. */
     webManagementUrl?: string
   }
@@ -2372,14 +2401,15 @@ export interface CustomerCenterConfiguration {
   }
   /** Shows the account details section (user ID, original download date). Defaults to `true`. */
   showsAccountDetails?: boolean
-  /** Warns when both a Google Play and a web subscription are active. Defaults to `true`. */
+  /**
+   * Warns when both a store (App Store or Google Play) and a web subscription are active.
+   * Defaults to `true`.
+   */
   warnsAboutDuplicateSubscriptions?: boolean
 }
 
 /**
  * An action the user selected in the Customer Center.
- *
- * Android only.
  */
 export type CustomerCenterAction =
   | { type: "restore" }
@@ -2391,9 +2421,10 @@ export type CustomerCenterAction =
   | { type: "custom"; identifier: string }
 
 /**
- * Outcome of a refund request made from the Customer Center. Google Play takes refund
- * requests on its own pages, so `"success"` means the request was handed to Google Play and
- * `"error"` that it couldn't be. `"userCancelled"` is not reported on Android.
+ * Outcome of a refund request made from the Customer Center. On iOS this is the outcome of
+ * the App Store refund request sheet. Google Play takes refund requests on its own pages, so
+ * on Android `"success"` means the request was handed to Google Play and `"error"` that it
+ * couldn't be. `"userCancelled"` is only reported on iOS.
  */
 export type CustomerCenterRefundStatus = "success" | "userCancelled" | "error"
 
@@ -2404,9 +2435,14 @@ export type CustomerCenterRefundStatus = "success" | "userCancelled" | "error"
 export type CustomerCenterScreenType = "management" | "noPurchases"
 
 /**
+ * How the Customer Center was shown: `"sheet"` when presented modally (as
+ * `presentCustomerCenter()` does), `"embedded"` inside native navigation the app owns.
+ * Reported on iOS only.
+ */
+export type CustomerCenterPresentationStyle = "sheet" | "embedded"
+
+/**
  * The purchase a Customer Center action applies to.
- *
- * Android only.
  */
 export interface CustomerCenterPurchase {
   /** The product purchased. `null` for an entitlement with no product behind it, such as a manually granted one. */
@@ -2422,17 +2458,19 @@ export interface CustomerCenterPurchase {
 }
 
 /**
- * The Customer Center was presented. Android only.
+ * The Customer Center was presented.
  */
 export interface CustomerCenterOpenEvent {
   /** The Customer Center was presented. */
   event: "customerCenterOpen"
   /** Which screen was shown. */
   screen: CustomerCenterScreenType
+  /** How the Customer Center was shown. iOS only. */
+  presentation?: CustomerCenterPresentationStyle
 }
 
 /**
- * The Customer Center was dismissed. Android only.
+ * The Customer Center was dismissed.
  */
 export interface CustomerCenterCloseEvent {
   /** The Customer Center was dismissed. */
@@ -2440,7 +2478,7 @@ export interface CustomerCenterCloseEvent {
 }
 
 /**
- * The user tapped a path in the Customer Center. Android only.
+ * The user tapped a path in the Customer Center.
  */
 export interface CustomerCenterActionEvent {
   /** The user tapped a path in the Customer Center. */
@@ -2454,7 +2492,7 @@ export interface CustomerCenterActionEvent {
 }
 
 /**
- * The user answered a Customer Center survey. Android only.
+ * The user answered a Customer Center survey.
  */
 export interface CustomerCenterSurveyResponseEvent {
   /** The user answered a Customer Center survey. */
@@ -2470,7 +2508,7 @@ export interface CustomerCenterSurveyResponseEvent {
 }
 
 /**
- * A refund request started from the Customer Center completed. Android only.
+ * A refund request started from the Customer Center completed.
  */
 export interface CustomerCenterRefundRequestEvent {
   /** A refund request started from the Customer Center completed. */
@@ -2600,6 +2638,8 @@ export type SuperwallEventType =
   | StripeCheckoutSubmitEvent["event"]
   | StripeCheckoutCompleteEvent["event"]
   | StripeCheckoutFailEvent["event"]
+  | TeleportOpenEvent["event"]
+  | TeleportReturnEvent["event"]
   | PaywallPageViewEvent["event"]
   | CustomerCenterOpenEvent["event"]
   | CustomerCenterCloseEvent["event"]
@@ -2692,6 +2732,8 @@ export type SuperwallEvent =
   | StripeCheckoutSubmitEvent
   | StripeCheckoutCompleteEvent
   | StripeCheckoutFailEvent
+  | TeleportOpenEvent
+  | TeleportReturnEvent
   | PaywallPageViewEvent
   | CustomerCenterOpenEvent
   | CustomerCenterCloseEvent
@@ -3064,20 +3106,21 @@ export type SuperwallExpoModuleEvents = {
     handlerId: string
   }) => void
 
-  // Customer Center Events (Android only)
+  // Customer Center Events
   /**
    * Emitted when the user taps a path in a Customer Center presented with `presentCustomerCenter()`.
-   * @platform Android
+   * @platform iOS and Android
    */
   onCustomerCenterAction: (params: {
     handlerId: string
     action: CustomerCenterAction
     pathId: string
-    purchase: CustomerCenterPurchase | null
+    /** Omitted or `null` for a screen-level action such as restore. */
+    purchase?: CustomerCenterPurchase | null
   }) => void
   /**
    * Emitted when the user answers a survey in a presented Customer Center.
-   * @platform Android
+   * @platform iOS and Android
    */
   onCustomerCenterSurveyComplete: (params: {
     handlerId: string
@@ -3088,7 +3131,7 @@ export type SuperwallExpoModuleEvents = {
   }) => void
   /**
    * Emitted when a refund request started from a presented Customer Center finishes.
-   * @platform Android
+   * @platform iOS and Android
    */
   onCustomerCenterRefundRequestComplete: (params: {
     handlerId: string
@@ -3098,7 +3141,7 @@ export type SuperwallExpoModuleEvents = {
   /**
    * Emitted before a presented Customer Center restores purchases, when the presenter asked
    * to be consulted. Answer with `didHandleCustomerCenterShouldRestorePurchases`.
-   * @platform Android
+   * @platform iOS and Android
    */
   onCustomerCenterShouldRestorePurchases: (params: { handlerId: string; requestId: string }) => void
 }

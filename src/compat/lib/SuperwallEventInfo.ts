@@ -1,5 +1,6 @@
 import type {
   CustomerCenterAction,
+  CustomerCenterPresentationStyle,
   CustomerCenterRefundStatus,
   CustomerCenterScreenType,
 } from "../../SuperwallExpoModule.types"
@@ -121,6 +122,8 @@ export enum EventType {
   stripeCheckoutSubmit = "stripeCheckoutSubmit",
   stripeCheckoutComplete = "stripeCheckoutComplete",
   stripeCheckoutFail = "stripeCheckoutFail",
+  teleportOpen = "teleportOpen",
+  teleportReturn = "teleportReturn",
   paywallPageView = "paywallPageView",
   customerCenterOpen = "customerCenterOpen",
   customerCenterClose = "customerCenterClose",
@@ -179,19 +182,21 @@ export class SuperwallEvent {
   userEnrichment?: Record<string, any>
   deviceEnrichment?: Record<string, any>
   pageViewData?: PageViewData
-  /** Android only. The Customer Center screen shown, for `customerCenterOpen`. */
+  /** The Customer Center screen shown, for `customerCenterOpen`. */
   customerCenterScreen?: CustomerCenterScreenType
-  /** Android only. The Customer Center action, for `customerCenterAction` and `customerCenterSurveyResponse`. */
+  /** iOS only. How the Customer Center was shown, for `customerCenterOpen`. */
+  customerCenterPresentation?: CustomerCenterPresentationStyle
+  /** The Customer Center action, for `customerCenterAction` and `customerCenterSurveyResponse`. */
   customerCenterAction?: CustomerCenterAction
-  /** Android only. The tapped Customer Center path's ID. */
+  /** The tapped Customer Center path's ID. */
   pathId?: string
-  /** Android only. The product a Customer Center event applies to, if any. */
+  /** The product a Customer Center event applies to, if any. */
   productId?: string
-  /** Android only. The survey answered, for `customerCenterSurveyResponse`. */
+  /** The survey answered, for `customerCenterSurveyResponse`. */
   surveyId?: string
-  /** Android only. The option chosen, for `customerCenterSurveyResponse`. */
+  /** The option chosen, for `customerCenterSurveyResponse`. */
   optionId?: string
-  /** Android only. The refund request outcome, for `customerCenterRefundRequest`. */
+  /** The refund request outcome, for `customerCenterRefundRequest`. */
   refundStatus?: CustomerCenterRefundStatus
 
   private constructor(options: {
@@ -230,6 +235,7 @@ export class SuperwallEvent {
     deviceEnrichment?: Record<string, any>
     pageViewData?: PageViewData
     customerCenterScreen?: CustomerCenterScreenType
+    customerCenterPresentation?: CustomerCenterPresentationStyle
     customerCenterAction?: CustomerCenterAction
     pathId?: string
     productId?: string
@@ -473,6 +479,16 @@ export class SuperwallEvent {
           type: eventType,
           paywallInfo: PaywallInfo.fromJson(json.paywallInfo),
         })
+      case EventType.teleportOpen:
+        return new SuperwallEvent({
+          type: eventType,
+          paywallInfo: PaywallInfo.fromJson(json.paywallInfo),
+        })
+      case EventType.teleportReturn:
+        return new SuperwallEvent({
+          type: eventType,
+          paywallInfo: json.paywallInfo ? PaywallInfo.fromJson(json.paywallInfo) : undefined,
+        })
       case EventType.paywallPageView:
         return new SuperwallEvent({
           type: eventType,
@@ -483,6 +499,7 @@ export class SuperwallEvent {
         return new SuperwallEvent({
           type: eventType,
           customerCenterScreen: json.screen,
+          customerCenterPresentation: json.presentation,
         })
       case EventType.customerCenterAction:
         return new SuperwallEvent({

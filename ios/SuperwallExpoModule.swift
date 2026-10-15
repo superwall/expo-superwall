@@ -1,5 +1,6 @@
 import ExpoModulesCore
 import SuperwallKit
+import UIKit
 
 /// Thread-safe boolean flag that can only be set once.
 private final class AtomicFlag {
@@ -57,6 +58,16 @@ public class SuperwallExpoModule: Module {
   // Customer Info Events
   private let customerInfoDidChange = "customerInfoDidChange"
 
+  // Customer Center Events
+  private let onCustomerCenterAction = "onCustomerCenterAction"
+  private let onCustomerCenterSurveyComplete = "onCustomerCenterSurveyComplete"
+  private let onCustomerCenterRefundRequestComplete = "onCustomerCenterRefundRequestComplete"
+  private let onCustomerCenterShouldRestorePurchases = "onCustomerCenterShouldRestorePurchases"
+
+  // Whether a Customer Center presented through this module is on screen. Only touched on
+  // the main actor.
+  private var isCustomerCenterPresented = false
+
   public required init(appContext: AppContext) {
     super.init(appContext: appContext)
     SuperwallExpoModule.shared = self
@@ -108,11 +119,11 @@ public class SuperwallExpoModule: Module {
       // Customer info events
       customerInfoDidChange,
 
-      // Customer Center events (Android only, declared so JS can subscribe on both platforms)
-      "onCustomerCenterAction",
-      "onCustomerCenterSurveyComplete",
-      "onCustomerCenterRefundRequestComplete",
-      "onCustomerCenterShouldRestorePurchases"
+      // Customer Center events
+      onCustomerCenterAction,
+      onCustomerCenterSurveyComplete,
+      onCustomerCenterRefundRequestComplete,
+      onCustomerCenterShouldRestorePurchases
     )
 
     View(SuperwallExpoPaywallView.self) {
@@ -518,20 +529,79 @@ public class SuperwallExpoModule: Module {
       )
     }
 
-    // The Customer Center is Android-only in the SuperwallKit version this module wraps.
     AsyncFunction("presentCustomerCenter") {
       (configuration: [String: Any]?, handlerId: String, asksBeforeRestoring: Bool, promise: Promise) in
-      promise.reject(
-        "ERR_UNSUPPORTED",
-        "presentCustomerCenter is only available on Android."
-      )
+      Task { @MainActor in
+        // The native SDK ignores a second presentation without calling `onDismiss`, so
+        // settle straight away rather than leave the promise pending.
+        if self.isCustomerCenterPresented {
+          promise.resolve(nil)
+          return
+        }
+
+        let promiseSettled = AtomicFlag()
+        let finish: () -> Void = { [weak self] in
+          self?.isCustomerCenterPresented = false
+          if promiseSettled.testAndSet() == false {
+            promise.resolve(nil)
+          }
+        }
+
+        self.isCustomerCenterPresented = true
+        Superwall.shared.presentCustomerCenter(
+          configuration: configuration.map { CustomerCenterConfiguration.fromJson($0) },
+          delegate: CustomerCenterDelegateBridge(
+            handlerId: handlerId,
+            asksBeforeRestoring: asksBeforeRestoring
+          ),
+          onDismiss: finish
+        )
+
+        // The SDK only logs when it can't present (not configured, nothing to present from,
+        // or UIKit refused), and then never calls `onDismiss`. UIKit sets up a presentation
+        // synchronously, so if no Customer Center is in the hierarchy now, none is coming.
+        if !SuperwallExpoModule.isCustomerCenterInHierarchy() {
+          finish()
+        }
+      }
     }
 
     AsyncFunction("dismissCustomerCenter") { (promise: Promise) in
-      promise.resolve(nil)
+      Task { @MainActor in
+        // Before configure the SDK returns without calling the completion.
+        guard Superwall.isInitialized else {
+          promise.resolve(nil)
+          return
+        }
+        Superwall.shared.dismissCustomerCenter {
+          promise.resolve(nil)
+        }
+      }
     }
 
     Function("didHandleCustomerCenterShouldRestorePurchases") { (requestId: String, proceed: Bool) in
+      PendingCustomerCenterRestores.shared.resolve(requestId: requestId, proceed: proceed)
     }
+
+    Function("setAdConsent") { (consent: [String: Any]) in
+      Superwall.shared.adConsent = AdConsent.fromJson(consent)
+    }
+  }
+
+  @MainActor
+  private static func isCustomerCenterInHierarchy() -> Bool {
+    let windows = UIApplication.shared.connectedScenes
+      .compactMap { $0 as? UIWindowScene }
+      .flatMap { $0.windows }
+    for window in windows {
+      var controller = window.rootViewController
+      while let current = controller {
+        if current is CustomerCenterViewController {
+          return true
+        }
+        controller = current.presentedViewController
+      }
+    }
+    return false
   }
 }

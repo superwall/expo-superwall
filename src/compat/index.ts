@@ -17,6 +17,7 @@ import { SubscriptionStatus } from "./lib/SubscriptionStatus"
 import type { SuperwallDelegate } from "./lib/SuperwallDelegate"
 import { SuperwallEventInfo } from "./lib/SuperwallEventInfo"
 import {
+  type AdConsent,
   type EventTrackingBehavior,
   type PartialSuperwallOptions,
   SuperwallOptions,
@@ -53,6 +54,7 @@ export type { PresentCustomerCenterOptions } from "../internal/customerCenter"
 export type {
   CustomerCenterAction,
   CustomerCenterConfiguration,
+  CustomerCenterPresentationStyle,
   CustomerCenterPurchase,
   CustomerCenterRefundStatus,
   CustomerCenterScreenType,
@@ -117,6 +119,8 @@ export { SubscriptionStatus } from "./lib/SubscriptionStatus"
 export { SuperwallDelegate } from "./lib/SuperwallDelegate"
 export { EventType, SuperwallEventInfo } from "./lib/SuperwallEventInfo"
 export {
+  type AdConsent,
+  AdConsentStatus,
   type PartialSuperwallOptions,
   SuperwallOptions,
   TestModeBehavior,
@@ -863,6 +867,20 @@ export default class Superwall {
   }
 
   /**
+   * iOS only. Sets the user's ad consent at runtime, which Superwall passes on with the
+   * conversions it uploads to Google Ads and Meta. Overrides the `adConsent` option and any
+   * TCF consent banner's stored answer. Does nothing on Android.
+   *
+   * @param consent - The consent for each purpose. A purpose left out is granted.
+   */
+  async setAdConsent(consent: AdConsent): Promise<void> {
+    await this.awaitConfig()
+    // Only the iOS module defines it.
+    if (typeof SuperwallExpoModule.setAdConsent !== "function") return
+    SuperwallExpoModule.setAdConsent(filterUndefined({ ...consent }) as Record<string, string>)
+  }
+
+  /**
    * Sets the locale identifier for the Superwall SDK.
    * This determines the language used when presenting paywalls.
    * Can be changed at runtime without needing to reconfigure.
@@ -918,12 +936,14 @@ export default class Superwall {
   }
 
   /**
-   * Android only. Presents the Customer Center, a self-service screen where users can view and
-   * restore their purchases, cancel or change a Google Play subscription, request a refund,
-   * manage a web subscription and contact support.
+   * Presents the Customer Center, a self-service screen where users can view and restore their
+   * purchases, manage, cancel or change a subscription, request a refund, manage a web
+   * subscription and contact support.
    *
    * Only one Customer Center can be presented at a time; calling this while one is presented
-   * does nothing and resolves straight away. Rejects on iOS.
+   * does nothing and resolves straight away. It also resolves straight away if the Customer
+   * Center couldn't be presented, for example on iOS when there's no view controller to
+   * present it from.
    *
    * @param options - Optional per-presentation configuration and callbacks.
    * @returns {Promise<void>} A promise that resolves once the Customer Center is dismissed.
@@ -934,8 +954,8 @@ export default class Superwall {
   }
 
   /**
-   * Android only. Dismisses the Customer Center presented with {@link presentCustomerCenter}.
-   * Does nothing if none is presented, and resolves straight away on iOS.
+   * Dismisses the Customer Center presented with {@link presentCustomerCenter}.
+   * Does nothing if none is presented.
    *
    * @returns {Promise<void>} A promise that resolves once the Customer Center has been dismissed.
    */

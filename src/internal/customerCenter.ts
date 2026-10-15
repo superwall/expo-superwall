@@ -9,7 +9,7 @@ import type {
 /**
  * @category Models
  * @since 1.6.0
- * Options for presenting the Customer Center. Android only.
+ * Options for presenting the Customer Center.
  */
 export interface PresentCustomerCenterOptions {
   /**
@@ -70,7 +70,7 @@ export function customerCenterConfigurationToJson(
 let nextPresentationId = 1
 
 /**
- * Presents the Customer Center and resolves once it is dismissed. Rejects on iOS natively.
+ * Presents the Customer Center and resolves once it is dismissed.
  * @internal
  */
 export async function presentCustomerCenter(options: PresentCustomerCenterOptions = {}) {
@@ -120,7 +120,7 @@ export async function presentCustomerCenter(options: PresentCustomerCenterOption
 }
 
 /**
- * Dismisses the Customer Center, if presented. A no-op on iOS natively.
+ * Dismisses the Customer Center, if presented.
  * @internal
  */
 export async function dismissCustomerCenter() {

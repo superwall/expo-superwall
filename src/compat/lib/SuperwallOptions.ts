@@ -50,6 +50,35 @@ export enum EventTrackingBehavior {
 }
 
 /**
+ * @category Enums
+ * @since 1.6.0
+ * Whether a user has granted or denied consent for an advertising purpose.
+ */
+export enum AdConsentStatus {
+  Granted = "granted",
+  Denied = "denied",
+}
+
+/**
+ * @category Types
+ * @since 1.6.0
+ * A user's consent for how their data is used for advertising, which Superwall passes on with
+ * the conversions it uploads to Google Ads and Meta. A purpose left out is granted.
+ *
+ * If ad consent is never set, the SDK uses the consent stored by an IAB TCF consent banner when
+ * GDPR applies, and otherwise defaults to granted. Apps with users in the EEA, UK or Switzerland
+ * that don't use a TCF banner should set it from their consent flow.
+ *
+ * iOS only.
+ */
+export interface AdConsent {
+  /** Consent to send user data to ad networks for advertising. */
+  adUserData?: AdConsentStatus
+  /** Consent for them to use that data for personalized advertising. */
+  adPersonalization?: AdConsentStatus
+}
+
+/**
  * @category Models
  * @since 0.0.15
  * Options for configuring logging behavior.
@@ -90,6 +119,7 @@ export interface PartialSuperwallOptions {
   useMockReviews?: boolean
   testModeBehavior?: TestModeBehavior
   customerCenter?: CustomerCenterConfiguration
+  adConsent?: AdConsent
 }
 
 /**
@@ -139,9 +169,16 @@ export class SuperwallOptions {
   /**
    * Configures the Customer Center presented with `presentCustomerCenter()`. Undefined uses
    * the native default.
-   * @platform Android only
+   * @platform iOS and Android
    */
   customerCenter?: CustomerCenterConfiguration
+  /**
+   * The user's ad consent, passed on with the conversions Superwall uploads to Google Ads and
+   * Meta. Undefined uses a TCF consent banner's stored answer, or granted. Setting it, even to
+   * the default, overrides the banner. Change it at runtime with `setAdConsent()`.
+   * @platform iOS only
+   */
+  adConsent?: AdConsent
 
   constructor(init?: PartialSuperwallOptions) {
     if (init) {
@@ -189,6 +226,7 @@ export class SuperwallOptions {
       customerCenter: this.customerCenter
         ? customerCenterConfigurationToJson(this.customerCenter)
         : undefined,
+      adConsent: this.adConsent ? filterUndefined({ ...this.adConsent }) : undefined,
     })
   }
 }
