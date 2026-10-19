@@ -3,6 +3,12 @@ import { create } from "zustand"
 import { useShallow } from "zustand/shallow"
 import pkg from "../package.json"
 import type { PresentationResult } from "./compat/lib/PresentationResult"
+import {
+  customerCenterConfigurationToJson,
+  dismissCustomerCenter,
+  type PresentCustomerCenterOptions,
+  presentCustomerCenter,
+} from "./internal/customerCenter"
 import { resolveLocalResources } from "./localResources"
 import SuperwallExpoModule from "./SuperwallExpoModule"
 import type {
@@ -16,6 +22,7 @@ import type {
   SubscriptionStatus,
 } from "./SuperwallExpoModule.types"
 import {
+  type AdConsent,
   DefaultSuperwallOptions,
   type EventTrackingBehavior,
   type PartialSuperwallOptions,
@@ -263,6 +270,28 @@ export interface SuperwallStore {
   dismiss: () => Promise<void>
 
   /**
+   * Presents the Customer Center, a self-service screen where users can view and restore their
+   * purchases, manage, cancel or change a subscription, request a refund, manage a web
+   * subscription and contact support.
+   *
+   * Only one Customer Center can be presented at a time; calling this while one is presented
+   * does nothing and resolves straight away. It also resolves straight away if the Customer
+   * Center couldn't be presented, for example on iOS when there's no view controller to
+   * present it from.
+   *
+   * @param options - Optional per-presentation configuration and callbacks.
+   * @returns A promise that resolves once the Customer Center is dismissed.
+   */
+  presentCustomerCenter: (options?: PresentCustomerCenterOptions) => Promise<void>
+
+  /**
+   * Dismisses the Customer Center presented with {@link presentCustomerCenter}.
+   * Does nothing if none is presented.
+   * @returns A promise that resolves once the Customer Center has been dismissed.
+   */
+  dismissCustomerCenter: () => Promise<void>
+
+  /**
    * Shows or hides the loading spinner on the currently presented paywall.
    *
    * Useful when a custom paywall action kicks off asynchronous work and you want the
@@ -332,6 +361,15 @@ export interface SuperwallStore {
    * @returns A promise that resolves when the behavior is set.
    */
   setEventTrackingBehavior: (behavior: EventTrackingBehavior) => Promise<void>
+
+  /**
+   * iOS only. Sets the user's ad consent at runtime, which Superwall passes on with the
+   * conversions it uploads to Google Ads and Meta. Overrides the `adConsent` configure option
+   * and any TCF consent banner's stored answer. Does nothing on Android.
+   * @param consent - The consent for each purpose. A purpose left out is `"granted"`.
+   * @returns A promise that resolves when the consent is set.
+   */
+  setAdConsent: (consent: AdConsent) => Promise<void>
 
   /**
    * Sets attributes for third-party integrations.
@@ -407,8 +445,14 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     set({ isLoading: true, configurationError: null })
 
     try {
-      const { manualPurchaseManagement, manualPurchaseManagment, localResources, ...restOptions } =
-        options || {}
+      const {
+        manualPurchaseManagement,
+        manualPurchaseManagment,
+        localResources,
+        customerCenter,
+        adConsent,
+        ...restOptions
+      } = options || {}
 
       // Support both spellings for backward compatibility
       const isManualPurchaseManagement =
@@ -421,9 +465,15 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
         ...DefaultSuperwallOptions,
         ...restOptions,
         ...(resolvedLocalResources ? { localResources: resolvedLocalResources } : {}),
+        ...(customerCenter
+          ? { customerCenter: customerCenterConfigurationToJson(customerCenter) }
+          : {}),
+        ...(adConsent ? { adConsent: filterUndefined(adConsent) } : {}),
         paywalls: {
           ...DefaultSuperwallOptions.paywalls,
-          ...restOptions.paywalls,
+          // Strip undefined so an explicitly undefined field (e.g. `presentationHost`) falls
+          // back to the default instead of reaching the Android bridge, which can't convert it
+          ...filterUndefined(restOptions.paywalls ?? {}),
           restoreFailed: {
             ...DefaultSuperwallOptions.paywalls.restoreFailed,
             ...restOptions.paywalls?.restoreFailed,
@@ -529,6 +579,14 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     await awaitConfigured()
     await SuperwallExpoModule.dismiss()
   },
+  presentCustomerCenter: async (options) => {
+    await awaitConfigured()
+    await presentCustomerCenter(options)
+  },
+  dismissCustomerCenter: async () => {
+    await awaitConfigured()
+    await dismissCustomerCenter()
+  },
   togglePaywallSpinner: async (isHidden) => {
     await awaitConfigured()
     SuperwallExpoModule.togglePaywallSpinner(isHidden)
@@ -561,6 +619,12 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   setEventTrackingBehavior: async (behavior) => {
     await awaitConfigured()
     await SuperwallExpoModule.setEventTrackingBehavior(behavior)
+  },
+  setAdConsent: async (consent) => {
+    await awaitConfigured()
+    // Only the iOS module defines it.
+    if (typeof SuperwallExpoModule.setAdConsent !== "function") return
+    SuperwallExpoModule.setAdConsent(filterUndefined(consent) as Record<string, string>)
   },
 
   setLocaleIdentifier: async (localeIdentifier) => {

@@ -22,6 +22,23 @@ export enum TransactionBackgroundView {
 }
 
 /**
+ * @category Enums
+ * @since 1.6.0
+ * Where a presented paywall is hosted on Android.
+ *
+ * Android only.
+ */
+export enum PresentationHost {
+  /** The paywall is shown in its own `SuperwallPaywallActivity` (default). */
+  activity = "activity",
+  /**
+   * **Experimental.** The paywall is shown as an overlay in the presenting activity's own
+   * window, so that activity is never covered or stopped by the paywall.
+   */
+  inWindow = "inWindow",
+}
+
+/**
  * @category Models
  * @since 0.0.15
  * Defines the messaging of the alert presented to the user when restoring a transaction fails.
@@ -54,6 +71,17 @@ export class PaywallOptions {
   transactionBackgroundView: TransactionBackgroundView = TransactionBackgroundView.spinner
   shouldShowWebPurchaseConfirmationAlert = false
   onBackPressed?: (paywallInfo: PaywallInfo) => boolean
+  /**
+   * **Experimental.** Chooses how presented paywalls are hosted. Defaults to
+   * {@link PresentationHost.activity}. Set it to {@link PresentationHost.inWindow} to show
+   * paywalls as an overlay in the presenting activity's own window instead of launching
+   * `SuperwallPaywallActivity`. If the host activity is destroyed while the paywall is shown,
+   * the paywall is dismissed. This may change or be removed in a future native SDK release.
+   *
+   * Android only: ignored on iOS.
+   * @since 1.6.0
+   */
+  presentationHost?: PresentationHost
 
   constructor(init?: Partial<PaywallOptions>) {
     if (init) {
@@ -74,6 +102,9 @@ export class PaywallOptions {
       }
       if (init.transactionBackgroundView) {
         this.transactionBackgroundView = init.transactionBackgroundView
+      }
+      if (init.presentationHost) {
+        this.presentationHost = init.presentationHost
       }
       if (init.onBackPressed) {
         this.onBackPressed = init.onBackPressed
@@ -97,6 +128,7 @@ export class PaywallOptions {
       automaticallyDismiss: this.automaticallyDismiss,
       transactionBackgroundView: this.transactionBackgroundView,
       shouldShowWebPurchaseConfirmationAlert: this.shouldShowWebPurchaseConfirmationAlert,
+      presentationHost: this.presentationHost,
     })
   }
 }

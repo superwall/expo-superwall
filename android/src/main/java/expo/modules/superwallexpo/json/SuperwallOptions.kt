@@ -94,7 +94,17 @@ fun superwallOptionsFromJson(json: Map<String, Any?>): SuperwallOptions {
         else -> null
       }
 
+      paywalls.presentationHost = when (paywallsMap?.get("presentationHost") as String?) {
+        "inWindow" -> PaywallOptions.PresentationHost.IN_WINDOW
+        "activity" -> PaywallOptions.PresentationHost.ACTIVITY
+        else -> paywalls.presentationHost
+      }
+
   options.paywalls = paywalls
+
+  (json["customerCenter"] as? Map<String, Any?>)?.let {
+    options.customerCenter = customerCenterConfigurationFromJson(it)
+  }
 
   return options
 }

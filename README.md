@@ -342,12 +342,15 @@ The hook returns an object representing the Superwall store. If a `selector` fun
     -   `registerPlacement: (placement: string, params?: Record<string, any>, handlerId?: string | null) => Promise<void>`: Registers a placement. This may or may not present a paywall depending on campaign rules. `handlerId` is used internally by `usePlacement` to associate events.
     -   `getPresentationResult: (placement: string, params?: Record<string, any>) => Promise<PresentationResult>`: Gets the presentation result for a given placement.
     -   `dismiss: () => Promise<void>`: Dismisses any currently presented paywall.
+    -   `presentCustomerCenter: (options?: PresentCustomerCenterOptions) => Promise<void>`: Presents the Customer Center, where users can view and restore purchases, manage, cancel or change a subscription, request a refund, manage a web subscription and contact support. Resolves once it is dismissed, or straight away if it couldn't be presented. `options` can override the `customerCenter` configure option for this presentation and take callbacks (`onAction`, `onSurveyComplete`, `onRefundRequestComplete`, `shouldRestorePurchases`).
+    -   `dismissCustomerCenter: () => Promise<void>`: Dismisses the Customer Center.
     -   `togglePaywallSpinner: (isHidden: boolean) => Promise<void>`: Shows or hides the loading spinner on the currently presented paywall. Useful when a custom paywall action does asynchronous work. Does nothing if no paywall is presented.
     -   `preloadAllPaywalls: () => Promise<void>`: Preloads all paywalls.
     -   `preloadPaywalls: (placements: string[]) => Promise<void>`: Preloads paywalls for the specified placement IDs.
     -   `setUserAttributes: (attrs: Record<string, any>) => Promise<void>`: Sets custom attributes for the current user.
     -   `getUserAttributes: () => Promise<Record<string, any>>`: Retrieves the attributes of the current user.
     -   `setLogLevel: (level: string) => Promise<void>`: Sets the log level for the SDK. `level` can be one of: `"debug"`, `"info"`, `"warn"`, `"error"`, `"none"`.
+    -   `setAdConsent: (consent: AdConsent) => Promise<void>`: **iOS only.** Sets the user's ad consent (`adUserData` and `adPersonalization`, each `"granted"` or `"denied"`), which Superwall passes on with the conversions it uploads to Google Ads and Meta. Set the initial value with the `adConsent` configure option. Does nothing on Android.
 
 **Selector (Optional Parameter):**
 
