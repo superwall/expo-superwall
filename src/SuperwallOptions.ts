@@ -52,6 +52,18 @@ export type TransactionBackgroundView = "spinner" | "none"
 
 /**
  * @category Types
+ * @since 1.6.0
+ * Where a presented paywall is hosted on Android.
+ * - `"activity"`: the paywall is shown in its own `SuperwallPaywallActivity` (default).
+ * - `"inWindow"`: **Experimental.** the paywall is shown as an overlay in the presenting
+ *   activity's own window, so that activity is never covered or stopped by the paywall.
+ *
+ * Android only.
+ */
+export type PresentationHost = "activity" | "inWindow"
+
+/**
+ * @category Types
  * @since 0.3.0
  * Controls when the SDK enters test mode.
  */
@@ -141,6 +153,19 @@ export interface PaywallOptions {
   transactionBackgroundView: TransactionBackgroundView
   shouldShowWebPurchaseConfirmationAlert: boolean
   onBackPressed?: (paywallInfo: PaywallInfo) => boolean
+  /**
+   * **Experimental.** Chooses how presented paywalls are hosted. Defaults to `"activity"`.
+   * Set it to `"inWindow"` to show paywalls as an overlay in the presenting activity's own
+   * window instead of launching `SuperwallPaywallActivity`. All presentation styles, back
+   * handling, surveys, trial reminder notifications, permission requests and web checkout work
+   * in this mode. If the host activity is destroyed while the paywall is shown, including by a
+   * configuration change it doesn't handle itself, the paywall is dismissed. This may change or
+   * be removed in a future native SDK release.
+   *
+   * Android only: ignored on iOS.
+   * @since 1.6.0
+   */
+  presentationHost?: PresentationHost
 }
 
 /**

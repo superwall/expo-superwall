@@ -21,6 +21,7 @@ export type {
   NetworkEnvironment,
   PartialSuperwallOptions,
   PaywallOptions,
+  PresentationHost,
   RestoreFailed,
   SuperwallOptions,
   TestModeBehavior,

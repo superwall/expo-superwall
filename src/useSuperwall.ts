@@ -471,7 +471,9 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
         ...(adConsent ? { adConsent: filterUndefined(adConsent) } : {}),
         paywalls: {
           ...DefaultSuperwallOptions.paywalls,
-          ...restOptions.paywalls,
+          // Strip undefined so an explicitly undefined field (e.g. `presentationHost`) falls
+          // back to the default instead of reaching the Android bridge, which can't convert it
+          ...filterUndefined(restOptions.paywalls ?? {}),
           restoreFailed: {
             ...DefaultSuperwallOptions.paywalls.restoreFailed,
             ...restOptions.paywalls?.restoreFailed,

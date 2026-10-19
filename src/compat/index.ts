@@ -83,6 +83,7 @@ export { PaywallCloseReason } from "./lib/PaywallCloseReason"
 export { PaywallInfo } from "./lib/PaywallInfo"
 export {
   PaywallOptions,
+  PresentationHost,
   TransactionBackgroundView,
 } from "./lib/PaywallOptions"
 export { PaywallPresentationHandler } from "./lib/PaywallPresentationHandler"
