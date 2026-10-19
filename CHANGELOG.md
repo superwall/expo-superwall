@@ -1,5 +1,30 @@
 # Changelog
 
+## 1.6.0
+
+### Minor Changes
+
+- 141adb5: Update native Android SDK to 2.8.5. [View Android SDK release notes](https://github.com/superwall/Superwall-Android/releases/tag/2.8.5).
+
+  - Add the Customer Center on Android: a self-service screen where users can view and restore their purchases, cancel or change a Google Play subscription, request a refund, manage a web subscription and contact support. Present it with `presentCustomerCenter()` and dismiss it with `dismissCustomerCenter()`, available on `useSuperwall()` and on the compat `Superwall.shared`. `presentCustomerCenter()` resolves once the Customer Center is dismissed, and takes an optional per-presentation `configuration` plus `onAction`, `onSurveyComplete`, `onRefundRequestComplete` and `shouldRestorePurchases` callbacks. Set the default configuration with the new `customerCenter` option. Android only: on iOS, `presentCustomerCenter()` rejects and `dismissCustomerCenter()` does nothing.
+  - Add the `customerCenterOpen`, `customerCenterClose`, `customerCenterAction`, `customerCenterSurveyResponse` and `customerCenterRefundRequest` Superwall events (Android only).
+  - Android fixes from the native SDK: subscribers are no longer reported as inactive when Google Play fails to answer a purchase query or a product no longer maps to an entitlement; unacknowledged purchases are now acknowledged on every subscription sync, so Google Play no longer refunds them; `register()` no longer stalls when a product query at launch is dropped; and a paywall whose webview can't load is now dismissed as declined, so the placement's `onDismiss` fires and then the feature block runs (non-gated) or `onError` fires (gated).
+
+- fc926b0: Update native Android SDK to 2.8.7. [View Android SDK release notes](https://github.com/superwall/Superwall-Android/releases/tag/2.8.7).
+
+  - Add the experimental `paywalls.presentationHost` option (`PresentationHost` in the compat SDK). Set it to `"inWindow"` to show paywalls as an overlay in the presenting activity's own window instead of launching a separate paywall activity. All presentation styles, back handling, surveys, trial reminder notifications, permission requests and web checkout work in this mode. The default stays `"activity"`. Android only: it's ignored on iOS.
+  - Android fix from the native SDK: prioritized preloading now works. The first preload batch holds only the prioritized campaign's paywalls, and the rest load afterwards.
+
+- 8dc6d36: Update native iOS SDK to 4.18.0. [View iOS SDK release notes](https://github.com/superwall/Superwall-iOS/releases/tag/4.18.0).
+
+  - SuperwallKit 4.18.0 needs Xcode 26 (Swift 6.2) or later to build, and iOS 15 or later. Expo SDK 53+ already targets iOS 15.1, so the deployment target doesn't change.
+  - The Customer Center now works on iOS too. `presentCustomerCenter()` and `dismissCustomerCenter()` (on `useSuperwall()` and the compat `Superwall.shared`), the `customerCenter` configure option, the per-presentation callbacks, and the `customerCenterOpen`, `customerCenterClose`, `customerCenterAction`, `customerCenterSurveyResponse` and `customerCenterRefundRequest` events behave the same on both platforms. iOS only: `support.checksAppStoreForUpdates` looks the latest app version up on the App Store, `customerCenterOpen` reports how it was shown (`presentation`), and refund requests can report `"userCancelled"`. `presentCustomerCenter()` resolves straight away if the Customer Center can't be presented.
+  - Add `adConsent` (`adUserData` and `adPersonalization`, each `"granted"` or `"denied"`) to report a user's ad consent, which Superwall passes on with the conversions it uploads to Google Ads and Meta. Set it with the new `adConsent` configure option or at runtime with `setAdConsent()` (on `useSuperwall()` and the compat `Superwall.shared`). If it's never set, the SDK uses a TCF consent banner's stored answer when GDPR applies, and otherwise defaults to granted. Apps with users in the EEA, UK or Switzerland that don't use a TCF banner should set it from their consent flow. iOS only: `setAdConsent()` does nothing on Android.
+  - Add the `teleportOpen` event, tracked when a paywall sends the user to a web flow such as its checkout page, and the `teleportReturn` event, tracked instead of `deepLink` when a return link (`yourscheme://superwall/return` or `https://<subdomain>.superwall.link/app-link/superwall/return`) brings the user back. `SuperwallProvider` already passes incoming links to Superwall, so return links work without changes. To open the app from a web flow without the Open in App alert, add `applinks:<subdomain>.superwall.link` to your app's associated domains. iOS only.
+  - A web purchase from a paywall's checkout page now finishes like an App Store purchase: the paywall runs the purchase button's after-purchase actions, and the paywall is dismissed as purchased only if those actions close it.
+  - Apps that use the Superwall MMP or set an AppsFlyer ID now send the device's public IP address, so declare IP address collection in your privacy manifest.
+  - iOS fixes from the native SDK: paywalls closed by an after-purchase action list now report `purchased`, not `declined`. The SDK no longer gets stuck in test mode after the dashboard setting is corrected. A preloaded paywall now tracks every page view. On first launch, paywalls wait up to 2 seconds for install attribution before checking audience filters. Fixes for web checkout, the test mode sheet in multi-window apps, and blank paywalls after the web content process is killed.
+
 ## 1.5.0
 
 ### Minor Changes
