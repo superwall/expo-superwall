@@ -25,6 +25,12 @@ export type IntegrationAttribute =
   | "posthogUserId"
   | "customerioId"
   | "appstackId"
+  /**
+   * The Airbridge Device ID, from `Airbridge.fetchDeviceUUID`.
+   *
+   * **Android only.** On iOS this key is currently ignored by `setIntegrationAttributes()`.
+   */
+  | "airbridgeId"
 
 /**
  * Object mapping integration attribute keys to their values.

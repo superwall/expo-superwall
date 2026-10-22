@@ -26,6 +26,7 @@ fun attributionProviderFromString(provider: String): AttributionProvider? {
     "customerioId" -> AttributionProvider.CUSTOMERIO_ID
     "appstackId" -> AttributionProvider.APPSTACK
     "singularDeviceId" -> AttributionProvider.SINGULAR_DEVICE_ID
+    "airbridgeId" -> AttributionProvider.AIRBRIDGE_ID
     else -> null
   }
 }
