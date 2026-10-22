@@ -103,7 +103,7 @@ export type IntegrationAttribute =
   /**
    * The Airbridge Device ID, from `Airbridge.fetchDeviceUUID`.
    *
-   * **Android only.** On iOS this key is currently ignored by `setIntegrationAttributes()`.
+   * On iOS, it is kept when you reset or identify a different user.
    */
   | "airbridgeId"
 
@@ -115,8 +115,7 @@ export type IntegrationAttribute =
  * brazeAliasName, brazeAliasLabel, onesignalId, fbAnonId, firebaseAppInstanceId,
  * iterableUserId, iterableCampaignId, iterableTemplateId, mixpanelDistinctId,
  * mparticleId, clevertapId, airshipChannelId, kochavaDeviceId, tenjinId,
- * posthogUserId, customerioId, appstackId, singularDeviceId,
- * airbridgeId (Android only)
+ * posthogUserId, customerioId, appstackId, singularDeviceId, airbridgeId
  *
  * @example
  * ```typescript

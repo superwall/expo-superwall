@@ -309,6 +309,7 @@ Supported keys currently include:
 - `posthogUserId`
 - `customerioId`
 - `appstackId`
+- `airbridgeId`
 
 ### Purchase-controller completion methods
 

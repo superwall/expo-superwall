@@ -25,6 +25,7 @@ extension IntegrationAttribute {
     case "customerioId": return .customerioId
     case "appstackId": return .appstackId
     case "singularDeviceId": return .singularDeviceId
+    case "airbridgeId": return .airbridgeId
     default: return nil
     }
   }

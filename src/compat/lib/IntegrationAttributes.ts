@@ -28,7 +28,7 @@ export type IntegrationAttribute =
   /**
    * The Airbridge Device ID, from `Airbridge.fetchDeviceUUID`.
    *
-   * **Android only.** On iOS this key is currently ignored by `setIntegrationAttributes()`.
+   * On iOS, it is kept when you reset or identify a different user.
    */
   | "airbridgeId"
 
