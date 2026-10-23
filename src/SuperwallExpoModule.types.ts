@@ -100,6 +100,12 @@ export type IntegrationAttribute =
   | "customerioId"
   | "appstackId"
   | "singularDeviceId"
+  /**
+   * The Airbridge Device ID, from `Airbridge.fetchDeviceUUID`.
+   *
+   * On iOS, it is kept when you reset or identify a different user.
+   */
+  | "airbridgeId"
 
 /**
  * Object with optional keys for third-party integration provider IDs.
@@ -109,7 +115,7 @@ export type IntegrationAttribute =
  * brazeAliasName, brazeAliasLabel, onesignalId, fbAnonId, firebaseAppInstanceId,
  * iterableUserId, iterableCampaignId, iterableTemplateId, mixpanelDistinctId,
  * mparticleId, clevertapId, airshipChannelId, kochavaDeviceId, tenjinId,
- * posthogUserId, customerioId, appstackId
+ * posthogUserId, customerioId, appstackId, singularDeviceId, airbridgeId
  *
  * @example
  * ```typescript
