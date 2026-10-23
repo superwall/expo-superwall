@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.7.0
+
+### Minor Changes
+
+- 11fd2c7: Update native Android SDK to 2.8.8. [View Android SDK release notes](https://github.com/superwall/Superwall-Android/releases/tag/2.8.8).
+
+  Adds `airbridgeId` as an integration attribute for the Airbridge Device ID (from `Airbridge.fetchDeviceUUID`). Pass it to `setIntegrationAttributes()` in the hooks SDK or `Superwall.shared.setIntegrationAttributes()` in the compat SDK.
+
+- 11fd2c7: Update native iOS SDK to 4.18.2. [View iOS SDK release notes](https://github.com/superwall/Superwall-iOS/releases/tag/4.18.2).
+
+  `airbridgeId` integration attributes passed to `setIntegrationAttributes()` are now forwarded on iOS as well as Android (previously iOS ignored the key). On iOS, the Airbridge Device ID is kept when you reset or identify a different user.
+
+### Patch Changes
+
+- 11fd2c7: Update native iOS SDK to 4.18.1. [View iOS SDK release notes](https://github.com/superwall/Superwall-iOS/releases/tag/4.18.1).
+
 ## 1.6.0
 
 ### Minor Changes
