@@ -356,13 +356,15 @@ Rules:
 | Event | Payload | Notes |
 | --- | --- | --- |
 | `onPurchase` | iOS: `{ productId, platform: "ios" }` | Manual purchase flow |
-| `onPurchase` | Android: `{ productId, platform: "android", basePlanId, offerId? }` | Manual purchase flow |
+| `onPurchase` | Android: `{ productId, platform: "android", basePlanId, offerId?, replacement? }` | Manual purchase flow |
 | `onPurchaseRestore` | no payload | Manual restore flow |
 
 Rules:
 
 - iOS purchase payload does not include base plan or offer IDs.
 - Android purchase payload must include `basePlanId` and may include `offerId`.
+- Android purchase payload includes `replacement` (`{ mode, oldProductId, oldPurchaseToken }`)
+  only when the purchase replaces an existing Google Play subscription.
 
 ### Android-only back button event
 
@@ -1336,7 +1338,7 @@ The rebuilt SDK must preserve these platform differences explicitly.
 
 - Android supports `onBackPressed`. iOS does not.
 - iOS purchase payload is `{ productId, platform: "ios" }`.
-- Android purchase payload includes `basePlanId` and optional `offerId`.
+- Android purchase payload includes `basePlanId`, optional `offerId` and optional `replacement`.
 - iOS and Android may serialize some internal native models differently, but
   the JS-facing contract must remain canonical.
 
