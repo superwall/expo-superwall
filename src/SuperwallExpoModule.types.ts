@@ -466,9 +466,16 @@ export interface SubscriptionTransaction {
   isInGracePeriod: boolean
   /** Whether the subscription is in a billing retry period. */
   isInBillingRetryPeriod: boolean
-  /** Whether the subscription is currently active. */
+  /**
+   * Whether the subscription is currently active. This is `true` during a
+   * billing grace period, while the store keeps the subscriber's access even
+   * though the renewal payment failed.
+   */
   isActive: boolean
-  /** ISO-8601 expiration date, or `null` if non-renewing. */
+  /**
+   * ISO-8601 expiration date, or `null` if non-renewing. During a billing
+   * grace period, this is the date the grace period ends.
+   */
   expirationDate?: string | null
   /** Store the transaction came from (e.g. `"PLAY_STORE"`). */
   store: string
@@ -2524,6 +2531,41 @@ export interface CustomerCenterRefundRequestEvent {
 }
 
 /**
+ * The result of matching an install to the ad click that led to it.
+ *
+ * Android only.
+ * @since 1.8.0
+ */
+export interface AttributionMatchInfo {
+  /** The attribution provider that produced the result. */
+  provider: "mmp"
+  /** Whether the install was matched to an ad click. */
+  matched: boolean
+  /** The source of the match, if any. */
+  source?: string
+  /** The confidence level returned by the attribution provider. */
+  confidence?: "high" | "medium" | "low"
+  /** The match score returned by the attribution provider. */
+  matchScore?: number
+  /** Why the match failed, if it did. */
+  reason?: string
+}
+
+/**
+ * Install attribution was resolved or failed to resolve. When matched, the resulting
+ * `acquisition_*` attributes are added to the user attributes.
+ *
+ * Android only.
+ * @since 1.8.0
+ */
+export interface AttributionMatchEvent {
+  /** Install attribution was resolved or failed to resolve. */
+  event: "attributionMatch"
+  /** The attribution result. See {@link AttributionMatchInfo}. */
+  info: AttributionMatchInfo
+}
+
+/**
  * Page-specific details for a multi-page paywall page view.
  */
 export interface PageViewData {
@@ -2652,6 +2694,7 @@ export type SuperwallEventType =
   | CustomerCenterActionEvent["event"]
   | CustomerCenterSurveyResponseEvent["event"]
   | CustomerCenterRefundRequestEvent["event"]
+  | AttributionMatchEvent["event"]
 
 /**
  * Represents a Superwall event that can be tracked by the SDK.
@@ -2746,6 +2789,7 @@ export type SuperwallEvent =
   | CustomerCenterActionEvent
   | CustomerCenterSurveyResponseEvent
   | CustomerCenterRefundRequestEvent
+  | AttributionMatchEvent
 
 /**
  * Contains information about a Superwall event, including the specific {@link SuperwallEvent}
@@ -2838,11 +2882,50 @@ export type OnPurchaseParamsIOS = {
   store?: ProductStore
 }
 
+/**
+ * How Google Play charges for a subscription replacement.
+ * - `default`: Let the store decide, using the replacement mode configured in Google Play Console.
+ * - `charge_prorated`: Replace it now and charge the prorated price difference immediately. Google
+ *   Play only supports this for upgrades, where the price per time unit increases.
+ * - `charge_full_price`: Replace it now and charge the full price of the new product immediately.
+ *
+ * Android only.
+ * @since 1.8.0
+ */
+export type ProductReplacementMode = "default" | "charge_prorated" | "charge_full_price"
+
+/**
+ * An existing Google Play subscription that a purchase replaces (an upgrade, downgrade or plan
+ * switch), instead of the purchase being bought alongside it.
+ *
+ * Set when the paywall's Purchase action is configured to replace the user's subscription and
+ * the user has an active subscription that shares an entitlement with the product being
+ * purchased. Pass `oldPurchaseToken` and `mode` to your billing library's subscription update
+ * params (for example RevenueCat's `googleProductChangeInfo`).
+ *
+ * Android only.
+ * @since 1.8.0
+ */
+export interface ProductReplacement {
+  /** How the store should charge for the switch. See {@link ProductReplacementMode}. */
+  mode: ProductReplacementMode
+  /** The subscription ID of the product being replaced, if known. */
+  oldProductId: string | null
+  /** The Google Play purchase token of the subscription being replaced. */
+  oldPurchaseToken: string | null
+}
+
 export type OnPurchaseParamsAndroid = {
   productId: string
   platform: "android"
   basePlanId: string
   offerId?: string
+  /**
+   * The existing subscription this purchase replaces, if any. Undefined for a normal purchase.
+   * See {@link ProductReplacement}.
+   * @since 1.8.0
+   */
+  replacement?: ProductReplacement
 }
 
 export type OnPurchaseParams = OnPurchaseParamsIOS | OnPurchaseParamsAndroid
@@ -3079,8 +3162,8 @@ export type SuperwallExpoModuleEvents = {
    * Emitted when a purchase is initiated by the user from a paywall.
    * @param params - Parameters related to the purchase.
    *   - For iOS: `{ productId: string; platform: "ios" }`
-   *   - For Android: `{ productId: string; platform: "android"; basePlanId: string; offerId?: string }`
-   *     (offerId is optional for Android).
+   *   - For Android: `{ productId: string; platform: "android"; basePlanId: string; offerId?: string; replacement?: ProductReplacement }`
+   *     (offerId is optional; replacement is set only when the purchase replaces an existing subscription).
    */
   onPurchase: (params: OnPurchaseParams) => void
   /**

@@ -93,10 +93,10 @@ export type AdConsentStatus = "granted" | "denied"
  * If ad consent is never set, the SDK uses the consent stored by an IAB TCF consent banner when
  * GDPR applies, and otherwise defaults to granted. Apps with users in the EEA, UK or Switzerland
  * that don't use a TCF banner should set it from their consent flow. Both purposes are reported
- * as denied while `eventTrackingBehavior` is `"none"`, and personalization is reported as denied
- * when the user hasn't allowed App Tracking Transparency, unless you set it yourself.
+ * as denied while `eventTrackingBehavior` is `"none"`. On iOS, personalization is also reported as
+ * denied when the user hasn't allowed App Tracking Transparency, unless you set it yourself.
  *
- * iOS only.
+ * Supported on iOS and, since 1.8.0, Android.
  */
 export interface AdConsent {
   /** Consent to send user data to ad networks for advertising. */
@@ -223,7 +223,7 @@ export interface SuperwallOptions {
    * The user's ad consent, passed on with the conversions Superwall uploads to Google Ads and
    * Meta. Omit to use a TCF consent banner's stored answer, or granted. Setting it, even to
    * the default, overrides the banner. Change it at runtime with `setAdConsent()`.
-   * @platform iOS only
+   * @platform iOS and Android (Android since 1.8.0)
    */
   adConsent?: AdConsent
 }
@@ -285,7 +285,7 @@ export interface PartialSuperwallOptions {
    * The user's ad consent, passed on with the conversions Superwall uploads to Google Ads and
    * Meta. Omit to use a TCF consent banner's stored answer, or granted. Setting it, even to
    * the default, overrides the banner. Change it at runtime with `setAdConsent()`.
-   * @platform iOS only
+   * @platform iOS and Android (Android since 1.8.0)
    */
   adConsent?: AdConsent
   /**

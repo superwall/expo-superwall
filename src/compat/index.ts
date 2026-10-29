@@ -52,6 +52,7 @@ import { filterUndefined } from "../utils/filterUndefined"
 
 export type { PresentCustomerCenterOptions } from "../internal/customerCenter"
 export type {
+  AttributionMatchInfo,
   CustomerCenterAction,
   CustomerCenterConfiguration,
   CustomerCenterPresentationStyle,
@@ -59,6 +60,8 @@ export type {
   CustomerCenterRefundStatus,
   CustomerCenterScreenType,
   OwnedInAppPurchase,
+  ProductReplacement,
+  ProductReplacementMode,
   ProductResponse,
   PurchaseResultResponse,
   RestorationResultResponse,
@@ -186,6 +189,7 @@ export default class Superwall {
           data.productId,
           data.basePlanId,
           data.offerId,
+          data.replacement,
         )
         if (purchaseResult == null) {
           return
@@ -868,15 +872,15 @@ export default class Superwall {
   }
 
   /**
-   * iOS only. Sets the user's ad consent at runtime, which Superwall passes on with the
+   * Sets the user's ad consent at runtime, which Superwall passes on with the
    * conversions it uploads to Google Ads and Meta. Overrides the `adConsent` option and any
-   * TCF consent banner's stored answer. Does nothing on Android.
+   * TCF consent banner's stored answer. Supported on iOS and, since 1.8.0, Android.
    *
    * @param consent - The consent for each purpose. A purpose left out is granted.
    */
   async setAdConsent(consent: AdConsent): Promise<void> {
     await this.awaitConfig()
-    // Only the iOS module defines it.
+    // Only the native iOS and Android modules define it.
     if (typeof SuperwallExpoModule.setAdConsent !== "function") return
     SuperwallExpoModule.setAdConsent(filterUndefined({ ...consent }) as Record<string, string>)
   }
