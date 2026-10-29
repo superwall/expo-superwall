@@ -111,6 +111,10 @@ class SuperwallEvent {
           map["event"] = "integrationAttributes"
           map["attributes"] = superwallPlacement.audienceFilterParams
         }
+        is SuperwallEvent.AttributionMatch -> {
+          map["event"] = "attributionMatch"
+          map["info"] = superwallPlacement.info.toJson()
+        }
         is SuperwallEvent.NonRecurringProductPurchase -> {
           map["event"] = "nonRecurringProductPurchase"
           map["product"] = superwallPlacement.product.toJson()
