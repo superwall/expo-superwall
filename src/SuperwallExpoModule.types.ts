@@ -466,9 +466,16 @@ export interface SubscriptionTransaction {
   isInGracePeriod: boolean
   /** Whether the subscription is in a billing retry period. */
   isInBillingRetryPeriod: boolean
-  /** Whether the subscription is currently active. */
+  /**
+   * Whether the subscription is currently active. This is `true` during a
+   * billing grace period, while the store keeps the subscriber's access even
+   * though the renewal payment failed.
+   */
   isActive: boolean
-  /** ISO-8601 expiration date, or `null` if non-renewing. */
+  /**
+   * ISO-8601 expiration date, or `null` if non-renewing. During a billing
+   * grace period, this is the date the grace period ends.
+   */
   expirationDate?: string | null
   /** Store the transaction came from (e.g. `"PLAY_STORE"`). */
   store: string
