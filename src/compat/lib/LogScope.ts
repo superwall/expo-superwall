@@ -17,7 +17,17 @@ export enum LogScope {
   Network = "network",
   PaywallEvents = "paywallEvents",
   ProductsManager = "productsManager",
+  /**
+   * StoreKit logs on iOS. On Android this is a deprecated alias for {@link LogScope.Billing}
+   * and still enables the Google Play Billing logs.
+   */
   StoreKitManager = "storeKitManager",
+  /**
+   * Google Play Billing logs on Android (Android SDK 2.10.0+). On Android, billing logs passed to
+   * `handleLog` now have the scope `"billing"` instead of `"storeKitManager"`.
+   * On iOS, this enables the `storeKitManager` (StoreKit) logs.
+   */
+  Billing = "billing",
   Placements = "placements",
   Receipts = "receipts",
   SuperwallCore = "superwallCore",
