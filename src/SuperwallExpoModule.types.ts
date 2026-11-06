@@ -2835,7 +2835,11 @@ export type LogLevel = "debug" | "info" | "warn" | "error" | "none"
  * - `network`: Logs related to network requests made by the SDK.
  * - `paywallEvents`: Logs related to events occurring on the paywall itself.
  * - `productsManager`: Logs related to fetching and managing product information from app stores.
- * - `storeKitManager`: Logs related to StoreKit interactions (iOS specific).
+ * - `storeKitManager`: Logs related to StoreKit interactions (iOS specific). On Android it is a
+ *   deprecated alias for `billing`: setting it still enables the Google Play Billing logs.
+ * - `billing`: Logs related to Google Play Billing (Android, SDK 2.10.0+). Since Android SDK 2.10.0,
+ *   billing logs passed to `handleLog`/`onLog` on Android have the scope `"billing"` instead of
+ *   `"storeKitManager"`. On iOS, setting `billing` enables the `storeKitManager` logs.
  * - `placements`: Logs related to placements and their evaluation.
  * - `receipts`: Logs related to App Store receipt validation and processing.
  * - `superwallCore`: Logs related to the core functionalities of the Superwall SDK.
@@ -2860,6 +2864,7 @@ export type LogScope =
   | "paywallEvents"
   | "productsManager"
   | "storeKitManager"
+  | "billing"
   | "placements"
   | "receipts"
   | "superwallCore"

@@ -31,6 +31,9 @@ extension LogScope {
       return .productsManager
     case "storeKitManager":
       return .storeKitManager
+    case "billing":
+      // Android-only scope (Google Play Billing). Its iOS counterpart is StoreKit.
+      return .storeKitManager
     case "placements":
       return .placements
     case "receipts":

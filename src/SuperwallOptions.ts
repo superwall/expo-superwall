@@ -11,6 +11,10 @@ export type LogLevel = "debug" | "info" | "warn" | "error" | "none"
  * @category Types
  * @since 0.0.15
  * Defines the scopes for logging within the SDK.
+ *
+ * `billing` covers Google Play Billing logs on Android (Android SDK 2.10.0+) and is
+ * treated as `storeKitManager` on iOS. On Android, `storeKitManager` is a deprecated
+ * alias that still enables the billing logs.
  */
 export type LogScope =
   | "localizationManager"
@@ -27,6 +31,7 @@ export type LogScope =
   | "paywallEvents"
   | "productsManager"
   | "storeKitManager"
+  | "billing"
   | "placements"
   | "receipts"
   | "superwallCore"
