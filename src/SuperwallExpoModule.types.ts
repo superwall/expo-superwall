@@ -2924,6 +2924,11 @@ export type OnPurchaseParamsAndroid = {
   productId: string
   platform: "android"
   basePlanId: string
+  /**
+   * The identifier of the offer to buy, already chosen by the SDK from the paywall's product
+   * (including `sw-auto` resolution). When absent (`null` or `undefined`), buy the base plan with no offer: don't pick a
+   * free trial or other offer yourself.
+   */
   offerId?: string
   /**
    * The existing subscription this purchase replaces, if any. Undefined for a normal purchase.
@@ -3168,7 +3173,8 @@ export type SuperwallExpoModuleEvents = {
    * @param params - Parameters related to the purchase.
    *   - For iOS: `{ productId: string; platform: "ios" }`
    *   - For Android: `{ productId: string; platform: "android"; basePlanId: string; offerId?: string; replacement?: ProductReplacement }`
-   *     (offerId is optional; replacement is set only when the purchase replaces an existing subscription).
+   *     (offerId is the offer already chosen by the SDK; when absent or `null`, buy the base plan with no offer.
+   *     replacement is set only when the purchase replaces an existing subscription).
    */
   onPurchase: (params: OnPurchaseParams) => void
   /**
