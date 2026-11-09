@@ -20,7 +20,9 @@ export abstract class PurchaseController {
    * Purchase a product from Google Play.
    * @param productId The product id of the product the user would like to purchase.
    * @param basePlanId An optional base plan identifier of the product that's being purchased.
-   * @param offerId An optional offer identifier of the product that's being purchased.
+   * @param offerId The identifier of the offer to buy, already chosen by the SDK from the paywall's
+   * product (including `sw-auto` resolution). Undefined or `null` means buy the base plan with no offer:
+   * don't pick a free trial or other offer yourself.
    * @param replacement The existing Google Play subscription this purchase replaces (an upgrade,
    * downgrade or plan switch), if any. Pass its `oldPurchaseToken` and `mode` to your billing
    * library's subscription update params. Undefined for a normal purchase. Since 1.8.0.
