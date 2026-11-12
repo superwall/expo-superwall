@@ -2962,6 +2962,7 @@ export type LogLevel = "debug" | "info" | "warn" | "error" | "none"
  * - `paywallTransactions`: Logs related to transactions initiated from paywalls.
  * - `paywallViewController`: Logs related to the paywall view controller (native specific).
  * - `cache`: Logs related to caching mechanisms within the SDK.
+ * - `billing`: Logs related to Google Play Billing (Android only). On Android, `storeKitManager` also enables them.
  * - `all`: Enables logging for all scopes.
  */
 export type LogScope =
@@ -2987,6 +2988,7 @@ export type LogScope =
   | "paywallTransactions"
   | "paywallViewController"
   | "cache"
+  | "billing"
   | "all"
 
 export type OnPurchaseParamsIOS = {

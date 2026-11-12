@@ -49,7 +49,7 @@ fun superwallOptionsFromJson(json: Map<String, Any?>): SuperwallOptions {
       val scopesArray = loggingMap?.get("scopes") as List<String>?
       val scopes = scopesArray?.map {
         try {
-          LogScope.valueOf(it)
+          LogScope.valueOf(androidLogScopeNames[it] ?: it)
         } catch (e: IllegalArgumentException) {
           null
         }
@@ -115,17 +115,19 @@ fun superwallOptionsFromJson(json: Map<String, Any?>): SuperwallOptions {
   return options
 }
 
-// Anything left out is granted, matching `AdConsent.Custom()`.
-fun adConsentFromJson(json: Map<String, Any?>): AdConsent {
-  return AdConsent.Custom(
+// Anything left out is granted, matching `AdConsent.Custom()` and iOS.
+fun adConsentFromJson(json: Map<String, Any?>): AdConsent =
+  AdConsent.Custom(
     adUserData = adConsentStatusFromJson(json["adUserData"] as? String),
-    adPersonalization = adConsentStatusFromJson(json["adPersonalization"] as? String)
+    adPersonalization = adConsentStatusFromJson(json["adPersonalization"] as? String),
   )
-}
 
-private fun adConsentStatusFromJson(json: String?): AdConsentStatus {
-  return when (json) {
-    "denied" -> AdConsentStatus.Denied
-    else -> AdConsentStatus.Granted
-  }
-}
+private fun adConsentStatusFromJson(json: String?): AdConsentStatus =
+  if (json == "denied") AdConsentStatus.Denied else AdConsentStatus.Granted
+
+// The JS `LogScope` uses the iOS names; these three are named differently on Android.
+private val androidLogScopeNames = mapOf(
+  "debugViewController" to "debugView",
+  "localizationViewController" to "localizationView",
+  "paywallViewController" to "paywallView",
+)
