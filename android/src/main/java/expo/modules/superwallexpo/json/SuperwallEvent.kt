@@ -4,6 +4,7 @@ package expo.modules.superwallexpo.json
 import com.superwall.sdk.analytics.superwall.AttributionMatchInfo
 import com.superwall.sdk.analytics.superwall.SuperwallEvent
 import com.superwall.sdk.store.abstractions.transactions.StoreTransaction
+import com.superwall.sdk.store.transactions.TransactionError
 
 class SuperwallEvent {
   companion object {
@@ -64,6 +65,7 @@ class SuperwallEvent {
         is SuperwallEvent.TransactionFail -> {
           map["event"] = "transactionFail"
           map["error"] = superwallPlacement.error.localizedMessage ?: "Error message unavailable"
+          map["transactionError"] = superwallPlacement.error.toJson()
           map["paywallInfo"] = superwallPlacement.paywallInfo.toJson()
         }
         is SuperwallEvent.TransactionAbandon -> {
@@ -257,6 +259,8 @@ class SuperwallEvent {
         }
         is SuperwallEvent.CustomerInfoDidChange -> {
           map["event"] = "customerInfoDidChange"
+          map["from"] = superwallPlacement.from.toJson()
+          map["to"] = superwallPlacement.to.toJson()
         }
         is SuperwallEvent.PermissionRequested -> {
           map["event"] = "permissionRequested"
@@ -339,3 +343,12 @@ fun AttributionMatchInfo.toJson(): Map<String, Any> {
   reason?.let { map["reason"] = it }
   return map
 }
+
+// Same shape as iOS: whether the transaction is pending or failed, its message and, for a
+// failure, the product.
+private fun TransactionError.toJson(): Map<String, Any?> =
+  when (this) {
+    is TransactionError.Pending -> mapOf("type" to "pending", "message" to message)
+    is TransactionError.Failure ->
+      mapOf("type" to "failure", "message" to message, "product" to product.toJson())
+  }

@@ -1,4 +1,4 @@
-import type { Entitlement } from "./Entitlement"
+import { Entitlement } from "./Entitlement"
 import { SubscriptionStatus } from "./SubscriptionStatus"
 
 /**
@@ -11,16 +11,22 @@ export interface EntitlementsInfo {
   active: Entitlement[]
   all: Entitlement[]
   inactive: Entitlement[]
+  /** The active entitlements redeemed through web checkout. */
+  web: Entitlement[]
 }
 
 // Utility functions for EntitlementsInfo
 export namespace EntitlementsInfo {
   export function fromObject(obj: any): EntitlementsInfo {
+    const toEntitlements = (items: any): Entitlement[] =>
+      Array.isArray(items) ? items.map((item: any) => Entitlement.fromJson(item)) : []
+    const active = toEntitlements(obj.active)
     return {
-      status: SubscriptionStatus.fromString(obj.status, obj.active),
-      active: obj.active,
-      all: obj.all,
-      inactive: obj.inactive,
+      status: SubscriptionStatus.fromString(obj.status, active),
+      active,
+      all: toEntitlements(obj.all),
+      inactive: toEntitlements(obj.inactive),
+      web: toEntitlements(obj.web),
     }
   }
 }

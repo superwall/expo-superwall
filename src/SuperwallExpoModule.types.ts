@@ -70,7 +70,67 @@ export interface Entitlement {
    * The type of the entitlement. See {@link EntitlementType}.
    */
   type: EntitlementType
+  /**
+   * Whether there is any active, non-revoked transaction for this entitlement.
+   * Not set in entitlements you pass to `setSubscriptionStatus`.
+   */
+  isActive?: boolean
+  /** All product identifiers that map to the entitlement. */
+  productIds?: string[]
+  /**
+   * The product identifier of the latest transaction to unlock this entitlement. If a lifetime
+   * product unlocks it, this is the first lifetime product's identifier.
+   *
+   * Absent if no transaction unlocks the entitlement or it was granted from Superwall.
+   */
+  latestProductId?: string
+  /** The store the entitlement was granted through. Absent if no transaction unlocks it. */
+  store?: ProductStore
+  /** ISO-8601 purchase date of the first transaction that unlocked this entitlement. */
+  startsAt?: string
+  /**
+   * ISO-8601 date the entitlement was last renewed. Absent for the first purchase, non-renewing
+   * subscriptions and non-consumables.
+   */
+  renewedAt?: string
+  /**
+   * ISO-8601 expiry date of the last transaction that unlocked this entitlement. Absent for
+   * lifetime entitlements.
+   */
+  expiresAt?: string
+  /** Whether a non-consumable purchase unlocks the entitlement for a lifetime. */
+  isLifetime?: boolean
+  /** Whether the last subscription transaction for this entitlement will auto-renew. */
+  willRenew?: boolean
+  /** ISO-8601 date at which the subscription renews. Absent if it won't renew or isn't active. */
+  renewsAt?: string
+  /**
+   * Whether the last subscription transaction for this entitlement was revoked.
+   * Always absent on Android, which tracks revocation per transaction.
+   */
+  isRevoked?: boolean
+  /** Whether the last subscription transaction for this entitlement is in a billing grace period. */
+  isInGracePeriod?: boolean
+  /** The state of the last subscription transaction for this entitlement. See {@link EntitlementState}. */
+  state?: EntitlementState
+  /**
+   * The type of offer applied to the last subscription transaction for this entitlement.
+   * On iOS, only set on iOS 17.2+ or for web entitlements.
+   */
+  offerType?: SubscriptionOfferType
 }
+
+/**
+ * The state of the last subscription transaction that unlocks an {@link Entitlement}.
+ * `"unknown"` is Android only.
+ */
+export type EntitlementState =
+  | "inGracePeriod"
+  | "subscribed"
+  | "expired"
+  | "inBillingRetryPeriod"
+  | "revoked"
+  | "unknown"
 
 /**
  * Third-party integration providers supported by Superwall.
@@ -151,6 +211,11 @@ export interface EntitlementsInfo {
    * See {@link Entitlement}.
    */
   inactive: Entitlement[]
+  /**
+   * Array of active entitlements redeemed through web checkout.
+   * See {@link Entitlement}.
+   */
+  web?: Entitlement[]
 }
 
 /**
@@ -517,6 +582,8 @@ export interface CustomerInfo {
   nonSubscriptions: NonSubscriptionTransaction[]
   /** All entitlements available to the user. */
   entitlements: Entitlement[]
+  /** The product identifiers of the user's active subscriptions. */
+  activeSubscriptionProductIds?: string[]
 }
 
 /**
@@ -680,7 +747,60 @@ export interface PaywallInfo {
    *   Will be `undefined` on iOS.
    */
   customerInfo?: CustomerInfo
+  /** The key the paywall is cached under. */
+  cacheKey?: string
+  /** The identifier of the paywall's build. */
+  buildId?: string
+  /** When the paywall's loading shimmer started, as a date string. */
+  shimmerLoadStartTime?: string
+  /** When the paywall's loading shimmer finished, as a date string. */
+  shimmerLoadCompleteTime?: string
+  /** How the paywall is presented. See {@link PaywallPresentationInfo}. */
+  presentation?: PaywallPresentationInfo
+  /** Whether the paywall's web view can scroll. */
+  isScrollEnabled?: boolean
+  /** iOS only. Whether the paywall was loaded from files bundled with the app. */
+  isLocal?: boolean
+  /** iOS only. Whether the user may claim the paywall's introductory offers. */
+  introOfferEligibility?: IntroOfferEligibility
 }
+
+/**
+ * The presentation style of a paywall, as set on the dashboard.
+ * `"NO_ANIMATION"` is fullscreen without animation; `"NONE"` means no style was set.
+ */
+export type PaywallPresentationStyle =
+  | "MODAL"
+  | "FULLSCREEN"
+  | "NO_ANIMATION"
+  | "PUSH"
+  | "DRAWER"
+  | "POPUP"
+  | "NONE"
+
+/**
+ * How a paywall is presented.
+ */
+export interface PaywallPresentationInfo {
+  /** The presentation style. See {@link PaywallPresentationStyle}. */
+  style: PaywallPresentationStyle
+  /** The delay, in milliseconds, before the loading view switches to the paywall. */
+  delay: number
+  /** The height of a `"DRAWER"` or `"POPUP"` paywall. */
+  height?: number
+  /** The width of a `"POPUP"` paywall. */
+  width?: number
+  /** The corner radius of a `"DRAWER"` or `"POPUP"` paywall. */
+  cornerRadius?: number
+}
+
+/**
+ * Whether the user may claim a paywall's introductory offers.
+ * - `eligible`: the user can always claim a free trial.
+ * - `ineligible`: the user can never claim a free trial.
+ * - `automatic`: StoreKit decides.
+ */
+export type IntroOfferEligibility = "eligible" | "ineligible" | "automatic"
 
 /**
  * Represents a custom callback invoked from a paywall.
@@ -951,6 +1071,8 @@ export interface RedemptionInfo {
    * See {@link Entitlement}.
    */
   entitlements: Entitlement[]
+  /** iOS only. User attributes set by the web checkout, if any. */
+  userAttributes?: Record<string, any>
 }
 
 /**
@@ -1069,11 +1191,67 @@ export type TriggerResult =
     }
 
 /**
+ * How an App Store subscription offer's price is charged.
+ */
+export type StoreProductPaymentMode = "payAsYouGo" | "payUpFront" | "freeTrial"
+
+/**
+ * iOS only. A subscription offer configured in App Store Connect.
+ */
+export interface StoreProductDiscount {
+  /** The offer's identifier, or `null` for an introductory offer. */
+  offerIdentifier: string | null
+  /** The currency code of the offer's price. */
+  currencyCode: string | null
+  /** The offer's price. */
+  price: number
+  /** The offer's price, formatted for the user's locale. */
+  localizedPriceString: string
+  /** How the offer's price is charged. See {@link StoreProductPaymentMode}. */
+  paymentMode: StoreProductPaymentMode
+  /** The length of one of the offer's periods. */
+  subscriptionPeriod: { unit: "day" | "week" | "month" | "year"; value: number }
+  /** The number of periods the offer lasts. */
+  numberOfPeriods: number
+  /** Whether it's an introductory or a promotional offer. */
+  type: "introductory" | "promotional"
+}
+
+/**
+ * Details of a store product that only one platform's bridge sends.
+ */
+export interface StoreProductPlatformDetails {
+  /** iOS only. The product's introductory offer, if it has one. See {@link StoreProductDiscount}. */
+  introductoryDiscount?: StoreProductDiscount | null
+  /** iOS only. The product's promotional offers. See {@link StoreProductDiscount}. */
+  discounts?: StoreProductDiscount[]
+  /**
+   * iOS only. The App Store billing plan the product is sold on, when one is configured and
+   * available on the device (iOS 26.4+).
+   */
+  billingPlanType?: "UP_FRONT" | "MONTHLY" | null
+  /** iOS only. Whether a billing plan is configured for the product and available on the device. */
+  isBillingPlanAvailable?: boolean
+  /** iOS only. The entitlements the product unlocks. See {@link Entitlement}. */
+  entitlements?: Entitlement[]
+  /** Android only. The Google Play product type, such as `"subs"` or `"inapp"`. */
+  productType?: string
+  /** Android only. The country code of the Google Play storefront. */
+  storeFrontCountryCode?: string | null
+  /** Android only. Whether it's a custom product, bought through your purchase controller. */
+  isCustomProduct?: boolean
+  /** Android only. The transaction ID the SDK generated for a purchase of a custom product. */
+  customTransactionId?: string | null
+  /** The product's attributes, as referenced in audience filters and paywalls. */
+  attributes?: Record<string, string>
+}
+
+/**
  * Represents comprehensive information about a product involved in a transaction event.
  * This interface includes detailed pricing, subscription, trial, and localization information
  * from both the native iOS (StoreProduct) and Android (Product) implementations.
  */
-export interface TransactionProductIdentifier {
+export interface TransactionProductIdentifier extends StoreProductPlatformDetails {
   /** The unique identifier of the product (e.g., SKU). */
   id: string
 
@@ -1252,6 +1430,27 @@ export interface StoreTransaction {
   purchaseToken?: string
   /** The signature for Android transactions for verification (Google Play). */
   signature?: string
+  /** The state of the transaction. See {@link StoreTransactionState}. */
+  state?: StoreTransactionState
+  /** The payment the transaction is for. See {@link StorePayment}. */
+  payment?: StorePayment | null
+}
+
+/**
+ * The state of a {@link StoreTransaction}.
+ */
+export type StoreTransactionState = "PURCHASING" | "PURCHASED" | "FAILED" | "RESTORED" | "DEFERRED"
+
+/**
+ * The payment a {@link StoreTransaction} is for.
+ */
+export interface StorePayment {
+  /** The identifier of the product bought. */
+  productIdentifier: string
+  /** The number of items bought. */
+  quantity: number
+  /** The identifier of the discount applied, if any. */
+  discountIdentifier: string | null
 }
 
 /**
@@ -1727,6 +1926,23 @@ export interface TransactionStartEvent {
 }
 
 /**
+ * Why a transaction didn't complete.
+ */
+export type TransactionError =
+  | {
+      /** The transaction is pending approval, such as by a parent or guardian. */
+      type: "pending"
+      message: string
+    }
+  | {
+      /** The transaction failed. */
+      type: "failure"
+      message: string
+      /** The product whose purchase failed. See {@link TransactionProductIdentifier}. */
+      product: TransactionProductIdentifier
+    }
+
+/**
  * A transaction failed.
  */
 export interface TransactionFailEvent {
@@ -1734,6 +1950,11 @@ export interface TransactionFailEvent {
   event: "transactionFail"
   /** The error message from the transaction failure. */
   error: string
+  /**
+   * Whether the transaction is pending (awaiting approval, e.g. by a parent) or failed, with
+   * its message and, for a failure, the product. See {@link TransactionError}.
+   */
+  transactionError?: TransactionError
   /**
    * Information about the paywall associated with the failed transaction.
    * See {@link PaywallInfo}.
@@ -2169,6 +2390,10 @@ export interface NetworkDecodingFailEvent {
 export interface CustomerInfoDidChangeEvent {
   /** The customer info did change. */
   event: "customerInfoDidChange"
+  /** Android only. The customer info before the change. See {@link CustomerInfo}. */
+  from?: CustomerInfo
+  /** Android only. The customer info after the change. See {@link CustomerInfo}. */
+  to?: CustomerInfo
 }
 
 /**
@@ -3018,7 +3243,7 @@ export interface OwnedInAppPurchase {
  * Represents a store product returned by {@link SuperwallExpoModule.products}.
  * Matches the JSON shape produced by the native `StoreProduct.toJson()` on both iOS and Android.
  */
-export interface ProductResponse {
+export interface ProductResponse extends StoreProductPlatformDetails {
   productIdentifier: string
   localizedPrice: string
   localizedSubscriptionPeriod: string

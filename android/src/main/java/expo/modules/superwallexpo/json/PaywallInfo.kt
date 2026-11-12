@@ -1,6 +1,8 @@
 package expo.modules.superwallexpo.json
 
 
+import com.superwall.sdk.models.paywall.PaywallPresentationInfo
+import com.superwall.sdk.models.paywall.PaywallPresentationStyle
 import com.superwall.sdk.models.product.ProductItem
 import com.superwall.sdk.paywall.presentation.PaywallInfo
 
@@ -93,6 +95,34 @@ fun PaywallInfo.toJson(): Map<String, Any?> {
 
   map["customerInfo"] = this.customerInfo.toJson()
 
+  map["cacheKey"] = this.cacheKey
+  map["buildId"] = this.buildId
+  this.shimmerLoadStartTime?.let { map["shimmerLoadStartTime"] = it }
+  this.shimmerLoadCompleteTime?.let { map["shimmerLoadCompleteTime"] = it }
+  map["presentation"] = this.presentation.toJson()
+  map["isScrollEnabled"] = this.isScrollEnabled
+
+  return map
+}
+
+// Same shape as iOS: the dashboard's style name, plus the drawer's or popup's dimensions.
+fun PaywallPresentationInfo.toJson(): Map<String, Any> {
+  val map = mutableMapOf<String, Any>(
+    "style" to style.rawValue,
+    "delay" to delay.toDouble(),
+  )
+  when (val style = style) {
+    is PaywallPresentationStyle.Drawer -> {
+      map["height"] = style.height
+      map["cornerRadius"] = style.cornerRadius
+    }
+    is PaywallPresentationStyle.Popup -> {
+      map["height"] = style.height
+      map["width"] = style.width
+      map["cornerRadius"] = style.cornerRadius
+    }
+    else -> {}
+  }
   return map
 }
 

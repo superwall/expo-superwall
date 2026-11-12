@@ -62,22 +62,27 @@ export class CustomerInfo {
   subscriptions: SubscriptionTransaction[]
   nonSubscriptions: NonSubscriptionTransaction[]
   entitlements: Entitlement[]
+  /** The product identifiers of the user's active subscriptions. */
+  activeSubscriptionProductIds: string[]
 
   constructor({
     userId,
     subscriptions,
     nonSubscriptions,
     entitlements,
+    activeSubscriptionProductIds,
   }: {
     userId: string
     subscriptions: SubscriptionTransaction[]
     nonSubscriptions: NonSubscriptionTransaction[]
     entitlements: Entitlement[]
+    activeSubscriptionProductIds?: string[]
   }) {
     this.userId = userId
     this.subscriptions = subscriptions
     this.nonSubscriptions = nonSubscriptions
     this.entitlements = entitlements
+    this.activeSubscriptionProductIds = activeSubscriptionProductIds ?? []
   }
 
   static fromJson(json: any): CustomerInfo {
@@ -87,6 +92,9 @@ export class CustomerInfo {
       nonSubscriptions: Array.isArray(json.nonSubscriptions) ? json.nonSubscriptions : [],
       entitlements: Array.isArray(json.entitlements)
         ? json.entitlements.map((e: any) => Entitlement.fromJson(e))
+        : [],
+      activeSubscriptionProductIds: Array.isArray(json.activeSubscriptionProductIds)
+        ? json.activeSubscriptionProductIds
         : [],
     })
   }

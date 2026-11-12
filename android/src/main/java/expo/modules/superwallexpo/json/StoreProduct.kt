@@ -1,6 +1,7 @@
 package expo.modules.superwallexpo.json
 
 
+import com.superwall.sdk.store.abstractions.product.StoreProduct
 import com.superwall.sdk.store.abstractions.product.StoreProductType
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -59,6 +60,14 @@ fun StoreProductType.toJson(): Map<String, Any?> {
     val instant = it.toInstant()
     map["trialPeriodEndDate"] = instant.atZone(ZoneId.systemDefault()).format(dateFormatter)
   } ?: run { map["trialPeriodEndDate"] = null }
+
+  map["productType"] = productType
+  map["storeFrontCountryCode"] = storeFrontCountryCode
+  map["attributes"] = attributes
+  if (this is StoreProduct) {
+    map["isCustomProduct"] = isCustomProduct
+    map["customTransactionId"] = customTransactionId
+  }
 
   return map
 }

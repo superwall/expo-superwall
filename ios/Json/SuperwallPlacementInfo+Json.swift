@@ -54,6 +54,7 @@ extension SuperwallEvent {
     case .transactionFail(let error, let paywallInfo):
       return [
         "event": "transactionFail", "error": error.localizedDescription,
+        "transactionError": error.toJson(),
         "paywallInfo": paywallInfo.toJson(),
       ]
     case .transactionAbandon(let product, let paywallInfo):
@@ -341,5 +342,17 @@ extension AttributionMatchInfo {
       json["reason"] = reason
     }
     return json
+  }
+}
+
+extension TransactionError {
+  // Same shape as the Android bridge.
+  func toJson() -> [String: Any] {
+    switch self {
+    case .pending(let message):
+      return ["type": "pending", "message": message]
+    case .failure(let message, let product):
+      return ["type": "failure", "message": message, "product": product.toJson()]
+    }
   }
 }

@@ -66,6 +66,9 @@ extension RedemptionResult.RedemptionInfo {
       map["paywallInfo"] = paywallInfo.toJson()
     }
     map["entitlements"] = self.entitlements.map { $0.toJson() }
+    if let userAttributes = self.userAttributes {
+      map["userAttributes"] = userAttributes
+    }
 
     return map
   }

@@ -72,6 +72,7 @@ export {
   type SubscriptionOfferType,
   type SubscriptionTransaction,
 } from "./lib/CustomerInfo"
+export { Entitlement, type EntitlementState } from "./lib/Entitlement"
 export { EntitlementsInfo } from "./lib/EntitlementsInfo"
 export { Experiment } from "./lib/Experiment"
 export { FeatureGatingBehavior } from "./lib/FeatureGatingBehavior"
@@ -663,7 +664,16 @@ export default class Superwall {
    */
   async setSubscriptionStatus(status: SubscriptionStatus): Promise<void> {
     await this.awaitConfig()
-    await SuperwallExpoModule.setSubscriptionStatus(status)
+    // The native modules read only each entitlement's `id`. Sending just `id` and `type` keeps
+    // the details' unset (`undefined`) fields off the bridge, which Android can't convert.
+    const json =
+      status.status === "ACTIVE"
+        ? {
+            status: status.status,
+            entitlements: status.entitlements.map(({ id, type }) => ({ id, type })),
+          }
+        : status
+    await SuperwallExpoModule.setSubscriptionStatus(json)
   }
 
   async getSubscriptionStatus(): Promise<SubscriptionStatus> {

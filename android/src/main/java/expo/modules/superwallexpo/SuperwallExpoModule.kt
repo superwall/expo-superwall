@@ -389,11 +389,20 @@ class SuperwallExpoModule : Module() {
         map["all"] = entitlements.all.toJson()
         map["inactive"] = entitlements.inactive.toJson()
         map["active"] = entitlements.active.toJson()
+        map["web"] = entitlements.web.toJson()
         promise.resolve(map)
       } catch (error: Exception) {
         promise.reject(CodedException(error))
       }
       }
+
+    AsyncFunction("getEntitlementsByProductIds") { productIds: List<String>, promise: Promise ->
+      try {
+        promise.resolve(Superwall.instance.entitlements.byProductIds(productIds.toSet()).toJson())
+      } catch (error: Exception) {
+        promise.reject(CodedException(error))
+      }
+    }
 
     AsyncFunction("getCustomerInfo") { promise: Promise ->
       ioScope.launch {

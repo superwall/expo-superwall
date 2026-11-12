@@ -88,6 +88,11 @@ private fun StoreIdentifiers.toJson(): Map<String, Any> {
         }
         is StoreIdentifiers.Unknown -> {
             map["store"] = "UNKNOWN"
+            // As on iOS, the unknown store's details are sent alongside `store`, which they
+            // replace when they name the store.
+            this.properties.forEach { (key, value) ->
+                value?.toNative()?.let { map[key] = it }
+            }
         }
     }
     return map

@@ -298,6 +298,11 @@ public class SuperwallExpoModule: Module {
       }
     }
 
+    AsyncFunction("getEntitlementsByProductIds") { (productIds: [String], promise: Promise) in
+      let entitlements = Superwall.shared.entitlements.byProductIds(Set(productIds))
+      promise.resolve(entitlements.map { $0.toJson() })
+    }
+
     AsyncFunction("getCustomerInfo") { (promise: Promise) in
       Task {
         let customerInfo = await Superwall.shared.getCustomerInfo()

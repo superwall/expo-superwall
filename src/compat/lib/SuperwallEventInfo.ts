@@ -4,7 +4,9 @@ import type {
   CustomerCenterPresentationStyle,
   CustomerCenterRefundStatus,
   CustomerCenterScreenType,
+  TransactionError,
 } from "../../SuperwallExpoModule.types"
+import { CustomerInfo } from "./CustomerInfo"
 import type { Entitlement } from "./Entitlement"
 import { PaywallInfo } from "./PaywallInfo"
 import {
@@ -210,6 +212,17 @@ export class SuperwallEvent {
   paywallIdentifier?: string
   /** The result of matching the install to an ad click, for `attributionMatch`. */
   attributionMatchInfo?: AttributionMatchInfo
+  /**
+   * iOS only. How the transaction completed, for `transactionComplete`, such as
+   * `"NON_RECURRING_PRODUCT_PURCHASE"`, `"FREE_TRIAL_START"` or `"SUBSCRIPTION_START"`.
+   */
+  transactionType?: string
+  /** Whether the transaction is pending or failed, with its details, for `transactionFail`. */
+  transactionError?: TransactionError
+  /** Android only. The customer info before the change, for `customerInfoDidChange`. */
+  fromCustomerInfo?: CustomerInfo
+  /** Android only. The customer info after the change, for `customerInfoDidChange`. */
+  toCustomerInfo?: CustomerInfo
 
   private constructor(options: {
     type: EventType
@@ -257,6 +270,10 @@ export class SuperwallEvent {
     permissionName?: string
     paywallIdentifier?: string
     attributionMatchInfo?: AttributionMatchInfo
+    transactionType?: string
+    transactionError?: TransactionError
+    fromCustomerInfo?: CustomerInfo
+    toCustomerInfo?: CustomerInfo
   }) {
     Object.assign(this, options)
   }
@@ -292,8 +309,13 @@ export class SuperwallEvent {
       case EventType.testModeModalOpen:
       case EventType.testModeModalClose:
       case EventType.customerCenterClose:
-      case EventType.customerInfoDidChange:
         return new SuperwallEvent({ type: eventType })
+      case EventType.customerInfoDidChange:
+        return new SuperwallEvent({
+          type: eventType,
+          fromCustomerInfo: json.from ? CustomerInfo.fromJson(json.from) : undefined,
+          toCustomerInfo: json.to ? CustomerInfo.fromJson(json.to) : undefined,
+        })
       case EventType.shimmerViewComplete:
         return new SuperwallEvent({
           type: eventType,
@@ -365,12 +387,14 @@ export class SuperwallEvent {
         return new SuperwallEvent({
           type: eventType,
           error: json.error,
+          transactionError: json.transactionError,
           paywallInfo: PaywallInfo.fromJson(json.paywallInfo),
         })
       case EventType.transactionComplete:
         return new SuperwallEvent({
           type: eventType,
           transaction: json.transaction ? StoreTransaction.fromJson(json.transaction) : undefined,
+          transactionType: json.type,
           product: StoreProduct.fromJson(json.product),
           paywallInfo: PaywallInfo.fromJson(json.paywallInfo),
         })
