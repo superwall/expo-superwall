@@ -66,10 +66,10 @@ export class PaywallOptions {
   isHapticFeedbackEnabled = true
   restoreFailed: RestoreFailed = new RestoreFailed()
   shouldShowPurchaseFailureAlert = true
-  shouldPreload = false
+  shouldPreload = true
   automaticallyDismiss = true
   transactionBackgroundView: TransactionBackgroundView = TransactionBackgroundView.spinner
-  shouldShowWebPurchaseConfirmationAlert = false
+  shouldShowWebPurchaseConfirmationAlert = true
   onBackPressed?: (paywallInfo: PaywallInfo) => boolean
   /**
    * **Experimental.** Chooses how presented paywalls are hosted. Defaults to
