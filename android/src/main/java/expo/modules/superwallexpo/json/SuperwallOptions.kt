@@ -10,6 +10,7 @@ import com.superwall.sdk.store.testmode.TestModeBehavior
 import com.superwall.sdk.logger.LogLevel
 import com.superwall.sdk.logger.LogScope
 import java.util.EnumSet
+import kotlin.time.Duration.Companion.milliseconds
 
 fun superwallOptionsFromJson(json: Map<String, Any?>): SuperwallOptions {
   val options = SuperwallOptions()
@@ -96,6 +97,18 @@ fun superwallOptionsFromJson(json: Map<String, Any?>): SuperwallOptions {
         else -> null
       }
 
+      @Suppress("UNCHECKED_CAST")
+      (paywallsMap?.get("overrideProductsByName") as? Map<String, String>)?.let {
+        paywalls.overrideProductsByName = it
+      }
+      (paywallsMap?.get("optimisticLoading") as? Boolean)?.let {
+        paywalls.optimisticLoading = it
+      }
+      // JS numbers arrive as Double.
+      (paywallsMap?.get("timeoutAfter") as? Number)?.let {
+        paywalls.timeoutAfter = it.toLong().milliseconds
+      }
+
       paywalls.presentationHost = when (paywallsMap?.get("presentationHost") as String?) {
         "inWindow" -> PaywallOptions.PresentationHost.IN_WINDOW
         "activity" -> PaywallOptions.PresentationHost.ACTIVITY
@@ -124,6 +137,22 @@ fun adConsentFromJson(json: Map<String, Any?>): AdConsent =
 
 private fun adConsentStatusFromJson(json: String?): AdConsentStatus =
   if (json == "denied") AdConsentStatus.Denied else AdConsentStatus.Granted
+
+// `Unspecified` reports both purposes as granted, as `AdConsent()` does on iOS.
+fun AdConsent.toJson(): Map<String, String> {
+  val consent = this as? AdConsent.Custom ?: AdConsent.Custom()
+  return mapOf(
+    "adUserData" to consent.adUserData.toString(),
+    "adPersonalization" to consent.adPersonalization.toString(),
+  )
+}
+
+fun EventTrackingBehavior.toJson(): String =
+  when (this) {
+    EventTrackingBehavior.ALL -> "all"
+    EventTrackingBehavior.SUPERWALL_ONLY -> "superwallOnly"
+    EventTrackingBehavior.NONE -> "none"
+  }
 
 // The JS `LogScope` uses the iOS names; these three are named differently on Android.
 private val androidLogScopeNames = mapOf(

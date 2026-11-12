@@ -27,6 +27,12 @@ fun attributionProviderFromString(provider: String): AttributionProvider? {
     "appstackId" -> AttributionProvider.APPSTACK
     "singularDeviceId" -> AttributionProvider.SINGULAR_DEVICE_ID
     "airbridgeId" -> AttributionProvider.AIRBRIDGE_ID
+    "meta" -> AttributionProvider.META
+    "amplitude" -> AttributionProvider.AMPLITUDE
+    "mixpanel" -> AttributionProvider.MIXPANEL
+    "googleAds" -> AttributionProvider.GOOGLE_ADS
+    "googleAppSetId" -> AttributionProvider.GOOGLE_APP_SET
+    "custom" -> AttributionProvider.CUSTOM
     else -> null
   }
 }

@@ -41,6 +41,14 @@ export interface SuperwallEventCallbacks {
    * @param error - A string describing the error.
    */
   onPaywallError?: (error: string) => void
+  /**
+   * iOS only. Called when a paywall presented by `registerPlacement` is about to be dismissed.
+   * Scoped to `handlerId` like `onPaywallDismiss`. Never called on Android; use
+   * `willDismissPaywall` there.
+   * @param paywallInfo - Information about the paywall. See {@link PaywallInfo}.
+   * @param result - The result of the paywall interaction. See {@link PaywallResult}.
+   */
+  onPaywallWillDismiss?: (paywallInfo: PaywallInfo, result: PaywallResult) => void
 
   /**
    * Called when the user's subscription status changes.
@@ -126,6 +134,25 @@ export interface SuperwallEventCallbacks {
    * @param result - The result of the redemption attempt. See {@link RedemptionResult}.
    */
   didRedeemLink?: (result: RedemptionResult) => void
+
+  /**
+   * Called when the user's attributes change, whether you set them or a paywall did.
+   * @param newAttributes - All of the user's attributes after the change.
+   */
+  onUserAttributesChange?: (newAttributes: Record<string, any>) => void
+
+  /**
+   * iOS only. Called when Superwall handles a deep link, with the link's parts.
+   * @param params - The deep link.
+   * @param params.fullURL - The full deep link URL.
+   * @param params.pathComponents - The URL's path components.
+   * @param params.queryParameters - The URL's query parameters.
+   */
+  onSuperwallDeepLink?: (params: {
+    fullURL: string
+    pathComponents: string[]
+    queryParameters: Record<string, string>
+  }) => void
 
   /**
    * Called when a purchase is initiated.

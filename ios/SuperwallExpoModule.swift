@@ -1,6 +1,7 @@
 import ExpoModulesCore
 import SuperwallKit
 import UIKit
+import UserNotifications
 
 /// Thread-safe boolean flag that can only be set once.
 private final class AtomicFlag {
@@ -29,6 +30,7 @@ public class SuperwallExpoModule: Module {
   // Paywall Events
   private let onPaywallPresent = "onPaywallPresent"
   private let onPaywallDismiss = "onPaywallDismiss"
+  private let onPaywallWillDismiss = "onPaywallWillDismiss"
   private let onPaywallError = "onPaywallError"
   private let onPaywallSkip = "onPaywallSkip"
   private let onCustomCallback = "onCustomCallback"
@@ -54,6 +56,8 @@ public class SuperwallExpoModule: Module {
   private let handleLog = "handleLog"
   private let willRedeemLink = "willRedeemLink"
   private let didRedeemLink = "didRedeemLink"
+  private let userAttributesDidChange = "userAttributesDidChange"
+  private let handleSuperwallDeepLink = "handleSuperwallDeepLink"
 
   // Customer Info Events
   private let customerInfoDidChange = "customerInfoDidChange"
@@ -96,6 +100,7 @@ public class SuperwallExpoModule: Module {
     Events(
       onPaywallPresent,
       onPaywallDismiss,
+      onPaywallWillDismiss,
       onPaywallError,
       onPaywallSkip,
       onCustomCallback,
@@ -115,6 +120,8 @@ public class SuperwallExpoModule: Module {
       handleLog,
       willRedeemLink,
       didRedeemLink,
+      userAttributesDidChange,
+      handleSuperwallDeepLink,
 
       // Customer info events
       customerInfoDidChange,
@@ -231,6 +238,17 @@ public class SuperwallExpoModule: Module {
               "handlerId": handlerId,
             ] as [String: Any]
           self.sendEvent(self.onPaywallDismiss, data)
+        }
+
+        handler?.onWillDismiss { [weak self] paywallInfo, result in
+          guard let self = self else { return }
+          let data =
+            [
+              "paywallInfoJson": paywallInfo.toJson(),
+              "result": result.toJson(),
+              "handlerId": handlerId,
+            ] as [String: Any]
+          self.sendEvent(self.onPaywallWillDismiss, data)
         }
 
         handler?.onError { [weak self] error in
@@ -474,12 +492,13 @@ public class SuperwallExpoModule: Module {
       Superwall.shared.localeIdentifier = localeIdentifier
     }
 
-    AsyncFunction("setIntegrationAttributes") { (attributes: [String: String], promise: Promise) in
-      var converted: [IntegrationAttribute: String] = [:]
+    AsyncFunction("setIntegrationAttributes") { (attributes: [String: Any?], promise: Promise) in
+      // A `nil` value removes the attribute.
+      var converted: [IntegrationAttribute: String?] = [:]
 
       for (key, value) in attributes {
         if let attribute = IntegrationAttribute.fromString(key) {
-          converted[attribute] = value
+          converted[attribute] = .some(value as? String)
         }
       }
 
@@ -591,6 +610,69 @@ public class SuperwallExpoModule: Module {
     Function("setAdConsent") { (consent: [String: Any]) in
       Superwall.shared.adConsent = AdConsent.fromJson(consent)
     }
+
+    AsyncFunction("getAdConsent") { (promise: Promise) in
+      promise.resolve(Superwall.shared.adConsent.toJson())
+    }
+
+    AsyncFunction("getEventTrackingBehavior") { (promise: Promise) in
+      promise.resolve(Superwall.shared.eventTrackingBehavior.toJson())
+    }
+
+    AsyncFunction("getLocaleIdentifier") { (promise: Promise) in
+      promise.resolve(Superwall.shared.localeIdentifier)
+    }
+
+    AsyncFunction("getLogLevel") { (promise: Promise) in
+      promise.resolve(Superwall.shared.logLevel.toJson())
+    }
+
+    AsyncFunction("getUserId") { (promise: Promise) in
+      promise.resolve(Superwall.shared.userId)
+    }
+
+    AsyncFunction("getIsLoggedIn") { (promise: Promise) in
+      promise.resolve(Superwall.shared.isLoggedIn)
+    }
+
+    AsyncFunction("getIsPaywallPresented") { (promise: Promise) in
+      DispatchQueue.main.async {
+        promise.resolve(Superwall.shared.isPaywallPresented)
+      }
+    }
+
+    AsyncFunction("getLatestPaywallInfo") { (promise: Promise) in
+      DispatchQueue.main.async {
+        promise.resolve(Superwall.shared.latestPaywallInfo?.toJson())
+      }
+    }
+
+    AsyncFunction("getOverrideProductsByName") { (promise: Promise) in
+      promise.resolve(Superwall.shared.overrideProductsByName ?? [:])
+    }
+
+    Function("setOverrideProductsByName") { (overrides: [String: String]) in
+      Superwall.shared.overrideProductsByName = overrides
+    }
+
+    AsyncFunction("refreshConfiguration") { (promise: Promise) in
+      Superwall.shared.refreshConfiguration {
+        promise.resolve(nil)
+      }
+    }
+
+    Function("cancelAllScheduledNotifications") {
+      UNUserNotificationCenter.current().removeAllPendingSuperwallNotificationRequests()
+    }
+
+    // Push tokens and notification opens are only reported by the Android SDK.
+    Function("setPushToken") { (_: String) in }
+
+    Function("optOutOfNotifications") {}
+
+    Function("optInToNotifications") {}
+
+    Function("handleNotificationOpen") { (_: [String: String]) in }
   }
 
   @MainActor

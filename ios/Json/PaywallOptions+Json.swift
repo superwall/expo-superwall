@@ -27,7 +27,40 @@ extension PaywallOptions {
     paywallOptions.transactionBackgroundView = transactionBackgroundView
     paywallOptions.shouldShowWebPurchaseConfirmationAlert = shouldShowWebPurchaseConfirmationAlert
 
+    // Optional, so options built before these existed still parse.
+    if let shouldShowWebRestorationAlert = dictionary["shouldShowWebRestorationAlert"] as? Bool {
+      paywallOptions.shouldShowWebRestorationAlert = shouldShowWebRestorationAlert
+    }
+    if let overrideProductsByName = dictionary["overrideProductsByName"] as? [String: String] {
+      paywallOptions.overrideProductsByName = overrideProductsByName
+    }
+    if let notificationPermissionsDeniedValue = dictionary["notificationPermissionsDenied"] as? [String: Any] {
+      paywallOptions.notificationPermissionsDenied = PaywallOptions.NotificationPermissionsDenied.fromJson(
+        notificationPermissionsDeniedValue
+      )
+    }
+
     return paywallOptions
+  }
+}
+
+extension PaywallOptions.NotificationPermissionsDenied {
+  // A field left out keeps the native default.
+  static func fromJson(_ dictionary: [String: Any]) -> PaywallOptions.NotificationPermissionsDenied {
+    let notificationPermissionsDenied = PaywallOptions.NotificationPermissionsDenied()
+    if let title = dictionary["title"] as? String {
+      notificationPermissionsDenied.title = title
+    }
+    if let message = dictionary["message"] as? String {
+      notificationPermissionsDenied.message = message
+    }
+    if let actionButtonTitle = dictionary["actionButtonTitle"] as? String {
+      notificationPermissionsDenied.actionButtonTitle = actionButtonTitle
+    }
+    if let closeButtonTitle = dictionary["closeButtonTitle"] as? String {
+      notificationPermissionsDenied.closeButtonTitle = closeButtonTitle
+    }
+    return notificationPermissionsDenied
   }
 }
 
