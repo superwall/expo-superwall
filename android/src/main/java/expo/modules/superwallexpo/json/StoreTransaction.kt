@@ -1,6 +1,7 @@
 package expo.modules.superwallexpo.json
 
 import com.superwall.sdk.store.abstractions.transactions.StoreTransaction
+import com.superwall.sdk.store.abstractions.transactions.StoreTransactionState
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Date
@@ -29,5 +30,23 @@ fun StoreTransaction.toJson(): Map<String, Any?> {
   map["appAccountToken"] = appAccountToken
   map["purchaseToken"] = purchaseToken
   map["signature"] = signature
+  map["state"] = state.toJson()
+  map["payment"] = payment?.let {
+    mapOf(
+      "productIdentifier" to it.productIdentifier,
+      "quantity" to it.quantity,
+      "discountIdentifier" to it.discountIdentifier,
+    )
+  }
   return map
 }
+
+// iOS's `StoreTransactionState` raw values.
+private fun StoreTransactionState.toJson(): String =
+  when (this) {
+    StoreTransactionState.Purchasing -> "PURCHASING"
+    StoreTransactionState.Purchased -> "PURCHASED"
+    StoreTransactionState.Failed -> "FAILED"
+    StoreTransactionState.Restored -> "RESTORED"
+    StoreTransactionState.Deferred -> "DEFERRED"
+  }

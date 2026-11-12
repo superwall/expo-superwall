@@ -1,3 +1,5 @@
+import type { StorePayment, StoreTransactionState } from "../../SuperwallExpoModule.types"
+
 /**
  * @category Models
  * @since 0.0.15
@@ -20,6 +22,10 @@ export class StoreTransaction {
   appAccountToken?: string | null
   purchaseToken?: string | null
   signature?: string | null
+  /** The state of the transaction, such as `"PURCHASED"`. */
+  state?: StoreTransactionState | null
+  /** The payment the transaction is for. */
+  payment?: StorePayment | null
 
   constructor({
     configRequestId,
@@ -38,6 +44,8 @@ export class StoreTransaction {
     appAccountToken,
     purchaseToken,
     signature,
+    state,
+    payment,
   }: {
     configRequestId: string
     appSessionId: string
@@ -55,6 +63,8 @@ export class StoreTransaction {
     appAccountToken?: string | null
     purchaseToken?: string | null
     signature?: string | null
+    state?: StoreTransactionState | null
+    payment?: StorePayment | null
   }) {
     this.configRequestId = configRequestId
     this.appSessionId = appSessionId
@@ -74,6 +84,8 @@ export class StoreTransaction {
     this.appAccountToken = appAccountToken || null
     this.purchaseToken = purchaseToken || null
     this.signature = signature || null
+    this.state = state || null
+    this.payment = payment || null
   }
 
   static fromJson(json: any): StoreTransaction {
@@ -94,6 +106,8 @@ export class StoreTransaction {
       appAccountToken: json.appAccountToken,
       purchaseToken: json.purchaseToken,
       signature: json.signature,
+      state: json.state,
+      payment: json.payment,
     })
   }
 }

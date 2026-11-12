@@ -1,3 +1,7 @@
+import type {
+  IntroOfferEligibility,
+  PaywallPresentationInfo,
+} from "../../SuperwallExpoModule.types"
 import { ComputedPropertyRequest } from "./ComputedPropertyRequest"
 import { CustomerInfo } from "./CustomerInfo"
 import { Experiment } from "./Experiment"
@@ -50,6 +54,22 @@ export class PaywallInfo {
    * Currently only populated by the Android SDK (2.7.12+).
    */
   customerInfo?: CustomerInfo
+  /** The key the paywall is cached under. */
+  cacheKey?: string
+  /** The identifier of the paywall's build. */
+  buildId?: string
+  /** When the paywall's loading shimmer started, as a date string. */
+  shimmerLoadStartTime?: string
+  /** When the paywall's loading shimmer finished, as a date string. */
+  shimmerLoadCompleteTime?: string
+  /** How the paywall is presented. */
+  presentation?: PaywallPresentationInfo
+  /** Whether the paywall's web view can scroll. */
+  isScrollEnabled?: boolean
+  /** iOS only. Whether the paywall was loaded from files bundled with the app. */
+  isLocal?: boolean
+  /** iOS only. Whether the user may claim the paywall's introductory offers. */
+  introOfferEligibility?: IntroOfferEligibility
 
   constructor({
     identifier,
@@ -85,6 +105,14 @@ export class PaywallInfo {
     surveys,
     state,
     customerInfo,
+    cacheKey,
+    buildId,
+    shimmerLoadStartTime,
+    shimmerLoadCompleteTime,
+    presentation,
+    isScrollEnabled,
+    isLocal,
+    introOfferEligibility,
   }: {
     identifier: string
     name: string
@@ -119,6 +147,14 @@ export class PaywallInfo {
     surveys: Survey[]
     state: Record<string, any>
     customerInfo?: CustomerInfo
+    cacheKey?: string
+    buildId?: string
+    shimmerLoadStartTime?: string
+    shimmerLoadCompleteTime?: string
+    presentation?: PaywallPresentationInfo
+    isScrollEnabled?: boolean
+    isLocal?: boolean
+    introOfferEligibility?: IntroOfferEligibility
   }) {
     this.identifier = identifier
     this.name = name
@@ -153,6 +189,14 @@ export class PaywallInfo {
     this.surveys = surveys
     this.state = state
     this.customerInfo = customerInfo
+    this.cacheKey = cacheKey
+    this.buildId = buildId
+    this.shimmerLoadStartTime = shimmerLoadStartTime
+    this.shimmerLoadCompleteTime = shimmerLoadCompleteTime
+    this.presentation = presentation
+    this.isScrollEnabled = isScrollEnabled
+    this.isLocal = isLocal
+    this.introOfferEligibility = introOfferEligibility
   }
 
   static fromJson(json: any): PaywallInfo {
@@ -192,6 +236,14 @@ export class PaywallInfo {
       surveys: json.surveys?.map((s: any) => Survey.fromJson(s)),
       state: json.state ?? {},
       customerInfo: json.customerInfo ? CustomerInfo.fromJson(json.customerInfo) : undefined,
+      cacheKey: json.cacheKey,
+      buildId: json.buildId,
+      shimmerLoadStartTime: json.shimmerLoadStartTime,
+      shimmerLoadCompleteTime: json.shimmerLoadCompleteTime,
+      presentation: json.presentation,
+      isScrollEnabled: json.isScrollEnabled,
+      isLocal: json.isLocal,
+      introOfferEligibility: json.introOfferEligibility,
     })
   }
 }

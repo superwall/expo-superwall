@@ -1,3 +1,6 @@
+import type { StoreProductPlatformDetails } from "../../SuperwallExpoModule.types"
+import { Entitlement } from "./Entitlement"
+
 /**
  * @category Models
  * @since 0.0.15
@@ -115,6 +118,39 @@ export class StoreProduct {
   // The price of the product in the local currency.
   price: number
 
+  /** The length of the product's subscription period, or `null` if it isn't a subscription. */
+  subscriptionPeriod?: { unit: "day" | "week" | "month" | "year"; value: number } | null
+
+  /** iOS only. The product's introductory offer, if it has one. */
+  introductoryDiscount?: StoreProductPlatformDetails["introductoryDiscount"]
+
+  /** iOS only. The product's promotional offers. */
+  discounts?: StoreProductPlatformDetails["discounts"]
+
+  /** iOS only. The App Store billing plan the product is sold on (iOS 26.4+). */
+  billingPlanType?: StoreProductPlatformDetails["billingPlanType"]
+
+  /** iOS only. Whether a billing plan is configured for the product and available on the device. */
+  isBillingPlanAvailable?: boolean
+
+  /** iOS only. The entitlements the product unlocks. */
+  entitlements?: Entitlement[]
+
+  /** Android only. The Google Play product type, such as `"subs"` or `"inapp"`. */
+  productType?: string
+
+  /** Android only. The country code of the Google Play storefront. */
+  storeFrontCountryCode?: string | null
+
+  /** Android only. Whether it's a custom product, bought through your purchase controller. */
+  isCustomProduct?: boolean
+
+  /** Android only. The transaction ID the SDK generated for a purchase of a custom product. */
+  customTransactionId?: string | null
+
+  /** The product's attributes, as referenced in audience filters and paywalls. */
+  attributes?: Record<string, string>
+
   constructor({
     productIdentifier,
     localizedPrice,
@@ -153,6 +189,17 @@ export class StoreProduct {
     isFamilyShareable,
     regionCode,
     price,
+    subscriptionPeriod,
+    introductoryDiscount,
+    discounts,
+    billingPlanType,
+    isBillingPlanAvailable,
+    entitlements,
+    productType,
+    storeFrontCountryCode,
+    isCustomProduct,
+    customTransactionId,
+    attributes,
   }: {
     productIdentifier: string
     localizedPrice: string
@@ -191,6 +238,17 @@ export class StoreProduct {
     isFamilyShareable: boolean
     regionCode?: string | null
     price: number
+    subscriptionPeriod?: { unit: "day" | "week" | "month" | "year"; value: number } | null
+    introductoryDiscount?: StoreProductPlatformDetails["introductoryDiscount"]
+    discounts?: StoreProductPlatformDetails["discounts"]
+    billingPlanType?: StoreProductPlatformDetails["billingPlanType"]
+    isBillingPlanAvailable?: boolean
+    entitlements?: Entitlement[]
+    productType?: string
+    storeFrontCountryCode?: string | null
+    isCustomProduct?: boolean
+    customTransactionId?: string | null
+    attributes?: Record<string, string>
   }) {
     this.productIdentifier = productIdentifier
     this.localizedPrice = localizedPrice
@@ -229,6 +287,17 @@ export class StoreProduct {
     this.isFamilyShareable = isFamilyShareable
     this.regionCode = regionCode
     this.price = price
+    this.subscriptionPeriod = subscriptionPeriod
+    this.introductoryDiscount = introductoryDiscount
+    this.discounts = discounts
+    this.billingPlanType = billingPlanType
+    this.isBillingPlanAvailable = isBillingPlanAvailable
+    this.entitlements = entitlements
+    this.productType = productType
+    this.storeFrontCountryCode = storeFrontCountryCode
+    this.isCustomProduct = isCustomProduct
+    this.customTransactionId = customTransactionId
+    this.attributes = attributes
   }
 
   static fromJson(json: any): StoreProduct {
@@ -270,6 +339,19 @@ export class StoreProduct {
       isFamilyShareable: json.isFamilyShareable ?? false,
       regionCode: json.regionCode || null,
       price: json.price,
+      subscriptionPeriod: json.subscriptionPeriod,
+      introductoryDiscount: json.introductoryDiscount,
+      discounts: json.discounts,
+      billingPlanType: json.billingPlanType,
+      isBillingPlanAvailable: json.isBillingPlanAvailable,
+      entitlements: Array.isArray(json.entitlements)
+        ? json.entitlements.map((e: any) => Entitlement.fromJson(e))
+        : undefined,
+      productType: json.productType,
+      storeFrontCountryCode: json.storeFrontCountryCode,
+      isCustomProduct: json.isCustomProduct,
+      customTransactionId: json.customTransactionId,
+      attributes: json.attributes,
     })
   }
 }

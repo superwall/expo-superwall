@@ -56,6 +56,84 @@ extension StoreProduct {
       json["trialPeriodEndDate"] = nil
     }
 
+    json["subscriptionPeriod"] = subscriptionPeriod?.toJson()
+    json["introductoryDiscount"] = introductoryDiscount?.toJson()
+    json["discounts"] = discounts.map { $0.toJson() }
+    json["billingPlanType"] = billingPlanType?.toJson()
+    json["isBillingPlanAvailable"] = isBillingPlanAvailable
+    json["attributes"] = attributes
+    json["entitlements"] = entitlements.map { $0.toJson() }
+
     return json
+  }
+}
+
+extension SubscriptionPeriod {
+  // Same shape as the Android bridge.
+  func toJson() -> [String: Any] {
+    return [
+      "value": value,
+      "unit": unit.toJson(),
+    ]
+  }
+}
+
+extension SubscriptionPeriod.Unit {
+  func toJson() -> String {
+    switch self {
+    case .day:
+      return "day"
+    case .week:
+      return "week"
+    case .month:
+      return "month"
+    case .year:
+      return "year"
+    @unknown default:
+      return "day"
+    }
+  }
+}
+
+extension StoreProductDiscount {
+  func toJson() -> [String: Any?] {
+    return [
+      "offerIdentifier": offerIdentifier,
+      "currencyCode": currencyCode,
+      "price": NSDecimalNumber(decimal: price).doubleValue,
+      "localizedPriceString": localizedPriceString,
+      "paymentMode": paymentMode.toJson(),
+      "subscriptionPeriod": subscriptionPeriod.toJson(),
+      "numberOfPeriods": numberOfPeriods,
+      "type": type.toJson(),
+    ]
+  }
+}
+
+extension StoreProductDiscount.PaymentMode {
+  func toJson() -> String {
+    switch self {
+    case .payAsYouGo:
+      return "payAsYouGo"
+    case .payUpFront:
+      return "payUpFront"
+    case .freeTrial:
+      return "freeTrial"
+    @unknown default:
+      return "payAsYouGo"
+    }
+  }
+}
+
+extension StoreProductDiscount.DiscountType {
+  func toJson() -> String {
+    switch self {
+    case .introductory:
+      return "introductory"
+    case .promotional:
+      return "promotional"
+    @unknown default:
+      return "introductory"
+    }
   }
 }

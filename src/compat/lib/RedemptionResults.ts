@@ -177,6 +177,8 @@ export interface RedemptionInfo {
   paywallInfo?: PaywallInfo
   /** The entitlements granted by the redemption */
   entitlements: Entitlement[]
+  /** iOS only. User attributes set by the web checkout, if any. */
+  userAttributes?: Record<string, any>
 }
 
 /**
@@ -256,6 +258,10 @@ export class RedemptionResults {
       entitlements: Array.isArray(json.entitlements)
         ? json.entitlements.map((e: any) => Entitlement.fromJson(e))
         : [],
+    }
+
+    if (json.userAttributes) {
+      result.userAttributes = json.userAttributes
     }
 
     if (json.paywallInfo) {
