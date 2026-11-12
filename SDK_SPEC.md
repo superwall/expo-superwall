@@ -208,6 +208,7 @@ type EntitlementsInfo = {
   active: Entitlement[]
   inactive: Entitlement[]
   all?: Entitlement[]
+  web?: Entitlement[]
 }
 ```
 
@@ -216,6 +217,12 @@ Target rule:
 - `active` and `inactive` are required.
 - `all` may be returned for backend parity, but consumers must not rely on it
   unless the public contract explicitly exposes it.
+- `web` holds the active entitlements redeemed through web checkout.
+
+### `getEntitlementsByProductIds(productIds)`
+
+This method must return the entitlements the given products unlock, without
+duplicates, using the native `entitlements.byProductIds`.
 
 ### `getSubscriptionStatus()`
 
@@ -255,6 +262,41 @@ Required behavior:
 
 This method must return the device attribute map resolved by native.
 
+### Getters
+
+These methods must return the native SDK's current value:
+
+| Method | Returns |
+| --- | --- |
+| `getUserId()` | `string`: the identified or anonymous user ID |
+| `getIsLoggedIn()` | `boolean` |
+| `getIsPaywallPresented()` | `boolean` |
+| `getLatestPaywallInfo()` | `PaywallInfo` or `null` |
+| `getEventTrackingBehavior()` | `"all"`, `"superwallOnly"` or `"none"` |
+| `getAdConsent()` | `{ adUserData, adPersonalization }`, each `"granted"` or `"denied"`. Unset is both granted on both platforms |
+| `getLocaleIdentifier()` | `string` or `null` |
+| `getLogLevel()` | `"debug"`, `"info"`, `"warn"`, `"error"` or `"none"` |
+| `getOverrideProductsByName()` | `Record<string, string>` |
+
+`setOverrideProductsByName(overrides)` must replace the runtime product
+overrides, which also start from the `overrideProductsByName` paywall option.
+
+### `refreshConfiguration()`
+
+This method must ask native to fetch the configuration again. Android's native
+call has no completion, so it resolves once the refresh has started; iOS
+resolves once it has finished.
+
+### Notifications
+
+- `cancelAllScheduledNotifications()` must cancel the local notifications
+  Superwall scheduled. On iOS this removes Superwall's pending notification
+  requests.
+- `setPushToken(token)`, `optOutOfNotifications()`, `optInToNotifications()`
+  and `handleNotificationOpen(data)` must call the Android SDK's push
+  notification API. They are defined on iOS as no-ops, since the iOS SDK has
+  no equivalent.
+
 ### `handleDeepLink(url)`
 
 This method must attempt native deep-link handling and return `boolean`.
@@ -286,6 +328,16 @@ Unknown values must be ignored, not rejected.
 These methods must round-trip supported integration IDs. Unknown keys must be
 ignored rather than causing the whole call to fail.
 
+Required behavior:
+
+- Keys left out keep their current value; a `null` value removes the
+  attribute. iOS merges natively. The Android SDK replaces the whole set, so
+  the Android bridge merges into the last set it sent (or the SDK's current
+  attributes) before passing it on.
+- Keys a platform's SDK doesn't have are ignored on that platform:
+  `firebaseInstallationId` is iOS only; `meta`, `amplitude`, `mixpanel`,
+  `googleAds`, `googleAppSetId` and `custom` are Android only.
+
 Supported keys currently include:
 
 - `adjustId`
@@ -309,7 +361,11 @@ Supported keys currently include:
 - `posthogUserId`
 - `customerioId`
 - `appstackId`
+- `singularDeviceId`
 - `airbridgeId`
+- `firebaseInstallationId` (iOS only)
+- `meta`, `amplitude`, `mixpanel`, `googleAds`, `googleAppSetId`, `custom`
+  (Android only)
 
 ### Purchase-controller completion methods
 
@@ -343,6 +399,7 @@ handler.
 | `onPaywallDismiss` | `{ paywallInfoJson, result, handlerId }` | Fired on dismissal |
 | `onPaywallError` | `{ errorString, handlerId }` | Fired on handler-level error |
 | `onPaywallSkip` | `{ skippedReason, handlerId }` | Fired when placement does not present |
+| `onPaywallWillDismiss` | `{ paywallInfoJson, result, handlerId }` | iOS only. Fired before dismissal |
 | `onCustomCallback` | `{ callbackId, name, variables?, handlerId }` | Fired for paywall callback round-trip |
 
 Rules:
@@ -356,13 +413,17 @@ Rules:
 | Event | Payload | Notes |
 | --- | --- | --- |
 | `onPurchase` | iOS: `{ productId, platform: "ios", store? }` | Manual purchase flow |
-| `onPurchase` | Android: `{ productId, platform: "android", basePlanId, offerId?, store }` | Manual purchase flow |
+| `onPurchase` | Android: `{ productId, platform: "android", basePlanId, offerId?, store, replacement? }` | Manual purchase flow |
 | `onPurchaseRestore` | no payload | Manual restore flow |
 
 Rules:
 
 - iOS purchase payload does not include base plan or offer IDs.
 - Android purchase payload must include `basePlanId` and may include `offerId`.
+- Android purchase payload must include `replacement`
+  (`{ mode, oldProductId, oldPurchaseToken }`, `mode` one of `storeDefault`,
+  `chargeProrated` or `chargeFullPrice`) when the purchase replaces an existing
+  subscription, and leave it out otherwise.
 
 ### Android-only back button event
 
@@ -396,6 +457,8 @@ These events must remain globally observable:
 - `handleLog`
 - `willRedeemLink`
 - `didRedeemLink`
+- `userAttributesDidChange`
+- `handleSuperwallDeepLink` (iOS only)
 
 Payload rules:
 
@@ -404,6 +467,9 @@ Payload rules:
 - paywall lifecycle events must provide `{ info: PaywallInfo }`.
 - `handleLog` must provide `level`, `scope`, `message`, `info`, and `error`.
 - `didRedeemLink` must provide a single `RedemptionResult`.
+- `userAttributesDidChange` must provide `{ newAttributes }`.
+- `handleSuperwallDeepLink` must provide `{ fullURL, pathComponents,
+  queryParameters }`.
 
 ## Core data models
 
@@ -429,8 +495,26 @@ type Experiment = {
 type Entitlement = {
   id: string
   type: "SERVICE_LEVEL"
+  // Filled in on the device; a key is left out when its value is null.
+  isActive?: boolean
+  productIds?: string[]
+  latestProductId?: string
+  store?: ProductStore
+  startsAt?: string // ISO 8601, as are the other dates
+  renewedAt?: string
+  expiresAt?: string
+  isLifetime?: boolean
+  willRenew?: boolean
+  renewsAt?: string
+  isRevoked?: boolean // never sent on Android
+  isInGracePeriod?: boolean
+  state?: "inGracePeriod" | "subscribed" | "expired" | "inBillingRetryPeriod" | "revoked" | "unknown"
+  offerType?: "trial" | "code" | "subscription" | "promotional" | "winback" | "revoked"
 }
 ```
+
+Android's `LatestSubscriptionState` values must be sent as iOS's
+`LatestSubscription.State` raw values, so both platforms send the same strings.
 
 ### Paywall result and skip reason
 
@@ -465,6 +549,13 @@ type PaywallResult =
 - `surveys`
 - `localNotifications`
 - `state`
+- `cacheKey`, `buildId`, `shimmerLoadStartTime`, `shimmerLoadCompleteTime`,
+  `isScrollEnabled`
+- `presentation`: `{ style, delay, height?, width?, cornerRadius? }`, where
+  `style` is the dashboard name (`MODAL`, `FULLSCREEN`, `NO_ANIMATION`, `PUSH`,
+  `DRAWER`, `POPUP` or `NONE`)
+- iOS only: `isLocal` and `introOfferEligibility` (`eligible`, `ineligible` or
+  `automatic`)
 
 ### Custom callback
 
