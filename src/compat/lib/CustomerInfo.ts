@@ -28,8 +28,12 @@ export interface SubscriptionTransaction {
   isRevoked: boolean
   isInGracePeriod: boolean
   isInBillingRetryPeriod: boolean
+  /** `true` during a billing grace period, while the store keeps access. */
   isActive: boolean
-  /** ISO-8601 string, or `null` if non-renewing. */
+  /**
+   * ISO-8601 string, or `null` if non-renewing. During a billing grace period,
+   * this is the date the grace period ends.
+   */
   expirationDate?: string | null
   store: string
   offerType?: SubscriptionOfferType

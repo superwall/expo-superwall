@@ -646,6 +646,10 @@ class SuperwallExpoModule : Module() {
       }
     }
 
+    Function("setAdConsent") { consent: Map<String, Any?> ->
+      Superwall.instance.adConsent = adConsentFromJson(consent)
+    }
+
     Function("setLocaleIdentifier") { localeIdentifier: String? ->
       Superwall.instance.localeIdentifier = localeIdentifier
     }

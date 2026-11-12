@@ -1,6 +1,8 @@
 package expo.modules.superwallexpo.json
 
 
+import com.superwall.sdk.config.options.AdConsent
+import com.superwall.sdk.config.options.AdConsentStatus
 import com.superwall.sdk.config.options.EventTrackingBehavior
 import com.superwall.sdk.config.options.PaywallOptions
 import com.superwall.sdk.config.options.SuperwallOptions
@@ -106,5 +108,24 @@ fun superwallOptionsFromJson(json: Map<String, Any?>): SuperwallOptions {
     options.customerCenter = customerCenterConfigurationFromJson(it)
   }
 
+  (json["adConsent"] as? Map<String, Any?>)?.let {
+    options.adConsent = adConsentFromJson(it)
+  }
+
   return options
+}
+
+// Anything left out is granted, matching `AdConsent.Custom()`.
+fun adConsentFromJson(json: Map<String, Any?>): AdConsent {
+  return AdConsent.Custom(
+    adUserData = adConsentStatusFromJson(json["adUserData"] as? String),
+    adPersonalization = adConsentStatusFromJson(json["adPersonalization"] as? String)
+  )
+}
+
+private fun adConsentStatusFromJson(json: String?): AdConsentStatus {
+  return when (json) {
+    "denied" -> AdConsentStatus.Denied
+    else -> AdConsentStatus.Granted
+  }
 }
