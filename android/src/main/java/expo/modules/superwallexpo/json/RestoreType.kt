@@ -7,7 +7,10 @@ fun RestoreType.toJson(): Map<String, Any?> {
   when (this) {
     is RestoreType.ViaPurchase -> {
       map["type"] = "viaPurchase"
-      map["transaction"] = transaction?.toJson()
+      // `storeTransaction` matches iOS; `transaction` is the old Android-only key.
+      val transactionJson = transaction?.toJson()
+      map["storeTransaction"] = transactionJson
+      map["transaction"] = transactionJson
     }
     is RestoreType.ViaRestore -> map["type"] = "viaRestore"
   }

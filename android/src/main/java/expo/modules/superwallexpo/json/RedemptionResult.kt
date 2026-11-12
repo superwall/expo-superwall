@@ -8,6 +8,14 @@ import com.superwall.sdk.models.internal.ErrorInfo
 import com.superwall.sdk.models.internal.ExpiredInfo
 import com.superwall.sdk.models.internal.RedemptionOwnership
 import com.superwall.sdk.models.entitlements.Entitlement
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.longOrNull
 
 fun RedemptionResult.toJson(): Map<String, Any> {
     val map = mutableMapOf<String, Any>()
@@ -44,13 +52,7 @@ private fun RedemptionInfo.toJson(): Map<String, Any> {
     map["purchaserInfo"] = this.purchaserInfo.toJson()
     this.paywallInfo?.let { map["paywallInfo"] = it.toJson() }
 
-    val entitlementsArray = mutableListOf<Map<String, Any>>()
-    this.entitlements.forEach { entitlement ->
-      val entitlementMap = mutableMapOf<String, Any>()
-      entitlementMap["id"] = entitlement.id
-      entitlementsArray.add(entitlementMap)
-    }
-    map["entitlements"] = entitlementsArray
+    map["entitlements"] = this.entitlements.map { it.toJson() }
 
     return map
 }
@@ -124,14 +126,56 @@ private fun RedemptionResult.PaywallInfo.toJson(): Map<String, Any> {
     map["identifier"] = this.identifier
     map["placementName"] = this.placementName
 
-    val placementParamsMap = mutableMapOf<String, Any>()
-    this.placementParams.forEach { (key, value) ->
-        placementParamsMap[key] = value.toString()
-    }
-    map["placementParams"] = placementParamsMap
+    // Plain values, as iOS sends them, not JSON text.
+    map["placementParams"] = this.placementParams.mapValues { (_, value) -> value.toNative() }
 
     this.variantId?.let { map["variantId"] = it }
     this.experimentId?.let { map["experimentId"] = it }
     this.productIdentifier?.let { map["productIdentifier"] = it }
+    this.product?.let { map["product"] = it.toJson() }
     return map
 }
+
+private fun RedemptionResult.PaywallInfo.PaywallProduct.toJson(): Map<String, Any> =
+    mapOf(
+        "identifier" to identifier,
+        "languageCode" to languageCode,
+        "locale" to locale,
+        "currencyCode" to currencyCode,
+        "currencySymbol" to currencySymbol,
+        "period" to period,
+        "periodly" to periodly,
+        "localizedPeriod" to localizedPeriod,
+        "periodAlt" to periodAlt,
+        "periodDays" to periodDays,
+        "periodWeeks" to periodWeeks,
+        "periodMonths" to periodMonths,
+        "periodYears" to periodYears,
+        "rawPrice" to rawPrice,
+        "price" to price,
+        "dailyPrice" to dailyPrice,
+        "weeklyPrice" to weeklyPrice,
+        "monthlyPrice" to monthlyPrice,
+        "yearlyPrice" to yearlyPrice,
+        "rawTrialPeriodPrice" to rawTrialPeriodPrice,
+        "trialPeriodPrice" to trialPeriodPrice,
+        "trialPeriodDailyPrice" to trialPeriodDailyPrice,
+        "trialPeriodWeeklyPrice" to trialPeriodWeeklyPrice,
+        "trialPeriodMonthlyPrice" to trialPeriodMonthlyPrice,
+        "trialPeriodYearlyPrice" to trialPeriodYearlyPrice,
+        "trialPeriodDays" to trialPeriodDays,
+        "trialPeriodWeeks" to trialPeriodWeeks,
+        "trialPeriodMonths" to trialPeriodMonths,
+        "trialPeriodYears" to trialPeriodYears,
+        "trialPeriodText" to trialPeriodText,
+        "trialPeriodEndDate" to trialPeriodEndDate,
+    )
+
+private fun JsonElement.toNative(): Any? =
+    when (this) {
+        is JsonNull -> null
+        is JsonPrimitive ->
+            if (isString) content else booleanOrNull ?: longOrNull ?: doubleOrNull ?: content
+        is JsonArray -> map { it.toNative() }
+        is JsonObject -> mapValues { (_, value) -> value.toNative() }
+    }

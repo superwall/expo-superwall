@@ -46,7 +46,8 @@ extension StoreProduct {
       json["isFamilyShareable"] = isFamilyShareable
     }
 
-    json["introOfferToken"] = introOfferToken
+    // The JWS string, as typed in JS; the struct itself can't cross the bridge.
+    json["introOfferToken"] = introOfferToken?.token
 
     if let trialPeriodEndDate = trialPeriodEndDate {
       let dateFormatter = ISO8601DateFormatter()

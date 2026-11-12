@@ -23,7 +23,10 @@ class TriggerResult {
         }
         is TriggerResult.Error -> {
           map["result"] = "error"
-          map["errorMessage"] = triggerResult.error.localizedMessage
+          // `error` matches iOS; `errorMessage` is the old Android-only key.
+          val message = triggerResult.error.localizedMessage ?: triggerResult.error.toString()
+          map["error"] = message
+          map["errorMessage"] = message
         }
       }
       return map

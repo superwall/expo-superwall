@@ -25,6 +25,7 @@ export type IntegrationAttribute =
   | "posthogUserId"
   | "customerioId"
   | "appstackId"
+  | "singularDeviceId"
   /**
    * The Airbridge Device ID, from `Airbridge.fetchDeviceUUID`.
    *

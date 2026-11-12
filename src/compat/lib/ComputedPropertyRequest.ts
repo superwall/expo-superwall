@@ -30,6 +30,11 @@ export enum ComputedPropertyRequestType {
   daysSince = "daysSince",
   monthsSince = "monthsSince",
   yearsSince = "yearsSince",
+  placementsInHour = "placementsInHour",
+  placementsInDay = "placementsInDay",
+  placementsInWeek = "placementsInWeek",
+  placementsInMonth = "placementsInMonth",
+  placementsSinceInstall = "placementsSinceInstall",
 }
 
 // Utilizing a namespace to extend the enum with serialization and deserialization functions

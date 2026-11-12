@@ -86,14 +86,8 @@ extension PaywallInfo {
       map["paywalljsVersion"] = paywalljsVersion
     }
 
-    let computedPropertyRequestsArray: [[String: Any]] = self.computedPropertyRequests.map {
-      request in
-      [
-        "placementName": request.placementName,
-        "type": request.type.rawValue,
-      ]
-    }
-    map["computedPropertyRequests"] = computedPropertyRequestsArray
+    // Sends the type's name (e.g. `minutesSince`), as Android does, rather than its raw value.
+    map["computedPropertyRequests"] = self.computedPropertyRequests.map { $0.toJson() }
 
     let surveysArray: [[String: Any]] = self.surveys.map { survey in
       var surveyMap: [String: Any] = [
@@ -119,15 +113,7 @@ extension PaywallInfo {
     }
     map["surveys"] = surveysArray
 
-    let localNotificationsArray: [[String: Any]] = self.localNotifications.map { notification in
-      [
-        "title": notification.title,
-        "body": notification.body,
-        "type": notification.type.toJson(),
-        "delay": notification.delay,
-      ]
-    }
-    map["localNotifications"] = localNotificationsArray
+    map["localNotifications"] = self.localNotifications.map { $0.toJson() }
 
     map["state"] = self.state
 

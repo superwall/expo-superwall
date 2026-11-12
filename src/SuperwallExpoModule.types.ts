@@ -182,6 +182,13 @@ export type PaywallSkippedReason =
        */
       type: "PlacementNotFound"
     }
+  | {
+      /**
+       * The user is subscribed, so the paywall was skipped.
+       * @platform Android
+       */
+      type: "UserIsSubscribed"
+    }
 
 /**
  * Represents the outcome of a user's interaction with a paywall.
@@ -535,27 +542,23 @@ export interface Product {
    * Use this to detect `CUSTOM` products in `onPurchase` and route them to your own
    * purchase logic instead of StoreKit / Google Play Billing.
    *
-   * @platform iOS — present on iOS 4.15.0+. May be absent on older Android SDK versions.
+   * @platform iOS and Android
    */
   store?: ProductStore
   /**
    * App Store-specific product data, present when `store === "APP_STORE"`.
-   * @platform iOS
    */
   appStoreProduct?: AppStoreProductIdentifier
   /**
    * Stripe-specific product data, present when `store === "STRIPE"`.
-   * @platform iOS
    */
   stripeProduct?: StripeProductIdentifier
   /**
    * Paddle-specific product data, present when `store === "PADDLE"`.
-   * @platform iOS
    */
   paddleProduct?: PaddleProductIdentifier
   /**
    * Custom-product data, present when `store === "CUSTOM"`.
-   * @platform iOS
    */
   customProduct?: CustomStoreProductIdentifier
 }
@@ -599,10 +602,10 @@ export interface PaywallInfo {
    */
   presentedByEventWithId?: string
   /**
-   * The Unix timestamp (in seconds or milliseconds) of when the event triggering this paywall occurred, if applicable.
+   * When the event triggering this paywall occurred, if applicable, as a date string.
    * Corresponds to `presentedByPlacementAt` in the native Swift SDK.
    */
-  presentedByEventAt?: number
+  presentedByEventAt?: string
   /**
    * The source that initiated the paywall presentation (e.g., "implicit", "explicit", "getPaywall").
    */
@@ -611,12 +614,12 @@ export interface PaywallInfo {
    * The type of the source that led to the paywall presentation (e.g., "Register" for `Superwall.shared.register(event:)`, "Track" for `Superwall.shared.track(event:)`).
    */
   presentationSourceType?: string
-  /** The Unix timestamp when the request to load the paywall configuration and rules (response) started. */
-  responseLoadStartTime?: number
-  /** The Unix timestamp when the paywall response successfully loaded. */
-  responseLoadCompleteTime?: number
-  /** The Unix timestamp if the paywall response failed to load. */
-  responseLoadFailTime?: number
+  /** When the request to load the paywall configuration and rules (response) started, as a date string. */
+  responseLoadStartTime?: string
+  /** When the paywall response successfully loaded, as a date string. */
+  responseLoadCompleteTime?: string
+  /** When the paywall response failed to load, if it did, as a date string. */
+  responseLoadFailTime?: string
   /** The duration (typically in milliseconds) it took to load the paywall response. */
   responseLoadDuration?: number
   /** Indicates whether a free trial is available for any of the products on this paywall. */
@@ -631,20 +634,20 @@ export interface PaywallInfo {
    * See {@link PaywallCloseReason}.
    */
   closeReason: PaywallCloseReason
-  /** The Unix timestamp when the web view started loading the paywall's HTML content. */
-  webViewLoadStartTime?: number
-  /** The Unix timestamp when the web view successfully loaded the paywall's HTML content. */
-  webViewLoadCompleteTime?: number
-  /** The Unix timestamp if the web view failed to load the paywall's HTML content. */
-  webViewLoadFailTime?: number
+  /** When the web view started loading the paywall's HTML content, as a date string. */
+  webViewLoadStartTime?: string
+  /** When the web view successfully loaded the paywall's HTML content, as a date string. */
+  webViewLoadCompleteTime?: string
+  /** When the web view failed to load the paywall's HTML content, if it did, as a date string. */
+  webViewLoadFailTime?: string
   /** The duration (typically in milliseconds) it took for the web view to load the paywall's content. */
   webViewLoadDuration?: number
-  /** The Unix timestamp when the loading of product information (from App Store/Google Play) started. */
-  productsLoadStartTime?: number
-  /** The Unix timestamp when the product information successfully loaded. */
-  productsLoadCompleteTime?: number
-  /** The Unix timestamp if loading product information failed. */
-  productsLoadFailTime?: number
+  /** When the loading of product information (from App Store/Google Play) started, as a date string. */
+  productsLoadStartTime?: string
+  /** When the product information successfully loaded, as a date string. */
+  productsLoadCompleteTime?: string
+  /** When loading product information failed, if it did, as a date string. */
+  productsLoadFailTime?: string
   /** The duration (typically in milliseconds) it took to load the product information. */
   productsLoadDuration?: number
   /** The version of the `paywall.js` script used in the paywall, if available. */
@@ -1308,32 +1311,52 @@ export type PaywallPresentationRequestStatusReason =
     }
   | {
       /** No paywall was presented because the user did not match any audience rules. */
-      reason: "noRuleMatch"
+      reason: "noAudienceMatch"
     }
   | {
-      /** No paywall was presented because the triggering event was not found. */
-      reason: "eventNotFound"
+      /** No paywall was presented because the placement was not found. */
+      reason: "placementNotFound"
     }
   | {
       /** No paywall was presented because the paywall view controller is not available (native SDK specific). */
       reason: "noPaywallViewController"
     }
   | {
-      /** No paywall was presented because there is no view controller available to present it on (native SDK specific). */
+      /** No paywall was presented because there is nothing available to present it on (native SDK specific). */
+      reason: "noPresenter"
+    }
+  | {
+      /** No paywall was presented because the Superwall configuration hasn't been retrieved. */
+      reason: "noConfig"
+    }
+  | {
+      /** No paywall was presented because the subscription status didn't become known in time. */
+      reason: "subscriptionStatusTimeout"
+    }
+  | {
+      /** @deprecated Never sent. The native SDKs report `"noAudienceMatch"`. */
+      reason: "noRuleMatch"
+    }
+  | {
+      /** @deprecated Never sent. The native SDKs report `"placementNotFound"`. */
+      reason: "eventNotFound"
+    }
+  | {
+      /** @deprecated Never sent. The native SDKs report `"noPresenter"`. */
       reason: "noViewController"
     }
   | {
-      /** No paywall was presented because the user is already subscribed. */
+      /** @deprecated Never sent by the native SDKs. */
       reason: "userIsSubscribed"
     }
   | {
-      /** No paywall was presented due to an error. */
+      /** @deprecated Never sent by the native SDKs. */
       reason: "error"
       /** A string describing the error. */
       error: string
     }
   | {
-      /** No paywall was presented because it is gated by some condition. */
+      /** @deprecated Never sent by the native SDKs. */
       reason: "paywallIsGated"
       /**
        * Information about the paywall that was gated.
@@ -1522,6 +1545,11 @@ export interface ShimmerViewStartEvent {
 export interface ShimmerViewCompleteEvent {
   /** Shimmer view (placeholder loading) completed. */
   event: "shimmerViewComplete"
+  /**
+   * How long the shimmer view was shown, in milliseconds.
+   * @platform Android — not sent on iOS.
+   */
+  duration?: number
 }
 
 /**
@@ -1601,10 +1629,11 @@ export interface SubscriptionStatusDidChangeEvent {
   /** The user's subscription status changed. */
   event: "subscriptionStatusDidChange"
   /**
-   * The new subscription status.
-   * See {@link SubscriptionStatus}.
+   * Not sent by either native SDK: this event has no payload. Read the new status with
+   * `getSubscriptionStatus()` or listen to the `subscriptionStatusDidChange` delegate callback.
+   * @deprecated Always `undefined`.
    */
-  subscriptionStatus: SubscriptionStatus
+  subscriptionStatus?: SubscriptionStatus
 }
 
 /**
@@ -1746,8 +1775,11 @@ export interface TransactionCompleteEvent {
    * See {@link TransactionProductIdentifier}.
    */
   product: TransactionProductIdentifier
-  /** The type of the transaction (e.g., "purchase", "restore"). */
-  type: string
+  /**
+   * The type of the transaction (e.g., "purchase", "restore").
+   * @platform iOS — the Android SDK has no transaction type, so it's `undefined` there.
+   */
+  type?: string
   /**
    * Information about the paywall associated with the completed transaction.
    * See {@link PaywallInfo}.
@@ -1919,6 +1951,11 @@ export interface PaywallWebviewLoadFailEvent {
    * See {@link PaywallInfo}.
    */
   paywallInfo: PaywallInfo
+  /**
+   * The web view's error, if any.
+   * @platform Android — not sent on iOS.
+   */
+  errorMessage?: string
 }
 
 /**
@@ -1988,6 +2025,11 @@ export interface PaywallProductsLoadFailEvent {
    * See {@link PaywallInfo}.
    */
   paywallInfo: PaywallInfo
+  /**
+   * Why the products failed to load, if known.
+   * @platform Android — not sent on iOS.
+   */
+  errorMessage?: string
 }
 
 /**
@@ -2001,8 +2043,9 @@ export interface PaywallProductsLoadCompleteEvent {
   /**
    * Information about the paywall for which products completed loading.
    * See {@link PaywallInfo}.
+   * @platform Android — the iOS SDK doesn't include it, so it's `undefined` there.
    */
-  paywallInfo: PaywallInfo
+  paywallInfo?: PaywallInfo
 }
 
 /**
@@ -2146,6 +2189,70 @@ export interface ReviewRequestedEvent {
   event: "reviewRequested"
   /** The number of times a review has been requested. */
   count: number
+}
+
+/**
+ * The user left a review when asked.
+ * @platform Android
+ */
+export interface ReviewGrantedEvent {
+  /** The user left a review when asked. */
+  event: "reviewGranted"
+  /** The number of times a review has been requested. */
+  count: number
+}
+
+/**
+ * The user didn't leave a review when asked.
+ * @platform Android
+ */
+export interface ReviewDeniedEvent {
+  /** The user didn't leave a review when asked. */
+  event: "reviewDenied"
+  /** The number of times a review has been requested. */
+  count: number
+}
+
+/**
+ * A resource used by a paywall, such as an image, failed to load.
+ * @platform Android
+ */
+export interface PaywallResourceLoadFailEvent {
+  /** A resource used by a paywall failed to load. */
+  event: "paywallResourceLoadFail"
+  /** The URL of the resource. */
+  url: string
+  /** Why the resource failed to load. */
+  error: string
+}
+
+/**
+ * The result of matching the app install to the ad click that led to it.
+ */
+export interface AttributionMatchInfo {
+  /** The attribution provider that produced the result, such as `"mmp"` or `"apple_search_ads"` (iOS). */
+  provider: string
+  /** Whether the install was matched. */
+  matched: boolean
+  /** The acquisition source that was found, such as `"meta"`, if any. */
+  source?: string
+  /** The provider's confidence in the match, if available. */
+  confidence?: "high" | "medium" | "low"
+  /** The provider's numeric match score, if available. Only returned for a match. */
+  matchScore?: number
+  /** Why there was no match, such as `"below_threshold"` or `"request_failed"`, if available. */
+  reason?: string
+}
+
+/**
+ * The install was matched, or failed to match, to the ad click that led to it. The resulting
+ * `acquisition_*` attributes are added to the user attributes.
+ */
+export interface AttributionMatchEvent {
+  /** An install attribution match finished. */
+  event: "attributionMatch"
+  /** The result. See {@link AttributionMatchInfo}. */
+  info: AttributionMatchInfo
 }
 
 /**
@@ -2633,6 +2740,10 @@ export type SuperwallEventType =
   | CustomerInfoDidChangeEvent["event"]
   | IntegrationAttributesEvent["event"]
   | ReviewRequestedEvent["event"]
+  | ReviewGrantedEvent["event"]
+  | ReviewDeniedEvent["event"]
+  | PaywallResourceLoadFailEvent["event"]
+  | AttributionMatchEvent["event"]
   | PermissionRequestedEvent["event"]
   | PermissionGrantedEvent["event"]
   | PermissionDeniedEvent["event"]
@@ -2727,6 +2838,10 @@ export type SuperwallEvent =
   | CustomerInfoDidChangeEvent
   | IntegrationAttributesEvent
   | ReviewRequestedEvent
+  | ReviewGrantedEvent
+  | ReviewDeniedEvent
+  | PaywallResourceLoadFailEvent
+  | AttributionMatchEvent
   | PermissionRequestedEvent
   | PermissionGrantedEvent
   | PermissionDeniedEvent

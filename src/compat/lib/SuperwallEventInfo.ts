@@ -1,4 +1,5 @@
 import type {
+  AttributionMatchInfo,
   CustomerCenterAction,
   CustomerCenterPresentationStyle,
   CustomerCenterRefundStatus,
@@ -10,7 +11,7 @@ import {
   PaywallPresentationRequestStatus,
   PaywallPresentationRequestStatusReason,
 } from "./PaywallPresentationRequestStatus"
-import type { RestoreType } from "./RestoreType"
+import { RestoreType } from "./RestoreType"
 import { StoreProduct } from "./StoreProduct"
 import { StoreTransaction } from "./StoreTransaction"
 import type { SubscriptionStatus } from "./SubscriptionStatus"
@@ -130,6 +131,11 @@ export enum EventType {
   customerCenterAction = "customerCenterAction",
   customerCenterSurveyResponse = "customerCenterSurveyResponse",
   customerCenterRefundRequest = "customerCenterRefundRequest",
+  customerInfoDidChange = "customerInfoDidChange",
+  permissionRequested = "permissionRequested",
+  permissionGranted = "permissionGranted",
+  permissionDenied = "permissionDenied",
+  attributionMatch = "attributionMatch",
 }
 
 /**
@@ -198,6 +204,12 @@ export class SuperwallEvent {
   optionId?: string
   /** The refund request outcome, for `customerCenterRefundRequest`. */
   refundStatus?: CustomerCenterRefundStatus
+  /** The permission asked for, for `permissionRequested`, `permissionGranted` and `permissionDenied`. */
+  permissionName?: string
+  /** The identifier of the paywall that asked for the permission, for the permission events. */
+  paywallIdentifier?: string
+  /** The result of matching the install to an ad click, for `attributionMatch`. */
+  attributionMatchInfo?: AttributionMatchInfo
 
   private constructor(options: {
     type: EventType
@@ -242,6 +254,9 @@ export class SuperwallEvent {
     surveyId?: string
     optionId?: string
     refundStatus?: CustomerCenterRefundStatus
+    permissionName?: string
+    paywallIdentifier?: string
+    attributionMatchInfo?: AttributionMatchInfo
   }) {
     Object.assign(this, options)
   }
@@ -277,6 +292,7 @@ export class SuperwallEvent {
       case EventType.testModeModalOpen:
       case EventType.testModeModalClose:
       case EventType.customerCenterClose:
+      case EventType.customerInfoDidChange:
         return new SuperwallEvent({ type: eventType })
       case EventType.shimmerViewComplete:
         return new SuperwallEvent({
@@ -301,13 +317,12 @@ export class SuperwallEvent {
       case EventType.triggerFire:
         return new SuperwallEvent({
           type: eventType,
-          placementName: eventType, // TODO: This seems incorrect, should be json.eventName or similar
+          placementName: json.placementName,
           result: TriggerResult.fromJson(json.result),
         })
       case EventType.paywallOpen:
       case EventType.paywallClose:
       case EventType.paywallDecline:
-      case EventType.transactionRestore: // Note: transactionRestore was duplicated, keeping one
       case EventType.paywallWebviewLoadStart:
       case EventType.paywallWebviewLoadComplete:
       case EventType.paywallWebviewLoadTimeout:
@@ -359,12 +374,12 @@ export class SuperwallEvent {
           product: StoreProduct.fromJson(json.product),
           paywallInfo: PaywallInfo.fromJson(json.paywallInfo),
         })
-      // case EventType.transactionRestore: // Already handled above
-      //   return new SuperwallEvent({
-      //     type: eventType,
-      //     restoreType: RestoreType.fromJson(json.restoreType),
-      //     paywallInfo: PaywallInfo.fromJson(json.paywallInfo),
-      //   });
+      case EventType.transactionRestore:
+        return new SuperwallEvent({
+          type: eventType,
+          restoreType: RestoreType.fromJson(json.restoreType),
+          paywallInfo: PaywallInfo.fromJson(json.paywallInfo),
+        })
       case EventType.userAttributes:
         return new SuperwallEvent({
           type: eventType,
@@ -382,12 +397,15 @@ export class SuperwallEvent {
       case EventType.paywallProductsLoadComplete:
         return new SuperwallEvent({
           type: eventType,
-          triggeredEventName: json.triggeredEventName, // Assuming this should be based on json.paywallInfo or similar
+          triggeredEventName: json.triggeredEventName,
+          // Only Android sends it for `paywallProductsLoadComplete`.
+          paywallInfo: json.paywallInfo ? PaywallInfo.fromJson(json.paywallInfo) : undefined,
         })
       case EventType.paywallProductsLoadFail:
         return new SuperwallEvent({
           type: eventType,
           triggeredEventName: json.triggeredEventName,
+          paywallInfo: PaywallInfo.fromJson(json.paywallInfo),
           errorMessage: json.errorMessage,
         })
       case EventType.paywallProductsLoadRetry:
@@ -456,7 +474,7 @@ export class SuperwallEvent {
       case EventType.integrationAttributes:
         return new SuperwallEvent({
           type: eventType,
-          audienceFilterParams: json.audienceFilterParams,
+          audienceFilterParams: json.attributes,
         })
       case EventType.reviewRequested:
       case EventType.reviewGranted:
@@ -522,6 +540,19 @@ export class SuperwallEvent {
           type: eventType,
           productId: json.productId,
           refundStatus: json.status,
+        })
+      case EventType.permissionRequested:
+      case EventType.permissionGranted:
+      case EventType.permissionDenied:
+        return new SuperwallEvent({
+          type: eventType,
+          permissionName: json.permissionName,
+          paywallIdentifier: json.paywallIdentifier,
+        })
+      case EventType.attributionMatch:
+        return new SuperwallEvent({
+          type: eventType,
+          attributionMatchInfo: json.info,
         })
       default:
         console.warn(`[Superwall] Unhandled event type in SuperwallEvent.fromJson: ${json.event}`)
