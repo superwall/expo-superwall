@@ -10,7 +10,8 @@ import { PaywallInfo } from "./lib/PaywallInfo"
 import type { PaywallPresentationHandler } from "./lib/PaywallPresentationHandler"
 import { fromJson as paywallResultFromJson } from "./lib/PaywallResult"
 import { PaywallSkippedReason } from "./lib/PaywallSkippedReason"
-import type { PresentationResult } from "./lib/PresentationResult"
+import { PresentationResult } from "./lib/PresentationResult"
+import type { ProductStore } from "./lib/Product"
 import type { PurchaseController } from "./lib/PurchaseController"
 import { RedemptionResults } from "./lib/RedemptionResults"
 import { SubscriptionStatus } from "./lib/SubscriptionStatus"
@@ -173,6 +174,7 @@ export default class Superwall {
       if (data.platform === "ios") {
         const purchaseResult = await Superwall.purchaseController?.purchaseFromAppStore(
           data.productId,
+          data.store as ProductStore | undefined,
         )
         if (purchaseResult == null) {
           return
@@ -186,6 +188,7 @@ export default class Superwall {
           data.productId,
           data.basePlanId,
           data.offerId,
+          data.store as ProductStore | undefined,
         )
         if (purchaseResult == null) {
           return
@@ -242,17 +245,6 @@ export default class Superwall {
 
       const skippedReason = PaywallSkippedReason.fromJson(data.skippedReason)
       handler.onSkipHandler(skippedReason)
-    })
-
-    SuperwallExpoModule.addListener("onPaywallPresent", (data) => {
-      const handler = this.presentationHandlers.get(data.handlerId)
-
-      if (!handler || !handler.onPresentHandler) {
-        return
-      }
-
-      const info = PaywallInfo.fromJson(data.paywallInfoJson)
-      handler.onPresentHandler(info)
     })
 
     SuperwallExpoModule.addListener("onCustomCallback", (data) => {
@@ -620,7 +612,8 @@ export default class Superwall {
     if (params) {
       paramsObject = Object.fromEntries(params)
     }
-    return await SuperwallExpoModule.getPresentationResult(placement, paramsObject)
+    const resultJson = await SuperwallExpoModule.getPresentationResult(placement, paramsObject)
+    return PresentationResult.fromJson(resultJson)
   }
 
   /**
@@ -646,8 +639,15 @@ export default class Superwall {
    */
   async getEntitlements(): Promise<EntitlementsInfo> {
     await this.awaitConfig()
-    const entitlementsJson = await SuperwallExpoModule.getEntitlements()
-    return EntitlementsInfo.fromObject(entitlementsJson)
+    // Neither native module includes the subscription status with the entitlements.
+    const [entitlementsJson, subscriptionStatusJson] = await Promise.all([
+      SuperwallExpoModule.getEntitlements(),
+      SuperwallExpoModule.getSubscriptionStatus(),
+    ])
+    return EntitlementsInfo.fromObject({
+      ...entitlementsJson,
+      status: subscriptionStatusJson?.status,
+    })
   }
 
   /**

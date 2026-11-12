@@ -2958,6 +2958,12 @@ export type OnPurchaseParamsAndroid = {
   platform: "android"
   basePlanId: string
   offerId?: string
+  /**
+   * The store that backs the product being purchased: `"PLAY_STORE"`, or `"CUSTOM"` for a
+   * custom product, which your purchase handler must purchase itself (e.g., through your
+   * backend). See {@link ProductStore}.
+   */
+  store?: ProductStore
 }
 
 export type OnPurchaseParams = OnPurchaseParamsIOS | OnPurchaseParamsAndroid
