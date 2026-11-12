@@ -3046,11 +3046,11 @@ export type OnPurchaseParamsAndroid = {
    */
   offerId?: string
   /**
-   * The existing subscription this purchase replaces, if any. Undefined for a normal purchase.
-   * See {@link ProductReplacement}.
-   * @since 1.8.0
+   * The store that backs the product being purchased: `"PLAY_STORE"`, or `"CUSTOM"` for a
+   * custom product, which your purchase handler must purchase itself (e.g., through your
+   * backend). See {@link ProductStore}.
    */
-  replacement?: ProductReplacement
+  store?: ProductStore
 }
 
 export type OnPurchaseParams = OnPurchaseParamsIOS | OnPurchaseParamsAndroid

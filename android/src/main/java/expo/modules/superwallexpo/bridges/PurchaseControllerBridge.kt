@@ -2,10 +2,8 @@ package expo.modules.superwallexpo.bridges
 
 import android.app.Activity
 import com.superwall.sdk.delegate.PurchaseResult
-import com.android.billingclient.api.ProductDetails
 import com.superwall.sdk.delegate.RestorationResult
 import com.superwall.sdk.delegate.subscription_controller.PurchaseController
-import com.superwall.sdk.store.ProductReplacement
 import com.superwall.sdk.store.abstractions.product.StoreProduct
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
@@ -28,9 +26,11 @@ class PurchaseControllerBridge(): PurchaseController {
         restorePromise?.complete(result)
     }
 
+    // The StoreProduct overload also receives custom products, which have no ProductDetails;
+    // the native default fails those before they reach JS.
     override suspend fun purchase(
         activity: Activity,
-        productDetails: ProductDetails,
+        product: StoreProduct,
         basePlanId: String?,
         offerId: String?
     ): PurchaseResult {
@@ -63,11 +63,12 @@ class PurchaseControllerBridge(): PurchaseController {
     ): PurchaseResult {
         purchasePromise = CompletableFuture()
 
-        val productData = mutableMapOf<String, Any?>(
+        val productData = mapOf(
             "platform" to "android",
-            "productId" to productId,
+            "productId" to product.productIdentifier,
             "basePlanId" to basePlanId,
-            "offerId" to offerId
+            "offerId" to offerId,
+            "store" to if (product.isCustomProduct) "CUSTOM" else "PLAY_STORE"
         )
         replacement?.let {
             productData["replacement"] = mapOf(
