@@ -119,7 +119,7 @@ jobs:
             echo "BRANCH=native-sdk/$PLATFORM-$VERSION"
           } >> "$GITHUB_ENV"
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ env.BASE_BRANCH }}
           token: ${{ secrets.SDK_BOT_TOKEN || secrets.GITHUB_TOKEN }}
@@ -259,11 +259,11 @@ jobs:
             echo "PR=$(gh pr view "$BRANCH" --json number -q .number)" >> "$GITHUB_ENV"
           fi
       # Toolchain for the agent to validate its changes with.
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         if: env.SKIP == 'false' && env.DRY_RUN == 'false'
         with:
           node-version: 24
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         if: env.SKIP == 'false' && env.DRY_RUN == 'false'
         with:
           distribution: temurin
@@ -326,7 +326,7 @@ jobs:
         if: env.SKIP == 'false' && env.DRY_RUN == 'false'
         id: agent
         continue-on-error: true
-        uses: anthropics/claude-code-action@v1
+        uses: anthropics/claude-code-action@4fa93a88de49bbef68b10eb15aabedf28ca0e1ed # v1
         env:
           CLAUDE_BRANCH: ${{ env.BRANCH }}
         with:
