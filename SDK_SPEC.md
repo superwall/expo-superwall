@@ -355,8 +355,8 @@ Rules:
 
 | Event | Payload | Notes |
 | --- | --- | --- |
-| `onPurchase` | iOS: `{ productId, platform: "ios" }` | Manual purchase flow |
-| `onPurchase` | Android: `{ productId, platform: "android", basePlanId, offerId?, replacement? }` | Manual purchase flow |
+| `onPurchase` | iOS: `{ productId, platform: "ios", store? }` | Manual purchase flow |
+| `onPurchase` | Android: `{ productId, platform: "android", basePlanId, offerId?, store }` | Manual purchase flow |
 | `onPurchaseRestore` | no payload | Manual restore flow |
 
 Rules:
@@ -441,6 +441,7 @@ type PaywallSkippedReason =
   | { type: "Holdout"; experiment: Experiment }
   | { type: "NoAudienceMatch" }
   | { type: "PlacementNotFound" }
+  | { type: "UserIsSubscribed" } // Android only
 
 type PaywallResult =
   | { type: "purchased"; productId: string }
@@ -517,18 +518,21 @@ Known status values:
 - `noPresentation`
 - `timeout`
 
-Known no-presentation reasons:
+Known no-presentation reasons, as both native bridges send them:
 
 - `debuggerPresented`
 - `paywallAlreadyPresented`
 - `holdout`
-- `noRuleMatch`
-- `eventNotFound`
+- `noAudienceMatch`
+- `placementNotFound`
 - `noPaywallViewController`
-- `noViewController`
-- `userIsSubscribed`
-- `error`
-- `paywallIsGated`
+- `noPresenter`
+- `noConfig`
+- `subscriptionStatusTimeout`
+
+The TypeScript union also keeps `noRuleMatch`, `eventNotFound`,
+`noViewController`, `userIsSubscribed`, `error` and `paywallIsGated` as
+deprecated members. Neither bridge sends them.
 
 ## Internal analytics event surface
 
@@ -555,6 +559,7 @@ Core lifecycle and identity:
 - `deepLink`
 - `userAttributes`
 - `integrationAttributes`
+- `attributionMatch`
 
 Restoration, redemption, and enrichment:
 
@@ -595,6 +600,7 @@ Trigger and paywall events:
 - `paywallProductsLoadMissingProducts`
 - `paywallPreloadStart`
 - `paywallPreloadComplete`
+- `paywallResourceLoadFail` (Android only)
 
 Transactions and purchases:
 
@@ -625,6 +631,8 @@ Other current events:
 - `networkDecodingFail`
 - `customerInfoDidChange`
 - `reviewRequested`
+- `reviewGranted` (Android only)
+- `reviewDenied` (Android only)
 - `permissionRequested`
 - `permissionGranted`
 - `permissionDenied`
