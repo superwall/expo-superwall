@@ -100,7 +100,7 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
   dismissCustomerCenter(): Promise<void>
   didHandleCustomerCenterShouldRestorePurchases(requestId: string, proceed: boolean): void
 
-  /** iOS only: undefined on Android, so callers must check that it exists. */
+  /** Both native modules define it; callers still check, so a stale native build without it is a no-op. */
   setAdConsent?: (consent: Record<string, string>) => void
 }
 

@@ -1,6 +1,8 @@
 package expo.modules.superwallexpo.json
 
 
+import com.superwall.sdk.config.options.AdConsent
+import com.superwall.sdk.config.options.AdConsentStatus
 import com.superwall.sdk.config.options.EventTrackingBehavior
 import com.superwall.sdk.config.options.PaywallOptions
 import com.superwall.sdk.config.options.SuperwallOptions
@@ -47,7 +49,7 @@ fun superwallOptionsFromJson(json: Map<String, Any?>): SuperwallOptions {
       val scopesArray = loggingMap?.get("scopes") as List<String>?
       val scopes = scopesArray?.map {
         try {
-          LogScope.valueOf(it)
+          LogScope.valueOf(androidLogScopeNames[it] ?: it)
         } catch (e: IllegalArgumentException) {
           null
         }
@@ -106,5 +108,26 @@ fun superwallOptionsFromJson(json: Map<String, Any?>): SuperwallOptions {
     options.customerCenter = customerCenterConfigurationFromJson(it)
   }
 
+  (json["adConsent"] as? Map<String, Any?>)?.let {
+    options.adConsent = adConsentFromJson(it)
+  }
+
   return options
 }
+
+// Anything left out is granted, matching `AdConsent.Custom()` and iOS.
+fun adConsentFromJson(json: Map<String, Any?>): AdConsent =
+  AdConsent.Custom(
+    adUserData = adConsentStatusFromJson(json["adUserData"] as? String),
+    adPersonalization = adConsentStatusFromJson(json["adPersonalization"] as? String),
+  )
+
+private fun adConsentStatusFromJson(json: String?): AdConsentStatus =
+  if (json == "denied") AdConsentStatus.Denied else AdConsentStatus.Granted
+
+// The JS `LogScope` uses the iOS names; these three are named differently on Android.
+private val androidLogScopeNames = mapOf(
+  "debugViewController" to "debugView",
+  "localizationViewController" to "localizationView",
+  "paywallViewController" to "paywallView",
+)

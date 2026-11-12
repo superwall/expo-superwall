@@ -363,9 +363,9 @@ export interface SuperwallStore {
   setEventTrackingBehavior: (behavior: EventTrackingBehavior) => Promise<void>
 
   /**
-   * iOS only. Sets the user's ad consent at runtime, which Superwall passes on with the
+   * Sets the user's ad consent at runtime, which Superwall passes on with the
    * conversions it uploads to Google Ads and Meta. Overrides the `adConsent` configure option
-   * and any TCF consent banner's stored answer. Does nothing on Android.
+   * and any TCF consent banner's stored answer.
    * @param consent - The consent for each purpose. A purpose left out is `"granted"`.
    * @returns A promise that resolves when the consent is set.
    */
@@ -622,7 +622,6 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   },
   setAdConsent: async (consent) => {
     await awaitConfigured()
-    // Only the iOS module defines it.
     if (typeof SuperwallExpoModule.setAdConsent !== "function") return
     SuperwallExpoModule.setAdConsent(filterUndefined(consent) as Record<string, string>)
   },

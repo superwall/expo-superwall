@@ -43,7 +43,7 @@ describe("compat ad consent", () => {
       adPersonalization: "denied",
     })
 
-    // Android doesn't define `setAdConsent`.
+    // A stale native build without `setAdConsent`.
     delete mockModule.setAdConsent
     await expect(
       Superwall.shared.setAdConsent({ adUserData: AdConsentStatus.Denied }),

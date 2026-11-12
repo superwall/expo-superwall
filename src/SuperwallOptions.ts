@@ -223,7 +223,7 @@ export interface SuperwallOptions {
    * The user's ad consent, passed on with the conversions Superwall uploads to Google Ads and
    * Meta. Omit to use a TCF consent banner's stored answer, or granted. Setting it, even to
    * the default, overrides the banner. Change it at runtime with `setAdConsent()`.
-   * @platform iOS only
+   * @platform iOS and Android
    */
   adConsent?: AdConsent
 }
@@ -285,7 +285,7 @@ export interface PartialSuperwallOptions {
    * The user's ad consent, passed on with the conversions Superwall uploads to Google Ads and
    * Meta. Omit to use a TCF consent banner's stored answer, or granted. Setting it, even to
    * the default, overrides the banner. Change it at runtime with `setAdConsent()`.
-   * @platform iOS only
+   * @platform iOS and Android
    */
   adConsent?: AdConsent
   /**

@@ -650,6 +650,10 @@ class SuperwallExpoModule : Module() {
       Superwall.instance.localeIdentifier = localeIdentifier
     }
 
+    Function("setAdConsent") { consent: Map<String, Any?> ->
+      Superwall.instance.adConsent = adConsentFromJson(consent)
+    }
+
     AsyncFunction("setIntegrationAttributes") { attributes: Map<String, String>, promise: Promise ->
       scope.launch {
         try {
