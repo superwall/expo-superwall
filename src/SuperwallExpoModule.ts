@@ -1,10 +1,13 @@
 import { NativeModule, requireNativeModule } from "expo"
 import type { PresentationResult } from "./compat/lib/PresentationResult"
 import type {
+  Assignment,
   CustomerInfo,
+  Entitlement,
   EntitlementsInfo,
   IntegrationAttributes,
   OwnedInAppPurchase,
+  PaywallInfo,
   ProductResponse,
   PurchaseResultResponse,
   RestorationResultResponse,
@@ -33,9 +36,10 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
   identify(userId: string, options?: Map<string, any> | Record<string, any> | null): Promise<void>
   reset(): Promise<void>
 
-  getAssignments(): Promise<any[]>
+  getAssignments(): Promise<Assignment[]>
   getCustomerInfo(): Promise<CustomerInfo>
   getEntitlements(): Promise<EntitlementsInfo>
+  getEntitlementsByProductIds(productIds: string[]): Promise<Entitlement[]>
   getSubscriptionStatus(): Promise<SubscriptionStatus>
   setSubscriptionStatus(status: Record<string, any>): Promise<void>
 
@@ -66,7 +70,7 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
 
   dismiss(): Promise<void>
   togglePaywallSpinner(isHidden: boolean): void
-  confirmAllAssignments(): Promise<any[]>
+  confirmAllAssignments(): Promise<Assignment[]>
 
   getPresentationResult(
     placement: string,
@@ -102,6 +106,26 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
 
   /** Both native modules define it; callers still check, so a stale native build without it is a no-op. */
   setAdConsent?: (consent: Record<string, string>) => void
+
+  getAdConsent(): Promise<{ adUserData: string; adPersonalization: string }>
+  getEventTrackingBehavior(): Promise<string>
+  getLocaleIdentifier(): Promise<string | null>
+  getLogLevel(): Promise<string>
+  getUserId(): Promise<string>
+  getIsLoggedIn(): Promise<boolean>
+  getIsPaywallPresented(): Promise<boolean>
+  getLatestPaywallInfo(): Promise<PaywallInfo | null>
+  getOverrideProductsByName(): Promise<Record<string, string>>
+  setOverrideProductsByName(overrides: Record<string, string>): void
+
+  refreshConfiguration(): Promise<void>
+
+  cancelAllScheduledNotifications(): void
+  /** Android only; the iOS module defines them as no-ops. */
+  setPushToken(token: string): void
+  optOutOfNotifications(): void
+  optInToNotifications(): void
+  handleNotificationOpen(data: Record<string, string>): void
 }
 
 export default requireNativeModule<SuperwallExpoModule>("SuperwallExpo")

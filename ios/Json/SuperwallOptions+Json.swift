@@ -124,8 +124,39 @@ extension AdConsent {
   }
 }
 
+extension AdConsent {
+  func toJson() -> [String: Any] {
+    return [
+      "adUserData": adUserData.toJson(),
+      "adPersonalization": adPersonalization.toJson(),
+    ]
+  }
+}
+
 extension AdConsentStatus {
   static func fromJson(_ json: String?) -> AdConsentStatus {
     return json == "denied" ? .denied : .granted
+  }
+
+  func toJson() -> String {
+    switch self {
+    case .granted:
+      return "granted"
+    case .denied:
+      return "denied"
+    }
+  }
+}
+
+extension EventTrackingBehavior {
+  func toJson() -> String {
+    switch self {
+    case .all:
+      return "all"
+    case .superwallOnly:
+      return "superwallOnly"
+    case .none:
+      return "none"
+    }
   }
 }

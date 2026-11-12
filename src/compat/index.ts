@@ -1,11 +1,12 @@
 import { Assignment } from "./lib/Assigments"
 import { ConfigurationStatus } from "./lib/ConfigurationStatus"
 import { CustomerInfo } from "./lib/CustomerInfo"
+import { Entitlement } from "./lib/Entitlement"
 import { EntitlementsInfo } from "./lib/EntitlementsInfo"
 import { IdentityOptions } from "./lib/IdentityOptions"
 import type { IntegrationAttributes } from "./lib/IntegrationAttributes"
 import type { InterfaceStyle } from "./lib/InterfaceStyle"
-import type { LogLevel } from "./lib/LogLevel"
+import { LogLevel } from "./lib/LogLevel"
 import { PaywallInfo } from "./lib/PaywallInfo"
 import type { PaywallPresentationHandler } from "./lib/PaywallPresentationHandler"
 import { fromJson as paywallResultFromJson } from "./lib/PaywallResult"
@@ -42,6 +43,7 @@ import {
   type PresentCustomerCenterOptions,
   presentCustomerCenter,
 } from "../internal/customerCenter"
+import { resolveLocalResources } from "../localResources"
 import SuperwallExpoModule from "../SuperwallExpoModule"
 import type {
   OwnedInAppPurchase,
@@ -59,10 +61,20 @@ export type {
   CustomerCenterPurchase,
   CustomerCenterRefundStatus,
   CustomerCenterScreenType,
+  IntroOfferEligibility,
   OwnedInAppPurchase,
+  PaywallPresentationInfo,
+  PaywallPresentationStyle,
+  ProductReplacement,
+  ProductReplacementMode,
   ProductResponse,
   PurchaseResultResponse,
   RestorationResultResponse,
+  StorePayment,
+  StoreProductDiscount,
+  StoreProductPaymentMode,
+  StoreProductPlatformDetails,
+  StoreTransactionState,
 } from "../SuperwallExpoModule.types"
 export { ComputedPropertyRequest } from "./lib/ComputedPropertyRequest"
 export { ConfigurationStatus } from "./lib/ConfigurationStatus"
@@ -84,6 +96,7 @@ export { LogScope } from "./lib/LogScope"
 export { PaywallCloseReason } from "./lib/PaywallCloseReason"
 export { PaywallInfo } from "./lib/PaywallInfo"
 export {
+  type NotificationPermissionsDenied,
   PaywallOptions,
   PresentationHost,
   TransactionBackgroundView,
@@ -185,12 +198,21 @@ export default class Superwall {
       }
 
       if (data.platform === "android") {
-        const purchaseResult = await Superwall.purchaseController?.purchaseFromGooglePlay(
-          data.productId,
-          data.basePlanId,
-          data.offerId,
-          data.store as ProductStore | undefined,
-        )
+        const controller = Superwall.purchaseController
+        const purchaseResult = data.replacement
+          ? await controller?.purchaseFromGooglePlayWithReplacement(
+              data.productId,
+              data.basePlanId,
+              data.offerId,
+              data.replacement,
+              data.store as ProductStore | undefined,
+            )
+          : await controller?.purchaseFromGooglePlay(
+              data.productId,
+              data.basePlanId,
+              data.offerId,
+              data.store as ProductStore | undefined,
+            )
         if (purchaseResult == null) {
           return
         }
@@ -225,6 +247,18 @@ export default class Superwall {
       const info = PaywallInfo.fromJson(data.paywallInfoJson)
       const result = paywallResultFromJson(data.result)
       handler.onDismissHandler(info, result)
+    })
+
+    SuperwallExpoModule.addListener("onPaywallWillDismiss", (data) => {
+      const handler = this.presentationHandlers.get(data.handlerId)
+
+      if (!handler || !handler.onWillDismissHandler) {
+        return
+      }
+
+      const info = PaywallInfo.fromJson(data.paywallInfoJson)
+      const result = paywallResultFromJson(data.result)
+      handler.onWillDismissHandler(info, result)
     })
 
     SuperwallExpoModule.addListener("onPaywallError", (data) => {
@@ -343,6 +377,18 @@ export default class Superwall {
       Superwall.delegate?.didRedeemLink?.(result)
     })
 
+    SuperwallExpoModule.addListener("userAttributesDidChange", async (data) => {
+      Superwall.delegate?.userAttributesDidChange?.(data.newAttributes)
+    })
+
+    SuperwallExpoModule.addListener("handleSuperwallDeepLink", async (data) => {
+      Superwall.delegate?.handleSuperwallDeepLink?.(
+        new URL(data.fullURL),
+        data.pathComponents,
+        data.queryParameters,
+      )
+    })
+
     SuperwallExpoModule.addListener("subscriptionStatusDidChange", async (data) => {
       this.subscriptionStatusEmitter.emit("change", data.to)
     })
@@ -407,9 +453,12 @@ export default class Superwall {
       Superwall.onBackPressedCallback = superwallOptions.paywalls.onBackPressed
     }
 
+    // Resolved here rather than in `toJson`, since resolving a bundled asset is asynchronous.
+    const localResources = await resolveLocalResources(superwallOptions.localResources)
+
     await SuperwallExpoModule.configure(
       apiKey,
-      superwallOptions.toJson(),
+      { ...superwallOptions.toJson(), ...(localResources ? { localResources } : {}) },
       !!purchaseController,
       `${version}compat`,
     )
@@ -652,6 +701,18 @@ export default class Superwall {
   }
 
   /**
+   * Returns the entitlements that the given products unlock.
+   *
+   * @param {string[]} productIds - The product identifiers.
+   * @returns {Promise<Entitlement[]>} A promise that resolves with the entitlements, without duplicates.
+   */
+  async getEntitlementsByProductIds(productIds: string[]): Promise<Entitlement[]> {
+    await this.awaitConfig()
+    const entitlements = await SuperwallExpoModule.getEntitlementsByProductIds(productIds)
+    return entitlements.map((entitlement: any) => Entitlement.fromJson(entitlement))
+  }
+
+  /**
    * Sets the subscription status of the user.
    *
    * When using a PurchaseController, you must call this method to update the user's subscription status.
@@ -734,6 +795,143 @@ export default class Superwall {
     await this.awaitConfig()
     const userAttributes: UserAttributes = await SuperwallExpoModule.getUserAttributes()
     return userAttributes
+  }
+
+  /**
+   * Retrieves the device attributes Superwall uses in audience filters and paywalls.
+   *
+   * @returns {Promise<Record<string, any>>} A promise that resolves with the device attributes.
+   */
+  async getDeviceAttributes(): Promise<Record<string, any>> {
+    await this.awaitConfig()
+    return SuperwallExpoModule.getDeviceAttributes()
+  }
+
+  /**
+   * Returns the current user's ID: the one passed to {@link identify}, or an anonymous ID.
+   *
+   * @returns {Promise<string>} A promise that resolves with the user ID.
+   */
+  async getUserId(): Promise<string> {
+    await this.awaitConfig()
+    return SuperwallExpoModule.getUserId()
+  }
+
+  /**
+   * Returns whether the user has been identified with {@link identify}.
+   *
+   * @returns {Promise<boolean>} A promise that resolves with `true` if the user is logged in.
+   */
+  async getIsLoggedIn(): Promise<boolean> {
+    await this.awaitConfig()
+    return SuperwallExpoModule.getIsLoggedIn()
+  }
+
+  /**
+   * Returns whether a paywall is presented.
+   *
+   * @returns {Promise<boolean>} A promise that resolves with `true` if a paywall is on screen.
+   */
+  async getIsPaywallPresented(): Promise<boolean> {
+    await this.awaitConfig()
+    return SuperwallExpoModule.getIsPaywallPresented()
+  }
+
+  /**
+   * Returns the info of the paywall on screen, or else the most recently presented one.
+   *
+   * @returns {Promise<PaywallInfo | null>} A promise that resolves with the paywall info, or `null` if none.
+   */
+  async getLatestPaywallInfo(): Promise<PaywallInfo | null> {
+    await this.awaitConfig()
+    const json = await SuperwallExpoModule.getLatestPaywallInfo()
+    return json ? PaywallInfo.fromJson(json) : null
+  }
+
+  /**
+   * Fetches the Superwall configuration again, so changes made on the dashboard show without
+   * restarting the app. Intended for development. On Android the promise resolves once the
+   * refresh has started, on iOS once it has finished.
+   *
+   * @returns {Promise<void>} A promise that resolves as described.
+   */
+  async refreshConfiguration(): Promise<void> {
+    await this.awaitConfig()
+    await SuperwallExpoModule.refreshConfiguration()
+  }
+
+  /**
+   * Replaces products on every paywall by product name, overriding the
+   * {@link PaywallOptions.overrideProductsByName} option.
+   *
+   * @param overrides - Product identifiers keyed by the product names set in the paywall editor,
+   *   such as `{ primary: "com.app.yearly" }`.
+   */
+  async setOverrideProductsByName(overrides: Record<string, string>): Promise<void> {
+    await this.awaitConfig()
+    SuperwallExpoModule.setOverrideProductsByName(overrides)
+  }
+
+  /**
+   * Returns the products that replace paywall products by name.
+   *
+   * @returns {Promise<Record<string, string>>} The product identifiers keyed by product name.
+   */
+  async getOverrideProductsByName(): Promise<Record<string, string>> {
+    await this.awaitConfig()
+    return SuperwallExpoModule.getOverrideProductsByName()
+  }
+
+  /**
+   * Cancels the local notifications Superwall has scheduled, such as free trial reminders.
+   */
+  async cancelAllScheduledNotifications(): Promise<void> {
+    await this.awaitConfig()
+    SuperwallExpoModule.cancelAllScheduledNotifications()
+  }
+
+  /**
+   * Android only. Gives Superwall the device's Firebase Cloud Messaging registration token, so it
+   * can send push notifications to this device. Call it on launch and whenever FCM issues a new
+   * token. Does nothing on iOS.
+   *
+   * @param token - The FCM registration token.
+   */
+  async setPushToken(token: string): Promise<void> {
+    await this.awaitConfig()
+    SuperwallExpoModule.setPushToken(token)
+  }
+
+  /**
+   * Android only. Stops Superwall sending push notifications to this device, until
+   * {@link optInToNotifications} is called. Remembered across launches, {@link reset} and
+   * {@link identify}. Does nothing on iOS.
+   */
+  async optOutOfNotifications(): Promise<void> {
+    await this.awaitConfig()
+    SuperwallExpoModule.optOutOfNotifications()
+  }
+
+  /**
+   * Android only. Lets Superwall send push notifications to this device again after
+   * {@link optOutOfNotifications}. Devices are opted in by default. Does nothing on iOS.
+   */
+  async optInToNotifications(): Promise<void> {
+    await this.awaitConfig()
+    SuperwallExpoModule.optInToNotifications()
+  }
+
+  /**
+   * Android only. Tells Superwall the user opened a notification, so it can measure the
+   * notifications it sends. Pass the data of a notification the user tapped; never call it when
+   * a message is merely delivered. Notifications Superwall didn't send are ignored. Does nothing
+   * on iOS.
+   *
+   * @param data - The notification's data.
+   */
+  async handleNotificationOpen(data: Record<string, string>): Promise<void> {
+    await this.awaitConfig()
+    SuperwallExpoModule.handleNotificationOpen(data)
   }
 
   /**
@@ -875,6 +1073,47 @@ export default class Superwall {
 
   async setEventTrackingBehavior(behavior: EventTrackingBehavior): Promise<void> {
     await SuperwallExpoModule.setEventTrackingBehavior(behavior.toString())
+  }
+
+  /**
+   * Returns which events Superwall tracks.
+   *
+   * @returns {Promise<EventTrackingBehavior>} The current event tracking behavior.
+   */
+  async getEventTrackingBehavior(): Promise<EventTrackingBehavior> {
+    await this.awaitConfig()
+    return (await SuperwallExpoModule.getEventTrackingBehavior()) as EventTrackingBehavior
+  }
+
+  /**
+   * Returns the SDK's log level.
+   *
+   * @returns {Promise<LogLevel>} The current log level.
+   */
+  async getLogLevel(): Promise<LogLevel> {
+    await this.awaitConfig()
+    return LogLevel.fromJson(await SuperwallExpoModule.getLogLevel())
+  }
+
+  /**
+   * Returns the locale identifier set with {@link setLocaleIdentifier} or the `localeIdentifier` option.
+   *
+   * @returns {Promise<string | null>} The locale identifier, or `null` for the device locale.
+   */
+  async getLocaleIdentifier(): Promise<string | null> {
+    await this.awaitConfig()
+    return (await SuperwallExpoModule.getLocaleIdentifier()) ?? null
+  }
+
+  /**
+   * Returns the ad consent Superwall passes on with the conversions it uploads. If it was never
+   * set, both purposes are granted.
+   *
+   * @returns {Promise<Required<AdConsent>>} The current ad consent.
+   */
+  async getAdConsent(): Promise<Required<AdConsent>> {
+    await this.awaitConfig()
+    return (await SuperwallExpoModule.getAdConsent()) as Required<AdConsent>
   }
 
   /**

@@ -1,5 +1,6 @@
 import { customerCenterConfigurationToJson } from "../../internal/customerCenter"
 import type { CustomerCenterConfiguration } from "../../SuperwallExpoModule.types"
+import type { LocalResource } from "../../SuperwallOptions"
 import { LogLevel } from "./LogLevel"
 import { LogScope } from "./LogScope"
 import { PaywallOptions } from "./PaywallOptions"
@@ -68,8 +69,6 @@ export enum AdConsentStatus {
  * If ad consent is never set, the SDK uses the consent stored by an IAB TCF consent banner when
  * GDPR applies, and otherwise defaults to granted. Apps with users in the EEA, UK or Switzerland
  * that don't use a TCF banner should set it from their consent flow.
- *
- * iOS only.
  */
 export interface AdConsent {
   /** Consent to send user data to ad networks for advertising. */
@@ -120,6 +119,7 @@ export interface PartialSuperwallOptions {
   testModeBehavior?: TestModeBehavior
   customerCenter?: CustomerCenterConfiguration
   adConsent?: AdConsent
+  localResources?: Record<string, LocalResource>
 }
 
 /**
@@ -179,6 +179,16 @@ export class SuperwallOptions {
    * @platform iOS and Android
    */
   adConsent?: AdConsent
+  /**
+   * Local files that paywalls can load instead of downloading them, keyed by the resource ID
+   * set in the paywall editor and served to the paywall as `swlocal://<id>`. A value can be a
+   * Metro `require()` result, a `file://` or `content://` URI or absolute path, or an
+   * `{ uri }` object. They're resolved when you call `configure`, and entries that can't be
+   * resolved are left out.
+   * @platform iOS and Android
+   * @since 1.8.0
+   */
+  localResources?: Record<string, LocalResource>
 
   constructor(init?: PartialSuperwallOptions) {
     if (init) {

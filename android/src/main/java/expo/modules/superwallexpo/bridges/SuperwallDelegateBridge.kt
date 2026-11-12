@@ -117,4 +117,8 @@ class SuperwallDelegateBridge : SuperwallDelegate {
   override fun didRedeemLink(result: RedemptionResult) {
     sendEvent("didRedeemLink", result.toJson())
   }
+
+  override fun userAttributesDidChange(newAttributes: Map<String, Any>) {
+    sendEvent("userAttributesDidChange", mapOf("newAttributes" to newAttributes))
+  }
 }

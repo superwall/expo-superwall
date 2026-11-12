@@ -59,6 +59,25 @@ export class RestoreFailed {
 
 /**
  * @category Models
+ * @since 1.8.0
+ * Defines the messaging of the alert presented when a paywall asks for notification permissions
+ * that the user has denied. A field left out keeps the native default.
+ *
+ * iOS only.
+ */
+export interface NotificationPermissionsDenied {
+  /** Defaults to `"Notification Permissions Denied"`. */
+  title?: string
+  /** Defaults to a message asking the user to enable notifications in the Settings app. */
+  message?: string
+  /** The button that opens the Settings app. Defaults to `"Open Settings"`. */
+  actionButtonTitle?: string
+  /** Defaults to `"Not now"`. */
+  closeButtonTitle?: string
+}
+
+/**
+ * @category Models
  * @since 0.0.15
  * Options for configuring the appearance and behavior of paywalls.
  */
@@ -82,6 +101,44 @@ export class PaywallOptions {
    * @since 1.6.0
    */
   presentationHost?: PresentationHost
+  /**
+   * Replaces products on every paywall by product name, such as `{ primary: "com.app.yearly" }`,
+   * where the keys are the product names set in the paywall editor. Change it at runtime with
+   * `Superwall.shared.setOverrideProductsByName()`.
+   * @since 1.8.0
+   */
+  overrideProductsByName?: Record<string, string>
+  /**
+   * Whether to show an alert after the user restores a web purchase. Defaults to `true`.
+   *
+   * iOS only: ignored on Android.
+   * @since 1.8.0
+   */
+  shouldShowWebRestorationAlert?: boolean
+  /**
+   * The alert shown when a paywall asks for notification permissions that the user has denied.
+   * No alert is shown unless this is set.
+   *
+   * iOS only: ignored on Android.
+   * @since 1.8.0
+   */
+  notificationPermissionsDenied?: NotificationPermissionsDenied
+  /**
+   * Shows the paywall without waiting for its loading shimmer to finish. Defaults to `false`.
+   *
+   * Android only: ignored on iOS.
+   * @since 1.8.0
+   */
+  optimisticLoading?: boolean
+  /**
+   * How long, in milliseconds, a presented paywall may take to load before it's given up on. It's
+   * then dismissed as declined with the `webViewFailedToLoad` close reason. No timeout unless
+   * this is set.
+   *
+   * Android only: ignored on iOS.
+   * @since 1.8.0
+   */
+  timeoutAfter?: number
 
   constructor(init?: Partial<PaywallOptions>) {
     if (init) {
@@ -106,6 +163,21 @@ export class PaywallOptions {
       if (init.presentationHost) {
         this.presentationHost = init.presentationHost
       }
+      if (init.overrideProductsByName) {
+        this.overrideProductsByName = init.overrideProductsByName
+      }
+      if (init.shouldShowWebRestorationAlert !== undefined) {
+        this.shouldShowWebRestorationAlert = init.shouldShowWebRestorationAlert
+      }
+      if (init.notificationPermissionsDenied) {
+        this.notificationPermissionsDenied = init.notificationPermissionsDenied
+      }
+      if (init.optimisticLoading !== undefined) {
+        this.optimisticLoading = init.optimisticLoading
+      }
+      if (init.timeoutAfter !== undefined) {
+        this.timeoutAfter = init.timeoutAfter
+      }
       if (init.onBackPressed) {
         this.onBackPressed = init.onBackPressed
       }
@@ -129,6 +201,13 @@ export class PaywallOptions {
       transactionBackgroundView: this.transactionBackgroundView,
       shouldShowWebPurchaseConfirmationAlert: this.shouldShowWebPurchaseConfirmationAlert,
       presentationHost: this.presentationHost,
+      overrideProductsByName: this.overrideProductsByName,
+      shouldShowWebRestorationAlert: this.shouldShowWebRestorationAlert,
+      notificationPermissionsDenied: this.notificationPermissionsDenied
+        ? filterUndefined(this.notificationPermissionsDenied)
+        : undefined,
+      optimisticLoading: this.optimisticLoading,
+      timeoutAfter: this.timeoutAfter,
     })
   }
 }

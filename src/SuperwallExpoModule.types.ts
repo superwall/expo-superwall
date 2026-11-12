@@ -33,6 +33,29 @@ export interface Variant {
 }
 
 /**
+ * An experiment variant the user has been assigned to, returned by `getAssignments()` and
+ * `confirmAllAssignments()`.
+ */
+export interface Assignment {
+  /** The identifier of the experiment. */
+  experimentId: string
+  /** The variant the user is assigned to. See {@link Variant}. */
+  variant: Variant
+  /** iOS only. Whether the assignment has been confirmed with Superwall's servers. */
+  isSentToServer?: boolean
+}
+
+/**
+ * Whether the SDK has finished configuring, returned by `getConfigurationStatus()`.
+ */
+export type ConfigurationStatus = "PENDING" | "CONFIGURED" | "FAILED"
+
+/**
+ * The interface style to show paywalls in, set with `setInterfaceStyle()`.
+ */
+export type InterfaceStyle = "LIGHT" | "DARK"
+
+/**
  * Represents a Superwall experiment, including its ID, group ID, and the variant assigned to the user.
  */
 export interface Experiment {
@@ -147,6 +170,8 @@ export type IntegrationAttribute =
   | "onesignalId"
   | "fbAnonId"
   | "firebaseAppInstanceId"
+  /** iOS only. The Firebase Installation ID. Ignored on Android. */
+  | "firebaseInstallationId"
   | "iterableUserId"
   | "iterableCampaignId"
   | "iterableTemplateId"
@@ -166,6 +191,18 @@ export type IntegrationAttribute =
    * On iOS, it is kept when you reset or identify a different user.
    */
   | "airbridgeId"
+  /** Android only. The Meta (Facebook) ID. Ignored on iOS. */
+  | "meta"
+  /** Android only. The Amplitude ID. Ignored on iOS. */
+  | "amplitude"
+  /** Android only. The Mixpanel ID. Ignored on iOS. */
+  | "mixpanel"
+  /** Android only. The Google Ads ID. Ignored on iOS. */
+  | "googleAds"
+  /** Android only. The Google App Set ID. Ignored on iOS. */
+  | "googleAppSetId"
+  /** Android only. A custom attribution ID. Ignored on iOS. */
+  | "custom"
 
 /**
  * Object with optional keys for third-party integration provider IDs.
@@ -175,7 +212,11 @@ export type IntegrationAttribute =
  * brazeAliasName, brazeAliasLabel, onesignalId, fbAnonId, firebaseAppInstanceId,
  * iterableUserId, iterableCampaignId, iterableTemplateId, mixpanelDistinctId,
  * mparticleId, clevertapId, airshipChannelId, kochavaDeviceId, tenjinId,
- * posthogUserId, customerioId, appstackId, singularDeviceId, airbridgeId
+ * posthogUserId, customerioId, appstackId, singularDeviceId, airbridgeId,
+ * firebaseInstallationId (iOS only), and meta, amplitude, mixpanel, googleAds,
+ * googleAppSetId and custom (Android only).
+ *
+ * Attributes you leave out keep their current value. Set one to `null` to remove it.
  *
  * @example
  * ```typescript
@@ -187,7 +228,7 @@ export type IntegrationAttribute =
  * ```
  */
 export type IntegrationAttributes = {
-  [K in IntegrationAttribute]?: string
+  [K in IntegrationAttribute]?: string | null
 }
 
 /**
@@ -3140,6 +3181,12 @@ export type LogLevel = "debug" | "info" | "warn" | "error" | "none"
  * - `paywallViewController`: Logs related to the paywall view controller (native specific).
  * - `cache`: Logs related to caching mechanisms within the SDK.
  * - `billing`: Logs related to Google Play Billing (Android only). On Android, `storeKitManager` also enables them.
+ * - `analytics`: Logs related to analytics (iOS only).
+ * - `transactions`: Logs related to transactions.
+ * - `webEntitlements`: Logs related to entitlements redeemed through web checkout.
+ * - `grantedEntitlements`: Logs related to entitlements granted outside the store (iOS only).
+ * - `customerCenter`: Logs related to the Customer Center.
+ * - `customerInfo`, `jsEvaluator`, `nativePurchaseController`, `deepLinks`: Android only.
  * - `all`: Enables logging for all scopes.
  */
 export type LogScope =
@@ -3165,6 +3212,15 @@ export type LogScope =
   | "paywallViewController"
   | "cache"
   | "billing"
+  | "analytics"
+  | "transactions"
+  | "webEntitlements"
+  | "grantedEntitlements"
+  | "customerCenter"
+  | "customerInfo"
+  | "jsEvaluator"
+  | "nativePurchaseController"
+  | "deepLinks"
   | "all"
 
 export type OnPurchaseParamsIOS = {
@@ -3180,6 +3236,30 @@ export type OnPurchaseParamsIOS = {
   store?: ProductStore
 }
 
+/**
+ * How a purchase replaces an existing Google Play subscription.
+ * - `storeDefault`: Google Play's default replacement mode.
+ * - `chargeProrated`: charge the prorated price difference straight away.
+ * - `chargeFullPrice`: charge the new product's full price straight away.
+ */
+export type ProductReplacementMode = "storeDefault" | "chargeProrated" | "chargeFullPrice"
+
+/**
+ * Android only. The existing subscription a purchase replaces, when the paywall's Purchase action
+ * is set to replace one and the user has an active subscription sharing an entitlement with the
+ * new product. Pass `oldPurchaseToken` and `mode` to your billing flow's subscription update
+ * parameters (or your billing library's equivalent, such as RevenueCat's `oldProductId` and
+ * `googleReplacementMode`).
+ */
+export interface ProductReplacement {
+  /** How the purchase replaces the old subscription. See {@link ProductReplacementMode}. */
+  mode: ProductReplacementMode
+  /** The product identifier of the subscription being replaced. */
+  oldProductId: string | null
+  /** The Google Play purchase token of the subscription being replaced. */
+  oldPurchaseToken: string | null
+}
+
 export type OnPurchaseParamsAndroid = {
   productId: string
   platform: "android"
@@ -3191,6 +3271,11 @@ export type OnPurchaseParamsAndroid = {
    * backend). See {@link ProductStore}.
    */
   store?: ProductStore
+  /**
+   * The existing subscription this purchase replaces, if any. See {@link ProductReplacement}.
+   * If you ignore it, the purchase is made as a new subscription.
+   */
+  replacement?: ProductReplacement
 }
 
 export type OnPurchaseParams = OnPurchaseParamsIOS | OnPurchaseParamsAndroid
@@ -3320,6 +3405,18 @@ export type SuperwallExpoModuleEvents = {
    */
   onPaywallError: (params: { errorString: string; handlerId: string }) => void
   /**
+   * iOS only. Emitted when a paywall presented by `registerPlacement` is about to be dismissed.
+   * @param params - Event parameters.
+   * @param params.paywallInfoJson - JSON representation of {@link PaywallInfo} for the paywall.
+   * @param params.result - The result of the paywall interaction. See {@link PaywallResult}.
+   * @param params.handlerId - Identifier for the handler associated with this paywall.
+   */
+  onPaywallWillDismiss: (params: {
+    paywallInfoJson: PaywallInfo
+    result: PaywallResult
+    handlerId: string
+  }) => void
+  /**
    * Emitted when a paywall presentation is skipped (e.g., user is in a holdout group, no rule match).
    * @param params - Event parameters.
    * @param params.skippedReason - The reason why the paywall was skipped. See {@link PaywallSkippedReason}.
@@ -3421,6 +3518,24 @@ export type SuperwallExpoModuleEvents = {
    * @param params - The result of the redemption attempt. See {@link RedemptionResult}.
    */
   didRedeemLink: (params: RedemptionResult) => void
+  /**
+   * Emitted when the user's attributes change, whether you set them or a paywall did.
+   * @param params - Event parameters.
+   * @param params.newAttributes - All of the user's attributes after the change.
+   */
+  userAttributesDidChange: (params: { newAttributes: Record<string, any> }) => void
+  /**
+   * iOS only. Emitted when Superwall handles a deep link, with the link's parts.
+   * @param params - Event parameters.
+   * @param params.fullURL - The full deep link URL.
+   * @param params.pathComponents - The URL's path components.
+   * @param params.queryParameters - The URL's query parameters.
+   */
+  handleSuperwallDeepLink: (params: {
+    fullURL: string
+    pathComponents: string[]
+    queryParameters: Record<string, string>
+  }) => void
 
   // Purchase Events
   /**

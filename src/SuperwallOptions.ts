@@ -34,6 +34,16 @@ export type LogScope =
   | "paywallTransactions"
   | "paywallViewController"
   | "cache"
+  | "billing"
+  | "analytics"
+  | "transactions"
+  | "webEntitlements"
+  | "grantedEntitlements"
+  | "customerCenter"
+  | "customerInfo"
+  | "jsEvaluator"
+  | "nativePurchaseController"
+  | "deepLinks"
   | "all"
 
 /**
@@ -95,8 +105,6 @@ export type AdConsentStatus = "granted" | "denied"
  * that don't use a TCF banner should set it from their consent flow. Both purposes are reported
  * as denied while `eventTrackingBehavior` is `"none"`, and personalization is reported as denied
  * when the user hasn't allowed App Tracking Transparency, unless you set it yourself.
- *
- * iOS only.
  */
 export interface AdConsent {
   /** Consent to send user data to ad networks for advertising. */
@@ -127,6 +135,25 @@ export interface RestoreFailed {
   title: string
   message: string
   closeButtonTitle: string
+}
+
+/**
+ * @category Models
+ * @since 1.8.0
+ * Defines the messaging of the alert presented when a paywall asks for notification permissions
+ * that the user has denied. A field left out keeps the native default.
+ *
+ * iOS only.
+ */
+export interface NotificationPermissionsDenied {
+  /** Defaults to `"Notification Permissions Denied"`. */
+  title?: string
+  /** Defaults to a message asking the user to enable notifications in the Settings app. */
+  message?: string
+  /** The button that opens the Settings app. Defaults to `"Open Settings"`. */
+  actionButtonTitle?: string
+  /** Defaults to `"Not now"`. */
+  closeButtonTitle?: string
 }
 
 /**
@@ -166,6 +193,45 @@ export interface PaywallOptions {
    * @since 1.6.0
    */
   presentationHost?: PresentationHost
+  /**
+   * Replaces products on every paywall by product name, such as `{ primary: "com.app.yearly" }`,
+   * where the keys are the product names set in the paywall editor. Change it at runtime with
+   * `setOverrideProductsByName()`.
+   * @since 1.8.0
+   */
+  overrideProductsByName?: Record<string, string>
+  /**
+   * Whether to show an alert after the user restores a web purchase. Defaults to `true`.
+   *
+   * iOS only: ignored on Android.
+   * @since 1.8.0
+   */
+  shouldShowWebRestorationAlert?: boolean
+  /**
+   * The alert shown when a paywall asks for notification permissions that the user has denied.
+   * No alert is shown unless this is set.
+   *
+   * iOS only: ignored on Android.
+   * @since 1.8.0
+   */
+  notificationPermissionsDenied?: NotificationPermissionsDenied
+  /**
+   * Shows the paywall without waiting for its loading shimmer to finish. Defaults to `false`.
+   *
+   * Android only: ignored on iOS.
+   * @since 1.8.0
+   */
+  optimisticLoading?: boolean
+  /**
+   * How long, in milliseconds, a presented paywall may take to load before it's given up on. It's
+   * then dismissed as declined with the `webViewFailedToLoad` close reason, so `onDismiss` is
+   * followed by the feature for a non-gated placement or `onError` for a gated one. No timeout
+   * unless this is set.
+   *
+   * Android only: ignored on iOS.
+   * @since 1.8.0
+   */
+  timeoutAfter?: number
 }
 
 /**

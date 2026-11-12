@@ -12,6 +12,7 @@ export class PaywallPresentationHandler {
   // Handlers for various events
   onPresentHandler?: (info: PaywallInfo) => void
   onDismissHandler?: (info: PaywallInfo, result: PaywallResult) => void
+  onWillDismissHandler?: (info: PaywallInfo, result: PaywallResult) => void
   onErrorHandler?: (error: string) => void
   onSkipHandler?: (reason: PaywallSkippedReason) => void
   onCustomCallbackHandler?: (callback: CustomCallback) => Promise<CustomCallbackResult> | CustomCallbackResult
@@ -23,6 +24,14 @@ export class PaywallPresentationHandler {
 
   onDismiss(handler: (info: PaywallInfo, result: PaywallResult) => void): void {
     this.onDismissHandler = handler
+  }
+
+  /**
+   * iOS only. Sets the handler called when the paywall is about to be dismissed.
+   * Never called on Android.
+   */
+  onWillDismiss(handler: (info: PaywallInfo, result: PaywallResult) => void): void {
+    this.onWillDismissHandler = handler
   }
 
   onError(handler: (error: string) => void): void {

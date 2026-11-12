@@ -25,5 +25,22 @@ export enum LogScope {
   PaywallTransactions = "paywallTransactions",
   PaywallViewController = "paywallViewController",
   Cache = "cache",
+  /** Android only. */
+  Billing = "billing",
+  /** iOS only. */
+  Analytics = "analytics",
+  Transactions = "transactions",
+  WebEntitlements = "webEntitlements",
+  /** iOS only. */
+  GrantedEntitlements = "grantedEntitlements",
+  CustomerCenter = "customerCenter",
+  /** Android only. */
+  CustomerInfo = "customerInfo",
+  /** Android only. */
+  JsEvaluator = "jsEvaluator",
+  /** Android only. */
+  NativePurchaseController = "nativePurchaseController",
+  /** Android only. */
+  DeepLinks = "deepLinks",
   All = "all",
 }

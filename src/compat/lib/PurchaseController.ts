@@ -1,3 +1,4 @@
+import type { ProductReplacement } from "../../SuperwallExpoModule.types"
 import type { ProductStore } from "./Product"
 import type { PurchaseResult } from "./PurchaseResult"
 import type { RestorationResult } from "./RestorationResult"
@@ -35,6 +36,33 @@ export abstract class PurchaseController {
     offerId?: string,
     store?: ProductStore,
   ): Promise<PurchaseResult>
+
+  /**
+   * Android only. Purchase a product from Google Play that replaces the user's existing
+   * subscription. Called instead of {@link purchaseFromGooglePlay} when the paywall's Purchase
+   * action is set to replace a subscription and the user has an active one that shares an
+   * entitlement with the new product.
+   *
+   * The default implementation ignores `replacement` and calls {@link purchaseFromGooglePlay},
+   * which buys the product as a new subscription.
+   * @param productId The product id of the product the user would like to purchase.
+   * @param basePlanId An optional base plan identifier of the product that's being purchased.
+   * @param offerId An optional offer identifier of the product that's being purchased.
+   * @param replacement The subscription being replaced, with the replacement mode and the old
+   * product's identifier and purchase token.
+   * @param store The store that backs the product.
+   * @returns A promise that resolves with the result of the purchase logic.
+   */
+  purchaseFromGooglePlayWithReplacement(
+    productId: string,
+    basePlanId: string | undefined,
+    offerId: string | undefined,
+    // biome-ignore lint/correctness/noUnusedFunctionParameters: overrides receive it; the default ignores it
+    replacement: ProductReplacement,
+    store?: ProductStore,
+  ): Promise<PurchaseResult> {
+    return this.purchaseFromGooglePlay(productId, basePlanId, offerId, store)
+  }
 
   /**
    * Restore purchases.

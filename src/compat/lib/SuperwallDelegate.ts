@@ -38,6 +38,22 @@ export class SuperwallDelegate {
    */
   didRedeemLink(result: RedemptionResult): void {}
   /**
+   * Called when the user's attributes change, whether you set them or a paywall did.
+   * @param newAttributes All of the user's attributes after the change.
+   */
+  userAttributesDidChange(newAttributes: Record<string, any>): void {}
+  /**
+   * iOS only. Called when Superwall handles a deep link, with the link's parts.
+   * @param fullURL The full deep link URL.
+   * @param pathComponents The URL's path components.
+   * @param queryParameters The URL's query parameters.
+   */
+  handleSuperwallDeepLink(
+    fullURL: URL,
+    pathComponents: string[],
+    queryParameters: Record<string, string>,
+  ): void {}
+  /**
    * Called for all Superwall internal events.
    * @param eventInfo Information about the Superwall event.
    */

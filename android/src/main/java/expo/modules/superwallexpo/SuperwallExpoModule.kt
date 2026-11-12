@@ -13,6 +13,7 @@ import expo.modules.superwallexpo.bridges.SuperwallDelegateBridge
 import expo.modules.superwallexpo.json.*
 import com.superwall.sdk.Superwall
 import com.superwall.sdk.billing.BillingError
+import com.superwall.sdk.models.attribution.AttributionProvider
 import com.superwall.sdk.store.abstractions.product.StoreProduct
 import com.superwall.sdk.delegate.SuperwallDelegate
 import com.superwall.sdk.delegate.PurchaseResult
@@ -113,6 +114,7 @@ class SuperwallExpoModule : Module() {
   private val handleLog = "handleLog"
   private val willRedeemLink = "willRedeemLink"
   private val didRedeemLink = "didRedeemLink"
+  private val userAttributesDidChange = "userAttributesDidChange"
 
   // Customer Info Events
   private val customerInfoDidChange = "customerInfoDidChange"
@@ -128,6 +130,8 @@ class SuperwallExpoModule : Module() {
   private var isCustomerCenterPresented = false
 
   val purchaseController = PurchaseControllerBridge.instance
+
+  private var latestIntegrationAttributes: Map<AttributionProvider, String>? = null
 
   override fun definition() = ModuleDefinition {
 
@@ -157,6 +161,7 @@ class SuperwallExpoModule : Module() {
       handleLog,
       willRedeemLink,
       didRedeemLink,
+      userAttributesDidChange,
 
       // Customer info events
       customerInfoDidChange,
@@ -663,14 +668,91 @@ class SuperwallExpoModule : Module() {
       Superwall.instance.adConsent = adConsentFromJson(consent)
     }
 
-    AsyncFunction("setIntegrationAttributes") { attributes: Map<String, String>, promise: Promise ->
+    AsyncFunction("getAdConsent") { promise: Promise ->
+      promise.resolve(Superwall.instance.adConsent.toJson())
+    }
+
+    AsyncFunction("getEventTrackingBehavior") { promise: Promise ->
+      promise.resolve(Superwall.instance.eventTrackingBehavior.toJson())
+    }
+
+    AsyncFunction("getLocaleIdentifier") { promise: Promise ->
+      promise.resolve(Superwall.instance.localeIdentifier)
+    }
+
+    AsyncFunction("getLogLevel") { promise: Promise ->
+      promise.resolve(Superwall.instance.logLevel.name)
+    }
+
+    AsyncFunction("getUserId") { promise: Promise ->
+      promise.resolve(Superwall.instance.userId)
+    }
+
+    AsyncFunction("getIsLoggedIn") { promise: Promise ->
+      promise.resolve(Superwall.instance.isLoggedIn)
+    }
+
+    AsyncFunction("getIsPaywallPresented") { promise: Promise ->
+      promise.resolve(Superwall.instance.isPaywallPresented)
+    }
+
+    AsyncFunction("getLatestPaywallInfo") { promise: Promise ->
+      promise.resolve(Superwall.instance.latestPaywallInfo?.toJson())
+    }
+
+    AsyncFunction("getOverrideProductsByName") { promise: Promise ->
+      promise.resolve(Superwall.instance.overrideProductsByName)
+    }
+
+    Function("setOverrideProductsByName") { overrides: Map<String, String> ->
+      Superwall.instance.overrideProductsByName = overrides
+    }
+
+    // The native refresh runs in the background and has no completion, so this resolves once
+    // it has started.
+    AsyncFunction("refreshConfiguration") { promise: Promise ->
+      Superwall.instance.refreshConfiguration()
+      promise.resolve(null)
+    }
+
+    Function("cancelAllScheduledNotifications") {
+      Superwall.instance.cancelAllScheduledNotifications()
+    }
+
+    Function("setPushToken") { token: String ->
+      Superwall.instance.setPushToken(token)
+    }
+
+    Function("optOutOfNotifications") {
+      Superwall.instance.optOutOfNotifications()
+    }
+
+    Function("optInToNotifications") {
+      Superwall.instance.optInToNotifications()
+    }
+
+    Function("handleNotificationOpen") { data: Map<String, String> ->
+      Superwall.instance.handleNotificationOpen(data)
+    }
+
+    AsyncFunction("setIntegrationAttributes") { attributes: Map<String, String?>, promise: Promise ->
       scope.launch {
         try {
-          val converted = attributes.mapNotNull { (key, value) ->
-            attributionProviderFromString(key)?.let { it to value }
-          }.toMap()
+          // The native call replaces every integration attribute, so merge into the current
+          // ones, as iOS does. A null value removes the attribute. The SDK stores the new set
+          // after a delay, so the last set sent is kept here rather than read back.
+          val current = latestIntegrationAttributes
+            ?: Superwall.instance.integrationAttributes.mapNotNull { (key, value) ->
+              attributionProviderFromString(key)?.let { it to value }
+            }.toMap()
+          val merged = current.toMutableMap()
+          attributes.forEach { (key, value) ->
+            val provider = attributionProviderFromString(key) ?: return@forEach
+            if (value == null) merged.remove(provider) else merged[provider] = value
+          }
+          latestIntegrationAttributes = merged
 
-          Superwall.instance.setIntegrationAttributes(converted)
+          Superwall.instance.setIntegrationAttributes(merged)
           promise.resolve(null)
         } catch (error: Exception) {
           promise.reject(CodedException(error))

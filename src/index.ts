@@ -19,6 +19,7 @@ export type {
   LocalResource,
   LoggingOptions,
   NetworkEnvironment,
+  NotificationPermissionsDenied,
   PartialSuperwallOptions,
   PaywallOptions,
   PresentationHost,

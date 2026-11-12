@@ -12,10 +12,16 @@ import {
 import { resolveLocalResources } from "./localResources"
 import SuperwallExpoModule from "./SuperwallExpoModule"
 import type {
+  Assignment,
+  ConfigurationStatus,
   CustomerInfo,
+  Entitlement,
   EntitlementsInfo,
   IntegrationAttributes,
+  InterfaceStyle,
+  LogLevel,
   OwnedInAppPurchase,
+  PaywallInfo,
   ProductResponse,
   PurchaseResultResponse,
   RestorationResultResponse,
@@ -419,6 +425,159 @@ export interface SuperwallStore {
    * @returns A promise that resolves with the entitlements information.
    */
   getEntitlements: () => Promise<EntitlementsInfo>
+
+  /**
+   * Returns the entitlements that the given products unlock.
+   * @param productIds - The product identifiers.
+   * @returns A promise that resolves with the entitlements, without duplicates.
+   */
+  getEntitlementsByProductIds: (productIds: string[]) => Promise<Entitlement[]>
+
+  /**
+   * Returns the experiment assignments made so far, without confirming the rest.
+   * @returns A promise that resolves with the assignments. See {@link Assignment}.
+   */
+  getAssignments: () => Promise<Assignment[]>
+
+  /**
+   * Confirms all experiment assignments and returns them. Assignments may differ when a placement
+   * is registered, as audience filters can depend on user, placement and device parameters.
+   * @returns A promise that resolves with the assignments. See {@link Assignment}.
+   */
+  confirmAllAssignments: () => Promise<Assignment[]>
+
+  /**
+   * Shows paywalls in the given interface style instead of the system's.
+   * @param style - `"LIGHT"` or `"DARK"`, or `null` to follow the system again.
+   * @returns A promise that resolves when the style is set.
+   */
+  setInterfaceStyle: (style: InterfaceStyle | null) => Promise<void>
+
+  /**
+   * Returns whether the native SDK has finished configuring. Unlike the other methods, this
+   * doesn't wait for configuration.
+   * @returns A promise that resolves with `"PENDING"`, `"CONFIGURED"` or `"FAILED"`.
+   */
+  getConfigurationStatus: () => Promise<ConfigurationStatus>
+
+  /**
+   * Handles a Superwall deep link, such as a paywall preview or web checkout link.
+   * `SuperwallProvider` already passes the links your app opens through this.
+   * @param url - The deep link URL.
+   * @returns A promise that resolves with whether Superwall handled the link.
+   */
+  handleDeepLink: (url: string) => Promise<boolean>
+
+  /**
+   * Fetches the Superwall configuration again, so changes made on the dashboard show without
+   * restarting the app. Intended for development. On Android the promise resolves once the
+   * refresh has started, on iOS once it has finished.
+   * @returns A promise that resolves as described.
+   */
+  refreshConfiguration: () => Promise<void>
+
+  /**
+   * Returns the info of the paywall on screen, or else the most recently presented one.
+   * @returns A promise that resolves with the {@link PaywallInfo}, or `null` if none.
+   */
+  getLatestPaywallInfo: () => Promise<PaywallInfo | null>
+
+  /**
+   * Returns whether a paywall is presented.
+   * @returns A promise that resolves with `true` if a paywall is on screen.
+   */
+  getIsPaywallPresented: () => Promise<boolean>
+
+  /**
+   * Returns the current user's ID: the one passed to `identify`, or an anonymous ID.
+   * @returns A promise that resolves with the user ID.
+   */
+  getUserId: () => Promise<string>
+
+  /**
+   * Returns whether the user has been identified with `identify`.
+   * @returns A promise that resolves with `true` if the user is logged in.
+   */
+  getIsLoggedIn: () => Promise<boolean>
+
+  /**
+   * Returns which events Superwall tracks.
+   * @returns A promise that resolves with the current {@link EventTrackingBehavior}.
+   */
+  getEventTrackingBehavior: () => Promise<EventTrackingBehavior>
+
+  /**
+   * Returns the ad consent Superwall passes on with the conversions it uploads. If it was never
+   * set, both purposes are `"granted"`.
+   * @returns A promise that resolves with the current {@link AdConsent}.
+   */
+  getAdConsent: () => Promise<Required<AdConsent>>
+
+  /**
+   * Returns the locale identifier set with `setLocaleIdentifier` or the `localeIdentifier` option.
+   * @returns A promise that resolves with the locale identifier, or `null` for the device locale.
+   */
+  getLocaleIdentifier: () => Promise<string | null>
+
+  /**
+   * Returns the SDK's log level.
+   * @returns A promise that resolves with the current {@link LogLevel}.
+   */
+  getLogLevel: () => Promise<LogLevel>
+
+  /**
+   * Replaces products on every paywall by product name, such as `{ primary: "com.app.yearly" }`,
+   * overriding the `overrideProductsByName` paywall option.
+   * @param overrides - Product identifiers keyed by the product names set in the paywall editor.
+   * @returns A promise that resolves when the overrides are set.
+   */
+  setOverrideProductsByName: (overrides: Record<string, string>) => Promise<void>
+
+  /**
+   * Returns the products that replace paywall products by name.
+   * @returns A promise that resolves with the product identifiers keyed by product name.
+   */
+  getOverrideProductsByName: () => Promise<Record<string, string>>
+
+  /**
+   * Cancels the local notifications Superwall has scheduled, such as free trial reminders.
+   * @returns A promise that resolves once the native SDK has been told.
+   */
+  cancelAllScheduledNotifications: () => Promise<void>
+
+  /**
+   * Android only. Gives Superwall the device's Firebase Cloud Messaging registration token, so it
+   * can send push notifications to this device. Call it on launch and whenever FCM issues a new
+   * token. Does nothing on iOS.
+   * @param token - The FCM registration token.
+   * @returns A promise that resolves once the native SDK has been told.
+   */
+  setPushToken: (token: string) => Promise<void>
+
+  /**
+   * Android only. Stops Superwall sending push notifications to this device, until
+   * {@link optInToNotifications} is called. Remembered across launches, `reset` and `identify`.
+   * Does nothing on iOS.
+   * @returns A promise that resolves once the native SDK has been told.
+   */
+  optOutOfNotifications: () => Promise<void>
+
+  /**
+   * Android only. Lets Superwall send push notifications to this device again after
+   * {@link optOutOfNotifications}. Devices are opted in by default. Does nothing on iOS.
+   * @returns A promise that resolves once the native SDK has been told.
+   */
+  optInToNotifications: () => Promise<void>
+
+  /**
+   * Android only. Tells Superwall the user opened a notification, so it can measure the
+   * notifications it sends. Pass the data of a notification the user tapped; never call it when
+   * a message is merely delivered. Notifications Superwall didn't send are ignored. Does nothing
+   * on iOS.
+   * @param data - The notification's data.
+   * @returns A promise that resolves once the native SDK has been told.
+   */
+  handleNotificationOpen: (data: Record<string, string>) => Promise<void>
 }
 
 /**
@@ -668,6 +827,93 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     await awaitConfigured()
     const entitlements = await SuperwallExpoModule.getEntitlements()
     return entitlements as EntitlementsInfo
+  },
+  getEntitlementsByProductIds: async (productIds) => {
+    await awaitConfigured()
+    return SuperwallExpoModule.getEntitlementsByProductIds(productIds)
+  },
+  getAssignments: async () => {
+    await awaitConfigured()
+    return SuperwallExpoModule.getAssignments()
+  },
+  confirmAllAssignments: async () => {
+    await awaitConfigured()
+    return SuperwallExpoModule.confirmAllAssignments()
+  },
+  setInterfaceStyle: async (style) => {
+    await awaitConfigured()
+    SuperwallExpoModule.setInterfaceStyle(style ?? undefined)
+  },
+  getConfigurationStatus: async () => {
+    return (await SuperwallExpoModule.getConfigurationStatus()) as ConfigurationStatus
+  },
+  handleDeepLink: async (url) => {
+    await awaitConfigured()
+    return SuperwallExpoModule.handleDeepLink(url)
+  },
+  refreshConfiguration: async () => {
+    await awaitConfigured()
+    await SuperwallExpoModule.refreshConfiguration()
+  },
+  getLatestPaywallInfo: async () => {
+    await awaitConfigured()
+    return (await SuperwallExpoModule.getLatestPaywallInfo()) ?? null
+  },
+  getIsPaywallPresented: async () => {
+    await awaitConfigured()
+    return SuperwallExpoModule.getIsPaywallPresented()
+  },
+  getUserId: async () => {
+    await awaitConfigured()
+    return SuperwallExpoModule.getUserId()
+  },
+  getIsLoggedIn: async () => {
+    await awaitConfigured()
+    return SuperwallExpoModule.getIsLoggedIn()
+  },
+  getEventTrackingBehavior: async () => {
+    await awaitConfigured()
+    return (await SuperwallExpoModule.getEventTrackingBehavior()) as EventTrackingBehavior
+  },
+  getAdConsent: async () => {
+    await awaitConfigured()
+    return (await SuperwallExpoModule.getAdConsent()) as Required<AdConsent>
+  },
+  getLocaleIdentifier: async () => {
+    await awaitConfigured()
+    return (await SuperwallExpoModule.getLocaleIdentifier()) ?? null
+  },
+  getLogLevel: async () => {
+    await awaitConfigured()
+    return (await SuperwallExpoModule.getLogLevel()) as LogLevel
+  },
+  setOverrideProductsByName: async (overrides) => {
+    await awaitConfigured()
+    SuperwallExpoModule.setOverrideProductsByName(overrides)
+  },
+  getOverrideProductsByName: async () => {
+    await awaitConfigured()
+    return SuperwallExpoModule.getOverrideProductsByName()
+  },
+  cancelAllScheduledNotifications: async () => {
+    await awaitConfigured()
+    SuperwallExpoModule.cancelAllScheduledNotifications()
+  },
+  setPushToken: async (token) => {
+    await awaitConfigured()
+    SuperwallExpoModule.setPushToken(token)
+  },
+  optOutOfNotifications: async () => {
+    await awaitConfigured()
+    SuperwallExpoModule.optOutOfNotifications()
+  },
+  optInToNotifications: async () => {
+    await awaitConfigured()
+    SuperwallExpoModule.optInToNotifications()
+  },
+  handleNotificationOpen: async (data) => {
+    await awaitConfigured()
+    SuperwallExpoModule.handleNotificationOpen(data)
   },
 
   /* -------------------- Listener helpers -------------------- */

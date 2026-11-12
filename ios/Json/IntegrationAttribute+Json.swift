@@ -12,6 +12,7 @@ extension IntegrationAttribute {
     case "onesignalId": return .onesignalId
     case "fbAnonId": return .fbAnonId
     case "firebaseAppInstanceId": return .firebaseAppInstanceId
+    case "firebaseInstallationId": return .firebaseInstallationId
     case "iterableUserId": return .iterableUserId
     case "iterableCampaignId": return .iterableCampaignId
     case "iterableTemplateId": return .iterableTemplateId

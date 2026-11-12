@@ -45,6 +45,16 @@ extension LogScope {
       return .paywallViewController
     case "cache":
       return .cache
+    case "analytics":
+      return .analytics
+    case "transactions":
+      return .transactions
+    case "webEntitlements":
+      return .webEntitlements
+    case "grantedEntitlements":
+      return .grantedEntitlements
+    case "customerCenter":
+      return .customerCenter
     case "all":
       return .all
     default:

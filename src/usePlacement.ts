@@ -32,6 +32,8 @@ export interface usePlacementCallbacks {
   onPresent?: (paywallInfo: PaywallInfo) => void
   /** Called when a paywall is dismissed. */
   onDismiss?: (paywallInfo: PaywallInfo, result: PaywallResult) => void
+  /** iOS only. Called when a paywall is about to be dismissed. Never called on Android. */
+  onWillDismiss?: (paywallInfo: PaywallInfo, result: PaywallResult) => void
   /** Called when a paywall is skipped. */
   onSkip?: (reason: PaywallSkippedReason) => void
   /** Called when a paywall fails to present or another SDK error occurs. */
@@ -126,6 +128,9 @@ export function usePlacement(callbacks: usePlacementCallbacks = {}) {
     onPaywallDismiss(info, result) {
       setState({ status: "dismissed", result })
       callbacks.onDismiss?.(info, result)
+    },
+    onPaywallWillDismiss(info, result) {
+      callbacks.onWillDismiss?.(info, result)
     },
     onPaywallSkip(reason) {
       setState({ status: "skipped", reason })
