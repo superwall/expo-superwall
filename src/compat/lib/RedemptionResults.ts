@@ -187,7 +187,13 @@ export interface RedemptionInfo {
  * The result of redeeming a code via web checkout
  */
 export type RedemptionResult =
-  | { status: "SUCCESS"; code: string; redemptionInfo: RedemptionInfo }
+  | {
+      status: "SUCCESS"
+      code: string
+      redemptionInfo: RedemptionInfo
+      /** The Stripe subscription IDs of the purchase, when it was made through Stripe. */
+      stripeSubscriptionIds?: string[]
+    }
   | { status: "ERROR"; code: string; error: ErrorInfo }
   | { status: "CODE_EXPIRED"; code: string; expired: ExpiredCodeInfo }
   | { status: "INVALID_CODE"; code: string }
@@ -212,6 +218,9 @@ export class RedemptionResults {
           status,
           code,
           redemptionInfo: RedemptionResults.parseRedemptionInfo(json.redemptionInfo),
+          ...(Array.isArray(json.stripeSubscriptionIds)
+            ? { stripeSubscriptionIds: json.stripeSubscriptionIds }
+            : {}),
         }
 
       case "ERROR":

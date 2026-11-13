@@ -17,6 +17,7 @@ import type {
   CustomerInfo,
   Entitlement,
   EntitlementsInfo,
+  IntegrationAttribute,
   IntegrationAttributes,
   InterfaceStyle,
   LogLevel,
@@ -24,7 +25,9 @@ import type {
   PaywallInfo,
   ProductResponse,
   PurchaseResultResponse,
+  PurchasingObserverState,
   RestorationResultResponse,
+  ShowAlertOptions,
   SubscriptionStatus,
 } from "./SuperwallExpoModule.types"
 import {
@@ -34,6 +37,8 @@ import {
   type PartialSuperwallOptions,
 } from "./SuperwallOptions"
 import { filterUndefined } from "./utils/filterUndefined"
+import { productIdentifierForPurchase } from "./utils/productIdentifier"
+import { purchasingObserverStateToJson } from "./utils/purchasingObserverState"
 
 const CONFIGURE_WAIT_TIMEOUT_MS = 10_000
 
@@ -157,6 +162,14 @@ export interface SuperwallStore {
   configurationError: string | null
 
   /**
+   * The native SDK's configuration status: `"PENDING"` until it has fetched its configuration,
+   * then `"CONFIGURED"` or `"FAILED"`. Kept current via the native
+   * `configurationStatusDidChange` event; use `onConfigurationStatusChange` in
+   * `useSuperwallEvents` to be called on each change.
+   */
+  configurationStatus: ConfigurationStatus
+
+  /**
    * The current user's attributes.
    * `null` if no user is identified or after `reset` is called.
    * `undefined` initially before any user data is fetched or set.
@@ -237,13 +250,15 @@ export interface SuperwallStore {
   restorePurchases: () => Promise<RestorationResultResponse>
 
   /**
-   * Initiates a purchase for a given product identifier.
-   * @param productId - The product identifier to purchase.
+   * Initiates a purchase of a product.
+   * @param product - The product identifier, or a product returned by {@link products}. On
+   * Android a product object is purchased with its own base plan and offer (its
+   * `fullIdentifier`); an identifier can also be a full one, `productId:basePlanId:offerId`.
    * @returns A promise that resolves with a {@link PurchaseResultResponse} indicating the outcome.
    * If the product can't be found or the purchase fails, it resolves with a `failed` result
    * containing the native error message rather than rejecting.
    */
-  purchase: (productId: string) => Promise<PurchaseResultResponse>
+  purchase: (product: string | ProductResponse) => Promise<PurchaseResultResponse>
 
   /**
    * Fetches product details for an array of product identifiers.
@@ -385,6 +400,14 @@ export interface SuperwallStore {
   setIntegrationAttributes: (attributes: IntegrationAttributes) => Promise<void>
 
   /**
+   * Sets a single attribute for a third-party integration, leaving the others as they are.
+   * @param attribute - The integration attribute, such as `"adjustId"`.
+   * @param value - The ID, or `null` to remove the attribute.
+   * @returns A promise that resolves when the attribute is set
+   */
+  setIntegrationAttribute: (attribute: IntegrationAttribute, value: string | null) => Promise<void>
+
+  /**
    * Gets the currently set integration attributes.
    * @returns A promise that resolves with the current integration attributes
    */
@@ -412,6 +435,18 @@ export interface SuperwallStore {
    * @returns A promise that resolves with the {@link CustomerInfo} snapshot.
    */
   getCustomerInfo: () => Promise<CustomerInfo>
+
+  /**
+   * Fetches the user's latest entitlements from Superwall, updates the store's `customerInfo`
+   * state and returns it. Call it once your server has reported a purchase Superwall can't see
+   * on the device, such as a custom product's.
+   *
+   * iOS only, and only when the app builds SuperwallKit 4.19 or later through Swift Package
+   * Manager (see the README). Otherwise, and on Android, the native SDK can't force a refresh
+   * and this resolves with the customer info it already has, like {@link getCustomerInfo}.
+   * @returns A promise that resolves with the {@link CustomerInfo} snapshot.
+   */
+  refreshCustomerInfo: () => Promise<CustomerInfo>
 
   /**
    * Retrieves the App Store / Play Store storefront country code for the current device.
@@ -578,6 +613,99 @@ export interface SuperwallStore {
    * @returns A promise that resolves once the native SDK has been told.
    */
   handleNotificationOpen: (data: Record<string, string>) => Promise<void>
+
+  /**
+   * iOS only. Removes all of your app's pending local notifications except the ones Superwall
+   * scheduled. Does nothing on Android.
+   * @returns A promise that resolves once the native SDK has been told.
+   */
+  removeAllPendingNonSuperwallNotificationRequests: () => Promise<void>
+
+  /**
+   * iOS only. Removes the notifications Superwall delivered from Notification Center. Doesn't
+   * affect notifications that are scheduled but not yet delivered. Does nothing on Android.
+   * @returns A promise that resolves once the native SDK has been told.
+   */
+  removeAllDeliveredSuperwallNotifications: () => Promise<void>
+
+  /**
+   * iOS only. Removes all of your app's delivered notifications from Notification Center except
+   * Superwall's. Does nothing on Android.
+   * @returns A promise that resolves once the native SDK has been told.
+   */
+  removeAllDeliveredNonSuperwallNotifications: () => Promise<void>
+
+  /**
+   * iOS only. Returns the entitlements granted with {@link setGrantedEntitlements}. Always an
+   * empty array on Android.
+   * @returns A promise that resolves with the granted entitlements.
+   */
+  getGrantedEntitlements: () => Promise<Entitlement[]>
+
+  /**
+   * iOS only. Grants entitlements that your own backend gives out and Superwall can't observe,
+   * such as a promotional grant. The SDK merges them into the subscription status alongside
+   * device and web entitlements. Don't use it if you set the full subscription status yourself
+   * with a purchase controller.
+   *
+   * Each call replaces the previous set; pass an empty array to revoke them. They persist
+   * across app launches, `reset` and `identify`, so set them again after either if the new
+   * user shouldn't inherit them. Does nothing on Android.
+   * @param entitlements - The entitlements to grant, or their identifiers.
+   * @returns A promise that resolves when the entitlements are set.
+   */
+  setGrantedEntitlements: (entitlements: (string | { id: string })[]) => Promise<void>
+
+  /**
+   * Android only. Shows an alert over the presented paywall. Does nothing on iOS.
+   * @param options - The alert's title, message and button titles.
+   * @returns A promise that resolves with `true` if the user tapped the action button, and
+   * `false` if they closed the alert or there was no paywall to show it over (always the case
+   * on iOS).
+   */
+  showAlert: (options?: ShowAlertOptions) => Promise<boolean>
+
+  /**
+   * Android only. Opens the web page where the user can restore purchases made on the web.
+   * Does nothing on iOS.
+   * @returns A promise that resolves once the native SDK has been told.
+   */
+  openRestoreOnWeb: () => Promise<void>
+
+  /**
+   * Android only. Returns the account ID Superwall passes to Google Play with purchases when
+   * `passIdentifiersToPlayStore` is on.
+   * @returns A promise that resolves with the ID, or `null` on iOS.
+   */
+  getExternalAccountId: () => Promise<string | null>
+
+  /**
+   * Android only. Reports a purchase made outside of Superwall, for observer mode
+   * (`shouldObservePurchases`). Report `purchaseWillBegin` before launching the billing flow,
+   * then `purchaseResult` with what Play Billing returned, or `purchaseError` if it failed
+   * before that. Does nothing on iOS, where the SDK observes StoreKit itself.
+   * @param state - The stage of the purchase. See {@link PurchasingObserverState}.
+   * @returns A promise that resolves once the SDK has been told. Rejects if the product can't
+   * be found.
+   */
+  observe: (state: PurchasingObserverState) => Promise<void>
+
+  /**
+   * Android only. Resets the native SDK and clears its instance, so it can be configured
+   * again, for example with another API key. Afterwards the store is back to its
+   * not-configured state until `configure` runs again. Does nothing on iOS, which has no way
+   * to tear the SDK down.
+   * @returns A promise that resolves with `true` if an SDK instance was torn down.
+   */
+  teardown: () => Promise<boolean>
+
+  /**
+   * Android only. Dismisses the presented paywall with the "for next paywall" close reason,
+   * which you use when another paywall is about to be presented: the feature block of a
+   * non-gated placement doesn't run. Does nothing on iOS.
+   * @returns A promise that resolves when the dismissal is complete.
+   */
+  dismissForNextPaywall: () => Promise<void>
 }
 
 /**
@@ -592,6 +720,7 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   isLoading: false,
   listenersInitialized: false,
   configurationError: null,
+  configurationStatus: "PENDING",
 
   user: null,
   subscriptionStatus: {
@@ -628,6 +757,9 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
           ? { customerCenter: customerCenterConfigurationToJson(customerCenter) }
           : {}),
         ...(adConsent ? { adConsent: filterUndefined(adConsent) } : {}),
+        ...(typeof restOptions.networkEnvironment === "object"
+          ? { networkEnvironment: filterUndefined(restOptions.networkEnvironment) }
+          : {}),
         paywalls: {
           ...DefaultSuperwallOptions.paywalls,
           // Strip undefined so an explicitly undefined field (e.g. `presentationHost`) falls
@@ -718,9 +850,9 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     await awaitConfigured()
     return SuperwallExpoModule.restorePurchases()
   },
-  purchase: async (productId) => {
+  purchase: async (product) => {
     await awaitConfigured()
-    return SuperwallExpoModule.purchase(productId)
+    return SuperwallExpoModule.purchase(productIdentifierForPurchase(product))
   },
   products: async (productIds) => {
     await awaitConfigured()
@@ -798,6 +930,14 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     set({ user: currentUser as UserAttributes })
   },
 
+  setIntegrationAttribute: async (attribute, value) => {
+    await awaitConfigured()
+    await SuperwallExpoModule.setIntegrationAttribute(attribute, value)
+
+    const currentUser = await SuperwallExpoModule.getUserAttributes()
+    set({ user: currentUser as UserAttributes })
+  },
+
   getIntegrationAttributes: async () => {
     await awaitConfigured()
     return SuperwallExpoModule.getIntegrationAttributes()
@@ -815,6 +955,12 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   getCustomerInfo: async () => {
     await awaitConfigured()
     const customerInfo = await SuperwallExpoModule.getCustomerInfo()
+    set({ customerInfo })
+    return customerInfo
+  },
+  refreshCustomerInfo: async () => {
+    await awaitConfigured()
+    const customerInfo = await SuperwallExpoModule.refreshCustomerInfo()
     set({ customerInfo })
     return customerInfo
   },
@@ -915,6 +1061,70 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     await awaitConfigured()
     SuperwallExpoModule.handleNotificationOpen(data)
   },
+  removeAllPendingNonSuperwallNotificationRequests: async () => {
+    await awaitConfigured()
+    SuperwallExpoModule.removeAllPendingNonSuperwallNotificationRequests()
+  },
+  removeAllDeliveredSuperwallNotifications: async () => {
+    await awaitConfigured()
+    SuperwallExpoModule.removeAllDeliveredSuperwallNotifications()
+  },
+  removeAllDeliveredNonSuperwallNotifications: async () => {
+    await awaitConfigured()
+    SuperwallExpoModule.removeAllDeliveredNonSuperwallNotifications()
+  },
+  getGrantedEntitlements: async () => {
+    await awaitConfigured()
+    return SuperwallExpoModule.getGrantedEntitlements()
+  },
+  setGrantedEntitlements: async (entitlements) => {
+    await awaitConfigured()
+    await SuperwallExpoModule.setGrantedEntitlements(
+      entitlements.map((entitlement) => ({
+        id: typeof entitlement === "string" ? entitlement : entitlement.id,
+      })),
+    )
+  },
+  showAlert: async (options = {}) => {
+    await awaitConfigured()
+    return SuperwallExpoModule.showAlert(
+      options.title ?? null,
+      options.message ?? null,
+      options.actionTitle ?? null,
+      options.closeActionTitle ?? null,
+    )
+  },
+  openRestoreOnWeb: async () => {
+    await awaitConfigured()
+    SuperwallExpoModule.openRestoreOnWeb()
+  },
+  getExternalAccountId: async () => {
+    await awaitConfigured()
+    return (await SuperwallExpoModule.getExternalAccountId()) ?? null
+  },
+  observe: async (state) => {
+    await awaitConfigured()
+    await SuperwallExpoModule.observe(purchasingObserverStateToJson(state))
+  },
+  teardown: async () => {
+    await awaitConfigured()
+    const didTearDown = await SuperwallExpoModule.teardown()
+    if (didTearDown) {
+      // The native SDK is gone, so calls wait for the next `configure` again.
+      set({
+        isConfigured: false,
+        configurationStatus: "PENDING",
+        user: null,
+        subscriptionStatus: { status: "UNKNOWN" },
+        customerInfo: null,
+      })
+    }
+    return didTearDown
+  },
+  dismissForNextPaywall: async () => {
+    await awaitConfigured()
+    await SuperwallExpoModule.dismissForNextPaywall()
+  },
 
   /* -------------------- Listener helpers -------------------- */
   _initListeners: (): (() => void) => {
@@ -939,6 +1149,15 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
       SuperwallExpoModule.addListener("customerInfoDidChange", ({ to }: { to: CustomerInfo }) => {
         set({ customerInfo: to })
       }),
+    )
+
+    subscriptions.push(
+      SuperwallExpoModule.addListener(
+        "configurationStatusDidChange",
+        ({ status }: { status: ConfigurationStatus }) => {
+          set({ configurationStatus: status })
+        },
+      ),
     )
 
     // Listen for configuration events

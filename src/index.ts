@@ -15,6 +15,8 @@ export type * from "./SuperwallExpoModule.types"
 export type {
   AdConsent,
   AdConsentStatus,
+  CustomNetworkEnvironment,
+  DeviceTier,
   EventTrackingBehavior,
   LocalResource,
   LoggingOptions,

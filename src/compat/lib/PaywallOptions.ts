@@ -1,3 +1,4 @@
+import type { DeviceTier } from "../../SuperwallOptions"
 import type { PaywallInfo } from "./PaywallInfo"
 
 /**
@@ -139,6 +140,23 @@ export class PaywallOptions {
    * @since 1.8.0
    */
   timeoutAfter?: number
+  /**
+   * Overrides `shouldPreload` for devices of the given tiers, such as `{ low: false }` to skip
+   * preloading on low-end devices.
+   *
+   * Android only: ignored on iOS.
+   * @since 1.8.0
+   */
+  preloadDeviceOverrides?: Partial<Record<DeviceTier, boolean>>
+  /**
+   * The color of the paywall's loading indicator, as the name of a color resource in your
+   * Android app, such as `"paywall_loading"` for `R.color.paywall_loading`. The native option
+   * is a resource ID, so a hex string isn't accepted. An unknown name keeps the default color.
+   *
+   * Android only: ignored on iOS.
+   * @since 1.8.0
+   */
+  loadingColor?: string
 
   constructor(init?: Partial<PaywallOptions>) {
     if (init) {
@@ -178,6 +196,12 @@ export class PaywallOptions {
       if (init.timeoutAfter !== undefined) {
         this.timeoutAfter = init.timeoutAfter
       }
+      if (init.preloadDeviceOverrides) {
+        this.preloadDeviceOverrides = init.preloadDeviceOverrides
+      }
+      if (init.loadingColor !== undefined) {
+        this.loadingColor = init.loadingColor
+      }
       if (init.onBackPressed) {
         this.onBackPressed = init.onBackPressed
       }
@@ -208,6 +232,10 @@ export class PaywallOptions {
         : undefined,
       optimisticLoading: this.optimisticLoading,
       timeoutAfter: this.timeoutAfter,
+      preloadDeviceOverrides: this.preloadDeviceOverrides
+        ? filterUndefined(this.preloadDeviceOverrides)
+        : undefined,
+      loadingColor: this.loadingColor,
     })
   }
 }
