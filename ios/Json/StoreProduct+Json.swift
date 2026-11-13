@@ -56,7 +56,9 @@ extension StoreProduct {
       json["trialPeriodEndDate"] = nil
     }
 
-    json["subscriptionPeriod"] = subscriptionPeriod?.toJson()
+    // `.some` keeps the key with a null value for a product with no period, as Android
+    // sends and the JS type says. Assigning the optional directly would drop the key.
+    json["subscriptionPeriod"] = .some(subscriptionPeriod?.toJson())
     json["introductoryDiscount"] = introductoryDiscount?.toJson()
     json["discounts"] = discounts.map { $0.toJson() }
     json["billingPlanType"] = billingPlanType?.toJson()
