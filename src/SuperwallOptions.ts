@@ -51,7 +51,49 @@ export type LogScope =
  * @since 0.0.15
  * Defines the network environment for Superwall.
  */
-export type NetworkEnvironment = "release" | "releaseCandidate" | "developer"
+export type NetworkEnvironment =
+  | "release"
+  | "releaseCandidate"
+  | "developer"
+  /** iOS only: a Superwall backend running on `localhost`. Android keeps the release environment. */
+  | "local"
+  | CustomNetworkEnvironment
+
+/**
+ * @category Types
+ * @since 1.8.0
+ * A custom Superwall backend. Only use this if the Superwall team tells you to.
+ *
+ * Give `custom` a domain to derive every host from it, as the built-in environments do
+ * (`api.<domain>`, `collector.<domain>`). On iOS it can also be a URL, whose scheme and port
+ * are then used. On Android you can instead name the hosts one by one with `baseHost` and
+ * `collectorHost`; iOS ignores those and needs `custom`.
+ */
+export interface CustomNetworkEnvironment {
+  /** The domain every host is derived from, such as `"example.com"`. */
+  custom?: string
+  /** Android only. The API host. Needs `collectorHost` too. */
+  baseHost?: string
+  /** Android only. The events collector host. */
+  collectorHost?: string
+  /** Android only. `"https"` unless set. Used with `baseHost`. */
+  scheme?: string
+  /** Android only. Used with `baseHost`. */
+  port?: number
+  /** Android only. Used with `baseHost`. */
+  subscriptionHost?: string
+  /** Android only. Used with `baseHost`. */
+  enrichmentHost?: string
+  /** Android only. Used with `baseHost`. */
+  mmpHost?: string
+}
+
+/**
+ * @category Types
+ * @since 1.8.0
+ * How capable the device is, as classified by the Android SDK.
+ */
+export type DeviceTier = "ultra_low" | "low" | "mid" | "high" | "ultra_high" | "unknown"
 
 /**
  * @category Types
@@ -232,6 +274,23 @@ export interface PaywallOptions {
    * @since 1.8.0
    */
   timeoutAfter?: number
+  /**
+   * Overrides `shouldPreload` for devices of the given tiers, such as `{ low: false }` to skip
+   * preloading on low-end devices.
+   *
+   * Android only: ignored on iOS.
+   * @since 1.8.0
+   */
+  preloadDeviceOverrides?: Partial<Record<DeviceTier, boolean>>
+  /**
+   * The color of the paywall's loading indicator, as the name of a color resource in your
+   * Android app, such as `"paywall_loading"` for `R.color.paywall_loading`. The native option
+   * is a resource ID, so a hex string isn't accepted. An unknown name keeps the default color.
+   *
+   * Android only: ignored on iOS.
+   * @since 1.8.0
+   */
+  loadingColor?: string
 }
 
 /**
@@ -292,6 +351,17 @@ export interface SuperwallOptions {
    * @platform iOS and Android
    */
   adConsent?: AdConsent
+  /**
+   * Connects the SDK to a running `superwall dev` server, for development builds only, so
+   * paywalls with a local counterpart render from your local paywall code. `true` finds the
+   * server on `localhost`, which works on a simulator; on a device, pass the `Device` URL that
+   * `superwall dev` prints, such as `"http://192.168.1.10:6100"`. Also turns on test mode and
+   * turns off paywall preloading. The app must allow local networking in its `Info.plist`
+   * (`NSAllowsLocalNetworking`).
+   * @platform iOS only
+   * @since 1.8.0
+   */
+  devServer?: boolean | string
 }
 
 /**
@@ -354,6 +424,17 @@ export interface PartialSuperwallOptions {
    * @platform iOS and Android
    */
   adConsent?: AdConsent
+  /**
+   * Connects the SDK to a running `superwall dev` server, for development builds only, so
+   * paywalls with a local counterpart render from your local paywall code. `true` finds the
+   * server on `localhost`, which works on a simulator; on a device, pass the `Device` URL that
+   * `superwall dev` prints, such as `"http://192.168.1.10:6100"`. Also turns on test mode and
+   * turns off paywall preloading. The app must allow local networking in its `Info.plist`
+   * (`NSAllowsLocalNetworking`).
+   * @platform iOS only
+   * @since 1.8.0
+   */
+  devServer?: boolean | string
   /**
    * A mapping of local resource IDs to local assets. The paywall webview can reference
    * these via the `swlocal://<id>` URL scheme.

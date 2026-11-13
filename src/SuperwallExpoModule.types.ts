@@ -820,6 +820,89 @@ export type PaywallPresentationStyle =
   | "NONE"
 
 /**
+ * Overrides for a paywall retrieved with `<PaywallView>`.
+ */
+export interface PaywallOverrides {
+  /**
+   * Replaces products on the paywall by product name, such as `{ primary: "com.app.yearly" }`,
+   * where the keys are the product names set in the paywall editor and the values are product
+   * identifiers. A product the store doesn't return is left as it is on the paywall.
+   */
+  productsByName?: Record<string, string>
+  /**
+   * Replaces the paywall's presentation style: a style name, or an object with the dimensions
+   * of a `"DRAWER"` (`height`, `cornerRadius`) or `"POPUP"` (`height`, `width`, `cornerRadius`).
+   * The native SDKs take this with a retrieved paywall, but it only affects paywalls they
+   * present themselves, so it has no visible effect on an embedded one.
+   */
+  presentationStyle?:
+    | PaywallPresentationStyle
+    | { style: PaywallPresentationStyle; height?: number; width?: number; cornerRadius?: number }
+}
+
+/**
+ * The loading state of an embedded paywall. iOS only.
+ * - `unknown`: the initial state.
+ * - `loadingPurchase`: a purchase is in progress.
+ * - `loadingURL`: the paywall's web page is loading.
+ * - `manualLoading`: the spinner was shown with `togglePaywallSpinner()`.
+ * - `ready`: the paywall is ready to use.
+ */
+export type PaywallLoadingState =
+  | "unknown"
+  | "loadingPurchase"
+  | "loadingURL"
+  | "manualLoading"
+  | "ready"
+
+/**
+ * A purchase made outside of Superwall, reported with `observe()` in observer mode
+ * (`shouldObservePurchases`). Android only: on iOS the SDK observes StoreKit itself.
+ */
+export type PurchasingObserverState =
+  | {
+      /** The purchase is about to start. Report it before launching the billing flow. */
+      type: "purchaseWillBegin"
+      /** The identifier of the product being purchased. */
+      productId: string
+    }
+  | {
+      /** The purchase failed before Play Billing returned a result. */
+      type: "purchaseError"
+      /** The identifier of the product that was being purchased. */
+      productId: string
+      /** A description of the error. */
+      error: string
+    }
+  | {
+      /** Play Billing's purchases-updated result. */
+      type: "purchaseResult"
+      /** The `BillingResult` response code, such as `0` for OK or `1` for user cancelled. */
+      responseCode: number
+      /** The `BillingResult` debug message. */
+      debugMessage?: string
+      /**
+       * The purchases Play Billing returned, each as the original JSON and signature it gave the
+       * app (`Purchase.getOriginalJson()` and `Purchase.getSignature()`).
+       */
+      purchases?: { originalJson: string; signature?: string }[]
+    }
+
+/**
+ * The content of an alert shown with `showAlert()`. Android only.
+ */
+export interface ShowAlertOptions {
+  /** The alert's title. */
+  title?: string
+  /** The alert's message. */
+  message?: string
+  /** The title of the action button. Left out, the alert only has a close button. */
+  actionTitle?: string
+  /** The title of the close button. Defaults to `"Done"`. */
+  closeActionTitle?: string
+}
+
+/**
  * How a paywall is presented.
  */
 export interface PaywallPresentationInfo {
@@ -1135,6 +1218,11 @@ export type RedemptionResult =
        * See {@link RedemptionInfo}.
        */
       redemptionInfo: RedemptionInfo
+      /**
+       * The Stripe subscription IDs of the purchase, when it was made through Stripe. The same
+       * IDs as `redemptionInfo.purchaserInfo.storeIdentifiers.stripeSubscriptionIds`.
+       */
+      stripeSubscriptionIds?: string[]
     }
   | {
       /**
@@ -1281,7 +1369,11 @@ export interface StoreProductPlatformDetails {
   storeFrontCountryCode?: string | null
   /** Android only. Whether it's a custom product, bought through your purchase controller. */
   isCustomProduct?: boolean
-  /** Android only. The transaction ID the SDK generated for a purchase of a custom product. */
+  /**
+   * The transaction ID the SDK generated for a purchase of a custom product. Send it back
+   * from your server with the purchase's events to attribute the revenue to the paywall. On iOS
+   * it's only sent when the app builds SuperwallKit 4.19 or later (see the README).
+   */
   customTransactionId?: string | null
   /** The product's attributes, as referenced in audience filters and paywalls. */
   attributes?: Record<string, string>
@@ -3444,6 +3536,12 @@ export type SuperwallExpoModuleEvents = {
    * @param params.to - The new customer info snapshot. See {@link CustomerInfo}.
    */
   customerInfoDidChange: (params: { from: CustomerInfo; to: CustomerInfo }) => void
+  /**
+   * Emitted when the native SDK's configuration status changes, and once with the current
+   * status when `configure` is called.
+   * @param params.status - The new {@link ConfigurationStatus}.
+   */
+  configurationStatusDidChange: (params: { status: ConfigurationStatus }) => void
   /**
    * Emitted for various internal Superwall events, providing a detailed stream of SDK activity.
    * @param params - Event parameters.

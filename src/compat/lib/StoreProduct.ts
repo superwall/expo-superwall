@@ -145,11 +145,21 @@ export class StoreProduct {
   /** Android only. Whether it's a custom product, bought through your purchase controller. */
   isCustomProduct?: boolean
 
-  /** Android only. The transaction ID the SDK generated for a purchase of a custom product. */
+  /**
+   * The transaction ID the SDK generated for a purchase of a custom product. Send it back
+   * from your server with the purchase's events to attribute the revenue to the paywall. On iOS
+   * it's only sent when the app builds SuperwallKit 4.19 or later (see the README).
+   */
   customTransactionId?: string | null
 
   /** The product's attributes, as referenced in audience filters and paywalls. */
   attributes?: Record<string, string>
+
+  /**
+   * Android only. The product's full identifier, `productId:basePlanId:offerId`, which
+   * `Superwall.purchase()` uses to buy this base plan and offer.
+   */
+  fullIdentifier?: string
 
   constructor({
     productIdentifier,
@@ -200,6 +210,7 @@ export class StoreProduct {
     isCustomProduct,
     customTransactionId,
     attributes,
+    fullIdentifier,
   }: {
     productIdentifier: string
     localizedPrice: string
@@ -249,6 +260,7 @@ export class StoreProduct {
     isCustomProduct?: boolean
     customTransactionId?: string | null
     attributes?: Record<string, string>
+    fullIdentifier?: string
   }) {
     this.productIdentifier = productIdentifier
     this.localizedPrice = localizedPrice
@@ -298,6 +310,7 @@ export class StoreProduct {
     this.isCustomProduct = isCustomProduct
     this.customTransactionId = customTransactionId
     this.attributes = attributes
+    this.fullIdentifier = fullIdentifier
   }
 
   static fromJson(json: any): StoreProduct {
@@ -352,6 +365,7 @@ export class StoreProduct {
       isCustomProduct: json.isCustomProduct,
       customTransactionId: json.customTransactionId,
       attributes: json.attributes,
+      fullIdentifier: json.fullIdentifier,
     })
   }
 }

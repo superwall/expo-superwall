@@ -6,6 +6,13 @@ jest.mock("expo", () => ({
   requireNativeView: () => "NativePaywallView",
 }))
 
+const mockDidHandleCustomCallback = jest.fn().mockResolvedValue(undefined)
+
+jest.mock("../SuperwallExpoModule", () => ({
+  __esModule: true,
+  default: { didHandleCustomCallback: mockDidHandleCustomCallback },
+}))
+
 jest.mock("react-native", () => ({
   StyleSheet: {
     absoluteFill: { bottom: 0, left: 0, position: "absolute", right: 0, top: 0 },
@@ -17,6 +24,7 @@ jest.mock("react-native", () => ({
 
 const {
   PaywallView,
+  paywallResultUnlocksFeature,
 }: typeof import("../components/PaywallView") = require("../components/PaywallView")
 
 const paywallInfo = {
@@ -126,5 +134,130 @@ describe("PaywallView", () => {
     })
 
     expect(renderer!.toJSON()).toBeNull()
+  })
+
+  it("passes paywall overrides to the native view and reloads when they change", () => {
+    let renderer: TestRenderer.ReactTestRenderer
+    act(() => {
+      renderer = TestRenderer.create(
+        <PaywallView
+          placement="article"
+          renderFallback={fallbackFor}
+          paywallOverrides={{ productsByName: { primary: "yearly" }, presentationStyle: undefined }}
+        />,
+      )
+    })
+
+    let nativeView = renderer!.root.findByType("NativePaywallView" as never)
+    // `undefined` is stripped: the Android bridge can't convert it.
+    expect(nativeView.props.paywallOverrides).toEqual({ productsByName: { primary: "yearly" } })
+
+    act(() => {
+      nativeView.props.onPaywallPresent({ nativeEvent: { paywallInfo } })
+    })
+    expect(renderer!.root.findAllByProps({ testID: "fallback-loading" })).toHaveLength(0)
+
+    act(() => {
+      renderer!.update(
+        <PaywallView
+          placement="article"
+          renderFallback={fallbackFor}
+          paywallOverrides={{ productsByName: { primary: "monthly" } }}
+        />,
+      )
+    })
+    expect(renderer!.root.findByProps({ testID: "fallback-loading" })).toBeDefined()
+    nativeView = renderer!.root.findByType("NativePaywallView" as never)
+    expect(nativeView.props.paywallOverrides).toEqual({ productsByName: { primary: "monthly" } })
+  })
+
+  it("runs the feature when the result gives access, as the native PaywallView does", () => {
+    const gated = { ...paywallInfo, featureGatingBehavior: "gated", closeReason: "manualClose" }
+    const nonGated = { ...gated, featureGatingBehavior: "nonGated" } as PaywallInfo
+    const purchased = { type: "purchased", productId: "monthly" } satisfies PaywallResult
+
+    expect(paywallResultUnlocksFeature(gated as PaywallInfo, purchased)).toBe(true)
+    expect(paywallResultUnlocksFeature(gated as PaywallInfo, { type: "restored" })).toBe(true)
+    expect(paywallResultUnlocksFeature(gated as PaywallInfo, declined)).toBe(false)
+    expect(paywallResultUnlocksFeature(nonGated, declined)).toBe(true)
+    expect(
+      paywallResultUnlocksFeature({ ...nonGated, closeReason: "forNextPaywall" }, declined),
+    ).toBe(false)
+
+    const feature = jest.fn()
+    let renderer: TestRenderer.ReactTestRenderer
+    act(() => {
+      renderer = TestRenderer.create(<PaywallView placement="article" feature={feature} />)
+    })
+    const nativeView = renderer!.root.findByType("NativePaywallView" as never)
+
+    act(() => {
+      nativeView.props.onPaywallDismiss({
+        nativeEvent: { paywallInfo: gated, result: declined, shouldDismiss: false },
+      })
+    })
+    expect(feature).not.toHaveBeenCalled()
+
+    act(() => {
+      nativeView.props.onPaywallDismiss({
+        nativeEvent: { paywallInfo: nonGated, result: declined, shouldDismiss: true },
+      })
+    })
+    expect(feature).toHaveBeenCalledTimes(1)
+  })
+
+  it("answers custom callbacks and reports loading state changes", async () => {
+    const onLoadingStateChange = jest.fn()
+    const onCustomCallback = jest
+      .fn()
+      .mockResolvedValueOnce({ status: "success", data: { valid: true } })
+      .mockImplementationOnce(() => {
+        throw new Error("boom")
+      })
+
+    let renderer: TestRenderer.ReactTestRenderer
+    act(() => {
+      renderer = TestRenderer.create(
+        <PaywallView
+          placement="article"
+          onCustomCallback={onCustomCallback}
+          onLoadingStateChange={onLoadingStateChange}
+        />,
+      )
+    })
+    const nativeView = renderer!.root.findByType("NativePaywallView" as never)
+
+    act(() => {
+      nativeView.props.onPaywallLoadingStateChange({ nativeEvent: { state: "loadingPurchase" } })
+    })
+    expect(onLoadingStateChange).toHaveBeenCalledWith("loadingPurchase")
+
+    await act(async () => {
+      nativeView.props.onPaywallCustomCallback({
+        nativeEvent: { callbackId: "one", name: "validate", variables: { email: "a@b.c" } },
+      })
+    })
+    expect(onCustomCallback).toHaveBeenCalledWith({
+      name: "validate",
+      variables: { email: "a@b.c" },
+    })
+    expect(mockDidHandleCustomCallback).toHaveBeenLastCalledWith("one", "success", { valid: true })
+
+    // A handler that throws still answers, so the paywall isn't left waiting.
+    await act(async () => {
+      nativeView.props.onPaywallCustomCallback({ nativeEvent: { callbackId: "two", name: "x" } })
+    })
+    expect(mockDidHandleCustomCallback).toHaveBeenLastCalledWith("two", "failure", undefined)
+
+    // Without a handler the paywall is told the callback failed.
+    act(() => {
+      renderer!.update(<PaywallView placement="article" />)
+    })
+    await act(async () => {
+      renderer!.root
+        .findByType("NativePaywallView" as never)
+        .props.onPaywallCustomCallback({ nativeEvent: { callbackId: "three", name: "x" } })
+    })
+    expect(mockDidHandleCustomCallback).toHaveBeenLastCalledWith("three", "failure", undefined)
   })
 })

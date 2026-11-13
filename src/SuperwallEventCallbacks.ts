@@ -1,4 +1,5 @@
 import type {
+  ConfigurationStatus,
   CustomCallback,
   CustomCallbackResult,
   CustomerInfo,
@@ -134,6 +135,14 @@ export interface SuperwallEventCallbacks {
    * @param result - The result of the redemption attempt. See {@link RedemptionResult}.
    */
   didRedeemLink?: (result: RedemptionResult) => void
+
+  /**
+   * Called when the native SDK's configuration status changes: `"PENDING"` while it fetches its
+   * configuration, then `"CONFIGURED"` or `"FAILED"`. Also called with the current status when
+   * `configure` runs.
+   * @param status - The new status. See {@link ConfigurationStatus}.
+   */
+  onConfigurationStatusChange?: (status: ConfigurationStatus) => void
 
   /**
    * Called when the user's attributes change, whether you set them or a paywall did.

@@ -5,11 +5,13 @@ import type {
   CustomerInfo,
   Entitlement,
   EntitlementsInfo,
+  IntegrationAttribute,
   IntegrationAttributes,
   OwnedInAppPurchase,
   PaywallInfo,
   ProductResponse,
   PurchaseResultResponse,
+  PurchasingObserverState,
   RestorationResultResponse,
   SuperwallExpoModuleEvents,
 } from "./SuperwallExpoModule.types"
@@ -38,6 +40,8 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
 
   getAssignments(): Promise<Assignment[]>
   getCustomerInfo(): Promise<CustomerInfo>
+  /** Forces a refresh on iOS builds with SuperwallKit 4.19+; elsewhere the same as `getCustomerInfo`. */
+  refreshCustomerInfo(): Promise<CustomerInfo>
   getEntitlements(): Promise<EntitlementsInfo>
   getEntitlementsByProductIds(productIds: string[]): Promise<Entitlement[]>
   getSubscriptionStatus(): Promise<SubscriptionStatus>
@@ -87,10 +91,12 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
   setEventTrackingBehavior(behavior: string): void
 
   setIntegrationAttributes(attributes: IntegrationAttributes): Promise<void>
+  setIntegrationAttribute(attribute: IntegrationAttribute, value: string | null): Promise<void>
   getIntegrationAttributes(): Promise<Record<string, string>>
 
   consume(purchaseToken: string): Promise<string>
 
+  /** On Android the identifier can be a full one: `productId:basePlanId:offerId`. */
   purchase(productId: string): Promise<PurchaseResultResponse>
   products(productIds: string[]): Promise<ProductResponse[]>
   queryInAppPurchases(): Promise<OwnedInAppPurchase[]>
@@ -126,6 +132,32 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
   optOutOfNotifications(): void
   optInToNotifications(): void
   handleNotificationOpen(data: Record<string, string>): void
+
+  /** iOS only; the Android module defines them as no-ops. */
+  removeAllPendingNonSuperwallNotificationRequests(): void
+  removeAllDeliveredSuperwallNotifications(): void
+  removeAllDeliveredNonSuperwallNotifications(): void
+  /** iOS only; the Android module resolves with an empty array. */
+  getGrantedEntitlements(): Promise<Entitlement[]>
+  setGrantedEntitlements(entitlements: { id: string }[]): Promise<void>
+
+  /** Android only; the iOS module resolves with `false`. */
+  showAlert(
+    title: string | null,
+    message: string | null,
+    actionTitle: string | null,
+    closeActionTitle: string | null,
+  ): Promise<boolean>
+  /** Android only; a no-op on iOS. */
+  openRestoreOnWeb(): void
+  /** Android only; the iOS module resolves with `null`. */
+  getExternalAccountId(): Promise<string | null>
+  /** Android only; a no-op on iOS. */
+  observe(state: PurchasingObserverState): Promise<void>
+  /** Android only. Resolves with whether an SDK instance was torn down; always `false` on iOS. */
+  teardown(): Promise<boolean>
+  /** Android only; a no-op on iOS. */
+  dismissForNextPaywall(): Promise<void>
 }
 
 export default requireNativeModule<SuperwallExpoModule>("SuperwallExpo")
