@@ -183,6 +183,13 @@ jobs:
             sed -i -E "s/(com\.superwall\.sdk:superwall-android:)[^\"]+\"/\1$VERSION\"/" android/build.gradle
           else
             sed -i -E "s/(\"SuperwallKit\", ')[^']+'/\1$VERSION'/" ios/SuperwallExpo.podspec
+            # The Swift Package Manager pin, used by apps with the config plugin. It can be ahead
+            # of the CocoaPods one, so it only ever moves up.
+            SPM_CURRENT="$(sed -nE "s/^superwall_spm_version = '([^']+)'.*/\1/p" ios/SuperwallExpo.podspec)"
+            if [ "$(printf '%s\n%s\n' "$SPM_CURRENT" "$VERSION" | sort -V | tail -1)" != "$SPM_CURRENT" ]; then
+              sed -i -E "s/^(superwall_spm_version = ')[^']+'/\1$VERSION'/" ios/SuperwallExpo.podspec
+              sed -i -E "s/^(const PACKAGE_VERSION = \")[^\"]+\"/\1$VERSION\"/" plugin/withSuperwall.js
+            fi
           fi
 
           # changesets turns this into the version bump and CHANGELOG entry on
