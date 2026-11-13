@@ -21,7 +21,8 @@
     },
     "plugins": [
       "expo-router",
-      "expo-web-browser"
+      "expo-web-browser",
+      "../app.plugin.js"
     ],
     "experiments": {
       "typedRoutes": true

@@ -70,6 +70,8 @@
     "ios",
     "android",
     "expo-module.config.json",
+    "app.plugin.js",
+    "plugin",
     "scripts"
   ],
   "packageManager": "yarn@4.18.0",
