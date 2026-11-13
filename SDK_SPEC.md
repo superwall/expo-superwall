@@ -297,6 +297,36 @@ resolves once it has finished.
   notification API. They are defined on iOS as no-ops, since the iOS SDK has
   no equivalent.
 
+- `removeAllPendingNonSuperwallNotificationRequests()`,
+  `removeAllDeliveredSuperwallNotifications()` and
+  `removeAllDeliveredNonSuperwallNotifications()` must call the iOS SDK's
+  `UNUserNotificationCenter` helpers. They are defined on Android as no-ops.
+
+### Platform-only methods
+
+Both native modules must define every method, so the JS API is the same on
+both platforms. Where the native SDK has no equivalent, the method must do
+nothing and resolve with the neutral value given here.
+
+- iOS only: `getGrantedEntitlements()` (Android: `[]`) and
+  `setGrantedEntitlements(entitlements)`, which replaces the granted set with
+  the entitlements' `id`s.
+- Android only: `showAlert(title, message, actionTitle, closeActionTitle)`
+  resolves with whether the action button was tapped, and with `false` when
+  no paywall is presented (iOS: `false`); `openRestoreOnWeb()`;
+  `getExternalAccountId()` (iOS: `null`); `dismissForNextPaywall()`;
+  `teardown()`, which resolves with whether an SDK instance was torn down
+  (iOS: `false`); and `observe(state)`, which builds a
+  `PurchasingObserverState` from `{ type: "purchaseWillBegin", productId }`,
+  `{ type: "purchaseError", productId, error }` or
+  `{ type: "purchaseResult", responseCode, debugMessage, purchases: [{
+  originalJson, signature }] }`.
+- `refreshCustomerInfo()` must call the native refresh where the SDK has one
+  (iOS with SuperwallKit 4.19 or later, built with `SUPERWALL_SPM`) and
+  otherwise resolve with the current customer info.
+- `setIntegrationAttribute(attribute, value)` must set one attribute and leave
+  the others; `null` removes it.
+
 ### `handleDeepLink(url)`
 
 This method must attempt native deep-link handling and return `boolean`.
@@ -459,6 +489,7 @@ These events must remain globally observable:
 - `didRedeemLink`
 - `userAttributesDidChange`
 - `handleSuperwallDeepLink` (iOS only)
+- `configurationStatusDidChange`
 
 Payload rules:
 
@@ -468,6 +499,9 @@ Payload rules:
 - `handleLog` must provide `level`, `scope`, `message`, `info`, and `error`.
 - `didRedeemLink` must provide a single `RedemptionResult`.
 - `userAttributesDidChange` must provide `{ newAttributes }`.
+- `configurationStatusDidChange` must provide `{ status }` (`"PENDING"`,
+  `"CONFIGURED"` or `"FAILED"`), once with the current status when `configure`
+  is called and then on each change.
 - `handleSuperwallDeepLink` must provide `{ fullURL, pathComponents,
   queryParameters }`.
 
