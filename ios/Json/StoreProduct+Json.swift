@@ -64,6 +64,12 @@ extension StoreProduct {
     json["billingPlanType"] = billingPlanType?.toJson()
     json["isBillingPlanAvailable"] = isBillingPlanAvailable
     json["attributes"] = attributes
+    #if SUPERWALL_SPM
+    // Only SuperwallKit 4.19 and later has it; CocoaPods builds use 4.18.3.
+    if let customTransactionId = customTransactionId {
+      json["customTransactionId"] = customTransactionId
+    }
+    #endif
     json["entitlements"] = entitlements.map { $0.toJson() }
 
     return json

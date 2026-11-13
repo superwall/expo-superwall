@@ -43,6 +43,13 @@ fun RedemptionResult.toJson(): Map<String, Any> {
         }
     }
 
+    // Only set for a successful redemption of a Stripe purchase, as on iOS.
+    if (this is RedemptionResult.Success &&
+        this.redemptionInfo.purchaserInfo?.storeIdentifiers is StoreIdentifiers.Stripe
+    ) {
+        map["stripeSubscriptionIds"] = this.stripeSubscriptionId.filterNotNull()
+    }
+
     return map
 }
 

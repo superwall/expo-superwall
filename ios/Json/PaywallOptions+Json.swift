@@ -1,33 +1,35 @@
 import SuperwallKit
 
 extension PaywallOptions {
-  static func fromJson(_ dictionary: [String: Any]) -> PaywallOptions? {
-    guard
-      let isHapticFeedbackEnabled = dictionary["isHapticFeedbackEnabled"] as? Bool,
-      let restoreFailedValue = dictionary["restoreFailed"] as? [String: Any],
-      let shouldShowPurchaseFailureAlert = dictionary["shouldShowPurchaseFailureAlert"] as? Bool,
-      let shouldPreload = dictionary["shouldPreload"] as? Bool,
-      let automaticallyDismiss = dictionary["automaticallyDismiss"] as? Bool,
-      let transactionBackgroundViewValue = dictionary["transactionBackgroundView"] as? String,
-      let shouldShowWebPurchaseConfirmationAlert = dictionary["shouldShowWebPurchaseConfirmationAlert"] as? Bool else {
-      return nil
-    }
-
-    guard let restoreFailed = PaywallOptions.RestoreFailed.fromJson(restoreFailedValue),
-          let transactionBackgroundView = PaywallOptions.TransactionBackgroundView.fromJson(transactionBackgroundViewValue) else {
-      return nil
-    }
-
+  // Every key is optional: one that's missing or has the wrong type keeps the native default.
+  static func fromJson(_ dictionary: [String: Any]) -> PaywallOptions {
     let paywallOptions = PaywallOptions()
-    paywallOptions.isHapticFeedbackEnabled = isHapticFeedbackEnabled
-    paywallOptions.restoreFailed = restoreFailed
-    paywallOptions.shouldShowPurchaseFailureAlert = shouldShowPurchaseFailureAlert
-    paywallOptions.shouldPreload = shouldPreload
-    paywallOptions.automaticallyDismiss = automaticallyDismiss
-    paywallOptions.transactionBackgroundView = transactionBackgroundView
-    paywallOptions.shouldShowWebPurchaseConfirmationAlert = shouldShowWebPurchaseConfirmationAlert
+    if let isHapticFeedbackEnabled = dictionary["isHapticFeedbackEnabled"] as? Bool {
+      paywallOptions.isHapticFeedbackEnabled = isHapticFeedbackEnabled
+    }
+    if let restoreFailedValue = dictionary["restoreFailed"] as? [String: Any] {
+      paywallOptions.restoreFailed = PaywallOptions.RestoreFailed.fromJson(restoreFailedValue)
+    }
+    if let shouldShowPurchaseFailureAlert = dictionary["shouldShowPurchaseFailureAlert"] as? Bool {
+      paywallOptions.shouldShowPurchaseFailureAlert = shouldShowPurchaseFailureAlert
+    }
+    if let shouldPreload = dictionary["shouldPreload"] as? Bool {
+      paywallOptions.shouldPreload = shouldPreload
+    }
+    if let automaticallyDismiss = dictionary["automaticallyDismiss"] as? Bool {
+      paywallOptions.automaticallyDismiss = automaticallyDismiss
+    }
+    if let transactionBackgroundViewValue = dictionary["transactionBackgroundView"] as? String,
+      let transactionBackgroundView = PaywallOptions.TransactionBackgroundView.fromJson(
+        transactionBackgroundViewValue
+      ) {
+      paywallOptions.transactionBackgroundView = transactionBackgroundView
+    }
+    if let shouldShowWebPurchaseConfirmationAlert =
+      dictionary["shouldShowWebPurchaseConfirmationAlert"] as? Bool {
+      paywallOptions.shouldShowWebPurchaseConfirmationAlert = shouldShowWebPurchaseConfirmationAlert
+    }
 
-    // Optional, so options built before these existed still parse.
     if let shouldShowWebRestorationAlert = dictionary["shouldShowWebRestorationAlert"] as? Bool {
       paywallOptions.shouldShowWebRestorationAlert = shouldShowWebRestorationAlert
     }
@@ -65,18 +67,18 @@ extension PaywallOptions.NotificationPermissionsDenied {
 }
 
 extension PaywallOptions.RestoreFailed {
-  static func fromJson(_ dictionary: [String: Any]) -> PaywallOptions.RestoreFailed? {
-    guard let title = dictionary["title"] as? String,
-          let message = dictionary["message"] as? String,
-          let closeButtonTitle = dictionary["closeButtonTitle"] as? String else {
-      return nil
-    }
-
+  // A field left out keeps the native default.
+  static func fromJson(_ dictionary: [String: Any]) -> PaywallOptions.RestoreFailed {
     let restoreFailed = PaywallOptions.RestoreFailed()
-    restoreFailed.title = title
-    restoreFailed.message = message
-    restoreFailed.closeButtonTitle = closeButtonTitle
-
+    if let title = dictionary["title"] as? String {
+      restoreFailed.title = title
+    }
+    if let message = dictionary["message"] as? String {
+      restoreFailed.message = message
+    }
+    if let closeButtonTitle = dictionary["closeButtonTitle"] as? String {
+      restoreFailed.closeButtonTitle = closeButtonTitle
+    }
     return restoreFailed
   }
 }

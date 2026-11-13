@@ -33,6 +33,11 @@ extension RedemptionResult {
       map["redemptionInfo"] = redemptionInfo.toJson()
     }
 
+    // Only set for a successful redemption of a Stripe purchase.
+    if let stripeSubscriptionIds = stripeSubscriptionIds {
+      map["stripeSubscriptionIds"] = stripeSubscriptionIds
+    }
+
     return map
   }
 }

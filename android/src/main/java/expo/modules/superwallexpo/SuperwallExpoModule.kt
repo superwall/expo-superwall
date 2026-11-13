@@ -38,7 +38,15 @@ import com.superwall.sdk.paywall.view.webview.PaywallResource
 import com.superwall.sdk.paywall.presentation.get_presentation_result.getPresentationResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
+import com.android.billingclient.api.BillingResult
+import com.android.billingclient.api.Purchase
+import com.superwall.sdk.paywall.presentation.dismissForNextPaywall
+import com.superwall.sdk.store.PurchasingObserverState
+import com.superwall.sdk.web.openRestoreOnWeb
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.launch
@@ -119,6 +127,16 @@ class SuperwallExpoModule : Module() {
   // Customer Info Events
   private val customerInfoDidChange = "customerInfoDidChange"
 
+  // Configuration Events
+  private val configurationStatusDidChange = "configurationStatusDidChange"
+
+  // Collects `Superwall.instance.configurationStateListener` for the JS event.
+  private var configurationStatusJob: Job? = null
+
+  // How long `getCustomerInfo` waits for the SDK to load the customer info before it resolves
+  // with whatever the SDK currently has.
+  private val customerInfoTimeoutMillis = 5_000L
+
   // Customer Center Events
   private val onCustomerCenterAction = "onCustomerCenterAction"
   private val onCustomerCenterSurveyComplete = "onCustomerCenterSurveyComplete"
@@ -166,6 +184,9 @@ class SuperwallExpoModule : Module() {
       // Customer info events
       customerInfoDidChange,
 
+      // Configuration events
+      configurationStatusDidChange,
+
       // Customer Center events
       onCustomerCenterAction,
       onCustomerCenterSurveyComplete,
@@ -178,6 +199,7 @@ class SuperwallExpoModule : Module() {
       // Deregister eagerly so `emitEvent` stops fanning out to it, rather than
       // waiting for the WeakHashMap entry to be garbage-collected.
       synchronized(instances) { instances.remove(this@SuperwallExpoModule) }
+      configurationStatusJob?.cancel()
       if (instance === this@SuperwallExpoModule) {
         instance = null
       }
@@ -197,6 +219,9 @@ class SuperwallExpoModule : Module() {
       }
       Prop("params") { view: SuperwallExpoPaywallView, params: Map<String, Any>? ->
         view.setParams(params)
+      }
+      Prop("paywallOverrides") { view: SuperwallExpoPaywallView, overrides: Map<String, Any>? ->
+        view.setPaywallOverrides(overrides)
       }
       OnViewDidUpdateProps { view: SuperwallExpoPaywallView ->
         view.loadPaywallIfNeeded()
@@ -239,7 +264,7 @@ class SuperwallExpoModule : Module() {
         val promiseSettled = java.util.concurrent.atomic.AtomicBoolean(false)
         try{
         val superwallOptions: SuperwallOptions = options?.let {
-          superwallOptionsFromJson(options)
+          superwallOptionsFromJson(options, appContext.reactContext?.applicationContext)
         }?:SuperwallOptions()
 
         // Set up onBackPressed callback to emit event to JS and wait for response
@@ -280,6 +305,15 @@ class SuperwallExpoModule : Module() {
             }
            }
          )
+
+        // `Superwall.instance` exists as soon as `configure` returns, before it has finished.
+        // The flow sends the current status first.
+        configurationStatusJob?.cancel()
+        configurationStatusJob = scope.launch {
+          Superwall.instance.configurationStateListener.distinctUntilChanged().collect { status ->
+            emitEvent(configurationStatusDidChange, mapOf("status" to status.asString()))
+          }
+        }
         } catch (error: Throwable) {
           error.printStackTrace()
           if (promiseSettled.compareAndSet(false, true)) {
@@ -416,11 +450,26 @@ class SuperwallExpoModule : Module() {
     AsyncFunction("getCustomerInfo") { promise: Promise ->
       ioScope.launch {
         try {
-          val customerInfo = Superwall.instance.customerInfo.first { it != CustomerInfo.empty() }
+          // Wait for the SDK to load the real customer info, but not forever: it never arrives
+          // if the load fails, so fall back to what the SDK has, which may be the empty
+          // placeholder.
+          val customerInfo = withTimeoutOrNull(customerInfoTimeoutMillis) {
+            Superwall.instance.customerInfo.first { it != CustomerInfo.empty() }
+          } ?: Superwall.instance.getCustomerInfo()
           scope.launch { promise.resolve(customerInfo.toJson()) }
         } catch (error: Throwable) {
           scope.launch { promise.reject(CodedException(error)) }
         }
+      }
+    }
+
+    // The Android SDK has no way to force a refresh, so this resolves with the customer info it
+    // already has.
+    AsyncFunction("refreshCustomerInfo") { promise: Promise ->
+      try {
+        promise.resolve(Superwall.instance.getCustomerInfo().toJson())
+      } catch (error: Throwable) {
+        promise.reject(CodedException(error))
       }
     }
 
@@ -742,21 +791,18 @@ class SuperwallExpoModule : Module() {
     AsyncFunction("setIntegrationAttributes") { attributes: Map<String, String?>, promise: Promise ->
       scope.launch {
         try {
-          // The native call replaces every integration attribute, so merge into the current
-          // ones, as iOS does. A null value removes the attribute. The SDK stores the new set
-          // after a delay, so the last set sent is kept here rather than read back.
-          val current = latestIntegrationAttributes
-            ?: Superwall.instance.integrationAttributes.mapNotNull { (key, value) ->
-              attributionProviderFromString(key)?.let { it to value }
-            }.toMap()
-          val merged = current.toMutableMap()
-          attributes.forEach { (key, value) ->
-            val provider = attributionProviderFromString(key) ?: return@forEach
-            if (value == null) merged.remove(provider) else merged[provider] = value
-          }
-          latestIntegrationAttributes = merged
+          setIntegrationAttributes(attributes)
+          promise.resolve(null)
+        } catch (error: Exception) {
+          promise.reject(CodedException(error))
+        }
+      }
+    }
 
-          Superwall.instance.setIntegrationAttributes(merged)
+    AsyncFunction("setIntegrationAttribute") { attribute: String, value: String?, promise: Promise ->
+      scope.launch {
+        try {
+          setIntegrationAttributes(mapOf(attribute to value))
           promise.resolve(null)
         } catch (error: Exception) {
           promise.reject(CodedException(error))
@@ -829,6 +875,107 @@ class SuperwallExpoModule : Module() {
       }
     }
 
+    // Shows an alert over the presented paywall. Resolves with true if the user tapped the
+    // action button, and with false if they closed it or no paywall is presented.
+    AsyncFunction("showAlert") {
+      title: String?,
+      message: String?,
+      actionTitle: String?,
+      closeActionTitle: String?,
+      promise: Promise ->
+      scope.launch {
+        val settled = java.util.concurrent.atomic.AtomicBoolean(false)
+        fun settle(didTapAction: Boolean) {
+          if (settled.compareAndSet(false, true)) {
+            scope.launch { promise.resolve(didTapAction) }
+          }
+        }
+        try {
+          // The SDK calls neither callback when there's no paywall to show the alert over.
+          if (Superwall.instance.paywallView == null) {
+            settle(false)
+            return@launch
+          }
+          Superwall.instance.showAlert(
+            title = title,
+            message = message,
+            actionTitle = actionTitle,
+            closeActionTitle = closeActionTitle ?: "Done",
+            action = { settle(true) },
+            onClose = { settle(false) },
+          )
+        } catch (error: Throwable) {
+          if (settled.compareAndSet(false, true)) {
+            promise.reject(CodedException(error))
+          }
+        }
+      }
+    }
+
+    Function("openRestoreOnWeb") {
+      Superwall.instance.openRestoreOnWeb()
+    }
+
+    AsyncFunction("getExternalAccountId") { promise: Promise ->
+      promise.resolve(Superwall.instance.externalAccountId)
+    }
+
+    // Observer mode: reports a purchase made outside of Superwall. See `purchasingObserverState`.
+    AsyncFunction("observe") { state: Map<String, Any?>, promise: Promise ->
+      ioScope.launch {
+        try {
+          Superwall.instance.observe(purchasingObserverState(state))
+          scope.launch { promise.resolve(null) }
+        } catch (error: Throwable) {
+          scope.launch { promise.reject(CodedException(error)) }
+        }
+      }
+    }
+
+    // Resets the SDK and clears its instance, so `configure` can be called again. Resolves with
+    // whether there was an SDK to tear down.
+    AsyncFunction("teardown") { promise: Promise ->
+      scope.launch {
+        try {
+          val wasInitialized = Superwall.initialized
+          configurationStatusJob?.cancel()
+          configurationStatusJob = null
+          latestIntegrationAttributes = null
+          Superwall.teardown()
+          promise.resolve(wasInitialized)
+        } catch (error: Throwable) {
+          promise.reject(CodedException(error))
+        }
+      }
+    }
+
+    AsyncFunction("dismissForNextPaywall") { promise: Promise ->
+      ioScope.launch {
+        try {
+          Superwall.instance.dismissForNextPaywall()
+          scope.launch { promise.resolve(null) }
+        } catch (error: Throwable) {
+          scope.launch { promise.reject(CodedException(error)) }
+        }
+      }
+    }
+
+    // Granted entitlements and these notification helpers exist only in the iOS SDK. They're
+    // defined here so the JS API is the same on both platforms, and do nothing.
+    AsyncFunction("getGrantedEntitlements") { promise: Promise ->
+      promise.resolve(emptyList<Map<String, Any>>())
+    }
+
+    AsyncFunction("setGrantedEntitlements") { _: List<Map<String, Any?>>, promise: Promise ->
+      promise.resolve(null)
+    }
+
+    Function("removeAllPendingNonSuperwallNotificationRequests") {}
+
+    Function("removeAllDeliveredSuperwallNotifications") {}
+
+    Function("removeAllDeliveredNonSuperwallNotifications") {}
+
     AsyncFunction("queryInAppPurchases") { promise: Promise ->
       ioScope.launch {
         runCatching {
@@ -841,6 +988,63 @@ class SuperwallExpoModule : Module() {
           scope.launch { promise.reject(CodedException(error)) }
         })
       }
+    }
+  }
+
+  // The native call replaces every integration attribute, so merge into the current ones, as
+  // iOS does. A null value removes the attribute. The SDK stores the new set after a delay, so
+  // the last set sent is kept here rather than read back.
+  private fun setIntegrationAttributes(attributes: Map<String, String?>) {
+    val current = latestIntegrationAttributes
+      ?: Superwall.instance.integrationAttributes.mapNotNull { (key, value) ->
+        attributionProviderFromString(key)?.let { it to value }
+      }.toMap()
+    val merged = current.toMutableMap()
+    attributes.forEach { (key, value) ->
+      val provider = attributionProviderFromString(key) ?: return@forEach
+      if (value == null) merged.remove(provider) else merged[provider] = value
+    }
+    latestIntegrationAttributes = merged
+
+    Superwall.instance.setIntegrationAttributes(merged)
+  }
+
+  /**
+   * Builds the observer-mode state from JS:
+   * - `{ type: "purchaseWillBegin", productId }`
+   * - `{ type: "purchaseError", productId, error }`
+   * - `{ type: "purchaseResult", responseCode, debugMessage, purchases: [{ originalJson, signature }] }`
+   *
+   * The SDK takes Play Billing objects, so the product is looked up by its identifier and each
+   * purchase is rebuilt from the JSON and signature Play Billing gave the app.
+   */
+  private suspend fun purchasingObserverState(state: Map<String, Any?>): PurchasingObserverState {
+    suspend fun productDetails() =
+      (state["productId"] as? String)?.let { productId ->
+        Superwall.instance.getProducts(productId).getOrThrow()[productId]
+          ?.rawStoreProduct?.underlyingProductDetails
+          ?: throw IllegalArgumentException("Product not found for identifier: $productId")
+      } ?: throw IllegalArgumentException("observe needs a productId.")
+
+    return when (val type = state["type"] as? String) {
+      "purchaseWillBegin" -> PurchasingObserverState.PurchaseWillBegin(productDetails())
+      "purchaseError" -> PurchasingObserverState.PurchaseError(
+        product = productDetails(),
+        error = Throwable(state["error"] as? String ?: "Unknown error"),
+      )
+      "purchaseResult" -> {
+        val result = BillingResult.newBuilder()
+          .setResponseCode((state["responseCode"] as? Number)?.toInt() ?: 0)
+          .setDebugMessage(state["debugMessage"] as? String ?: "")
+          .build()
+        val purchases = (state["purchases"] as? List<*>)?.mapNotNull { item ->
+          val purchase = item as? Map<*, *> ?: return@mapNotNull null
+          val originalJson = purchase["originalJson"] as? String ?: return@mapNotNull null
+          Purchase(originalJson, purchase["signature"] as? String ?: "")
+        }
+        PurchasingObserverState.PurchaseResult(result, purchases)
+      }
+      else -> throw IllegalArgumentException("Unknown purchasing observer state: $type")
     }
   }
 }

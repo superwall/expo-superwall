@@ -1,6 +1,8 @@
 package expo.modules.superwallexpo.json
 
 
+import android.content.Context
+import com.superwall.sdk.analytics.Tier
 import com.superwall.sdk.config.options.AdConsent
 import com.superwall.sdk.config.options.AdConsentStatus
 import com.superwall.sdk.config.options.EventTrackingBehavior
@@ -12,7 +14,8 @@ import com.superwall.sdk.logger.LogScope
 import java.util.EnumSet
 import kotlin.time.Duration.Companion.milliseconds
 
-fun superwallOptionsFromJson(json: Map<String, Any?>): SuperwallOptions {
+// `context` resolves `paywalls.loadingColor`, which names a color resource.
+fun superwallOptionsFromJson(json: Map<String, Any?>, context: Context? = null): SuperwallOptions {
   val options = SuperwallOptions()
   options.localeIdentifier = json["localeIdentifier"] as String?
   options.isExternalDataCollectionEnabled = (json["isExternalDataCollectionEnabled"] as Boolean?)?:true
@@ -37,13 +40,8 @@ fun superwallOptionsFromJson(json: Map<String, Any?>): SuperwallOptions {
     else -> TestModeBehavior.AUTOMATIC
   }
 
-      val networkEnvironment = when (json["networkEnvironment"] as String?) {
-        "release" -> SuperwallOptions.NetworkEnvironment.Release()
-        "releaseCandidate" -> SuperwallOptions.NetworkEnvironment.ReleaseCandidate()
-        "developer" -> SuperwallOptions.NetworkEnvironment.Developer()
-        else -> options.networkEnvironment
-      }
-      options.networkEnvironment = networkEnvironment
+      options.networkEnvironment =
+        networkEnvironmentFromJson(json["networkEnvironment"]) ?: options.networkEnvironment
 
       // Logging
       val loggingMap = json["logging"] as Map<String, Any>?
@@ -109,6 +107,22 @@ fun superwallOptionsFromJson(json: Map<String, Any?>): SuperwallOptions {
         paywalls.timeoutAfter = it.toLong().milliseconds
       }
 
+      // Keys are device tiers, such as `{ "low": false }`.
+      (paywallsMap?.get("preloadDeviceOverrides") as? Map<*, *>)?.let { overrides ->
+        paywalls.preloadDeviceOverrides = overrides.mapNotNull { (raw, value) ->
+          val tier = Tier.values().firstOrNull { it.raw == raw || it.name.equals(raw as? String, ignoreCase = true) }
+          if (tier != null && value is Boolean) tier to value else null
+        }.toMap()
+      }
+      // The native option is a color resource, so this is the name of one in the app, such as
+      // `"paywall_loading"` for `R.color.paywall_loading`. An unknown name keeps the default.
+      (paywallsMap?.get("loadingColor") as? String)?.let { name ->
+        val resourceId = context?.resources?.getIdentifier(name, "color", context.packageName) ?: 0
+        if (resourceId != 0) {
+          paywalls.loadingColor = resourceId
+        }
+      }
+
       paywalls.presentationHost = when (paywallsMap?.get("presentationHost") as String?) {
         "inWindow" -> PaywallOptions.PresentationHost.IN_WINDOW
         "activity" -> PaywallOptions.PresentationHost.ACTIVITY
@@ -126,6 +140,41 @@ fun superwallOptionsFromJson(json: Map<String, Any?>): SuperwallOptions {
   }
 
   return options
+}
+
+/**
+ * Takes an environment name, or a map for a custom one: either `{ custom: "<domain>" }`, whose
+ * hosts are derived from the domain as for the built-in environments, or the individual hosts
+ * `{ baseHost, collectorHost, scheme, port, subscriptionHost, enrichmentHost, mmpHost }`.
+ * `"local"` exists only on iOS and returns null here.
+ */
+fun networkEnvironmentFromJson(json: Any?): SuperwallOptions.NetworkEnvironment? {
+  if (json is Map<*, *>) {
+    val baseHost = json["baseHost"] as? String
+    val collectorHost = json["collectorHost"] as? String
+    if (baseHost != null && collectorHost != null) {
+      val scheme = json["scheme"] as? String ?: "https"
+      val port = (json["port"] as? Number)?.toInt()
+      val defaults = SuperwallOptions.NetworkEnvironment.Custom(baseHost, collectorHost, scheme, port)
+      return SuperwallOptions.NetworkEnvironment.Custom(
+        baseHost = baseHost,
+        collectorHost = collectorHost,
+        scheme = scheme,
+        port = port,
+        subscriptionHost = json["subscriptionHost"] as? String ?: defaults.subscriptionHost,
+        enrichmentHost = json["enrichmentHost"] as? String ?: defaults.enrichmentHost,
+        mmpHost = json["mmpHost"] as? String ?: defaults.mmpHost,
+      )
+    }
+    val domain = (json["custom"] ?: json["domain"]) as? String
+    return domain?.takeIf { it.isNotEmpty() }?.let { SuperwallOptions.NetworkEnvironment(it) }
+  }
+  return when (json as? String) {
+    "release" -> SuperwallOptions.NetworkEnvironment.Release()
+    "releaseCandidate" -> SuperwallOptions.NetworkEnvironment.ReleaseCandidate()
+    "developer" -> SuperwallOptions.NetworkEnvironment.Developer()
+    else -> null
+  }
 }
 
 // Anything left out is granted, matching `AdConsent.Custom()` and iOS.

@@ -62,6 +62,9 @@ public class SuperwallExpoModule: Module {
   // Customer Info Events
   private let customerInfoDidChange = "customerInfoDidChange"
 
+  // Configuration Events
+  private let configurationStatusDidChange = "configurationStatusDidChange"
+
   // Customer Center Events
   private let onCustomerCenterAction = "onCustomerCenterAction"
   private let onCustomerCenterSurveyComplete = "onCustomerCenterSurveyComplete"
@@ -126,6 +129,9 @@ public class SuperwallExpoModule: Module {
       // Customer info events
       customerInfoDidChange,
 
+      // Configuration events
+      configurationStatusDidChange,
+
       // Customer Center events
       onCustomerCenterAction,
       onCustomerCenterSurveyComplete,
@@ -140,7 +146,9 @@ public class SuperwallExpoModule: Module {
         "onPaywallPresent",
         "onPaywallDismiss",
         "onPaywallSkip",
-        "onPaywallError"
+        "onPaywallError",
+        "onPaywallCustomCallback",
+        "onPaywallLoadingStateChange"
       )
       Prop("placement") { (view: SuperwallExpoPaywallView, placement: String) in
         view.setPlacement(placement)
@@ -148,8 +156,28 @@ public class SuperwallExpoModule: Module {
       Prop("params") { (view: SuperwallExpoPaywallView, params: [String: Any]?) in
         view.setParams(params)
       }
+      Prop("paywallOverrides") { (view: SuperwallExpoPaywallView, overrides: [String: Any]?) in
+        view.setPaywallOverrides(overrides)
+      }
       OnViewDidUpdateProps { (view: SuperwallExpoPaywallView) in
         view.loadPaywallIfNeeded()
+      }
+    }
+
+    View(SuperwallExpoCustomerCenterView.self) {
+      ViewName("CustomerCenterView")
+      Events("onCustomerCenterError")
+      Prop("configuration") { (view: SuperwallExpoCustomerCenterView, configuration: [String: Any]?) in
+        view.setConfiguration(configuration)
+      }
+      Prop("handlerId") { (view: SuperwallExpoCustomerCenterView, handlerId: String?) in
+        view.setHandlerId(handlerId)
+      }
+      Prop("asksBeforeRestoring") { (view: SuperwallExpoCustomerCenterView, asks: Bool?) in
+        view.setAsksBeforeRestoring(asks ?? false)
+      }
+      OnViewDidUpdateProps { (view: SuperwallExpoCustomerCenterView) in
+        view.loadCustomerCenterIfNeeded()
       }
     }
 
@@ -177,11 +205,8 @@ public class SuperwallExpoModule: Module {
         promise: Promise
       ) in
 
-      var superwallOptions: SuperwallOptions?
-
-      if let options = options {
-        superwallOptions = SuperwallOptions.fromJson(options)
-      }
+      // A key that's missing or malformed keeps its native default.
+      let superwallOptions = options.map { SuperwallOptions.fromJson($0) }
 
       let promiseSettled = AtomicFlag()
 
@@ -200,6 +225,9 @@ public class SuperwallExpoModule: Module {
           }
         }
       )
+
+      // `Superwall.shared` exists as soon as `configure` returns, before it has finished.
+      ConfigurationStatusObserver.shared.start()
     }
 
     AsyncFunction("getConfigurationStatus") { (promise: Promise) in
@@ -328,6 +356,19 @@ public class SuperwallExpoModule: Module {
       }
     }
 
+    AsyncFunction("refreshCustomerInfo") { (promise: Promise) in
+      Task {
+        #if SUPERWALL_SPM
+        let customerInfo = await Superwall.shared.refreshCustomerInfo()
+        #else
+        // CocoaPods builds use SuperwallKit 4.18.3, which can't force a refresh, so this
+        // returns the customer info the SDK already has.
+        let customerInfo = await Superwall.shared.getCustomerInfo()
+        #endif
+        promise.resolve(customerInfo.toJson())
+      }
+    }
+
     AsyncFunction("getSubscriptionStatus") { (promise: Promise) in
       print("Getting subscription status")
       let subscriptionStatus = Superwall.shared.subscriptionStatus
@@ -420,17 +461,18 @@ public class SuperwallExpoModule: Module {
       self.callbackLock.lock()
       let continuation = self.customCallbackContinuations.removeValue(forKey: callbackId)
       self.callbackLock.unlock()
-      guard let continuation = continuation else {
-        promise.resolve(nil)
-        return
-      }
       let result: CustomCallbackResult
       if status == "success" {
         result = .success(data: data)
       } else {
         result = .failure(data: data)
       }
-      continuation.resume(returning: result)
+      if let continuation = continuation {
+        continuation.resume(returning: result)
+      } else {
+        // Not from `registerPlacement`, so it may belong to an embedded paywall.
+        PendingCustomCallbacks.shared.resolve(callbackId: callbackId, result: result)
+      }
       promise.resolve(nil)
     }
 
@@ -503,6 +545,14 @@ public class SuperwallExpoModule: Module {
       }
 
       Superwall.shared.setIntegrationAttributes(converted)
+      promise.resolve(nil)
+    }
+
+    AsyncFunction("setIntegrationAttribute") { (attribute: String, value: String?, promise: Promise) in
+      // A `nil` value removes the attribute.
+      if let attribute = IntegrationAttribute.fromString(attribute) {
+        Superwall.shared.setIntegrationAttribute(attribute, value)
+      }
       promise.resolve(nil)
     }
 
@@ -673,6 +723,57 @@ public class SuperwallExpoModule: Module {
     Function("optInToNotifications") {}
 
     Function("handleNotificationOpen") { (_: [String: String]) in }
+
+    Function("removeAllPendingNonSuperwallNotificationRequests") {
+      UNUserNotificationCenter.current().removeAllPendingNonSuperwallNotificationRequests()
+    }
+
+    Function("removeAllDeliveredSuperwallNotifications") {
+      UNUserNotificationCenter.current().removeAllDeliveredSuperwallNotifications()
+    }
+
+    Function("removeAllDeliveredNonSuperwallNotifications") {
+      UNUserNotificationCenter.current().removeAllDeliveredNonSuperwallNotifications()
+    }
+
+    AsyncFunction("getGrantedEntitlements") { (promise: Promise) in
+      promise.resolve(Superwall.shared.grantedEntitlements.map { $0.toJson() })
+    }
+
+    AsyncFunction("setGrantedEntitlements") { (entitlements: [[String: Any]], promise: Promise) in
+      // Replaces the previous set; an empty array revokes them all.
+      Superwall.shared.grantedEntitlements = Set(
+        entitlements.compactMap { item in
+          (item["id"] as? String).map { Entitlement(id: $0) }
+        }
+      )
+      promise.resolve(nil)
+    }
+
+    // The functions below exist only in the Android SDK. They're defined here so the JS API is
+    // the same on both platforms, and do nothing.
+    AsyncFunction("showAlert") {
+      (_: String?, _: String?, _: String?, _: String?, promise: Promise) in
+      promise.resolve(false)
+    }
+
+    Function("openRestoreOnWeb") {}
+
+    AsyncFunction("getExternalAccountId") { (promise: Promise) in
+      promise.resolve(nil)
+    }
+
+    AsyncFunction("observe") { (_: [String: Any], promise: Promise) in
+      promise.resolve(nil)
+    }
+
+    AsyncFunction("teardown") { (promise: Promise) in
+      promise.resolve(false)
+    }
+
+    AsyncFunction("dismissForNextPaywall") { (promise: Promise) in
+      promise.resolve(nil)
+    }
   }
 
   @MainActor

@@ -12,6 +12,7 @@ import com.superwall.sdk.paywall.view.delegate.PaywallViewCallback
 import expo.modules.kotlin.AppContext
 import expo.modules.kotlin.viewevent.EventDispatcher
 import expo.modules.kotlin.views.ExpoView
+import expo.modules.superwallexpo.json.paywallOverridesFromJson
 import expo.modules.superwallexpo.json.toJson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -53,6 +54,8 @@ class SuperwallExpoPaywallView(
   private var params: Map<String, Any>? = null
   private var loadedPlacement: String? = null
   private var loadedParams: Map<String, Any>? = null
+  private var paywallOverrides: Map<String, Any>? = null
+  private var loadedPaywallOverrides: Map<String, Any>? = null
   private var loadGeneration = 0
   private var paywallView: PaywallView? = null
   private var lastUiMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
@@ -88,14 +91,25 @@ class SuperwallExpoPaywallView(
     this.params = params
   }
 
+  fun setPaywallOverrides(paywallOverrides: Map<String, Any>?) {
+    this.paywallOverrides = paywallOverrides
+  }
+
   fun loadPaywallIfNeeded() {
     val placement = placement ?: return
     if (placement.isEmpty() || !isAttachedToWindow) return
-    if (placement == loadedPlacement && params == loadedParams) return
+    if (placement == loadedPlacement &&
+      params == loadedParams &&
+      paywallOverrides == loadedPaywallOverrides
+    ) {
+      return
+    }
 
     val paramsSnapshot = params?.toMap()
+    val paywallOverridesSnapshot = paywallOverrides?.toMap()
     loadedPlacement = placement
     loadedParams = paramsSnapshot
+    loadedPaywallOverrides = paywallOverridesSnapshot
     loadGeneration += 1
     val generation = loadGeneration
     detachPaywall()
@@ -114,9 +128,25 @@ class SuperwallExpoPaywallView(
       teardownJob?.join()
       if (generation != loadGeneration) return@launch
 
+      // Overriding products means fetching them from the store first.
+      val overrides =
+        try {
+          paywallOverridesSnapshot?.let { paywallOverridesFromJson(it) }
+        } catch (error: kotlinx.coroutines.CancellationException) {
+          throw error
+        } catch (error: Throwable) {
+          if (generation == loadGeneration) {
+            clearLoadedConfig()
+            onPaywallError(mapOf("message" to (error.localizedMessage ?: error.toString())))
+          }
+          return@launch
+        }
+      if (generation != loadGeneration) return@launch
+
       val result =
         PaywallBuilder(placement)
           .params(paramsSnapshot)
+          .overrides(overrides)
           .delegate(delegate)
           .activity(activity)
           .build()
@@ -192,6 +222,7 @@ class SuperwallExpoPaywallView(
   private fun clearLoadedConfig() {
     loadedPlacement = null
     loadedParams = null
+    loadedPaywallOverrides = null
   }
 
   /**
