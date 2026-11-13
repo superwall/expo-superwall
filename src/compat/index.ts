@@ -199,20 +199,22 @@ export default class Superwall {
 
       if (data.platform === "android") {
         const controller = Superwall.purchaseController
-        const purchaseResult = data.replacement
-          ? await controller?.purchaseFromGooglePlayWithReplacement(
-              data.productId,
-              data.basePlanId,
-              data.offerId,
-              data.replacement,
-              data.store as ProductStore | undefined,
-            )
-          : await controller?.purchaseFromGooglePlay(
-              data.productId,
-              data.basePlanId,
-              data.offerId,
-              data.store as ProductStore | undefined,
-            )
+        const purchaseResult =
+          data.replacement &&
+          typeof controller?.purchaseFromGooglePlayWithReplacement === "function"
+            ? await controller.purchaseFromGooglePlayWithReplacement(
+                data.productId,
+                data.basePlanId,
+                data.offerId,
+                data.replacement,
+                data.store as ProductStore | undefined,
+              )
+            : await controller?.purchaseFromGooglePlay(
+                data.productId,
+                data.basePlanId,
+                data.offerId,
+                data.store as ProductStore | undefined,
+              )
         if (purchaseResult == null) {
           return
         }

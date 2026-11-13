@@ -315,6 +315,30 @@ describe("compat API parity", () => {
     )
     expect(replacing.purchaseFromGooglePlay).not.toHaveBeenCalled()
 
+    // A controller that isn't a subclass, so has no replacement method at all, still gets the
+    // purchase rather than a TypeError.
+    const plainObject = {
+      purchaseFromAppStore: jest.fn(),
+      purchaseFromGooglePlay: jest.fn().mockResolvedValue(new PurchaseResultPurchased()),
+      restorePurchases: jest.fn(),
+    }
+    await Superwall.configure({ apiKey: "api-key", purchaseController: plainObject })
+    mockDidPurchase.mockClear()
+    await emit("onPurchase", {
+      platform: "android",
+      productId: "yearly",
+      basePlanId: "base",
+      store: "PLAY_STORE",
+      replacement,
+    })
+    expect(plainObject.purchaseFromGooglePlay).toHaveBeenCalledWith(
+      "yearly",
+      "base",
+      undefined,
+      "PLAY_STORE",
+    )
+    expect(mockDidPurchase).toHaveBeenCalledWith({ type: "purchased" })
+
     await Superwall.configure({ apiKey: "api-key" })
   })
 

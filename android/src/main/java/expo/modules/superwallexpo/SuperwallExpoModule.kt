@@ -295,6 +295,10 @@ class SuperwallExpoModule : Module() {
       try {
         val configurationStatus = Superwall.instance.configurationState.asString()
           promise.resolve(configurationStatus)
+        } catch (error: IllegalStateException) {
+          // `Superwall.instance` throws until `configure` is called. Report pending, as iOS
+          // does, since `getConfigurationStatus` doesn't wait for configure.
+          promise.resolve("PENDING")
         } catch (error: Throwable) {
           promise.reject(CodedException(error))
         }
