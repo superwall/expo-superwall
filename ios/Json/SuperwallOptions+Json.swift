@@ -1,52 +1,52 @@
 import SuperwallKit
 
 extension SuperwallOptions {
-  static func fromJson(_ dictionary: [String: Any]) -> SuperwallOptions? {
-    guard
-      let paywallsValue = dictionary["paywalls"] as? [String: Any],
-      let paywalls = PaywallOptions.fromJson(paywallsValue),
-      let networkEnvironmentValue = dictionary["networkEnvironment"] as? String,
-      let networkEnvironment = NetworkEnvironment.fromJson(networkEnvironmentValue),
-      let isExternalDataCollectionEnabled = dictionary["isExternalDataCollectionEnabled"] as? Bool,
-      let loggingValue = dictionary["logging"] as? [String: Any],
-      let logging = Logging.fromJson(loggingValue)
-    else {
-      return nil
-    }
-
-    let localeIdentifier = dictionary["localeIdentifier"] as? String
-    let isGameControllerEnabled = dictionary["isGameControllerEnabled"] as? Bool ?? false
-    let storeKitVersion = dictionary["storeKitVersion"] as? String
-    let enableExperimentalDeviceVariables =
-      dictionary["enableExperimentalDeviceVariables"] as? Bool ?? false
-    let shouldObservePurchases = dictionary["shouldObservePurchases"] as? Bool ?? false
-    let shouldBypassAppTransactionCheck = dictionary["shouldBypassAppTransactionCheck"] as? Bool ?? false
-    let maxConfigRetryCount = dictionary["maxConfigRetryCount"] as? Int ?? 6
-    let testModeBehavior: TestModeBehavior = {
-      switch dictionary["testModeBehavior"] as? String {
-      case "automatic": return .automatic
-      case "whenEnabledForUser": return .whenEnabledForUser
-      case "never": return .never
-      case "always": return .always
-      default: return .automatic
-      }
-    }()
-
+  // Every key is optional: one that's missing or has the wrong type keeps the native default,
+  // so a partial dictionary is never discarded as a whole.
+  static func fromJson(_ dictionary: [String: Any]) -> SuperwallOptions {
     let superwallOptions = SuperwallOptions()
-    superwallOptions.paywalls = paywalls
-    superwallOptions.networkEnvironment = networkEnvironment
-    superwallOptions.isExternalDataCollectionEnabled = isExternalDataCollectionEnabled
-    superwallOptions.localeIdentifier = localeIdentifier
-    superwallOptions.isGameControllerEnabled = isGameControllerEnabled
-    superwallOptions.logging = logging
-    if let storeKitVersion = storeKitVersion {
+
+    if let paywallsValue = dictionary["paywalls"] as? [String: Any] {
+      superwallOptions.paywalls = PaywallOptions.fromJson(paywallsValue)
+    }
+    if let networkEnvironmentValue = dictionary["networkEnvironment"],
+      let networkEnvironment = NetworkEnvironment.fromJson(networkEnvironmentValue) {
+      superwallOptions.networkEnvironment = networkEnvironment
+    }
+    if let isExternalDataCollectionEnabled = dictionary["isExternalDataCollectionEnabled"] as? Bool {
+      superwallOptions.isExternalDataCollectionEnabled = isExternalDataCollectionEnabled
+    }
+    if let localeIdentifier = dictionary["localeIdentifier"] as? String {
+      superwallOptions.localeIdentifier = localeIdentifier
+    }
+    if let isGameControllerEnabled = dictionary["isGameControllerEnabled"] as? Bool {
+      superwallOptions.isGameControllerEnabled = isGameControllerEnabled
+    }
+    if let loggingValue = dictionary["logging"] as? [String: Any] {
+      superwallOptions.logging = Logging.fromJson(loggingValue)
+    }
+    if let storeKitVersion = dictionary["storeKitVersion"] as? String {
       superwallOptions.storeKitVersion = storeKitVersion == "STOREKIT1" ? .storeKit1 : .storeKit2
     }
-    superwallOptions.enableExperimentalDeviceVariables = enableExperimentalDeviceVariables
-    superwallOptions.shouldObservePurchases = shouldObservePurchases
-    superwallOptions.shouldBypassAppTransactionCheck = shouldBypassAppTransactionCheck
-    superwallOptions.maxConfigRetryCount = maxConfigRetryCount
-    superwallOptions.testModeBehavior = testModeBehavior
+    if let enableExperimentalDeviceVariables = dictionary["enableExperimentalDeviceVariables"] as? Bool {
+      superwallOptions.enableExperimentalDeviceVariables = enableExperimentalDeviceVariables
+    }
+    if let shouldObservePurchases = dictionary["shouldObservePurchases"] as? Bool {
+      superwallOptions.shouldObservePurchases = shouldObservePurchases
+    }
+    if let shouldBypassAppTransactionCheck = dictionary["shouldBypassAppTransactionCheck"] as? Bool {
+      superwallOptions.shouldBypassAppTransactionCheck = shouldBypassAppTransactionCheck
+    }
+    if let maxConfigRetryCount = dictionary["maxConfigRetryCount"] as? Int {
+      superwallOptions.maxConfigRetryCount = maxConfigRetryCount
+    }
+    switch dictionary["testModeBehavior"] as? String {
+    case "automatic": superwallOptions.testModeBehavior = .automatic
+    case "whenEnabledForUser": superwallOptions.testModeBehavior = .whenEnabledForUser
+    case "never": superwallOptions.testModeBehavior = .never
+    case "always": superwallOptions.testModeBehavior = .always
+    default: break
+    }
 
     if let eventTrackingBehaviorString = dictionary["eventTrackingBehavior"] as? String {
       switch eventTrackingBehaviorString {
@@ -75,19 +75,38 @@ extension SuperwallOptions {
       }
     }
 
+    // `true` finds the dev server on localhost; a string is the address `superwall dev` prints.
+    if let devServerURL = dictionary["devServer"] as? String {
+      if let url = URL(string: devServerURL), url.scheme != nil {
+        superwallOptions.devServer = .url(url)
+      }
+    } else if dictionary["devServer"] as? Bool == true {
+      superwallOptions.devServer = .default
+    }
+
     return superwallOptions
   }
 }
 
 extension SuperwallOptions.NetworkEnvironment {
-  static func fromJson(_ json: String) -> SuperwallOptions.NetworkEnvironment? {
-    switch json {
+  /// Takes an environment name, or `{ "custom": "<domain or URL>" }` for a custom one.
+  static func fromJson(_ json: Any) -> SuperwallOptions.NetworkEnvironment? {
+    if let dictionary = json as? [String: Any] {
+      // `domain` is the key the Android-style custom environment shares with this one.
+      if let domain = (dictionary["custom"] ?? dictionary["domain"]) as? String, !domain.isEmpty {
+        return .custom(domain)
+      }
+      return nil
+    }
+    switch json as? String {
     case "release":
       return .release
     case "releaseCandidate":
       return .releaseCandidate
     case "developer":
       return .developer
+    case "local":
+      return .local
     default:
       return nil
     }
@@ -95,21 +114,16 @@ extension SuperwallOptions.NetworkEnvironment {
 }
 
 extension SuperwallOptions.Logging {
-  static func fromJson(_ dictionary: [String: Any]) -> SuperwallOptions.Logging? {
-    guard
-      let levelString = dictionary["level"] as? String,
-      let level = LogLevel.fromJson(levelString),
-      let scopeStrings = dictionary["scopes"] as? [String]
-    else {
-      return nil
-    }
-
-    let scopes = Set(scopeStrings.compactMap { LogScope.fromJson($0) })
-
+  // A missing or unknown level or scope list keeps the native default.
+  static func fromJson(_ dictionary: [String: Any]) -> SuperwallOptions.Logging {
     let logging = SuperwallOptions.Logging()
-    logging.level = level
-    logging.scopes = scopes
-
+    if let levelString = dictionary["level"] as? String,
+      let level = LogLevel.fromJson(levelString) {
+      logging.level = level
+    }
+    if let scopeStrings = dictionary["scopes"] as? [String] {
+      logging.scopes = Set(scopeStrings.compactMap { LogScope.fromJson($0) })
+    }
     return logging
   }
 }

@@ -13,9 +13,14 @@ final class SuperwallExpoPaywallView: ExpoView, PaywallViewControllerDelegate {
   let onPaywallDismiss = EventDispatcher()
   let onPaywallSkip = EventDispatcher()
   let onPaywallError = EventDispatcher()
+  let onPaywallCustomCallback = EventDispatcher()
+  let onPaywallLoadingStateChange = EventDispatcher()
 
   private var placement: String?
   private var params: [String: Any]?
+  private var paywallOverrides: [String: Any]?
+  // Custom callbacks sent to JS that it hasn't answered yet.
+  private var pendingCustomCallbackIds = Set<String>()
   private var configurationKey: String?
   private var loadGeneration = 0
   private var loadTask: Task<Void, Never>?
@@ -34,12 +39,20 @@ final class SuperwallExpoPaywallView: ExpoView, PaywallViewControllerDelegate {
     self.params = params
   }
 
+  func setPaywallOverrides(_ paywallOverrides: [String: Any]?) {
+    self.paywallOverrides = paywallOverrides
+  }
+
   func loadPaywallIfNeeded() {
     guard window != nil, let placement, !placement.isEmpty else {
       return
     }
 
-    let nextConfigurationKey = makeConfigurationKey(placement: placement, params: params)
+    let nextConfigurationKey = makeConfigurationKey(
+      placement: placement,
+      params: params,
+      paywallOverrides: paywallOverrides
+    )
     guard nextConfigurationKey != configurationKey else {
       attachPaywallViewControllerIfNeeded()
       return
@@ -52,14 +65,28 @@ final class SuperwallExpoPaywallView: ExpoView, PaywallViewControllerDelegate {
     detachPaywallViewController()
     onPaywallLoadStart([:])
 
+    let params = self.params
+    let paywallOverridesJson = self.paywallOverrides
+
     loadTask = Task { @MainActor [weak self] in
       guard let self else { return }
 
       do {
+        // Overriding products means fetching them from the store first.
+        var paywallOverrides: PaywallOverrides?
+        if let paywallOverridesJson {
+          paywallOverrides = await PaywallOverrides.fromJson(paywallOverridesJson)
+          guard !Task.isCancelled, generation == self.loadGeneration else { return }
+        }
+
         let paywall = try await Superwall.shared.getPaywall(
           forPlacement: placement,
-          params: self.params,
-          delegate: self
+          params: params,
+          paywallOverrides: paywallOverrides,
+          delegate: self,
+          onCustomCallback: { [weak self] callback in
+            return await self?.handleCustomCallback(callback) ?? .failure()
+          }
         )
 
         guard !Task.isCancelled,
@@ -129,17 +156,61 @@ final class SuperwallExpoPaywallView: ExpoView, PaywallViewControllerDelegate {
   func paywall(
     _ paywall: PaywallViewController,
     loadingStateDidChange loadingState: PaywallLoadingState
-  ) {}
-
-  private func makeConfigurationKey(placement: String, params: [String: Any]?) -> String {
-    guard let params,
-      JSONSerialization.isValidJSONObject(params),
-      let data = try? JSONSerialization.data(withJSONObject: params, options: [.sortedKeys]),
-      let json = String(data: data, encoding: .utf8)
-    else {
-      return placement
+  ) {
+    // Not limited to the attached paywall: the state can change while the paywall is still
+    // being retrieved.
+    guard window != nil else {
+      return
     }
-    return "\(placement):\(json)"
+    onPaywallLoadingStateChange(["state": loadingState.toJson()])
+  }
+
+  /// Sends a custom callback from the paywall to JS and waits for
+  /// `didHandleCustomCallback`. Fails straight away once the host has left the window, as
+  /// nothing is left to answer.
+  @MainActor
+  private func handleCustomCallback(_ callback: CustomCallback) async -> CustomCallbackResult {
+    guard window != nil else {
+      return .failure()
+    }
+    let callbackId = UUID().uuidString
+    var data: [String: Any] = [
+      "callbackId": callbackId,
+      "name": callback.name,
+    ]
+    if let variables = callback.variables {
+      data["variables"] = variables
+    }
+    return await withCheckedContinuation { continuation in
+      PendingCustomCallbacks.shared.add(continuation, for: callbackId)
+      pendingCustomCallbackIds.insert(callbackId)
+      onPaywallCustomCallback(data)
+    }
+  }
+
+  /// Answers the callbacks JS hasn't answered, so the paywall doesn't wait on a host that's gone.
+  private func failPendingCustomCallbacks() {
+    for callbackId in pendingCustomCallbackIds {
+      PendingCustomCallbacks.shared.resolve(callbackId: callbackId, result: .failure())
+    }
+    pendingCustomCallbackIds.removeAll()
+  }
+
+  private func makeConfigurationKey(
+    placement: String,
+    params: [String: Any]?,
+    paywallOverrides: [String: Any]?
+  ) -> String {
+    return [params, paywallOverrides].reduce(placement) { key, value in
+      guard let value,
+        JSONSerialization.isValidJSONObject(value),
+        let data = try? JSONSerialization.data(withJSONObject: value, options: [.sortedKeys]),
+        let json = String(data: data, encoding: .utf8)
+      else {
+        return "\(key):"
+      }
+      return "\(key):\(json)"
+    }
   }
 
   private func attachPaywallViewControllerIfNeeded() {
@@ -179,9 +250,13 @@ final class SuperwallExpoPaywallView: ExpoView, PaywallViewControllerDelegate {
     loadTask = nil
     configurationKey = nil
     detachPaywallViewController()
+    failPendingCustomCallbacks()
   }
 
   deinit {
     loadTask?.cancel()
+    for callbackId in pendingCustomCallbackIds {
+      PendingCustomCallbacks.shared.resolve(callbackId: callbackId, result: .failure())
+    }
   }
 }
