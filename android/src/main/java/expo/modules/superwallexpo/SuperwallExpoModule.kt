@@ -880,7 +880,12 @@ class SuperwallExpoModule : Module() {
     }
 
     // Shows an alert over the presented paywall. Resolves with true if the user tapped the
-    // action button, and with false if they closed it or no paywall is presented.
+    // action button, and with false if they closed it any other way or no paywall is presented.
+    //
+    // This builds the dialog itself rather than calling `Superwall.instance.showAlert`: the SDK's
+    // dialog stays cancelable but only calls back from its two buttons, so a back press, a tap
+    // outside it or its activity going away would leave the promise pending forever. It also
+    // returns without calling back when the paywall has no activity.
     AsyncFunction("showAlert") {
       title: String?,
       message: String?,
@@ -889,18 +894,22 @@ class SuperwallExpoModule : Module() {
       promise: Promise ->
       scope.launch {
         val settled = java.util.concurrent.atomic.AtomicBoolean(false)
+        var unregister: (() -> Unit)? = null
         fun settle(didTapAction: Boolean) {
           if (settled.compareAndSet(false, true)) {
-            scope.launch { promise.resolve(didTapAction) }
+            unregister?.invoke()
+            promise.resolve(didTapAction)
           }
         }
         try {
-          // The SDK calls neither callback when there's no paywall to show the alert over.
-          if (Superwall.instance.paywallView == null) {
+          val paywallView = Superwall.instance.paywallView
+          val activity = paywallView?.encapsulatingActivity?.get()
+          if (paywallView == null || activity == null || activity.isFinishing || activity.isDestroyed) {
             settle(false)
             return@launch
           }
-          Superwall.instance.showAlert(
+          val dialog = com.superwall.sdk.misc.AlertControllerFactory.make(
+            context = activity,
             title = title,
             message = message,
             actionTitle = actionTitle,
@@ -908,8 +917,32 @@ class SuperwallExpoModule : Module() {
             action = { settle(true) },
             onClose = { settle(false) },
           )
+          // Runs after the button callbacks, so it only settles a close that skipped the buttons.
+          dialog.setOnDismissListener { settle(false) }
+          // A dialog whose activity is destroyed goes away without calling its dismiss listener.
+          val callbacks = object : Application.ActivityLifecycleCallbacks {
+            override fun onActivityDestroyed(destroyed: android.app.Activity) {
+              if (destroyed === activity) settle(false)
+            }
+            override fun onActivityCreated(a: android.app.Activity, b: android.os.Bundle?) {}
+            override fun onActivityStarted(a: android.app.Activity) {}
+            override fun onActivityResumed(a: android.app.Activity) {}
+            override fun onActivityPaused(a: android.app.Activity) {}
+            override fun onActivityStopped(a: android.app.Activity) {}
+            override fun onActivitySaveInstanceState(a: android.app.Activity, b: android.os.Bundle) {}
+          }
+          activity.application.registerActivityLifecycleCallbacks(callbacks)
+          unregister = { activity.application.unregisterActivityLifecycleCallbacks(callbacks) }
+          dialog.show()
+          // As the SDK's own `showAlert` does, so a purchase spinner doesn't cover the alert.
+          paywallView.controller.updateState(
+            com.superwall.sdk.paywall.view.PaywallViewState.Updates.SetLoadingState(
+              com.superwall.sdk.paywall.view.delegate.PaywallLoadingState.Ready
+            )
+          )
         } catch (error: Throwable) {
           if (settled.compareAndSet(false, true)) {
+            unregister?.invoke()
             promise.reject(CodedException(error))
           }
         }
