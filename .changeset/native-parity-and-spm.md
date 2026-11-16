@@ -22,7 +22,7 @@ With SuperwallKit 4.19.1:
 - `setIntegrationAttribute(attribute, value)` sets one integration attribute and leaves the others.
 - `purchase()` also takes a product returned by `products()`, or a compat `StoreProduct`. On Android it's bought with its own base plan and offer. Compat `StoreProduct` gains `fullIdentifier`.
 - iOS only: `getGrantedEntitlements()` and `setGrantedEntitlements()`, for entitlements your own backend grants, and `removeAllPendingNonSuperwallNotificationRequests()`, `removeAllDeliveredSuperwallNotifications()` and `removeAllDeliveredNonSuperwallNotifications()`. They do nothing on Android.
-- Android only: `showAlert()`, `openRestoreOnWeb()`, `getExternalAccountId()`, `dismissForNextPaywall()`, `teardown()` and `observe()`, which reports purchases made outside of Superwall in observer mode. They do nothing on iOS.
+- Android only: `showAlert()`, `openRestoreOnWeb()`, `getExternalAccountId()`, `dismissForNextPaywall()`, `teardown()` and `observe()`, which reports purchases made outside of Superwall in observer mode. They do nothing on iOS. After `teardown()`, `SuperwallProvider` leaves the SDK unconfigured until you call `configure` with the API key to use.
 
 **Configuration status changes.** The hooks store has a `configurationStatus` state and `useSuperwallEvents` an `onConfigurationStatusChange` callback. Compat has `Superwall.shared.addConfigurationStatusListener()`.
 

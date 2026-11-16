@@ -1394,8 +1394,8 @@ export default class Superwall {
   }
 
   /**
-   * Android only. Returns the account ID Superwall passes to Google Play with purchases when
-   * `passIdentifiersToPlayStore` is on.
+   * Android only. Returns the account ID Superwall passes to Google Play with purchases: the
+   * user ID when `passIdentifiersToPlayStore` is on, and a SHA-256 hash of it otherwise.
    *
    * @returns {Promise<string | null>} The ID, or `null` on iOS.
    */

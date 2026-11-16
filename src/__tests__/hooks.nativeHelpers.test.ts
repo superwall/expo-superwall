@@ -128,6 +128,7 @@ describe("hooks native helpers", () => {
     await expect(useSuperwallStore.getState().teardown()).resolves.toBe(true)
     expect(useSuperwallStore.getState()).toMatchObject({
       isConfigured: false,
+      isTornDown: true,
       configurationStatus: "PENDING",
       customerInfo: null,
     })
