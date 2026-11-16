@@ -358,13 +358,7 @@ public class SuperwallExpoModule: Module {
 
     AsyncFunction("refreshCustomerInfo") { (promise: Promise) in
       Task {
-        #if SUPERWALL_SPM
         let customerInfo = await Superwall.shared.refreshCustomerInfo()
-        #else
-        // CocoaPods builds use SuperwallKit 4.18.3, which can't force a refresh, so this
-        // returns the customer info the SDK already has.
-        let customerInfo = await Superwall.shared.getCustomerInfo()
-        #endif
         promise.resolve(customerInfo.toJson())
       }
     }

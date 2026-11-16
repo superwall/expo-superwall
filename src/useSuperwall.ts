@@ -441,9 +441,8 @@ export interface SuperwallStore {
    * state and returns it. Call it once your server has reported a purchase Superwall can't see
    * on the device, such as a custom product's.
    *
-   * iOS only, and only when the app builds SuperwallKit 4.19 or later through Swift Package
-   * Manager (see the README). Otherwise, and on Android, the native SDK can't force a refresh
-   * and this resolves with the customer info it already has, like {@link getCustomerInfo}.
+   * iOS only. The Android SDK can't force a refresh, so there this resolves with the customer
+   * info it already has, like {@link getCustomerInfo}.
    * @returns A promise that resolves with the {@link CustomerInfo} snapshot.
    */
   refreshCustomerInfo: () => Promise<CustomerInfo>

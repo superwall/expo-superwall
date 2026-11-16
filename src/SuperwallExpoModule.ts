@@ -40,7 +40,7 @@ declare class SuperwallExpoModule extends NativeModule<SuperwallExpoModuleEvents
 
   getAssignments(): Promise<Assignment[]>
   getCustomerInfo(): Promise<CustomerInfo>
-  /** Forces a refresh on iOS builds with SuperwallKit 4.19+; elsewhere the same as `getCustomerInfo`. */
+  /** Forces a refresh on iOS. On Android it's the same as `getCustomerInfo`. */
   refreshCustomerInfo(): Promise<CustomerInfo>
   getEntitlements(): Promise<EntitlementsInfo>
   getEntitlementsByProductIds(productIds: string[]): Promise<Entitlement[]>
