@@ -322,7 +322,7 @@ nothing and resolve with the neutral value given here.
   `{ type: "purchaseResult", responseCode, debugMessage, purchases: [{
   originalJson, signature }] }`.
 - `refreshCustomerInfo()` must call the native refresh where the SDK has one
-  (iOS with SuperwallKit 4.19 or later, built with `SUPERWALL_SPM`) and
+  (iOS) and
   otherwise resolve with the current customer info.
 - `setIntegrationAttribute(attribute, value)` must set one attribute and leave
   the others; `null` removes it.

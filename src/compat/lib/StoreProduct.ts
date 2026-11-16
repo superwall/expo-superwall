@@ -147,8 +147,7 @@ export class StoreProduct {
 
   /**
    * The transaction ID the SDK generated for a purchase of a custom product. Send it back
-   * from your server with the purchase's events to attribute the revenue to the paywall. On iOS
-   * it's only sent when the app builds SuperwallKit 4.19 or later (see the README).
+   * from your server with the purchase's events to attribute the revenue to the paywall.
    */
   customTransactionId?: string | null
 

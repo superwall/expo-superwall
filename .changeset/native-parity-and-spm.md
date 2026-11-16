@@ -2,12 +2,20 @@
 "expo-superwall": minor
 ---
 
-Adds the remaining native SDK API, and an option to build the iOS SDK from Swift Package Manager.
+Updates the native iOS SDK to 4.19.1, now installed from Swift Package Manager, and adds the remaining native SDK API. [View iOS SDK release notes](https://github.com/superwall/Superwall-iOS/releases/tag/4.19.1).
 
-**iOS: SuperwallKit from Swift Package Manager.** Add `"expo-superwall"` to the `plugins` in your app config and prebuild again to build against SuperwallKit 4.19.1 from Swift Package Manager instead of 4.18.3 from CocoaPods; 4.19 and later aren't published to CocoaPods. The plugin switches this module's podspec to the Swift package and links the package into your app target. It needs React Native 0.75 or later and Xcode 26. Without the plugin nothing changes. See the README for apps that don't use prebuild.
+**Breaking install change on iOS: SuperwallKit now comes from Swift Package Manager.** SuperwallKit is no longer published to CocoaPods, so this package no longer depends on the `SuperwallKit` pod. `pod install` adds the Swift package instead and links it into your app target. You don't need a config plugin or any Podfile change, but:
 
-- Adds `refreshCustomerInfo()`, which fetches the user's latest entitlements from Superwall. It needs the Swift package; with CocoaPods, and on Android, it returns the customer info the SDK already has.
-- iOS: products include `customTransactionId` when built with the Swift package.
+- You need Xcode 26 or later and React Native 0.75 or later (any Expo SDK this package supports, 53 and up). `pod install` fails with a message saying so on an older React Native.
+- Run `pod install` again after upgrading (or `npx expo prebuild --clean`). It edits your app's Xcode project to add the `Superwall-iOS` package; commit that if your `ios` folder is committed.
+- Nothing else in the app may install the `SuperwallKit` pod.
+- React Native warns during `pod install` that the pod uses a Swift package with static linking. That's expected.
+
+With SuperwallKit 4.19.1:
+
+- Adds `refreshCustomerInfo()`, which fetches the user's latest entitlements from Superwall. On Android, where the SDK can't force a refresh, it returns the customer info the SDK already has.
+- iOS: products include `customTransactionId`.
+- iOS: `getCustomerInfo()` no longer waits forever when the SDK can't load its configuration.
 
 **New methods**, on the hooks store and on the compat `Superwall.shared`:
 
