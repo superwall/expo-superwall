@@ -30,6 +30,8 @@ final class CustomerCenterDelegateBridge: CustomerCenterDelegate {
   private let handlerId: String
   // Only ask JS before restoring when it registered a handler; otherwise restore straight away.
   private let asksBeforeRestoring: Bool
+  // Restores this bridge asked JS about that haven't been answered yet.
+  private var pendingRequestIds: Set<String> = []
 
   init(handlerId: String, asksBeforeRestoring: Bool) {
     self.handlerId = handlerId
@@ -42,12 +44,26 @@ final class CustomerCenterDelegateBridge: CustomerCenterDelegate {
     }
     let requestId = UUID().uuidString
     let handlerId = self.handlerId
-    return await withCheckedContinuation { continuation in
+    pendingRequestIds.insert(requestId)
+    let proceed = await withCheckedContinuation { continuation in
       PendingCustomerCenterRestores.shared.add(continuation, for: requestId)
       SuperwallExpoModule.emitEvent(
         "onCustomerCenterShouldRestorePurchases",
         ["handlerId": handlerId, "requestId": requestId]
       )
+    }
+    pendingRequestIds.remove(requestId)
+    return proceed
+  }
+
+  /// Declines the restores still waiting on JS. Call it when the JS side that would answer them
+  /// goes away, such as an embedded `CustomerCenterView` unmounting: nothing else knows their
+  /// request IDs, so the SDK would wait on them, holding this bridge, forever.
+  func declinePendingRestores() {
+    let requestIds = pendingRequestIds
+    pendingRequestIds.removeAll()
+    for requestId in requestIds {
+      PendingCustomerCenterRestores.shared.resolve(requestId: requestId, proceed: false)
     }
   }
 
