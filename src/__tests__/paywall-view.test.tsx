@@ -214,6 +214,7 @@ describe("PaywallView", () => {
       .mockImplementationOnce(() => {
         throw new Error("boom")
       })
+      .mockResolvedValueOnce(undefined)
 
     let renderer: TestRenderer.ReactTestRenderer
     act(() => {
@@ -248,6 +249,12 @@ describe("PaywallView", () => {
       nativeView.props.onPaywallCustomCallback({ nativeEvent: { callbackId: "two", name: "x" } })
     })
     expect(mockDidHandleCustomCallback).toHaveBeenLastCalledWith("two", "failure", undefined)
+
+    // So does one that resolves without a status.
+    await act(async () => {
+      nativeView.props.onPaywallCustomCallback({ nativeEvent: { callbackId: "two-b", name: "x" } })
+    })
+    expect(mockDidHandleCustomCallback).toHaveBeenLastCalledWith("two-b", "failure", undefined)
 
     // Without a handler the paywall is told the callback failed.
     act(() => {

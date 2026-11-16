@@ -182,18 +182,18 @@ export function PaywallView({
             fail()
             return
           }
-          // Wrapped so a handler that throws synchronously still answers the paywall.
-          new Promise<CustomCallbackResult>((resolve) =>
+          // Wrapped so a handler that throws synchronously still answers the paywall. A result
+          // without a status (say, a handler that returns nothing) answers with a failure, or
+          // the paywall would wait for an answer until the view goes away.
+          new Promise<CustomCallbackResult | undefined>((resolve) =>
             resolve(onCustomCallback({ name, variables })),
-          ).then(
-            (result) =>
-              void SuperwallExpoModule.didHandleCustomCallback(
-                callbackId,
-                result.status,
-                result.data,
-              ),
-            fail,
-          )
+          ).then((result) => {
+            if (typeof result?.status !== "string") {
+              fail()
+              return
+            }
+            void SuperwallExpoModule.didHandleCustomCallback(callbackId, result.status, result.data)
+          }, fail)
         }}
         onPaywallLoadingStateChange={(event) => onLoadingStateChange?.(event.nativeEvent.state)}
         onPaywallLoadStart={() => setState({ status: "loading" })}
