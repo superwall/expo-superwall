@@ -380,7 +380,7 @@ The hook returns an object representing the Superwall store. If a `selector` fun
     -   `showAlert: (options?: ShowAlertOptions) => Promise<boolean>` (Android only; resolves with `false` on iOS): Shows an alert over the presented paywall and resolves with whether the user tapped its action button.
     -   `openRestoreOnWeb`, `getExternalAccountId` and `dismissForNextPaywall` (Android only; no-ops on iOS, where `getExternalAccountId` resolves with `null`): Open the web page for restoring web purchases, return the account ID passed to Google Play, and dismiss the paywall to make way for another one.
     -   `observe: (state: PurchasingObserverState) => Promise<void>` (Android only, no-op on iOS): Reports a purchase made outside of Superwall, for observer mode (`shouldObservePurchases`).
-    -   `teardown: () => Promise<boolean>` (Android only; resolves with `false` on iOS): Resets the native SDK and clears its instance so it can be configured again.
+    -   `teardown: () => Promise<boolean>` (Android only; resolves with `false` on iOS): Resets the native SDK and clears its instance so it can be configured again. `SuperwallProvider` then leaves it unconfigured until you call `configure` with the API key to use.
 
 **Selector (Optional Parameter):**
 

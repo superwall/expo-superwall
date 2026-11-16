@@ -86,17 +86,20 @@ export function SuperwallProvider({
     onBackPressed: options?.paywalls?.onBackPressed,
   })
 
-  const { isConfigured, isLoading, configure, configurationError } = useSuperwallStore(
+  const { isConfigured, isLoading, configure, configurationError, isTornDown } = useSuperwallStore(
     useShallow((state) => ({
       isConfigured: state.isConfigured,
       isLoading: state.isLoading,
       configure: state.configure,
       configurationError: state.configurationError,
+      isTornDown: state.isTornDown,
     })),
   )
 
   useEffect(() => {
-    if (!isConfigured && !isLoading && !configurationError) {
+    // After a `teardown` the app configures the SDK itself, maybe with another API key. The
+    // native SDK keeps whichever key reaches it first, so configuring here would race it.
+    if (!isConfigured && !isLoading && !configurationError && !isTornDown) {
       const apiKey = apiKeys[Platform.OS as keyof typeof apiKeys]
       if (!apiKey) {
         const errorMessage = `No API key provided for platform ${Platform.OS}`
@@ -119,6 +122,7 @@ export function SuperwallProvider({
     isUsingCustomPurchaseController,
     isLoading,
     configurationError,
+    isTornDown,
     apiKeys,
     options,
     configure,

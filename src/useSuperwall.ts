@@ -162,6 +162,13 @@ export interface SuperwallStore {
   configurationError: string | null
 
   /**
+   * `true` after `teardown` has torn the native SDK down, until `configure` runs again.
+   * `SuperwallProvider` doesn't configure the SDK again while this is set, so the app can
+   * configure it with another API key.
+   */
+  isTornDown: boolean
+
+  /**
    * The native SDK's configuration status: `"PENDING"` until it has fetched its configuration,
    * then `"CONFIGURED"` or `"FAILED"`. Kept current via the native
    * `configurationStatusDidChange` event; use `onConfigurationStatusChange` in
@@ -672,8 +679,8 @@ export interface SuperwallStore {
   openRestoreOnWeb: () => Promise<void>
 
   /**
-   * Android only. Returns the account ID Superwall passes to Google Play with purchases when
-   * `passIdentifiersToPlayStore` is on.
+   * Android only. Returns the account ID Superwall passes to Google Play with purchases: the
+   * user ID when `passIdentifiersToPlayStore` is on, and a SHA-256 hash of it otherwise.
    * @returns A promise that resolves with the ID, or `null` on iOS.
    */
   getExternalAccountId: () => Promise<string | null>
@@ -692,8 +699,9 @@ export interface SuperwallStore {
   /**
    * Android only. Resets the native SDK and clears its instance, so it can be configured
    * again, for example with another API key. Afterwards the store is back to its
-   * not-configured state until `configure` runs again. Does nothing on iOS, which has no way
-   * to tear the SDK down.
+   * not-configured state until `configure` runs again. `SuperwallProvider` doesn't configure
+   * it again by itself: call `configure` with the API key to use. Does nothing on iOS, which
+   * has no way to tear the SDK down.
    * @returns A promise that resolves with `true` if an SDK instance was torn down.
    */
   teardown: () => Promise<boolean>
@@ -719,6 +727,7 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
   isLoading: false,
   listenersInitialized: false,
   configurationError: null,
+  isTornDown: false,
   configurationStatus: "PENDING",
 
   user: null,
@@ -729,7 +738,7 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
 
   /* -------------------- Actions -------------------- */
   configure: async (apiKey, options) => {
-    set({ isLoading: true, configurationError: null })
+    set({ isLoading: true, configurationError: null, isTornDown: false })
 
     try {
       const {
@@ -1112,6 +1121,7 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
       // The native SDK is gone, so calls wait for the next `configure` again.
       set({
         isConfigured: false,
+        isTornDown: true,
         configurationStatus: "PENDING",
         user: null,
         subscriptionStatus: { status: "UNKNOWN" },
