@@ -39,16 +39,12 @@ bunx expo install expo-superwall
 
 ### iOS requirements
 
-The iOS SDK, SuperwallKit, is only published as a Swift package, so `expo-superwall` gets it from Swift Package Manager rather than CocoaPods. This happens during `pod install` and needs nothing from you: no config plugin, no Podfile changes and nothing to add in Xcode. You'll see two things you may not expect:
-
-- `pod install` adds the `Superwall-iOS` package (product `SuperwallKit`) to your app target in your Xcode project. If your `ios` folder is committed, commit that change.
-- React Native prints a warning that the pod "is using swift package(s) SuperwallKit with static linking". Linking the package into the app target is what addresses it.
-
-Requirements:
+The iOS SDK, SuperwallKit, is only published as a Swift package, so `expo-superwall` gets it from Swift Package Manager rather than CocoaPods. `pod install` sets this up in the Pods project, and you don't need a config plugin, Podfile changes or anything in Xcode.
 
 - Xcode 26 or later, which SuperwallKit needs.
 - React Native 0.75 or later, which every supported Expo SDK (53 and later) has. The Podfile must call `react_native_post_install`, as the Expo and React Native templates do.
-- No other dependency may install the `SuperwallKit` CocoaPod, or the SDK would be in the app twice.
+- Don't add the `Superwall-iOS` package to your app target yourself, and don't install the `SuperwallKit` CocoaPod through another dependency. Either puts the SDK in the app twice and the build fails with duplicate symbols.
+- During `pod install`, React Native warns that the pod "is using swift package(s) SuperwallKit with static linking". That's expected and can be ignored.
 
 ## Setup
 

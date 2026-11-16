@@ -4,11 +4,11 @@
 
 Updates the native iOS SDK to 4.19.1, now installed from Swift Package Manager, and adds the remaining native SDK API. [View iOS SDK release notes](https://github.com/superwall/Superwall-iOS/releases/tag/4.19.1).
 
-**Breaking install change on iOS: SuperwallKit now comes from Swift Package Manager.** SuperwallKit is no longer published to CocoaPods, so this package no longer depends on the `SuperwallKit` pod. `pod install` adds the Swift package instead and links it into your app target. You don't need a config plugin or any Podfile change, but:
+**Breaking install change on iOS: SuperwallKit now comes from Swift Package Manager.** SuperwallKit is no longer published to CocoaPods, so this package no longer depends on the `SuperwallKit` pod. `pod install` adds the Swift package to the Pods project instead. You don't need a config plugin, Podfile changes or anything in Xcode, but:
 
 - You need Xcode 26 or later and React Native 0.75 or later (any Expo SDK this package supports, 53 and up). `pod install` fails with a message saying so on an older React Native.
-- Run `pod install` again after upgrading (or `npx expo prebuild --clean`). It edits your app's Xcode project to add the `Superwall-iOS` package; commit that if your `ios` folder is committed.
-- Nothing else in the app may install the `SuperwallKit` pod.
+- Run `pod install` again after upgrading, or `npx expo prebuild --clean`.
+- Nothing else in the app may install the `SuperwallKit` pod or add the `Superwall-iOS` package to the app target, or the build fails with duplicate symbols.
 - React Native warns during `pod install` that the pod uses a Swift package with static linking. That's expected.
 
 With SuperwallKit 4.19.1:
