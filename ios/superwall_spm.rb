@@ -44,49 +44,28 @@ module SuperwallSPM
       end
     end
 
-    # Adds the package and its product to `target`, or moves an existing reference to the
-    # pinned version. Returns whether anything changed.
+    # TEMPORARY PROBE. Reports through a failing build whether Xcode copies SuperwallKit's
+    # resource bundle into the app when only the pod depends on the package.
+    PROBE_PHASE_NAME = '[expo-superwall] Probe SuperwallKit resources'.freeze
+    PROBE_SCRIPT = <<~'SCRIPT'.freeze
+      APP="${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}"
+      IN_APP="$(cd "$APP" 2>/dev/null && ls -d *uperwall*.bundle 2>/dev/null | tr '\n' ',')"
+      BUILT="$(cd "${BUILT_PRODUCTS_DIR}" 2>/dev/null && ls -d *uperwall*.bundle *uperwall*.o *uperscript* 2>/dev/null | tr '\n' ',')"
+      UNINSTALLED="$(cd "${OBJROOT}/UninstalledProducts/${PLATFORM_NAME}" 2>/dev/null && ls -d *uperwall* 2>/dev/null | tr '\n' ',')"
+      FRAMEWORKS="$(cd "${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}" 2>/dev/null && ls 2>/dev/null | grep -i 'super' | tr '\n' ',')"
+      echo "error: SUPERWALL_PROBE in_app=[${IN_APP}] built=[${BUILT}] uninstalled=[${UNINSTALLED}] frameworks=[${FRAMEWORKS}] sandbox=${ENABLE_USER_SCRIPT_SANDBOXING}"
+      exit 1
+    SCRIPT
+
     def link_package(project, target)
-      changed = false
-      package_class = Xcodeproj::Project::Object::XCRemoteSwiftPackageReference
-      product_class = Xcodeproj::Project::Object::XCSwiftPackageProductDependency
-      requirement = @requirement.transform_keys(&:to_s)
+      phase = target.shell_script_build_phases.find { |p| p.name == PROBE_PHASE_NAME }
+      return false if phase && phase.shell_script == PROBE_SCRIPT
 
-      package = project.root_object.package_references.find do |reference|
-        reference.is_a?(package_class) && same_repository?(reference.repositoryURL)
-      end
-      if package.nil?
-        package = project.new(package_class)
-        package.repositoryURL = PACKAGE_URL
-        package.requirement = requirement
-        project.root_object.package_references << package
-        changed = true
-      elsif package.requirement != requirement
-        package.requirement = requirement
-        changed = true
-      end
-
-      product = target.package_product_dependencies.find do |dependency|
-        dependency.is_a?(product_class) && dependency.package == package &&
-          dependency.product_name == PRODUCT_NAME
-      end
-      if product.nil?
-        product = project.new(product_class)
-        product.package = package
-        product.product_name = PRODUCT_NAME
-        target.package_product_dependencies << product
-        changed = true
-      end
-
-      frameworks_phase = target.frameworks_build_phase
-      unless frameworks_phase.files.any? { |file| file.product_ref == product }
-        build_file = project.new(Xcodeproj::Project::Object::PBXBuildFile)
-        build_file.product_ref = product
-        frameworks_phase.files << build_file
-        changed = true
-      end
-
-      changed
+      phase ||= target.new_shell_script_build_phase(PROBE_PHASE_NAME)
+      phase.shell_path = '/bin/sh'
+      phase.shell_script = PROBE_SCRIPT
+      phase.always_out_of_date = '1'
+      true
     end
 
     private
