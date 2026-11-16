@@ -102,6 +102,8 @@ final class SuperwallExpoCustomerCenterView: ExpoView {
       navigationController.removeFromParent()
     }
     navigationController = nil
+    // The JS view that would answer a waiting restore is going away with this one.
+    delegateBridge?.declinePendingRestores()
     delegateBridge = nil
   }
 }
