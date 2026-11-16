@@ -32,11 +32,10 @@ deployment_target = lambda do |platform, floor|
 end
 
 # SuperwallKit is only published as a Swift package, so it comes from Swift Package Manager
-# through React Native's `spm_dependency`, which adds the package to this pod's target in the
-# Pods project. `superwall_spm.rb` then links the package product into the app target, as that
-# helper leaves it to the pod, and this pod is a static library, which links nothing itself.
-require_relative 'superwall_spm'
-
+# through React Native's `spm_dependency`, which adds the package product to this pod's target in
+# the Pods project. That is all it takes: Xcode links the product into this pod's static library
+# and copies the package's resource bundle into the app. Don't also link the product into the
+# app target, which fails the app's link with duplicate symbols.
 superwall_spm_version = '4.19.1'
 
 Pod::Spec.new do |s|
@@ -69,11 +68,10 @@ Pod::Spec.new do |s|
   end
   spm_dependency(
     s,
-    url: SuperwallSPM::PACKAGE_URL,
-    requirement: SuperwallSPM.activate!(superwall_spm_version),
-    products: [SuperwallSPM::PRODUCT_NAME]
+    url: 'https://github.com/superwall/Superwall-iOS',
+    requirement: { kind: 'exactVersion', version: superwall_spm_version },
+    products: ['SuperwallKit']
   )
-
 
   s.source_files = "**/*.{h,m,mm,swift,hpp,cpp}"
 end

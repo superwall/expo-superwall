@@ -151,7 +151,7 @@ The project supports both modern hooks and legacy class-based APIs:
 
 ## Native Dependencies
 
-**iOS:** SuperwallKit 4.19.1 from Swift Package Manager (it isn't published to CocoaPods). `ios/SuperwallExpo.podspec` declares it with React Native's `spm_dependency`, pinned by `superwall_spm_version`, and `ios/superwall_spm.rb` links the package product into the app target after `pod install`, because the pod is a static library and the React Native helper only adds the product to the pod's own target. There is no CocoaPods fallback.
+**iOS:** SuperwallKit 4.19.1 from Swift Package Manager (it isn't published to CocoaPods). `ios/SuperwallExpo.podspec` declares it with React Native's `spm_dependency`, pinned by `superwall_spm_version`; there is no CocoaPods fallback. Xcode links the package into the pod's static library and copies its resource bundle into the app, so nothing may link the package product into the app target as well: that fails the link with duplicate symbols (confirmed by the example app's EAS build).
 **Android:** Superwall SDK (Gradle)
 
 Both are installed automatically: SuperwallKit during `pod install`, the Android SDK by Gradle.
