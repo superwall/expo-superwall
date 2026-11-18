@@ -1,5 +1,10 @@
 name: Base CI
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+    # `labeled` so that adding the deploy-preview label publishes a preview
+    # without needing a new commit.
+    types: [opened, synchronize, reopened, labeled]
 
 permissions:
   contents: read
@@ -23,4 +28,10 @@ jobs:
       - name: Build
         run: yarn build
 
-      - run: yarn dlx pkg-pr-new publish
+      # Publishes a pkg.pr.new preview build. Only runs on PRs labeled
+      # `deploy-preview`, and never fails CI: it needs the pkg.pr.new GitHub App
+      # installed on the repo, which it currently isn't.
+      - name: Publish preview package
+        if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'deploy-preview')
+        continue-on-error: true
+        run: yarn dlx pkg-pr-new publish
