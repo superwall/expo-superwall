@@ -1,4 +1,5 @@
 import type {
+  AttributionMatchInfo,
   CustomerCenterAction,
   CustomerCenterPresentationStyle,
   CustomerCenterRefundStatus,
@@ -130,6 +131,8 @@ export enum EventType {
   customerCenterAction = "customerCenterAction",
   customerCenterSurveyResponse = "customerCenterSurveyResponse",
   customerCenterRefundRequest = "customerCenterRefundRequest",
+  /** Android only. Install attribution was resolved or failed to resolve. */
+  attributionMatch = "attributionMatch",
 }
 
 /**
@@ -198,6 +201,8 @@ export class SuperwallEvent {
   optionId?: string
   /** The refund request outcome, for `customerCenterRefundRequest`. */
   refundStatus?: CustomerCenterRefundStatus
+  /** Android only. The attribution result, for `attributionMatch`. */
+  attributionMatchInfo?: AttributionMatchInfo
 
   private constructor(options: {
     type: EventType
@@ -242,6 +247,7 @@ export class SuperwallEvent {
     surveyId?: string
     optionId?: string
     refundStatus?: CustomerCenterRefundStatus
+    attributionMatchInfo?: AttributionMatchInfo
   }) {
     Object.assign(this, options)
   }
@@ -522,6 +528,11 @@ export class SuperwallEvent {
           type: eventType,
           productId: json.productId,
           refundStatus: json.status,
+        })
+      case EventType.attributionMatch:
+        return new SuperwallEvent({
+          type: eventType,
+          attributionMatchInfo: json.info,
         })
       default:
         console.warn(`[Superwall] Unhandled event type in SuperwallEvent.fromJson: ${json.event}`)
