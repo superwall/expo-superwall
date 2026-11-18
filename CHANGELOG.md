@@ -1,5 +1,43 @@
 # Changelog
 
+## 1.8.0
+
+### Minor Changes
+
+- f954094: Update native Android SDK to 2.10.0. [View Android SDK release notes](https://github.com/superwall/Superwall-Android/releases/tag/2.10.0).
+
+  - Adds the `billing` log scope (`LogScope.Billing` in `expo-superwall/compat`) for Google Play Billing logs. On Android, billing logs passed to `onLog` / `handleLog` now have the scope `"billing"` instead of `"storeKitManager"`, so update any log filter that matches `"storeKitManager"`. Setting `storeKitManager` in `logging.scopes` still enables the billing logs on Android. On iOS, `billing` enables the StoreKit (`storeKitManager`) logs.
+  - Android: custom store product transaction events now report `store: "CUSTOM"` instead of `"PLAY_STORE"`, and their entitlements are refreshed in the background after a successful purchase.
+  - Android: fixes `register()` failing with "Paywall Already Presented" for the rest of the session after the paywall activity was finished in the background (e.g. by opening a `singleTask` activity from a deep link or notification). The paywall is now dismissed and `onDismiss` is called.
+  - Android: observer mode (`shouldObservePurchases`) now tracks `transaction_complete` / `transaction_abandon` for single in-progress purchases, and no longer stops tracking after Play reports a cancelled or failed purchase that wasn't being observed. Observer-mode charts may show more transactions.
+  - Android: for Google Play subscriptions with several base plans, `CustomerInfo` and entitlements now use the base plan that was bought. When the plan can't be known (e.g. after a reinstall, or for purchases made before this release), `productId` / `latestProductId` are the Play subscription ID and expiry dates are `null`. Those users keep their access.
+  - Android: preloaded paywalls are paused while off screen, and a misleading `Error Evaluating JS` log after paywall messages has been removed.
+
+- d0b016f: Update native Android SDK to 2.9.0. [View Android SDK release notes](https://github.com/superwall/Superwall-Android/releases/tag/2.9.0).
+
+  - Android: The `adConsent` configure option and `setAdConsent()` (hooks and compat SDKs) now work on Android, not just iOS. The consent is sent as the `adUserDataConsent` and `adPersonalizationConsent` device attributes and forwarded with the conversions Superwall uploads to Google Ads and Meta. If you don't set it, the SDK uses the consent stored by an IAB TCF consent banner when GDPR applies, and otherwise defaults to granted. Where the values came from is reported in the new `adConsentSource` device attribute.
+  - Android: Adds subscription replacement. When a paywall's Purchase action is set to replace an existing subscription, the purchase upgrades, downgrades or switches the user's active Google Play subscription instead of buying a second one. With a custom purchase controller, the Android `onPurchase` params now include an optional `replacement` (`{ mode, oldProductId, oldPurchaseToken }`), and the compat `PurchaseController.purchaseFromGooglePlay` gets it as a new optional fourth argument. Pass it to your billing library to perform the replacement.
+  - Android: Adds install attribution matching. The new `attributionMatch` Superwall event (with `info: AttributionMatchInfo`) is emitted when an install is matched, or fails to match, to the ad click that led to it. The resulting `acquisition_*` attributes are added to user attributes.
+  - Android: Adds best-effort public IPv4 and IPv6 device attributes for apps using the Superwall MMP, and the IPv4 attribute for apps that set an AppsFlyer ID. These apps should declare IP address collection in their Play Console data safety form.
+  - Android: Web checkout codes passed through the Play install referrer are now redeemed, once, on the first launch after install.
+  - Android: Paywalls now run post-purchase actions after a one-time product purchase.
+  - Android: Fixes a band of the host window showing beside the display cutout around in-window (`presentationHost: "inWindow"`) paywalls.
+  - Android: Fixes `getProducts()` failing with `NetworkOnMainThreadException` when it fell back to the network on the main thread.
+
+### Patch Changes
+
+- aee5c8b: Update native Android SDK to 2.10.1. [View Android SDK release notes](https://github.com/superwall/Superwall-Android/releases/tag/2.10.1).
+
+  - Android: products using `:sw-none` are no longer bought with a free trial or discount offer when you don't use a custom purchase controller.
+  - Android: if you use a custom `PurchaseController`, an absent `offerId` in `onPurchase` / `purchaseFromGooglePlay` means buy the base plan with no offer. Don't pick a free trial or other offer yourself.
+  - Android: paywall content stays clear of side navigation bars in landscape, and test mode now keeps entitlements bought during the session.
+
+- df8371a: Update native Android SDK to 2.10.2. [View Android SDK release notes](https://github.com/superwall/Superwall-Android/releases/tag/2.10.2).
+- 147d4d3: Update native iOS SDK to 4.18.3. [View iOS SDK release notes](https://github.com/superwall/Superwall-iOS/releases/tag/4.18.3).
+
+  - iOS: Entitlements now stay active while an App Store subscription is in a billing grace period when using StoreKit 2. During the grace period, `SubscriptionTransaction.isActive` is `true` and `expirationDate` is the date the grace period ends.
+  - iOS: The native SDK's database moves out of the root of Application Support into its own folder. Existing data is migrated automatically on first launch.
+
 ## 1.7.0
 
 ### Minor Changes
