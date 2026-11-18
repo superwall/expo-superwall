@@ -830,7 +830,8 @@ export default class Superwall {
    * @returns {Promise<void>} A promise that resolves once the delegate has been updated.
    */
   async setDelegate(delegate: SuperwallDelegate | undefined): Promise<void> {
-    await this.awaitConfig()
+    // The delegate lives on the JS side, so it does not need a configured SDK. Setting it before
+    // `configure()` is what lets it receive the events the SDK reports while it is configuring.
     Superwall.delegate = delegate
   }
 

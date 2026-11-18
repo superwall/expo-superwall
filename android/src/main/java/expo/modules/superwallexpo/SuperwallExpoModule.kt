@@ -294,7 +294,6 @@ class SuperwallExpoModule : Module() {
           options = superwallOptions,
           completion = {
             Superwall.instance.setPlatformWrapper("Expo", version = sdkVersion ?: "0.0.0")
-            Superwall.instance.delegate = SuperwallDelegateBridge()
             if (localResourcesMap != null) {
               Superwall.instance.localResources = localResourcesMap.mapValues { (_, value) ->
                 PaywallResource.FromUri(Uri.parse(value))
@@ -305,6 +304,11 @@ class SuperwallExpoModule : Module() {
             }
            }
          )
+        // Attach the delegate as soon as the instance exists. The completion above only runs after
+        // the first config fetch and identity setup, and everything the SDK reports before then
+        // (app launch, session start, the first subscription status, an early paywall) would reach
+        // no delegate.
+        Superwall.instance.delegate = SuperwallDelegateBridge()
 
         // `Superwall.instance` exists as soon as `configure` returns, before it has finished.
         // The flow sends the current status first.
