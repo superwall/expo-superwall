@@ -1,5 +1,113 @@
 # Changelog
 
+## 1.9.0
+
+### Minor Changes
+
+- 53bdd06: Fixes Superwall events and paywall details that the native bridges dropped, mislabelled or sent differently on iOS and Android.
+
+  - `attributionMatch` events, the result of matching an install to the ad click that led to it, are now delivered with their `info` (an `AttributionMatchInfo`) on both platforms. iOS used to deliver them as `unknown`.
+  - Android: the `reviewGranted` and `reviewDenied` events are now delivered. They, and any event type added by a later native SDK, used to arrive without an `event` name; unrecognised events are now `unknown`, as on iOS.
+  - Android: `paywallResponseLoad*` and `paywallProductsLoad*` events now include `triggeredEventName`, as on iOS. The old Android-only `triggeredPlacementName` key is still sent.
+  - Android: `paywallProductsLoadComplete` now includes the `paywallInfo`.
+  - Android: a `transactionRestore` event's `restoreType.storeTransaction` and a failed `triggerFire` result's `error` are now set, matching iOS and the TypeScript types. The old `transaction` and `errorMessage` keys are still sent.
+  - Android: the products in `PaywallInfo.products` now have their `name`, `entitlements` and `store`, plus `appStoreProduct`, `stripeProduct`, `paddleProduct` or `customProduct`, as on iOS. `PaywallInfo.presentationId` and the local notifications' `subtitle` are now set on Android, and `subtitle` on iOS.
+  - Entitlements in `subscriptionStatus`, and in a redeemed web checkout's `redemptionInfo`, now include their `type` on Android, as on iOS.
+  - Android: a redeemed web checkout's `paywallInfo.placementParams` now holds the parameter values rather than their JSON text, and `paywallInfo.product` is now set, as on iOS.
+  - iOS: `StoreProduct.introOfferToken` is now the token string, as typed, rather than a native object that couldn't be passed to JavaScript.
+  - **Behaviour change:** `PaywallInfo.computedPropertyRequests[].type` is now the property's name, such as `minutesSince`, on both platforms. iOS used to send a number and Android `MINUTES_SINCE`, which made the compat SDK throw while parsing any paywall with computed properties.
+  - Types: `PaywallInfo`'s `presentedByEventAt` and load times are now typed as the date strings both platforms send, not numbers. Adds the `reviewGranted`, `reviewDenied`, `paywallResourceLoadFail` (Android) and `attributionMatch` event types, `duration` on `shimmerViewComplete`, `errorMessage` on `paywallWebviewLoadFail` and `paywallProductsLoadFail` (Android), and the `UserIsSubscribed` paywall skipped reason (Android). `PaywallPresentationRequestStatusReason` now lists the reasons the SDKs actually send (`noAudienceMatch`, `placementNotFound`, `noPresenter`, `noConfig`, `subscriptionStatusTimeout`); the old values are kept but deprecated, as they were never sent. `transactionComplete`'s `type` (iOS only) and `paywallProductsLoadComplete`'s `paywallInfo` (Android only) are now optional, and `subscriptionStatusDidChange`'s `subscriptionStatus`, which neither platform sends, is optional and deprecated.
+  - Compat: `triggerFire` events now have the placement's name in `placementName`, rather than `"triggerFire"`; `integrationAttributes` events now have the attributes in `audienceFilterParams`; `transactionRestore` events now have their `restoreType`; `paywallResponseLoadComplete`, `paywallProductsLoadStart`, `paywallProductsLoadFail` and (Android) `paywallProductsLoadComplete` events now have their `paywallInfo`. The `customerInfoDidChange`, `permissionRequested`, `permissionGranted`, `permissionDenied` and `attributionMatch` events, which used to arrive with an undefined `type`, now have their own `EventType`, with `permissionName`, `paywallIdentifier` and `attributionMatchInfo`. Adds `singularDeviceId` to the compat `IntegrationAttribute` type.
+
+- 6ed4be4: Adds the details the native SDKs have for entitlements, paywalls, products and transactions, on both the hooks and compat SDKs.
+
+  - `Entitlement` now has `isActive`, `productIds`, `latestProductId`, `store`, `startsAt`, `renewedAt`, `expiresAt`, `isLifetime`, `willRenew`, `renewsAt`, `isRevoked` (iOS only), `isInGracePeriod`, `state` and `offerType`, wherever entitlements appear: `getEntitlements()`, `CustomerInfo`, `subscriptionStatus`, products and redemption results. A detail the SDK doesn't know is left out.
+  - `getEntitlements()` now includes `web`, the active entitlements redeemed through web checkout. Adds `getEntitlementsByProductIds(productIds)`, which returns the entitlements that products unlock.
+  - `PaywallInfo` now has `cacheKey`, `buildId`, `shimmerLoadStartTime`, `shimmerLoadCompleteTime`, `presentation` (a `PaywallPresentationInfo` with the style, delay and drawer or popup dimensions) and `isScrollEnabled`, plus the iOS-only `isLocal` and `introOfferEligibility`.
+  - Products from `products()` and in transaction events now have `attributes`, plus the iOS-only `subscriptionPeriod`, `introductoryDiscount`, `discounts`, `billingPlanType`, `isBillingPlanAvailable` and `entitlements`, and the Android-only `productType`, `storeFrontCountryCode`, `isCustomProduct` and `customTransactionId`. The App Store products in `PaywallInfo.products` now have `billingPlanType` (iOS).
+  - `StoreTransaction` now has `state` and `payment`.
+  - `CustomerInfo` now has `activeSubscriptionProductIds`.
+  - `transactionFail` events now have `transactionError`, which says whether the transaction is pending or failed and, for a failure, the product. Android `customerInfoDidChange` events now have the `from` and `to` customer info. The compat `SuperwallEvent` has them as `transactionError`, `fromCustomerInfo` and `toCustomerInfo`, plus `transactionType` for `transactionComplete` (iOS).
+  - iOS: a redeemed web checkout's `redemptionInfo` now has `userAttributes`. Android: an unknown store's details are now included in a redemption's `storeIdentifiers`, as on iOS.
+  - Compat: the entitlements in `getEntitlements()` are now `Entitlement` instances, and a list the bridge doesn't send is empty rather than `undefined`. The compat `Entitlement` and `EntitlementState` are now exported.
+
+- 2993d0d: **Behaviour change:** the `shouldPreload` and `shouldShowWebPurchaseConfirmationAlert` paywall options now default to `true`, as in the native SDKs. Paywalls are preloaded after configuring, and on iOS a confirmation alert is shown after a web purchase. Set them to `false` in the `paywalls` options to keep the previous behaviour.
+- a3fc1f6: Updates the native iOS SDK to 4.19.1, now installed from Swift Package Manager, and adds the remaining native SDK API. [View iOS SDK release notes](https://github.com/superwall/Superwall-iOS/releases/tag/4.19.1).
+
+  **Breaking install change on iOS: SuperwallKit now comes from Swift Package Manager.** SuperwallKit is no longer published to CocoaPods, so this package no longer depends on the `SuperwallKit` pod. `pod install` adds the Swift package to the Pods project instead. You don't need a config plugin, Podfile changes or anything in Xcode, but:
+
+  - You need Xcode 26 or later and React Native 0.75 or later (any Expo SDK this package supports, 53 and up). `pod install` fails with a message saying so on an older React Native.
+  - Run `pod install` again after upgrading, or `npx expo prebuild --clean`.
+  - Nothing else in the app may install the `SuperwallKit` pod or add the `Superwall-iOS` package to the app target, or the build fails with duplicate symbols.
+  - React Native warns during `pod install` that the pod uses a Swift package with static linking. That's expected.
+
+  With SuperwallKit 4.19.1:
+
+  - Adds `refreshCustomerInfo()`, which fetches the user's latest entitlements from Superwall. On Android, where the SDK can't force a refresh, it returns the customer info the SDK already has.
+  - iOS: products include `customTransactionId`.
+  - iOS: `getCustomerInfo()` no longer waits forever when the SDK can't load its configuration.
+
+  **New methods**, on the hooks store and on the compat `Superwall.shared`:
+
+  - `setIntegrationAttribute(attribute, value)` sets one integration attribute and leaves the others.
+  - `purchase()` also takes a product returned by `products()`, or a compat `StoreProduct`. On Android it's bought with its own base plan and offer. Compat `StoreProduct` gains `fullIdentifier`.
+  - iOS only: `getGrantedEntitlements()` and `setGrantedEntitlements()`, for entitlements your own backend grants, and `removeAllPendingNonSuperwallNotificationRequests()`, `removeAllDeliveredSuperwallNotifications()` and `removeAllDeliveredNonSuperwallNotifications()`. They do nothing on Android.
+  - Android only: `showAlert()`, `openRestoreOnWeb()`, `getExternalAccountId()`, `dismissForNextPaywall()`, `teardown()` and `observe()`, which reports purchases made outside of Superwall in observer mode. They do nothing on iOS. After `teardown()`, `SuperwallProvider` leaves the SDK unconfigured until you call `configure` with the API key to use.
+
+  **Configuration status changes.** The hooks store has a `configurationStatus` state and `useSuperwallEvents` an `onConfigurationStatusChange` callback. Compat has `Superwall.shared.addConfigurationStatusListener()`.
+
+  **Embedded views.**
+
+  - `PaywallView` gains `paywallOverrides` (products by name), `feature`, and on iOS `onCustomCallback` and `onLoadingStateChange`.
+  - Adds `CustomerCenterView`, which embeds the Customer Center on iOS. On Android it renders its fallback, as the Android SDK can only present the Customer Center.
+  - Both are now exported from `expo-superwall/compat` too.
+
+  **Options.**
+
+  - `networkEnvironment` accepts `"local"` (iOS) and a custom environment, such as `{ custom: "example.com" }`.
+  - iOS: `devServer` connects to a running `superwall dev` server.
+  - Android: `paywalls.preloadDeviceOverrides` and `paywalls.loadingColor`, the name of a color resource.
+  - A redeemed web checkout's result includes `stripeSubscriptionIds` for Stripe purchases.
+
+  **Behaviour changes.**
+
+  - iOS: an option that's missing or has an unexpected value now keeps its native default. Previously the native module discarded every option if a single required one was missing, which only affected apps calling `SuperwallExpoModule.configure` directly.
+  - Android: `getCustomerInfo()` no longer waits forever when the SDK can't load the customer info. After 5 seconds it resolves with what the SDK has.
+  - Compat: the static `Superwall.purchase()` and `Superwall.products()` now wait for `configure` to finish, like the other methods, instead of failing when called early.
+
+- 1140b7c: Adds the native SDK methods, callbacks and options that were missing from the hooks and compat SDKs.
+
+  - Hooks: `useSuperwall()` now has `getAssignments`, `confirmAllAssignments`, `setInterfaceStyle`, `getConfigurationStatus` and `handleDeepLink`, which were only on the compat SDK.
+  - Android: `getConfigurationStatus()` now returns `PENDING` before `configure` has been called, as on iOS, instead of rejecting.
+  - Adds `refreshConfiguration()`, and the getters `getUserId()`, `getIsLoggedIn()`, `getIsPaywallPresented()`, `getLatestPaywallInfo()`, `getEventTrackingBehavior()`, `getAdConsent()`, `getLocaleIdentifier()` and `getLogLevel()`, on both SDKs.
+  - Adds `overrideProductsByName`, which replaces products on every paywall by product name, as a paywall option and at runtime with `setOverrideProductsByName()` and `getOverrideProductsByName()`.
+  - Adds the `shouldShowWebRestorationAlert` and `notificationPermissionsDenied` (iOS only) and `optimisticLoading` and `timeoutAfter` (Android only) paywall options.
+  - Adds `cancelAllScheduledNotifications()`, which cancels the local notifications Superwall scheduled.
+  - Android: adds `setPushToken()`, `optOutOfNotifications()`, `optInToNotifications()` and `handleNotificationOpen()` for the push notifications Superwall sends. They do nothing on iOS.
+  - Android: when a paywall's purchase replaces the user's existing subscription, `onPurchase` now has a `replacement` (`ProductReplacement`, with the replacement `mode` and the old product's ID and purchase token). A compat purchase controller still gets it as the fourth argument of `purchaseFromGooglePlay()`, as in 1.8.0, now followed by `store`.
+  - Adds the `userAttributesDidChange` and, on iOS, `handleSuperwallDeepLink` delegate callbacks: `onUserAttributesChange` and `onSuperwallDeepLink` in `useSuperwallEvents`, and methods of the compat `SuperwallDelegate`.
+  - iOS: adds `onWillDismiss` to `usePlacement` and to the compat `PaywallPresentationHandler`, called when a paywall is about to be dismissed.
+  - Compat: adds `getDeviceAttributes()` and the `localResources` configure option, which the hooks SDK already had.
+  - Adds the `firebaseInstallationId` (iOS only) and `meta`, `amplitude`, `mixpanel`, `googleAds`, `googleAppSetId` and `custom` (Android only) integration attributes. A `null` value passed to `setIntegrationAttributes()` now removes the attribute.
+  - Adds the `analytics`, `grantedEntitlements` (iOS only), `transactions`, `webEntitlements` and `customerCenter`, and `customerInfo`, `jsEvaluator`, `nativePurchaseController` and `deepLinks` (Android only) log scopes. The compat `LogScope` also gains `billing`.
+  - **Behaviour change:** on Android, `setIntegrationAttributes()` now keeps the attributes you leave out, as on iOS. It used to replace them all.
+
+### Patch Changes
+
+- 48dc32b: Fixes the `debugViewController`, `localizationViewController` and `paywallViewController` log scopes being ignored on Android.
+- a5597a2: Fixes purchase controllers and two compat SDK methods.
+
+  - Android: paywall purchases of custom products now reach your purchase controller's `onPurchase`, with `store: "CUSTOM"`, instead of failing in the native SDK. `onPurchase` now has `store` on Android too (`"PLAY_STORE"` or `"CUSTOM"`).
+  - Compat: `PurchaseController.purchaseFromAppStore` and `purchaseFromGooglePlay` now receive the product's `store` as a last argument, so a compat purchase controller can tell custom products from store ones.
+  - Compat: a presentation handler's `onPresent` is now called once per presentation. It used to be called twice.
+  - **Behaviour change:** compat `getPresentationResult()` now returns a `PresentationResult` instance, as typed, such as `PresentationResultPaywall`, instead of the raw native object.
+  - Compat: `getEntitlements()` now fills in `status` from the subscription status. It used to always be `UNKNOWN`.
+
+- d16ea56: Attach the native delegate as soon as `configure()` creates the SDK instance instead of in its completion, which only runs after the first config fetch. Events the SDK reports before then (app launch, session start, the first subscription status, a paywall for an early placement) no longer go missing from `useSuperwallEvents` and the compat `SuperwallDelegate`. In the compat SDK, `Superwall.shared.setDelegate()` no longer waits for `configure()`, so a delegate set before `configure()` receives those events too. Fixes #186.
+- 09dbcd9: - iOS: an embedded `PaywallView` or `CustomerCenterView` is no longer torn down when its screen is only covered, such as by a pushed screen or a full-screen modal. The paywall isn't reloaded when the screen comes back, and a custom callback or restore confirmation that was waiting on your handler can still be answered.
+  - Hooks SDK: `undefined` values nested inside the configure options (for example in `logging`, `paywalls.restoreFailed` or `paywalls.preloadDeviceOverrides`) and inside `PaywallView`'s `params` and `paywallOverrides` no longer reach the native module. An option left `undefined` falls back to its default.
+- 1b7c910: `onPurchase` now has `customTransactionId` for custom products, on iOS and Android. It's the transaction ID Superwall generates for each purchase of a custom product. Pass it to your checkout and have your server send it back as `custom_transaction_id` when it reports the purchase, so Superwall attributes the revenue to the paywall. Compat purchase controllers receive it as a new last argument of `purchaseFromAppStore` and `purchaseFromGooglePlay`.
+
 ## 1.8.0
 
 ### Minor Changes
