@@ -137,6 +137,7 @@ export enum EventType {
   permissionRequested = "permissionRequested",
   permissionGranted = "permissionGranted",
   permissionDenied = "permissionDenied",
+  /** Android only. Install attribution was resolved or failed to resolve. */
   attributionMatch = "attributionMatch",
 }
 

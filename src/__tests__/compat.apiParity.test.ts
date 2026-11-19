@@ -261,9 +261,9 @@ describe("compat API parity", () => {
     expect(change.event.toCustomerInfo?.entitlements[0]).toBeInstanceOf(Entitlement)
   })
 
-  it("routes a replacement purchase to purchaseFromGooglePlayWithReplacement", async () => {
+  it("passes a replacement purchase to purchaseFromGooglePlay as its fourth argument", async () => {
     const replacement = {
-      mode: "chargeProrated",
+      mode: "charge_prorated",
       oldProductId: "monthly",
       oldPurchaseToken: "token",
     }
@@ -274,9 +274,8 @@ describe("compat API parity", () => {
       restorePurchases = jest.fn()
     }
 
-    // The default implementation buys the product as a new subscription.
-    const plain = new Controller()
-    await Superwall.configure({ apiKey: "api-key", purchaseController: plain })
+    const controller = new Controller()
+    await Superwall.configure({ apiKey: "api-key", purchaseController: controller })
     await emit("onPurchase", {
       platform: "android",
       productId: "yearly",
@@ -284,63 +283,32 @@ describe("compat API parity", () => {
       store: "PLAY_STORE",
       replacement,
     })
-    expect(plain.purchaseFromGooglePlay).toHaveBeenCalledWith(
+    expect(controller.purchaseFromGooglePlay).toHaveBeenCalledWith(
       "yearly",
       "base",
       undefined,
+      replacement,
       "PLAY_STORE",
       undefined,
     )
     expect(mockDidPurchase).toHaveBeenCalledWith({ type: "purchased" })
 
-    class ReplacingController extends Controller {
-      purchaseFromGooglePlayWithReplacement = jest
-        .fn()
-        .mockResolvedValue(new PurchaseResultPurchased())
-    }
-    const replacing = new ReplacingController()
-    await Superwall.configure({ apiKey: "api-key", purchaseController: replacing })
+    // A normal purchase leaves the replacement undefined.
+    controller.purchaseFromGooglePlay.mockClear()
     await emit("onPurchase", {
       platform: "android",
       productId: "yearly",
       basePlanId: "base",
       store: "PLAY_STORE",
-      replacement,
     })
-    expect(replacing.purchaseFromGooglePlayWithReplacement).toHaveBeenCalledWith(
+    expect(controller.purchaseFromGooglePlay).toHaveBeenCalledWith(
       "yearly",
       "base",
       undefined,
-      replacement,
-      "PLAY_STORE",
-      undefined,
-    )
-    expect(replacing.purchaseFromGooglePlay).not.toHaveBeenCalled()
-
-    // A controller that isn't a subclass, so has no replacement method at all, still gets the
-    // purchase rather than a TypeError.
-    const plainObject = {
-      purchaseFromAppStore: jest.fn(),
-      purchaseFromGooglePlay: jest.fn().mockResolvedValue(new PurchaseResultPurchased()),
-      restorePurchases: jest.fn(),
-    }
-    await Superwall.configure({ apiKey: "api-key", purchaseController: plainObject })
-    mockDidPurchase.mockClear()
-    await emit("onPurchase", {
-      platform: "android",
-      productId: "yearly",
-      basePlanId: "base",
-      store: "PLAY_STORE",
-      replacement,
-    })
-    expect(plainObject.purchaseFromGooglePlay).toHaveBeenCalledWith(
-      "yearly",
-      "base",
       undefined,
       "PLAY_STORE",
       undefined,
     )
-    expect(mockDidPurchase).toHaveBeenCalledWith({ type: "purchased" })
 
     await Superwall.configure({ apiKey: "api-key" })
   })

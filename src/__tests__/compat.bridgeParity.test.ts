@@ -228,6 +228,7 @@ describe("compat Superwall methods", () => {
       "custom_coins",
       null,
       null,
+      undefined,
       ProductStore.custom,
       undefined,
     )
@@ -266,6 +267,7 @@ describe("compat Superwall methods", () => {
       "web_annual",
       null,
       null,
+      undefined,
       ProductStore.custom,
       "android-txn-id",
     )

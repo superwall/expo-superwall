@@ -231,25 +231,14 @@ export default class Superwall {
       }
 
       if (data.platform === "android") {
-        const controller = Superwall.purchaseController
-        const purchaseResult =
-          data.replacement &&
-          typeof controller?.purchaseFromGooglePlayWithReplacement === "function"
-            ? await controller.purchaseFromGooglePlayWithReplacement(
-                data.productId,
-                data.basePlanId,
-                data.offerId,
-                data.replacement,
-                data.store as ProductStore | undefined,
-                data.customTransactionId,
-              )
-            : await controller?.purchaseFromGooglePlay(
-                data.productId,
-                data.basePlanId,
-                data.offerId,
-                data.store as ProductStore | undefined,
-                data.customTransactionId,
-              )
+        const purchaseResult = await Superwall.purchaseController?.purchaseFromGooglePlay(
+          data.productId,
+          data.basePlanId,
+          data.offerId,
+          data.replacement,
+          data.store as ProductStore | undefined,
+          data.customTransactionId,
+        )
         if (purchaseResult == null) {
           return
         }
@@ -1188,7 +1177,7 @@ export default class Superwall {
   /**
    * Sets the user's ad consent at runtime, which Superwall passes on with the
    * conversions it uploads to Google Ads and Meta. Overrides the `adConsent` option and any
-   * TCF consent banner's stored answer.
+   * TCF consent banner's stored answer. Supported on iOS and, since 1.8.0, Android.
    *
    * @param consent - The consent for each purpose. A purpose left out is granted.
    */

@@ -360,7 +360,7 @@ The hook returns an object representing the Superwall store. If a `selector` fun
     -   `setUserAttributes: (attrs: Record<string, any>) => Promise<void>`: Sets custom attributes for the current user.
     -   `getUserAttributes: () => Promise<Record<string, any>>`: Retrieves the attributes of the current user.
     -   `setLogLevel: (level: string) => Promise<void>`: Sets the log level for the SDK. `level` can be one of: `"debug"`, `"info"`, `"warn"`, `"error"`, `"none"`.
-    -   `setAdConsent: (consent: AdConsent) => Promise<void>`: Sets the user's ad consent (`adUserData` and `adPersonalization`, each `"granted"` or `"denied"`), which Superwall passes on with the conversions it uploads to Google Ads and Meta. Set the initial value with the `adConsent` configure option.
+    -   `setAdConsent: (consent: AdConsent) => Promise<void>`: Sets the user's ad consent (`adUserData` and `adPersonalization`, each `"granted"` or `"denied"`), which Superwall passes on with the conversions it uploads to Google Ads and Meta. Set the initial value with the `adConsent` configure option. Supported on iOS and, since 1.8.0, Android.
     -   `getEntitlementsByProductIds: (productIds: string[]) => Promise<Entitlement[]>`: Returns the entitlements that the given products unlock.
     -   `getAssignments: () => Promise<Assignment[]>` and `confirmAllAssignments: () => Promise<Assignment[]>`: Return the experiment assignments made so far, or confirm and return all of them.
     -   `setInterfaceStyle: (style: "LIGHT" | "DARK" | null) => Promise<void>`: Shows paywalls in light or dark mode instead of following the system. Pass `null` to follow the system again.

@@ -31,7 +31,12 @@ export abstract class PurchaseController {
    * Purchase a product from Google Play.
    * @param productId The product id of the product the user would like to purchase.
    * @param basePlanId An optional base plan identifier of the product that's being purchased.
-   * @param offerId An optional offer identifier of the product that's being purchased.
+   * @param offerId The identifier of the offer to buy, already chosen by the SDK from the paywall's
+   * product (including `sw-auto` resolution). Undefined or `null` means buy the base plan with no offer:
+   * don't pick a free trial or other offer yourself.
+   * @param replacement The existing Google Play subscription this purchase replaces (an upgrade,
+   * downgrade or plan switch), if any. Pass its `oldPurchaseToken` and `mode` to your billing
+   * library's subscription update params. Undefined for a normal purchase. Since 1.8.0.
    * @param store The store that backs the product. When it's `ProductStore.custom`, the
    * product isn't on Google Play and you must purchase it yourself (e.g., through your
    * backend).
@@ -44,35 +49,7 @@ export abstract class PurchaseController {
     productId: string,
     basePlanId?: string,
     offerId?: string,
-    store?: ProductStore,
-    customTransactionId?: string,
-  ): Promise<PurchaseResult>
-
-  /**
-   * Android only. Purchase a product from Google Play that replaces the user's existing
-   * subscription. Called instead of {@link purchaseFromGooglePlay} when the paywall's Purchase
-   * action is set to replace a subscription and the user has an active one that shares an
-   * entitlement with the new product.
-   *
-   * Optional: if you don't implement it, {@link purchaseFromGooglePlay} is called instead,
-   * which buys the product as a new subscription. It's optional so that controllers written
-   * with `implements PurchaseController`, or as plain objects, keep working unchanged.
-   * @param productId The product id of the product the user would like to purchase.
-   * @param basePlanId An optional base plan identifier of the product that's being purchased.
-   * @param offerId An optional offer identifier of the product that's being purchased.
-   * @param replacement The subscription being replaced, with the replacement mode and the old
-   * product's identifier and purchase token.
-   * @param store The store that backs the product.
-   * @param customTransactionId The transaction ID Superwall generated for this purchase of a
-   * custom product, or `undefined` for other products. Pass it to your checkout and have your
-   * server send it back as `custom_transaction_id` when it reports the purchase to Superwall.
-   * @returns A promise that resolves with the result of the purchase logic.
-   */
-  purchaseFromGooglePlayWithReplacement?(
-    productId: string,
-    basePlanId: string | undefined,
-    offerId: string | undefined,
-    replacement: ProductReplacement,
+    replacement?: ProductReplacement,
     store?: ProductStore,
     customTransactionId?: string,
   ): Promise<PurchaseResult>

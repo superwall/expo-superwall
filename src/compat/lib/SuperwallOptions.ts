@@ -74,6 +74,8 @@ export enum AdConsentStatus {
  * If ad consent is never set, the SDK uses the consent stored by an IAB TCF consent banner when
  * GDPR applies, and otherwise defaults to granted. Apps with users in the EEA, UK or Switzerland
  * that don't use a TCF banner should set it from their consent flow.
+ *
+ * Supported on iOS and, since 1.8.0, Android.
  */
 export interface AdConsent {
   /** Consent to send user data to ad networks for advertising. */
@@ -187,7 +189,7 @@ export class SuperwallOptions {
    * The user's ad consent, passed on with the conversions Superwall uploads to Google Ads and
    * Meta. Undefined uses a TCF consent banner's stored answer, or granted. Setting it, even to
    * the default, overrides the banner. Change it at runtime with `setAdConsent()`.
-   * @platform iOS and Android
+   * @platform iOS and Android (Android since 1.8.0)
    */
   adConsent?: AdConsent
   /**

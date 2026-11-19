@@ -451,8 +451,8 @@ Rules:
 - iOS purchase payload does not include base plan or offer IDs.
 - Android purchase payload must include `basePlanId` and may include `offerId`.
 - Android purchase payload must include `replacement`
-  (`{ mode, oldProductId, oldPurchaseToken }`, `mode` one of `storeDefault`,
-  `chargeProrated` or `chargeFullPrice`) when the purchase replaces an existing
+  (`{ mode, oldProductId, oldPurchaseToken }`, `mode` one of `default`,
+  `charge_prorated` or `charge_full_price`) when the purchase replaces an existing
   subscription, and leave it out otherwise.
 
 ### Android-only back button event

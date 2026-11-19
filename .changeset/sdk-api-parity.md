@@ -11,7 +11,7 @@ Adds the native SDK methods, callbacks and options that were missing from the ho
 - Adds the `shouldShowWebRestorationAlert` and `notificationPermissionsDenied` (iOS only) and `optimisticLoading` and `timeoutAfter` (Android only) paywall options.
 - Adds `cancelAllScheduledNotifications()`, which cancels the local notifications Superwall scheduled.
 - Android: adds `setPushToken()`, `optOutOfNotifications()`, `optInToNotifications()` and `handleNotificationOpen()` for the push notifications Superwall sends. They do nothing on iOS.
-- Android: when a paywall's purchase replaces the user's existing subscription, `onPurchase` now has a `replacement` (`ProductReplacement`, with the replacement `mode` and the old product's ID and purchase token). A compat purchase controller gets it through the new optional `purchaseFromGooglePlayWithReplacement()`; a controller that doesn't implement it gets `purchaseFromGooglePlay()` as before.
+- Android: when a paywall's purchase replaces the user's existing subscription, `onPurchase` now has a `replacement` (`ProductReplacement`, with the replacement `mode` and the old product's ID and purchase token). A compat purchase controller still gets it as the fourth argument of `purchaseFromGooglePlay()`, as in 1.8.0, now followed by `store`.
 - Adds the `userAttributesDidChange` and, on iOS, `handleSuperwallDeepLink` delegate callbacks: `onUserAttributesChange` and `onSuperwallDeepLink` in `useSuperwallEvents`, and methods of the compat `SuperwallDelegate`.
 - iOS: adds `onWillDismiss` to `usePlacement` and to the compat `PaywallPresentationHandler`, called when a paywall is about to be dismissed.
 - Compat: adds `getDeviceAttributes()` and the `localResources` configure option, which the hooks SDK already had.

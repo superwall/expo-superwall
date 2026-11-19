@@ -11,7 +11,7 @@ fun ProductReplacement.toJson(): Map<String, Any?> =
 
 private fun ProductReplacement.Mode.toJson(): String =
   when (this) {
-    ProductReplacement.Mode.DEFAULT -> "storeDefault"
-    ProductReplacement.Mode.CHARGE_PRORATED -> "chargeProrated"
-    ProductReplacement.Mode.CHARGE_FULL_PRICE -> "chargeFullPrice"
+    ProductReplacement.Mode.DEFAULT -> "default"
+    ProductReplacement.Mode.CHARGE_PRORATED -> "charge_prorated"
+    ProductReplacement.Mode.CHARGE_FULL_PRICE -> "charge_full_price"
   }

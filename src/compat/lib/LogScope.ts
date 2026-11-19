@@ -35,8 +35,6 @@ export enum LogScope {
   PaywallTransactions = "paywallTransactions",
   PaywallViewController = "paywallViewController",
   Cache = "cache",
-  /** Android only. */
-  Billing = "billing",
   /** iOS only. */
   Analytics = "analytics",
   Transactions = "transactions",

@@ -46,33 +46,6 @@ class PurchaseControllerBridge(): PurchaseController {
         offerId: String?,
         replacement: ProductReplacement?
     ): PurchaseResult {
-        return emitPurchase(productDetails.productId, basePlanId, offerId, null)
-    }
-
-    override suspend fun purchase(
-        activity: Activity,
-        product: StoreProduct,
-        basePlanId: String?,
-        offerId: String?,
-        replacement: ProductReplacement?
-    ): PurchaseResult {
-        // Custom products aren't bridged, so let the default fail them as before
-        val rawStoreProduct = product.rawStoreProduct
-            ?: return purchase(activity, product, basePlanId, offerId)
-        return emitPurchase(
-            rawStoreProduct.underlyingProductDetails.productId,
-            basePlanId,
-            offerId,
-            replacement
-        )
-    }
-
-    private suspend fun emitPurchase(
-        productId: String,
-        basePlanId: String?,
-        offerId: String?,
-        replacement: ProductReplacement?
-    ): PurchaseResult {
         purchasePromise = CompletableFuture()
 
         val productData = mutableMapOf<String, Any?>(
