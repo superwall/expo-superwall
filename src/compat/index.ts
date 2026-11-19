@@ -15,7 +15,9 @@ import { PresentationResult } from "./lib/PresentationResult"
 import type { ProductStore } from "./lib/Product"
 import type { StoreProduct } from "./lib/StoreProduct"
 import type { PurchaseController } from "./lib/PurchaseController"
+import { type PurchaseResult, PurchaseResultFailed } from "./lib/PurchaseResult"
 import { RedemptionResults } from "./lib/RedemptionResults"
+import { RestorationResult } from "./lib/RestorationResult"
 import { SubscriptionStatus } from "./lib/SubscriptionStatus"
 import type { SuperwallDelegate } from "./lib/SuperwallDelegate"
 import { SuperwallEventInfo } from "./lib/SuperwallEventInfo"
@@ -216,42 +218,66 @@ export default class Superwall {
   }
 
   private constructor() {
+    // The native SDK waits for an answer to every purchase and restore, so once a compat
+    // controller is set, a throw or a missing result is still answered as a failure.
     SuperwallExpoModule.addListener("onPurchase", async (data) => {
-      if (data.platform === "ios") {
-        const purchaseResult = await Superwall.purchaseController?.purchaseFromAppStore(
-          data.productId,
-          data.store as ProductStore | undefined,
-          data.customTransactionId,
-        )
-        if (purchaseResult == null) {
-          return
-        }
-        await SuperwallExpoModule.didPurchase(purchaseResult.toJSON())
+      const purchaseController = Superwall.purchaseController
+      if (!purchaseController) {
         return
       }
 
-      if (data.platform === "android") {
-        const purchaseResult = await Superwall.purchaseController?.purchaseFromGooglePlay(
-          data.productId,
-          data.basePlanId,
-          data.offerId,
-          data.replacement,
-          data.store as ProductStore | undefined,
-          data.customTransactionId,
-        )
-        if (purchaseResult == null) {
+      let purchaseResult: PurchaseResult | undefined
+      try {
+        if (data.platform === "ios") {
+          purchaseResult = await purchaseController.purchaseFromAppStore(
+            data.productId,
+            data.store as ProductStore | undefined,
+            data.customTransactionId,
+          )
+        } else if (data.platform === "android") {
+          purchaseResult = await purchaseController.purchaseFromGooglePlay(
+            data.productId,
+            data.basePlanId,
+            data.offerId,
+            data.replacement,
+            data.store as ProductStore | undefined,
+            data.customTransactionId,
+          )
+        } else {
           return
         }
-        await SuperwallExpoModule.didPurchase(purchaseResult.toJSON())
+      } catch (error: any) {
+        purchaseResult = new PurchaseResultFailed(error?.message || "Unknown error")
       }
+
+      await SuperwallExpoModule.didPurchase(
+        (
+          purchaseResult ?? new PurchaseResultFailed("The purchase controller returned no result")
+        ).toJSON(),
+      )
     })
 
     SuperwallExpoModule.addListener("onPurchaseRestore", async () => {
-      const restorationResult = await Superwall.purchaseController?.restorePurchases()
-      if (restorationResult == null) {
+      const purchaseController = Superwall.purchaseController
+      if (!purchaseController) {
         return
       }
-      await SuperwallExpoModule.didRestore(restorationResult.toJson())
+
+      let restorationResult: RestorationResult | undefined
+      try {
+        restorationResult = await purchaseController.restorePurchases()
+      } catch (error: any) {
+        restorationResult = RestorationResult.failed(
+          error instanceof Error ? error : new Error(String(error)),
+        )
+      }
+
+      await SuperwallExpoModule.didRestore(
+        (
+          restorationResult ??
+          RestorationResult.failed(new Error("The purchase controller returned no result"))
+        ).toJson(),
+      )
     })
 
     SuperwallExpoModule.addListener("onPaywallPresent", (data) => {

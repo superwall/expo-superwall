@@ -15,7 +15,7 @@ export class PurchaseResult {
     if (this.type === "failed") {
       return {
         type: this.type,
-        error: this.error!,
+        error: this.error || "Unknown error",
       }
     }
     return {

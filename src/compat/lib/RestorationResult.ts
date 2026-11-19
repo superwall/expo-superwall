@@ -40,7 +40,8 @@ export class Failed extends RestorationResult {
   toJson() {
     return {
       result: "failed",
-      errorMessage: this.error ? this.error.message : null,
+      // iOS can only read a string message, so a failure without one still sends text.
+      errorMessage: this.error?.message || "Unknown error",
     }
   }
 }

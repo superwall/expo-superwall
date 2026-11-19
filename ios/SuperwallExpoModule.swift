@@ -442,17 +442,11 @@ public class SuperwallExpoModule: Module {
     }
 
     Function("didPurchase") { (result: [String: Any]) in
-      guard let purchaseResult = PurchaseResult.fromJson(result) else {
-        return
-      }
-      purchaseController.purchaseCompletion?(purchaseResult)
+      purchaseController.purchaseCompletion?(PurchaseResult.fromJson(result))
     }
 
     Function("didRestore") { (result: [String: Any]) in
-      guard let restorationResult = RestorationResult.fromJson(result) else {
-        return
-      }
-      purchaseController.restoreCompletion?(restorationResult)
+      purchaseController.restoreCompletion?(RestorationResult.fromJson(result))
     }
 
     AsyncFunction("didHandleCustomCallback") { (callbackId: String, status: String, data: [String: Any]?, promise: Promise) in
