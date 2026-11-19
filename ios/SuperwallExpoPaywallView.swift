@@ -5,8 +5,9 @@ import SuperwallKit
 /// A React Native host view for a paywall retrieved through Superwall's `getPaywall` API.
 ///
 /// Each host owns exactly one PaywallViewController. Changing the placement/params or
-/// removing the host from the hierarchy discards that controller; native paywall
-/// controllers must never be reused in another view hierarchy.
+/// removing the host from its superview discards that controller; native paywall
+/// controllers must never be reused in another view hierarchy. The controller is kept while
+/// the host is only off screen, such as under a pushed screen or a full-screen modal.
 final class SuperwallExpoPaywallView: ExpoView, PaywallViewControllerDelegate {
   let onPaywallLoadStart = EventDispatcher()
   let onPaywallPresent = EventDispatcher()
@@ -89,10 +90,9 @@ final class SuperwallExpoPaywallView: ExpoView, PaywallViewControllerDelegate {
           }
         )
 
-        guard !Task.isCancelled,
-          generation == self.loadGeneration,
-          self.window != nil
-        else {
+        // Unmounting cancels the task and bumps the generation. A host that's only off screen
+        // keeps the paywall, which is attached when it comes back to the window.
+        guard !Task.isCancelled, generation == self.loadGeneration else {
           return
         }
 
@@ -130,10 +130,20 @@ final class SuperwallExpoPaywallView: ExpoView, PaywallViewControllerDelegate {
   override func didMoveToWindow() {
     super.didMoveToWindow()
 
-    if window == nil {
-      invalidateAndDetach()
-    } else {
+    // Leaving the window isn't unmounting: a screen pushed over this one, or a full-screen
+    // modal, takes the host out of the window while its React component stays mounted. The
+    // paywall and any custom callback waiting on JS are kept for when it comes back.
+    if window != nil {
       loadPaywallIfNeeded()
+    }
+  }
+
+  override func didMoveToSuperview() {
+    super.didMoveToSuperview()
+
+    // React removes the host from its superview when the component unmounts.
+    if superview == nil {
+      invalidateAndDetach()
     }
   }
 
@@ -142,6 +152,12 @@ final class SuperwallExpoPaywallView: ExpoView, PaywallViewControllerDelegate {
     didFinishWith result: PaywallResult,
     shouldDismiss: Bool
   ) {
+    // The SDK finishes a paywall as declined whenever its view disappears, which includes the
+    // host going off screen under a pushed screen or a full-screen modal. The paywall is kept
+    // and shown again when the host comes back, so that isn't a dismissal to report.
+    if window == nil, !shouldDismiss, case .declined = result {
+      return
+    }
     onPaywallDismiss([
       "paywallInfo": paywall.info.toJson(),
       "result": result.toJson(),
@@ -159,18 +175,18 @@ final class SuperwallExpoPaywallView: ExpoView, PaywallViewControllerDelegate {
   ) {
     // Not limited to the attached paywall: the state can change while the paywall is still
     // being retrieved.
-    guard window != nil else {
+    guard superview != nil else {
       return
     }
     onPaywallLoadingStateChange(["state": loadingState.toJson()])
   }
 
   /// Sends a custom callback from the paywall to JS and waits for
-  /// `didHandleCustomCallback`. Fails straight away once the host has left the window, as
+  /// `didHandleCustomCallback`. Fails straight away once the host has been unmounted, as
   /// nothing is left to answer.
   @MainActor
   private func handleCustomCallback(_ callback: CustomCallback) async -> CustomCallbackResult {
-    guard window != nil else {
+    guard superview != nil else {
       return .failure()
     }
     let callbackId = UUID().uuidString

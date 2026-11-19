@@ -8,7 +8,8 @@ import UIKit
 /// The Customer Center is created in the SDK's `embedded` style, which expects to sit in a
 /// navigation stack and pushes its own screens onto it. React Native layouts don't provide a
 /// `UINavigationController` to push onto, so this host owns one and contains it as a child view
-/// controller. Leaving the window discards it; coming back builds a new one.
+/// controller. It's kept while the host is only off screen, such as under a pushed screen or a
+/// full-screen modal, and discarded when the host is removed from its superview.
 final class SuperwallExpoCustomerCenterView: ExpoView {
   let onCustomerCenterError = EventDispatcher()
 
@@ -88,10 +89,20 @@ final class SuperwallExpoCustomerCenterView: ExpoView {
   override func didMoveToWindow() {
     super.didMoveToWindow()
 
-    if window == nil {
-      detachCustomerCenter()
-    } else {
+    // Leaving the window isn't unmounting: a screen pushed over this one, or a full-screen
+    // modal, takes the host out of the window while its React component stays mounted. The
+    // Customer Center and any restore waiting on JS are kept for when it comes back.
+    if window != nil {
       loadCustomerCenterIfNeeded()
+    }
+  }
+
+  override func didMoveToSuperview() {
+    super.didMoveToSuperview()
+
+    // React removes the host from its superview when the component unmounts.
+    if superview == nil {
+      detachCustomerCenter()
     }
   }
 
