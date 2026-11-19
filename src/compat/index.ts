@@ -180,8 +180,10 @@ export default class Superwall {
 
   private static configEmitter = new EventEmitter<{
     configured: (isConfigured: boolean) => void
+    configureFailed: (error: Error) => void
   }>()
   private static didConfigure = false
+  private static configureError?: Error
   private presentationHandlers: Map<string, PaywallPresentationHandler> = new Map()
   subscriptionStatusEmitter = new EventEmitter<{
     change: (status: SubscriptionStatus) => void
@@ -207,11 +209,25 @@ export default class Superwall {
     if (Superwall.didConfigure) {
       return
     }
+    if (Superwall.configureError) {
+      throw Superwall.configureError
+    }
 
-    await new Promise<void>((resolve) => {
-      Superwall.configEmitter.addListener("configured", () => {
+    await new Promise<void>((resolve, reject) => {
+      const onConfigured = () => {
+        removeListeners()
         resolve()
-      })
+      }
+      const onConfigureFailed = (error: Error) => {
+        removeListeners()
+        reject(error)
+      }
+      const removeListeners = () => {
+        Superwall.configEmitter.removeListener("configured", onConfigured)
+        Superwall.configEmitter.removeListener("configureFailed", onConfigureFailed)
+      }
+      Superwall.configEmitter.addListener("configured", onConfigured)
+      Superwall.configEmitter.addListener("configureFailed", onConfigureFailed)
     })
   }
 
@@ -474,6 +490,8 @@ export default class Superwall {
     completion?: () => void
   }): Promise<Superwall> {
     Superwall.purchaseController = purchaseController
+    // A new attempt clears an earlier failure, so calls made meanwhile wait for this one.
+    Superwall.configureError = undefined
 
     // Ensure options is always a SuperwallOptions instance with defaults
     const superwallOptions =
@@ -487,16 +505,24 @@ export default class Superwall {
     // Resolved here rather than in `toJson`, since resolving a bundled asset is asynchronous.
     const localResources = await resolveLocalResources(superwallOptions.localResources)
 
-    await SuperwallExpoModule.configure(
-      apiKey,
-      { ...superwallOptions.toJson(), ...(localResources ? { localResources } : {}) },
-      !!purchaseController,
-      `${version}compat`,
-    )
+    try {
+      await SuperwallExpoModule.configure(
+        apiKey,
+        { ...superwallOptions.toJson(), ...(localResources ? { localResources } : {}) },
+        !!purchaseController,
+        `${version}compat`,
+      )
+    } catch (error) {
+      // Fail the calls waiting on configure instead of leaving them pending forever.
+      Superwall.configureError = error instanceof Error ? error : new Error(String(error))
+      Superwall.configEmitter.emit("configureFailed", Superwall.configureError)
+      throw error
+    }
+
+    // Mark the SDK configured before running app code, so a throwing completion can't block it.
+    Superwall.setDidConfigure(true)
 
     completion?.()
-
-    Superwall.setDidConfigure(true)
 
     return Superwall._superwall
   }
