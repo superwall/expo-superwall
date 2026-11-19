@@ -215,9 +215,6 @@ public class SuperwallExpoModule: Module {
         purchaseController: usingPurchaseController ? purchaseController : nil,
         options: superwallOptions,
         completion: {
-          self.delegate = SuperwallDelegateBridge()
-          Superwall.shared.delegate = self.delegate
-
           Superwall.shared.setPlatformWrapper("Expo", version: sdkVersion ?? "0.0.0")
 
           if promiseSettled.testAndSet() == false {
@@ -225,6 +222,13 @@ public class SuperwallExpoModule: Module {
           }
         }
       )
+
+      // Attach the delegate as soon as the instance exists. The completion above only runs after
+      // the first config fetch and identity setup, and everything the SDK reports before then
+      // (app launch, session start, the first subscription status, an early paywall) would reach
+      // no delegate.
+      self.delegate = SuperwallDelegateBridge()
+      Superwall.shared.delegate = self.delegate
 
       // `Superwall.shared` exists as soon as `configure` returns, before it has finished.
       ConfigurationStatusObserver.shared.start()
