@@ -5,20 +5,16 @@ struct RestorationResultError: Error {
 }
 
 extension RestorationResult {
-  static func fromJson(_ dictionary: [String: Any]) -> RestorationResult? {
-    guard let result = dictionary["result"] as? String else {
-      return nil
-    }
-    switch result {
+  // Never fails: the SDK waits for an answer, so anything unreadable becomes a failure, as on Android.
+  static func fromJson(_ dictionary: [String: Any]) -> RestorationResult {
+    switch dictionary["result"] as? String {
     case "restored":
       return RestorationResult.restored
     case "failed":
-      guard let message = dictionary["errorMessage"] as? String else {
-        return nil
-      }
+      let message = dictionary["errorMessage"] as? String ?? "Unknown error"
       return RestorationResult.failed(RestorationResultError(message: message))
     default:
-      return nil
+      return RestorationResult.failed(RestorationResultError(message: "Unknown restoration result"))
     }
   }
 

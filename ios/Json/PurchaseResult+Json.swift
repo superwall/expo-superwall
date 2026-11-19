@@ -9,11 +9,9 @@ struct PurchaseResultError: LocalizedError {
 }
 
 extension PurchaseResult {
-  static func fromJson(_ dictionary: [String: Any]) -> PurchaseResult? {
-    guard let type = dictionary["type"] as? String else {
-      return nil
-    }
-    switch type {
+  // Never fails: the SDK waits for an answer, so anything unreadable becomes a failure, as on Android.
+  static func fromJson(_ dictionary: [String: Any]) -> PurchaseResult {
+    switch dictionary["type"] as? String {
     case "cancelled":
       return  PurchaseResult.cancelled
     case "purchased":
@@ -21,12 +19,10 @@ extension PurchaseResult {
     case "pending":
       return PurchaseResult.pending
     case "failed":
-      guard let message = dictionary["error"] as? String else {
-        return nil
-      }
+      let message = dictionary["error"] as? String ?? "Unknown error"
       return PurchaseResult.failed(PurchaseResultError(message: message))
     default:
-      return nil
+      return PurchaseResult.failed(PurchaseResultError(message: "Unknown Purchase Result type"))
     }
   }
 
