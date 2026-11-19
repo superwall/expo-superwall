@@ -3325,6 +3325,13 @@ export type OnPurchaseParamsIOS = {
    * presented paywall (e.g., during background flows).
    */
   store?: ProductStore
+  /**
+   * The transaction ID Superwall generated for this purchase of a `"CUSTOM"` product, or
+   * `undefined` for other products. Pass it to your checkout, for example as checkout metadata,
+   * and have your server send it back as `custom_transaction_id` when it reports the purchase to
+   * Superwall, so the revenue is attributed to the paywall that sold it.
+   */
+  customTransactionId?: string
 }
 
 /**
@@ -3367,6 +3374,13 @@ export type OnPurchaseParamsAndroid = {
    * If you ignore it, the purchase is made as a new subscription.
    */
   replacement?: ProductReplacement
+  /**
+   * The transaction ID Superwall generated for this purchase of a `"CUSTOM"` product, or
+   * `undefined` for other products. Pass it to your checkout, for example as checkout metadata,
+   * and have your server send it back as `custom_transaction_id` when it reports the purchase to
+   * Superwall, so the revenue is attributed to the paywall that sold it.
+   */
+  customTransactionId?: string
 }
 
 export type OnPurchaseParams = OnPurchaseParamsIOS | OnPurchaseParamsAndroid

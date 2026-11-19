@@ -757,4 +757,42 @@ describe("SDK behavior regressions", () => {
       renderer!.unmount()
     })
   })
+
+  it("passes a custom product's customTransactionId to onPurchase on both platforms", () => {
+    const onPurchase = jest.fn()
+
+    function Harness() {
+      useSuperwallEvents({ onPurchase })
+      return null
+    }
+
+    let renderer: TestRenderer.ReactTestRenderer
+    act(() => {
+      renderer = TestRenderer.create(<Harness />)
+    })
+
+    const iosPayload = {
+      productId: "web_annual",
+      platform: "ios",
+      store: "CUSTOM",
+      customTransactionId: "ios-txn-id",
+    }
+    const androidPayload = {
+      productId: "web_annual",
+      platform: "android",
+      basePlanId: null,
+      offerId: null,
+      store: "CUSTOM",
+      customTransactionId: "android-txn-id",
+    }
+    emit("onPurchase", iosPayload)
+    emit("onPurchase", androidPayload)
+
+    expect(onPurchase).toHaveBeenNthCalledWith(1, iosPayload)
+    expect(onPurchase).toHaveBeenNthCalledWith(2, androidPayload)
+
+    act(() => {
+      renderer!.unmount()
+    })
+  })
 })

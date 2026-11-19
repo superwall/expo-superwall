@@ -220,6 +220,7 @@ export default class Superwall {
         const purchaseResult = await Superwall.purchaseController?.purchaseFromAppStore(
           data.productId,
           data.store as ProductStore | undefined,
+          data.customTransactionId,
         )
         if (purchaseResult == null) {
           return
@@ -239,12 +240,14 @@ export default class Superwall {
                 data.offerId,
                 data.replacement,
                 data.store as ProductStore | undefined,
+                data.customTransactionId,
               )
             : await controller?.purchaseFromGooglePlay(
                 data.productId,
                 data.basePlanId,
                 data.offerId,
                 data.store as ProductStore | undefined,
+                data.customTransactionId,
               )
         if (purchaseResult == null) {
           return

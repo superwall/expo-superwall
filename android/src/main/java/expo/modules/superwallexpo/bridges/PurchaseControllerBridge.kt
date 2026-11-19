@@ -56,6 +56,7 @@ class PurchaseControllerBridge(): PurchaseController {
             "store" to if (product.isCustomProduct) "CUSTOM" else "PLAY_STORE"
         )
         replacement?.let { productData["replacement"] = it.toJson() }
+        product.customTransactionId?.let { productData["customTransactionId"] = it }
 
         SuperwallExpoModule.emitEvent(
             "onPurchase",

@@ -442,8 +442,8 @@ Rules:
 
 | Event | Payload | Notes |
 | --- | --- | --- |
-| `onPurchase` | iOS: `{ productId, platform: "ios", store? }` | Manual purchase flow |
-| `onPurchase` | Android: `{ productId, platform: "android", basePlanId, offerId?, store, replacement? }` | Manual purchase flow |
+| `onPurchase` | iOS: `{ productId, platform: "ios", store?, customTransactionId? }` | Manual purchase flow |
+| `onPurchase` | Android: `{ productId, platform: "android", basePlanId, offerId?, store, replacement?, customTransactionId? }` | Manual purchase flow |
 | `onPurchaseRestore` | no payload | Manual restore flow |
 
 Rules:
