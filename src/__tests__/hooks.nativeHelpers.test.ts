@@ -134,6 +134,15 @@ describe("hooks native helpers", () => {
     })
   })
 
+  it("answers false straight away when there is nothing left to tear down", async () => {
+    await expect(useSuperwallStore.getState().teardown()).resolves.toBe(true)
+    mockModule.teardown!.mockClear()
+
+    // Not a ten-second wait for a configure that isn't coming, ending in a rejection.
+    await expect(useSuperwallStore.getState().teardown()).resolves.toBe(false)
+    expect(mockModule.teardown).not.toHaveBeenCalled()
+  })
+
   it("tracks the configuration status in the store and tells subscribers", () => {
     const cleanup = useSuperwallStore.getState()._initListeners()
     const onConfigurationStatusChange = jest.fn()

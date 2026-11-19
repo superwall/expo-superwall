@@ -181,11 +181,15 @@ final class SuperwallExpoPaywallView: ExpoView, PaywallViewControllerDelegate {
     if let variables = callback.variables {
       data["variables"] = variables
     }
-    return await withCheckedContinuation { continuation in
+    let result = await withCheckedContinuation { continuation in
       PendingCustomCallbacks.shared.add(continuation, for: callbackId)
       pendingCustomCallbackIds.insert(callbackId)
       onPaywallCustomCallback(data)
     }
+    // Answered, so it's no longer pending. Otherwise the set grows by one id per callback for
+    // as long as the paywall is mounted.
+    pendingCustomCallbackIds.remove(callbackId)
+    return result
   }
 
   /// Answers the callbacks JS hasn't answered, so the paywall doesn't wait on a host that's gone.

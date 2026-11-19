@@ -702,7 +702,8 @@ export interface SuperwallStore {
    * not-configured state until `configure` runs again. `SuperwallProvider` doesn't configure
    * it again by itself: call `configure` with the API key to use. Does nothing on iOS, which
    * has no way to tear the SDK down.
-   * @returns A promise that resolves with `true` if an SDK instance was torn down.
+   * @returns A promise that resolves with `true` if an SDK instance was torn down, and
+   * `false` straight away when the SDK isn't configured and no `configure` is in flight.
    */
   teardown: () => Promise<boolean>
 
@@ -1115,6 +1116,10 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
     await SuperwallExpoModule.observe(purchasingObserverStateToJson(state))
   },
   teardown: async () => {
+    // Nothing to tear down, e.g. a second teardown in a row. Waiting for a configure that
+    // isn't coming would only time out; one that is in flight is still waited for.
+    const { isConfigured, isLoading } = get()
+    if (!isConfigured && !isLoading) return false
     await awaitConfigured()
     const didTearDown = await SuperwallExpoModule.teardown()
     if (didTearDown) {
