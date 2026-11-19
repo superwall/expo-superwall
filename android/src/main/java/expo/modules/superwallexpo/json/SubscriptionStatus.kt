@@ -13,11 +13,7 @@ fun SubscriptionStatus.toJson(): Map<String, Any> {
   }
   when (status) {
     is SubscriptionStatus.Active -> {
-      map["entitlements"] =  status.entitlements.map { entitlement ->
-          val entitlementMap = mutableMapOf<String, Any>()
-          entitlementMap["id"] = entitlement.id
-          entitlementMap
-      }
+      map["entitlements"] = status.entitlements.toJson()
     }
     is SubscriptionStatus.Inactive -> {
     }

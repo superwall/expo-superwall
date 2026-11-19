@@ -2436,12 +2436,8 @@ PODS:
     - ReactCommon/turbomodule/core
     - ReactNativeDependencies
     - Yoga
-  - Superscript (1.0.13)
   - SuperwallExpo (1.3.0):
     - ExpoModulesCore
-    - SuperwallKit (= 4.16.1)
-  - SuperwallKit (4.16.1):
-    - Superscript (= 1.0.13)
   - Yoga (0.0.0)
 
 DEPENDENCIES:
@@ -2566,8 +2562,6 @@ SPEC REPOS:
   trunk:
     - PurchasesHybridCommon
     - RevenueCat
-    - Superscript
-    - SuperwallKit
 
 EXTERNAL SOURCES:
   EXConstants:
@@ -2918,9 +2912,7 @@ SPEC CHECKSUMS:
   RNReanimated: fcf6a8cdd698fb09a811a8d6c5bcfe36575d965d
   RNScreens: c1a06fd73d0581a2a28a160577be393f579662b9
   RNWorklets: 43af89f696342f91118a2f1f3a879056e2f47331
-  Superscript: bcb4099b41bed108ab7e88cfc56af0ed1170b582
   SuperwallExpo: 1ae226651a1c9d89f128f45acc9bdb4475b36c3d
-  SuperwallKit: bde0865ed3b461f7fdbc85386ac89dca930c70e9
   Yoga: 18b74b3ade30bebc1904004dfaceae1dd02a330a
 
 PODFILE CHECKSUM: 9717debc68ec0aac78fac8d3a1b6b6623fe7eb5f

@@ -8,6 +8,8 @@ const mockModule: Record<string, unknown> = {
 
 // The compat configuration gate only needs an in-process event emitter.
 jest.mock("expo", () => ({ EventEmitter: require("node:events").EventEmitter }))
+// The compat SDK resolves local resources through `expo-asset`, whose ESM build jest can't require.
+jest.mock("expo-asset", () => ({ Asset: { fromModule: jest.fn() } }))
 
 jest.mock("../SuperwallExpoModule", () => ({
   __esModule: true,
@@ -43,7 +45,7 @@ describe("compat ad consent", () => {
       adPersonalization: "denied",
     })
 
-    // Android doesn't define `setAdConsent`.
+    // A stale native build without `setAdConsent`.
     delete mockModule.setAdConsent
     await expect(
       Superwall.shared.setAdConsent({ adUserData: AdConsentStatus.Denied }),

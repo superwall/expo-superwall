@@ -18,7 +18,13 @@ extension StoreTransaction {
       "expirationDate": expirationDate.map { dateFormatter.string(from: $0) },
       "offerId": offerId,
       "revocationDate": revocationDate.map { dateFormatter.string(from: $0) },
-      "appAccountToken": appAccountToken?.uuidString
+      "appAccountToken": appAccountToken?.uuidString,
+      "state": state.rawValue,
+      "payment": [
+        "productIdentifier": payment.productIdentifier,
+        "quantity": payment.quantity,
+        "discountIdentifier": payment.discountIdentifier,
+      ] as [String: Any?],
     ]
   }
 }

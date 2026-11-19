@@ -2,7 +2,6 @@ package expo.modules.superwallexpo.bridges
 
 import android.app.Activity
 import com.superwall.sdk.delegate.PurchaseResult
-import com.android.billingclient.api.ProductDetails
 import com.superwall.sdk.delegate.RestorationResult
 import com.superwall.sdk.delegate.subscription_controller.PurchaseController
 import com.superwall.sdk.store.ProductReplacement
@@ -10,6 +9,7 @@ import com.superwall.sdk.store.abstractions.product.StoreProduct
 import kotlinx.coroutines.future.await
 import java.util.concurrent.CompletableFuture
 import expo.modules.superwallexpo.SuperwallExpoModule
+import expo.modules.superwallexpo.json.toJson
 
 class PurchaseControllerBridge(): PurchaseController {
 
@@ -28,35 +28,20 @@ class PurchaseControllerBridge(): PurchaseController {
         restorePromise?.complete(result)
     }
 
-    override suspend fun purchase(
-        activity: Activity,
-        productDetails: ProductDetails,
-        basePlanId: String?,
-        offerId: String?
-    ): PurchaseResult {
-        return emitPurchase(productDetails.productId, basePlanId, offerId, null)
-    }
-
+    // The StoreProduct overloads also receive custom products, which have no ProductDetails;
+    // the native default fails those before they reach JS.
     override suspend fun purchase(
         activity: Activity,
         product: StoreProduct,
         basePlanId: String?,
-        offerId: String?,
-        replacement: ProductReplacement?
-    ): PurchaseResult {
-        // Custom products aren't bridged, so let the default fail them as before
-        val rawStoreProduct = product.rawStoreProduct
-            ?: return purchase(activity, product, basePlanId, offerId)
-        return emitPurchase(
-            rawStoreProduct.underlyingProductDetails.productId,
-            basePlanId,
-            offerId,
-            replacement
-        )
-    }
+        offerId: String?
+    ): PurchaseResult = purchase(activity, product, basePlanId, offerId, null)
 
-    private suspend fun emitPurchase(
-        productId: String,
+    // The SDK calls this overload; `replacement` is set when the paywall's purchase replaces an
+    // existing subscription.
+    override suspend fun purchase(
+        activity: Activity,
+        product: StoreProduct,
         basePlanId: String?,
         offerId: String?,
         replacement: ProductReplacement?
@@ -65,17 +50,13 @@ class PurchaseControllerBridge(): PurchaseController {
 
         val productData = mutableMapOf<String, Any?>(
             "platform" to "android",
-            "productId" to productId,
+            "productId" to product.productIdentifier,
             "basePlanId" to basePlanId,
-            "offerId" to offerId
+            "offerId" to offerId,
+            "store" to if (product.isCustomProduct) "CUSTOM" else "PLAY_STORE"
         )
-        replacement?.let {
-            productData["replacement"] = mapOf(
-                "mode" to it.mode.rawName,
-                "oldProductId" to it.oldProductId,
-                "oldPurchaseToken" to it.oldPurchaseToken
-            )
-        }
+        replacement?.let { productData["replacement"] = it.toJson() }
+        product.customTransactionId?.let { productData["customTransactionId"] = it }
 
         SuperwallExpoModule.emitEvent(
             "onPurchase",

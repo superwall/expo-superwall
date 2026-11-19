@@ -37,6 +37,15 @@ npx expo install expo-superwall
 bunx expo install expo-superwall
 ```
 
+### iOS requirements
+
+The iOS SDK, SuperwallKit, is only published as a Swift package, so `expo-superwall` gets it from Swift Package Manager rather than CocoaPods. `pod install` sets this up in the Pods project, and you don't need a config plugin, Podfile changes or anything in Xcode.
+
+- Xcode 26 or later, which SuperwallKit needs.
+- React Native 0.75 or later, which every supported Expo SDK (53 and later) has. The Podfile must call `react_native_post_install`, as the Expo and React Native templates do.
+- Don't add the `Superwall-iOS` package to your app target yourself, and don't install the `SuperwallKit` CocoaPod through another dependency. Either puts the SDK in the app twice and the build fails with duplicate symbols.
+- During `pod install`, React Native warns that the pod "is using swift package(s) SuperwallKit with static linking". That's expected and can be ignored.
+
 ## Setup
 
 To use the Superwall SDK, you need to wrap your application (or the relevant part of it) with the `<SuperwallProvider />`. This provider initializes the SDK with your API key.
@@ -321,6 +330,7 @@ The hook returns an object representing the Superwall store. If a `selector` fun
     -   `isConfigured: boolean`: True if the Superwall SDK has been configured with an API key.
     -   `isLoading: boolean`: True when the SDK is performing an asynchronous operation like configuration.
     -   `listenersInitialized: boolean`: True if native event listeners have been initialized.
+    -   `configurationStatus: "PENDING" | "CONFIGURED" | "FAILED"`: The native SDK's configuration status, kept current as it changes. `onConfigurationStatusChange` in `useSuperwallEvents` is called on each change.
     -   `configurationError: string | null`: Contains error message if SDK configuration failed, `null` otherwise. When set, the SDK is not configured and app should show error UI.
     -   `user?: UserAttributes | null`: An object containing the current user's attributes.
         -   `UserAttributes`:
@@ -333,7 +343,7 @@ The hook returns an object representing the Superwall store. If a `selector` fun
         -   `SubscriptionStatus` (see `SuperwallExpoModule.types.ts` for full details):
             -   `status: "UNKNOWN" | "INACTIVE" | "ACTIVE"`
             -   `entitlements?: Entitlement[]` (if status is "ACTIVE")
-                -   `Entitlement`: `{ id: string, type: EntitlementType }`
+                -   `Entitlement`: `{ id: string, type: EntitlementType }`, plus the details filled in from the user's transactions, such as `isActive`, `productIds`, `latestProductId`, `store`, `expiresAt`, `willRenew` and `state`
 
 -   **Actions (Functions):**
     -   `identify: (userId: string, options?: IdentifyOptions) => Promise<void>`: Identifies the user with the given `userId`.
@@ -351,6 +361,26 @@ The hook returns an object representing the Superwall store. If a `selector` fun
     -   `getUserAttributes: () => Promise<Record<string, any>>`: Retrieves the attributes of the current user.
     -   `setLogLevel: (level: string) => Promise<void>`: Sets the log level for the SDK. `level` can be one of: `"debug"`, `"info"`, `"warn"`, `"error"`, `"none"`.
     -   `setAdConsent: (consent: AdConsent) => Promise<void>`: Sets the user's ad consent (`adUserData` and `adPersonalization`, each `"granted"` or `"denied"`), which Superwall passes on with the conversions it uploads to Google Ads and Meta. Set the initial value with the `adConsent` configure option. Supported on iOS and, since 1.8.0, Android.
+    -   `getEntitlementsByProductIds: (productIds: string[]) => Promise<Entitlement[]>`: Returns the entitlements that the given products unlock.
+    -   `getAssignments: () => Promise<Assignment[]>` and `confirmAllAssignments: () => Promise<Assignment[]>`: Return the experiment assignments made so far, or confirm and return all of them.
+    -   `setInterfaceStyle: (style: "LIGHT" | "DARK" | null) => Promise<void>`: Shows paywalls in light or dark mode instead of following the system. Pass `null` to follow the system again.
+    -   `getConfigurationStatus: () => Promise<"PENDING" | "CONFIGURED" | "FAILED">`: Returns whether the native SDK has finished configuring.
+    -   `handleDeepLink: (url: string) => Promise<boolean>`: Handles a Superwall deep link. `SuperwallProvider` already does this for the links your app opens.
+    -   `refreshConfiguration: () => Promise<void>`: Fetches the Superwall configuration again, for development.
+    -   `getUserId`, `getIsLoggedIn`, `getIsPaywallPresented`, `getLatestPaywallInfo`, `getEventTrackingBehavior`, `getAdConsent`, `getLocaleIdentifier` and `getLogLevel`: Return the native SDK's current value.
+    -   `setOverrideProductsByName: (overrides: Record<string, string>) => Promise<void>` and `getOverrideProductsByName`: Replace products on every paywall by product name, like the `overrideProductsByName` paywall option.
+    -   `cancelAllScheduledNotifications: () => Promise<void>`: Cancels the local notifications Superwall scheduled, such as free trial reminders.
+    -   `setPushToken`, `optOutOfNotifications`, `optInToNotifications` and `handleNotificationOpen` (Android only, no-ops on iOS): Give Superwall the device's FCM token, opt the device out of or back in to Superwall's push notifications, and report that the user opened one.
+
+    -   `purchase: (product: string | ProductResponse) => Promise<PurchaseResultResponse>`: Purchases a product, given its identifier or a product returned by `products()`. On Android a product object is bought with its own base plan and offer.
+    -   `setIntegrationAttribute: (attribute: IntegrationAttribute, value: string | null) => Promise<void>`: Sets one integration attribute, leaving the others as they are. `null` removes it.
+    -   `refreshCustomerInfo: () => Promise<CustomerInfo>`: Fetches the user's latest entitlements from Superwall. iOS only; on Android it returns what `getCustomerInfo()` does.
+    -   `getGrantedEntitlements` and `setGrantedEntitlements: (entitlements: (string | { id: string })[]) => Promise<void>` (iOS only; an empty array and a no-op on Android): Entitlements your own backend grants, which the SDK merges into the subscription status. Each call replaces the previous set, and they persist across `reset` and `identify`.
+    -   `removeAllPendingNonSuperwallNotificationRequests`, `removeAllDeliveredSuperwallNotifications` and `removeAllDeliveredNonSuperwallNotifications` (iOS only, no-ops on Android): Remove your app's pending notifications except Superwall's, Superwall's delivered notifications, or your app's delivered notifications except Superwall's.
+    -   `showAlert: (options?: ShowAlertOptions) => Promise<boolean>` (Android only; resolves with `false` on iOS): Shows an alert over the presented paywall and resolves with whether the user tapped its action button.
+    -   `openRestoreOnWeb`, `getExternalAccountId` and `dismissForNextPaywall` (Android only; no-ops on iOS, where `getExternalAccountId` resolves with `null`): Open the web page for restoring web purchases, return the account ID passed to Google Play, and dismiss the paywall to make way for another one.
+    -   `observe: (state: PurchasingObserverState) => Promise<void>` (Android only, no-op on iOS): Reports a purchase made outside of Superwall, for observer mode (`shouldObservePurchases`).
+    -   `teardown: () => Promise<boolean>` (Android only; resolves with `false` on iOS): Resets the native SDK and clears its instance so it can be configured again. `SuperwallProvider` then leaves it unconfigured until you call `configure` with the API key to use.
 
 **Selector (Optional Parameter):**
 
@@ -375,6 +405,21 @@ function MyAdvancedComponent() {
   return <Button title="Set Custom Flag" onPress={handleSetCustomAttribute} />;
 }
 ```
+
+### `PaywallView`
+
+`<PaywallView placement="..." />` embeds a paywall in your layout instead of presenting it. Besides `params`, `renderFallback`, `onPresent`, `onDismiss`, `onSkip` and `onError`, it takes:
+
+-   `paywallOverrides?: { productsByName?: Record<string, string>; presentationStyle? }`: Replaces products on the paywall by name.
+-   `feature?: () => void`: Called when the user gets access: after a purchase or restore, or when they decline a paywall that isn't gated.
+-   `onCustomCallback?: (callback) => CustomCallbackResult | Promise<CustomCallbackResult>` (iOS only): Answers a custom callback from the paywall.
+-   `onLoadingStateChange?: (state: PaywallLoadingState) => void` (iOS only): Called when the paywall's loading state changes.
+
+### `CustomerCenterView`
+
+`<CustomerCenterView />` (iOS only) embeds the Customer Center in your layout, with the same `configuration` and callbacks as `presentCustomerCenter()`. It has its own navigation bar and no close button; unmount it to close it. On Android it renders `renderFallback`, or nothing, because the Android SDK can only present the Customer Center as its own screen.
+
+Both views are also exported from `expo-superwall/compat`.
 
 ### `useUser`
 
@@ -417,6 +462,7 @@ The `usePlacement` hook is designed to handle the presentation of paywalls based
         -   `onDismiss?: (paywallInfo: PaywallInfo, result: PaywallResult) => void`: Called when a paywall is dismissed.
             -   `paywallInfo: PaywallInfo`: Information about the dismissed paywall.
             -   `result: PaywallResult`: The result of the paywall interaction (e.g., `purchased`, `declined`, `restored`). See `SuperwallExpoModule.types.ts`.
+        -   `onWillDismiss?: (paywallInfo: PaywallInfo, result: PaywallResult) => void`: iOS only. Called when a paywall is about to be dismissed.
         -   `onSkip?: (reason: PaywallSkippedReason) => void`: Called when a paywall is skipped (e.g., due to holdout group, no audience match).
             -   `reason: PaywallSkippedReason`: The reason why the paywall was skipped. See `SuperwallExpoModule.types.ts`.
         -   `onError?: (error: string) => void`: Called when an error occurs during paywall presentation or other SDK operations related to this placement.
@@ -466,6 +512,8 @@ The `useSuperwallEvents` hook provides a low-level way to subscribe to *any* nat
         -   `onPaywallWillOpenURL?: (url: string) => void`
         -   `onPaywallWillOpenDeepLink?: (url: string) => void`
         -   `onLog?: (params: { level: LogLevel, scope: LogScope, message: string | null, info: Record<string, any> | null, error: string | null }) => void`
+        -   `onUserAttributesChange?: (newAttributes: Record<string, any>) => void`: When the user's attributes change, whether you set them or a paywall did.
+        -   `onSuperwallDeepLink?: (params: { fullURL: string, pathComponents: string[], queryParameters: Record<string, string> }) => void`: iOS only. When Superwall handles a deep link.
         -   `handlerId?: string`: (Optional) If provided, some events like `onPaywallPresent`, `onPaywallDismiss`, `onPaywallSkip` will only be triggered if the event originated from a `registerPlacement` call associated with the same `handlerId`. This is used internally by `usePlacement`.
 
 **Returned Values:**

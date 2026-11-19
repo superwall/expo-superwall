@@ -54,6 +54,7 @@ extension SuperwallEvent {
     case .transactionFail(let error, let paywallInfo):
       return [
         "event": "transactionFail", "error": error.localizedDescription,
+        "transactionError": error.toJson(),
         "paywallInfo": paywallInfo.toJson(),
       ]
     case .transactionAbandon(let product, let paywallInfo):
@@ -92,6 +93,8 @@ extension SuperwallEvent {
       return ["event": "transactionTimeout", "paywallInfo": paywallInfo.toJson()]
     case .userAttributes(let attributes):
       return ["event": "userAttributes", "attributes": attributes]
+    case .attributionMatch(let info):
+      return ["event": "attributionMatch", "info": info.toJson()]
     case .nonRecurringProductPurchase(let product, let paywallInfo):
       return [
         "event": "nonRecurringProductPurchase", "product": product.toJson(),
@@ -318,4 +321,38 @@ extension SuperwallEvent {
     }
   
 }
+}
+
+extension AttributionMatchInfo {
+  func toJson() -> [String: Any] {
+    var json: [String: Any] = [
+      "provider": provider.rawValue,
+      "matched": matched,
+    ]
+    if let source = source {
+      json["source"] = source
+    }
+    if let confidence = confidence {
+      json["confidence"] = confidence.rawValue
+    }
+    if let matchScore = matchScore {
+      json["matchScore"] = matchScore
+    }
+    if let reason = reason {
+      json["reason"] = reason
+    }
+    return json
+  }
+}
+
+extension TransactionError {
+  // Same shape as the Android bridge.
+  func toJson() -> [String: Any] {
+    switch self {
+    case .pending(let message):
+      return ["type": "pending", "message": message]
+    case .failure(let message, let product):
+      return ["type": "failure", "message": message, "product": product.toJson()]
+    }
+  }
 }

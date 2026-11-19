@@ -6,6 +6,8 @@ const mockConsume = jest.fn()
 
 // The compat configuration gate only needs an in-process event emitter.
 jest.mock("expo", () => ({ EventEmitter: require("node:events").EventEmitter }))
+// The compat SDK resolves local resources through `expo-asset`, whose ESM build jest can't require.
+jest.mock("expo-asset", () => ({ Asset: { fromModule: jest.fn() } }))
 
 jest.mock("../SuperwallExpoModule", () => ({
   __esModule: true,

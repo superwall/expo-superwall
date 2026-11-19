@@ -33,6 +33,29 @@ export interface Variant {
 }
 
 /**
+ * An experiment variant the user has been assigned to, returned by `getAssignments()` and
+ * `confirmAllAssignments()`.
+ */
+export interface Assignment {
+  /** The identifier of the experiment. */
+  experimentId: string
+  /** The variant the user is assigned to. See {@link Variant}. */
+  variant: Variant
+  /** iOS only. Whether the assignment has been confirmed with Superwall's servers. */
+  isSentToServer?: boolean
+}
+
+/**
+ * Whether the SDK has finished configuring, returned by `getConfigurationStatus()`.
+ */
+export type ConfigurationStatus = "PENDING" | "CONFIGURED" | "FAILED"
+
+/**
+ * The interface style to show paywalls in, set with `setInterfaceStyle()`.
+ */
+export type InterfaceStyle = "LIGHT" | "DARK"
+
+/**
  * Represents a Superwall experiment, including its ID, group ID, and the variant assigned to the user.
  */
 export interface Experiment {
@@ -70,7 +93,67 @@ export interface Entitlement {
    * The type of the entitlement. See {@link EntitlementType}.
    */
   type: EntitlementType
+  /**
+   * Whether there is any active, non-revoked transaction for this entitlement.
+   * Not set in entitlements you pass to `setSubscriptionStatus`.
+   */
+  isActive?: boolean
+  /** All product identifiers that map to the entitlement. */
+  productIds?: string[]
+  /**
+   * The product identifier of the latest transaction to unlock this entitlement. If a lifetime
+   * product unlocks it, this is the first lifetime product's identifier.
+   *
+   * Absent if no transaction unlocks the entitlement or it was granted from Superwall.
+   */
+  latestProductId?: string
+  /** The store the entitlement was granted through. Absent if no transaction unlocks it. */
+  store?: ProductStore
+  /** ISO-8601 purchase date of the first transaction that unlocked this entitlement. */
+  startsAt?: string
+  /**
+   * ISO-8601 date the entitlement was last renewed. Absent for the first purchase, non-renewing
+   * subscriptions and non-consumables.
+   */
+  renewedAt?: string
+  /**
+   * ISO-8601 expiry date of the last transaction that unlocked this entitlement. Absent for
+   * lifetime entitlements.
+   */
+  expiresAt?: string
+  /** Whether a non-consumable purchase unlocks the entitlement for a lifetime. */
+  isLifetime?: boolean
+  /** Whether the last subscription transaction for this entitlement will auto-renew. */
+  willRenew?: boolean
+  /** ISO-8601 date at which the subscription renews. Absent if it won't renew or isn't active. */
+  renewsAt?: string
+  /**
+   * Whether the last subscription transaction for this entitlement was revoked.
+   * Always absent on Android, which tracks revocation per transaction.
+   */
+  isRevoked?: boolean
+  /** Whether the last subscription transaction for this entitlement is in a billing grace period. */
+  isInGracePeriod?: boolean
+  /** The state of the last subscription transaction for this entitlement. See {@link EntitlementState}. */
+  state?: EntitlementState
+  /**
+   * The type of offer applied to the last subscription transaction for this entitlement.
+   * On iOS, only set on iOS 17.2+ or for web entitlements.
+   */
+  offerType?: SubscriptionOfferType
 }
+
+/**
+ * The state of the last subscription transaction that unlocks an {@link Entitlement}.
+ * `"unknown"` is Android only.
+ */
+export type EntitlementState =
+  | "inGracePeriod"
+  | "subscribed"
+  | "expired"
+  | "inBillingRetryPeriod"
+  | "revoked"
+  | "unknown"
 
 /**
  * Third-party integration providers supported by Superwall.
@@ -87,6 +170,8 @@ export type IntegrationAttribute =
   | "onesignalId"
   | "fbAnonId"
   | "firebaseAppInstanceId"
+  /** iOS only. The Firebase Installation ID. Ignored on Android. */
+  | "firebaseInstallationId"
   | "iterableUserId"
   | "iterableCampaignId"
   | "iterableTemplateId"
@@ -106,6 +191,18 @@ export type IntegrationAttribute =
    * On iOS, it is kept when you reset or identify a different user.
    */
   | "airbridgeId"
+  /** Android only. The Meta (Facebook) ID. Ignored on iOS. */
+  | "meta"
+  /** Android only. The Amplitude ID. Ignored on iOS. */
+  | "amplitude"
+  /** Android only. The Mixpanel ID. Ignored on iOS. */
+  | "mixpanel"
+  /** Android only. The Google Ads ID. Ignored on iOS. */
+  | "googleAds"
+  /** Android only. The Google App Set ID. Ignored on iOS. */
+  | "googleAppSetId"
+  /** Android only. A custom attribution ID. Ignored on iOS. */
+  | "custom"
 
 /**
  * Object with optional keys for third-party integration provider IDs.
@@ -115,7 +212,11 @@ export type IntegrationAttribute =
  * brazeAliasName, brazeAliasLabel, onesignalId, fbAnonId, firebaseAppInstanceId,
  * iterableUserId, iterableCampaignId, iterableTemplateId, mixpanelDistinctId,
  * mparticleId, clevertapId, airshipChannelId, kochavaDeviceId, tenjinId,
- * posthogUserId, customerioId, appstackId, singularDeviceId, airbridgeId
+ * posthogUserId, customerioId, appstackId, singularDeviceId, airbridgeId,
+ * firebaseInstallationId (iOS only), and meta, amplitude, mixpanel, googleAds,
+ * googleAppSetId and custom (Android only).
+ *
+ * Attributes you leave out keep their current value. Set one to `null` to remove it.
  *
  * @example
  * ```typescript
@@ -127,7 +228,7 @@ export type IntegrationAttribute =
  * ```
  */
 export type IntegrationAttributes = {
-  [K in IntegrationAttribute]?: string
+  [K in IntegrationAttribute]?: string | null
 }
 
 /**
@@ -151,6 +252,11 @@ export interface EntitlementsInfo {
    * See {@link Entitlement}.
    */
   inactive: Entitlement[]
+  /**
+   * Array of active entitlements redeemed through web checkout.
+   * See {@link Entitlement}.
+   */
+  web?: Entitlement[]
 }
 
 /**
@@ -181,6 +287,13 @@ export type PaywallSkippedReason =
        * The placement ID specified for the paywall presentation was not found in the Superwall dashboard configuration.
        */
       type: "PlacementNotFound"
+    }
+  | {
+      /**
+       * The user is subscribed, so the paywall was skipped.
+       * @platform Android
+       */
+      type: "UserIsSubscribed"
     }
 
 /**
@@ -517,6 +630,8 @@ export interface CustomerInfo {
   nonSubscriptions: NonSubscriptionTransaction[]
   /** All entitlements available to the user. */
   entitlements: Entitlement[]
+  /** The product identifiers of the user's active subscriptions. */
+  activeSubscriptionProductIds?: string[]
 }
 
 /**
@@ -542,27 +657,23 @@ export interface Product {
    * Use this to detect `CUSTOM` products in `onPurchase` and route them to your own
    * purchase logic instead of StoreKit / Google Play Billing.
    *
-   * @platform iOS — present on iOS 4.15.0+. May be absent on older Android SDK versions.
+   * @platform iOS and Android
    */
   store?: ProductStore
   /**
    * App Store-specific product data, present when `store === "APP_STORE"`.
-   * @platform iOS
    */
   appStoreProduct?: AppStoreProductIdentifier
   /**
    * Stripe-specific product data, present when `store === "STRIPE"`.
-   * @platform iOS
    */
   stripeProduct?: StripeProductIdentifier
   /**
    * Paddle-specific product data, present when `store === "PADDLE"`.
-   * @platform iOS
    */
   paddleProduct?: PaddleProductIdentifier
   /**
    * Custom-product data, present when `store === "CUSTOM"`.
-   * @platform iOS
    */
   customProduct?: CustomStoreProductIdentifier
 }
@@ -606,10 +717,10 @@ export interface PaywallInfo {
    */
   presentedByEventWithId?: string
   /**
-   * The Unix timestamp (in seconds or milliseconds) of when the event triggering this paywall occurred, if applicable.
+   * When the event triggering this paywall occurred, if applicable, as a date string.
    * Corresponds to `presentedByPlacementAt` in the native Swift SDK.
    */
-  presentedByEventAt?: number
+  presentedByEventAt?: string
   /**
    * The source that initiated the paywall presentation (e.g., "implicit", "explicit", "getPaywall").
    */
@@ -618,12 +729,12 @@ export interface PaywallInfo {
    * The type of the source that led to the paywall presentation (e.g., "Register" for `Superwall.shared.register(event:)`, "Track" for `Superwall.shared.track(event:)`).
    */
   presentationSourceType?: string
-  /** The Unix timestamp when the request to load the paywall configuration and rules (response) started. */
-  responseLoadStartTime?: number
-  /** The Unix timestamp when the paywall response successfully loaded. */
-  responseLoadCompleteTime?: number
-  /** The Unix timestamp if the paywall response failed to load. */
-  responseLoadFailTime?: number
+  /** When the request to load the paywall configuration and rules (response) started, as a date string. */
+  responseLoadStartTime?: string
+  /** When the paywall response successfully loaded, as a date string. */
+  responseLoadCompleteTime?: string
+  /** When the paywall response failed to load, if it did, as a date string. */
+  responseLoadFailTime?: string
   /** The duration (typically in milliseconds) it took to load the paywall response. */
   responseLoadDuration?: number
   /** Indicates whether a free trial is available for any of the products on this paywall. */
@@ -638,20 +749,20 @@ export interface PaywallInfo {
    * See {@link PaywallCloseReason}.
    */
   closeReason: PaywallCloseReason
-  /** The Unix timestamp when the web view started loading the paywall's HTML content. */
-  webViewLoadStartTime?: number
-  /** The Unix timestamp when the web view successfully loaded the paywall's HTML content. */
-  webViewLoadCompleteTime?: number
-  /** The Unix timestamp if the web view failed to load the paywall's HTML content. */
-  webViewLoadFailTime?: number
+  /** When the web view started loading the paywall's HTML content, as a date string. */
+  webViewLoadStartTime?: string
+  /** When the web view successfully loaded the paywall's HTML content, as a date string. */
+  webViewLoadCompleteTime?: string
+  /** When the web view failed to load the paywall's HTML content, if it did, as a date string. */
+  webViewLoadFailTime?: string
   /** The duration (typically in milliseconds) it took for the web view to load the paywall's content. */
   webViewLoadDuration?: number
-  /** The Unix timestamp when the loading of product information (from App Store/Google Play) started. */
-  productsLoadStartTime?: number
-  /** The Unix timestamp when the product information successfully loaded. */
-  productsLoadCompleteTime?: number
-  /** The Unix timestamp if loading product information failed. */
-  productsLoadFailTime?: number
+  /** When the loading of product information (from App Store/Google Play) started, as a date string. */
+  productsLoadStartTime?: string
+  /** When the product information successfully loaded, as a date string. */
+  productsLoadCompleteTime?: string
+  /** When loading product information failed, if it did, as a date string. */
+  productsLoadFailTime?: string
   /** The duration (typically in milliseconds) it took to load the product information. */
   productsLoadDuration?: number
   /** The version of the `paywall.js` script used in the paywall, if available. */
@@ -684,7 +795,143 @@ export interface PaywallInfo {
    *   Will be `undefined` on iOS.
    */
   customerInfo?: CustomerInfo
+  /** The key the paywall is cached under. */
+  cacheKey?: string
+  /** The identifier of the paywall's build. */
+  buildId?: string
+  /** When the paywall's loading shimmer started, as a date string. */
+  shimmerLoadStartTime?: string
+  /** When the paywall's loading shimmer finished, as a date string. */
+  shimmerLoadCompleteTime?: string
+  /** How the paywall is presented. See {@link PaywallPresentationInfo}. */
+  presentation?: PaywallPresentationInfo
+  /** Whether the paywall's web view can scroll. */
+  isScrollEnabled?: boolean
+  /** iOS only. Whether the paywall was loaded from files bundled with the app. */
+  isLocal?: boolean
+  /** iOS only. Whether the user may claim the paywall's introductory offers. */
+  introOfferEligibility?: IntroOfferEligibility
 }
+
+/**
+ * The presentation style of a paywall, as set on the dashboard.
+ * `"NO_ANIMATION"` is fullscreen without animation; `"NONE"` means no style was set.
+ */
+export type PaywallPresentationStyle =
+  | "MODAL"
+  | "FULLSCREEN"
+  | "NO_ANIMATION"
+  | "PUSH"
+  | "DRAWER"
+  | "POPUP"
+  | "NONE"
+
+/**
+ * Overrides for a paywall retrieved with `<PaywallView>`.
+ */
+export interface PaywallOverrides {
+  /**
+   * Replaces products on the paywall by product name, such as `{ primary: "com.app.yearly" }`,
+   * where the keys are the product names set in the paywall editor and the values are product
+   * identifiers. A product the store doesn't return is left as it is on the paywall.
+   */
+  productsByName?: Record<string, string>
+  /**
+   * Replaces the paywall's presentation style: a style name, or an object with the dimensions
+   * of a `"DRAWER"` (`height`, `cornerRadius`) or `"POPUP"` (`height`, `width`, `cornerRadius`).
+   * The native SDKs take this with a retrieved paywall, but it only affects paywalls they
+   * present themselves, so it has no visible effect on an embedded one.
+   */
+  presentationStyle?:
+    | PaywallPresentationStyle
+    | { style: PaywallPresentationStyle; height?: number; width?: number; cornerRadius?: number }
+}
+
+/**
+ * The loading state of an embedded paywall. iOS only.
+ * - `unknown`: the initial state.
+ * - `loadingPurchase`: a purchase is in progress.
+ * - `loadingURL`: the paywall's web page is loading.
+ * - `manualLoading`: the spinner was shown with `togglePaywallSpinner()`.
+ * - `ready`: the paywall is ready to use.
+ */
+export type PaywallLoadingState =
+  | "unknown"
+  | "loadingPurchase"
+  | "loadingURL"
+  | "manualLoading"
+  | "ready"
+
+/**
+ * A purchase made outside of Superwall, reported with `observe()` in observer mode
+ * (`shouldObservePurchases`). Android only: on iOS the SDK observes StoreKit itself.
+ */
+export type PurchasingObserverState =
+  | {
+      /** The purchase is about to start. Report it before launching the billing flow. */
+      type: "purchaseWillBegin"
+      /** The identifier of the product being purchased. */
+      productId: string
+    }
+  | {
+      /** The purchase failed before Play Billing returned a result. */
+      type: "purchaseError"
+      /** The identifier of the product that was being purchased. */
+      productId: string
+      /** A description of the error. */
+      error: string
+    }
+  | {
+      /** Play Billing's purchases-updated result. */
+      type: "purchaseResult"
+      /** The `BillingResult` response code, such as `0` for OK or `1` for user cancelled. */
+      responseCode: number
+      /** The `BillingResult` debug message. */
+      debugMessage?: string
+      /**
+       * The purchases Play Billing returned, each as the original JSON and signature it gave the
+       * app (`Purchase.getOriginalJson()` and `Purchase.getSignature()`).
+       */
+      purchases?: { originalJson: string; signature?: string }[]
+    }
+
+/**
+ * The content of an alert shown with `showAlert()`. Android only.
+ */
+export interface ShowAlertOptions {
+  /** The alert's title. */
+  title?: string
+  /** The alert's message. */
+  message?: string
+  /** The title of the action button. Left out, the alert only has a close button. */
+  actionTitle?: string
+  /** The title of the close button. Defaults to `"Done"`. */
+  closeActionTitle?: string
+}
+
+/**
+ * How a paywall is presented.
+ */
+export interface PaywallPresentationInfo {
+  /** The presentation style. See {@link PaywallPresentationStyle}. */
+  style: PaywallPresentationStyle
+  /** The delay, in milliseconds, before the loading view switches to the paywall. */
+  delay: number
+  /** The height of a `"DRAWER"` or `"POPUP"` paywall. */
+  height?: number
+  /** The width of a `"POPUP"` paywall. */
+  width?: number
+  /** The corner radius of a `"DRAWER"` or `"POPUP"` paywall. */
+  cornerRadius?: number
+}
+
+/**
+ * Whether the user may claim a paywall's introductory offers.
+ * - `eligible`: the user can always claim a free trial.
+ * - `ineligible`: the user can never claim a free trial.
+ * - `automatic`: StoreKit decides.
+ */
+export type IntroOfferEligibility = "eligible" | "ineligible" | "automatic"
 
 /**
  * Represents a custom callback invoked from a paywall.
@@ -955,6 +1202,8 @@ export interface RedemptionInfo {
    * See {@link Entitlement}.
    */
   entitlements: Entitlement[]
+  /** iOS only. User attributes set by the web checkout, if any. */
+  userAttributes?: Record<string, any>
 }
 
 /**
@@ -976,6 +1225,11 @@ export type RedemptionResult =
        * See {@link RedemptionInfo}.
        */
       redemptionInfo: RedemptionInfo
+      /**
+       * The Stripe subscription IDs of the purchase, when it was made through Stripe. The same
+       * IDs as `redemptionInfo.purchaserInfo.storeIdentifiers.stripeSubscriptionIds`.
+       */
+      stripeSubscriptionIds?: string[]
     }
   | {
       /**
@@ -1073,11 +1327,70 @@ export type TriggerResult =
     }
 
 /**
+ * How an App Store subscription offer's price is charged.
+ */
+export type StoreProductPaymentMode = "payAsYouGo" | "payUpFront" | "freeTrial"
+
+/**
+ * iOS only. A subscription offer configured in App Store Connect.
+ */
+export interface StoreProductDiscount {
+  /** The offer's identifier, or `null` for an introductory offer. */
+  offerIdentifier: string | null
+  /** The currency code of the offer's price. */
+  currencyCode: string | null
+  /** The offer's price. */
+  price: number
+  /** The offer's price, formatted for the user's locale. */
+  localizedPriceString: string
+  /** How the offer's price is charged. See {@link StoreProductPaymentMode}. */
+  paymentMode: StoreProductPaymentMode
+  /** The length of one of the offer's periods. */
+  subscriptionPeriod: { unit: "day" | "week" | "month" | "year"; value: number }
+  /** The number of periods the offer lasts. */
+  numberOfPeriods: number
+  /** Whether it's an introductory or a promotional offer. */
+  type: "introductory" | "promotional"
+}
+
+/**
+ * Details of a store product that only one platform's bridge sends.
+ */
+export interface StoreProductPlatformDetails {
+  /** iOS only. The product's introductory offer, if it has one. See {@link StoreProductDiscount}. */
+  introductoryDiscount?: StoreProductDiscount | null
+  /** iOS only. The product's promotional offers. See {@link StoreProductDiscount}. */
+  discounts?: StoreProductDiscount[]
+  /**
+   * iOS only. The App Store billing plan the product is sold on, when one is configured and
+   * available on the device (iOS 26.4+).
+   */
+  billingPlanType?: "UP_FRONT" | "MONTHLY" | null
+  /** iOS only. Whether a billing plan is configured for the product and available on the device. */
+  isBillingPlanAvailable?: boolean
+  /** iOS only. The entitlements the product unlocks. See {@link Entitlement}. */
+  entitlements?: Entitlement[]
+  /** Android only. The Google Play product type, such as `"subs"` or `"inapp"`. */
+  productType?: string
+  /** Android only. The country code of the Google Play storefront. */
+  storeFrontCountryCode?: string | null
+  /** Android only. Whether it's a custom product, bought through your purchase controller. */
+  isCustomProduct?: boolean
+  /**
+   * The transaction ID the SDK generated for a purchase of a custom product. Send it back
+   * from your server with the purchase's events to attribute the revenue to the paywall.
+   */
+  customTransactionId?: string | null
+  /** The product's attributes, as referenced in audience filters and paywalls. */
+  attributes?: Record<string, string>
+}
+
+/**
  * Represents comprehensive information about a product involved in a transaction event.
  * This interface includes detailed pricing, subscription, trial, and localization information
  * from both the native iOS (StoreProduct) and Android (Product) implementations.
  */
-export interface TransactionProductIdentifier {
+export interface TransactionProductIdentifier extends StoreProductPlatformDetails {
   /** The unique identifier of the product (e.g., SKU). */
   id: string
 
@@ -1256,6 +1569,27 @@ export interface StoreTransaction {
   purchaseToken?: string
   /** The signature for Android transactions for verification (Google Play). */
   signature?: string
+  /** The state of the transaction. See {@link StoreTransactionState}. */
+  state?: StoreTransactionState
+  /** The payment the transaction is for. See {@link StorePayment}. */
+  payment?: StorePayment | null
+}
+
+/**
+ * The state of a {@link StoreTransaction}.
+ */
+export type StoreTransactionState = "PURCHASING" | "PURCHASED" | "FAILED" | "RESTORED" | "DEFERRED"
+
+/**
+ * The payment a {@link StoreTransaction} is for.
+ */
+export interface StorePayment {
+  /** The identifier of the product bought. */
+  productIdentifier: string
+  /** The number of items bought. */
+  quantity: number
+  /** The identifier of the discount applied, if any. */
+  discountIdentifier: string | null
 }
 
 /**
@@ -1315,32 +1649,52 @@ export type PaywallPresentationRequestStatusReason =
     }
   | {
       /** No paywall was presented because the user did not match any audience rules. */
-      reason: "noRuleMatch"
+      reason: "noAudienceMatch"
     }
   | {
-      /** No paywall was presented because the triggering event was not found. */
-      reason: "eventNotFound"
+      /** No paywall was presented because the placement was not found. */
+      reason: "placementNotFound"
     }
   | {
       /** No paywall was presented because the paywall view controller is not available (native SDK specific). */
       reason: "noPaywallViewController"
     }
   | {
-      /** No paywall was presented because there is no view controller available to present it on (native SDK specific). */
+      /** No paywall was presented because there is nothing available to present it on (native SDK specific). */
+      reason: "noPresenter"
+    }
+  | {
+      /** No paywall was presented because the Superwall configuration hasn't been retrieved. */
+      reason: "noConfig"
+    }
+  | {
+      /** No paywall was presented because the subscription status didn't become known in time. */
+      reason: "subscriptionStatusTimeout"
+    }
+  | {
+      /** @deprecated Never sent. The native SDKs report `"noAudienceMatch"`. */
+      reason: "noRuleMatch"
+    }
+  | {
+      /** @deprecated Never sent. The native SDKs report `"placementNotFound"`. */
+      reason: "eventNotFound"
+    }
+  | {
+      /** @deprecated Never sent. The native SDKs report `"noPresenter"`. */
       reason: "noViewController"
     }
   | {
-      /** No paywall was presented because the user is already subscribed. */
+      /** @deprecated Never sent by the native SDKs. */
       reason: "userIsSubscribed"
     }
   | {
-      /** No paywall was presented due to an error. */
+      /** @deprecated Never sent by the native SDKs. */
       reason: "error"
       /** A string describing the error. */
       error: string
     }
   | {
-      /** No paywall was presented because it is gated by some condition. */
+      /** @deprecated Never sent by the native SDKs. */
       reason: "paywallIsGated"
       /**
        * Information about the paywall that was gated.
@@ -1529,6 +1883,11 @@ export interface ShimmerViewStartEvent {
 export interface ShimmerViewCompleteEvent {
   /** Shimmer view (placeholder loading) completed. */
   event: "shimmerViewComplete"
+  /**
+   * How long the shimmer view was shown, in milliseconds.
+   * @platform Android — not sent on iOS.
+   */
+  duration?: number
 }
 
 /**
@@ -1608,10 +1967,11 @@ export interface SubscriptionStatusDidChangeEvent {
   /** The user's subscription status changed. */
   event: "subscriptionStatusDidChange"
   /**
-   * The new subscription status.
-   * See {@link SubscriptionStatus}.
+   * Not sent by either native SDK: this event has no payload. Read the new status with
+   * `getSubscriptionStatus()` or listen to the `subscriptionStatusDidChange` delegate callback.
+   * @deprecated Always `undefined`.
    */
-  subscriptionStatus: SubscriptionStatus
+  subscriptionStatus?: SubscriptionStatus
 }
 
 /**
@@ -1705,6 +2065,23 @@ export interface TransactionStartEvent {
 }
 
 /**
+ * Why a transaction didn't complete.
+ */
+export type TransactionError =
+  | {
+      /** The transaction is pending approval, such as by a parent or guardian. */
+      type: "pending"
+      message: string
+    }
+  | {
+      /** The transaction failed. */
+      type: "failure"
+      message: string
+      /** The product whose purchase failed. See {@link TransactionProductIdentifier}. */
+      product: TransactionProductIdentifier
+    }
+
+/**
  * A transaction failed.
  */
 export interface TransactionFailEvent {
@@ -1712,6 +2089,11 @@ export interface TransactionFailEvent {
   event: "transactionFail"
   /** The error message from the transaction failure. */
   error: string
+  /**
+   * Whether the transaction is pending (awaiting approval, e.g. by a parent) or failed, with
+   * its message and, for a failure, the product. See {@link TransactionError}.
+   */
+  transactionError?: TransactionError
   /**
    * Information about the paywall associated with the failed transaction.
    * See {@link PaywallInfo}.
@@ -1753,8 +2135,11 @@ export interface TransactionCompleteEvent {
    * See {@link TransactionProductIdentifier}.
    */
   product: TransactionProductIdentifier
-  /** The type of the transaction (e.g., "purchase", "restore"). */
-  type: string
+  /**
+   * The type of the transaction (e.g., "purchase", "restore").
+   * @platform iOS — the Android SDK has no transaction type, so it's `undefined` there.
+   */
+  type?: string
   /**
    * Information about the paywall associated with the completed transaction.
    * See {@link PaywallInfo}.
@@ -1926,6 +2311,11 @@ export interface PaywallWebviewLoadFailEvent {
    * See {@link PaywallInfo}.
    */
   paywallInfo: PaywallInfo
+  /**
+   * The web view's error, if any.
+   * @platform Android — not sent on iOS.
+   */
+  errorMessage?: string
 }
 
 /**
@@ -1995,6 +2385,11 @@ export interface PaywallProductsLoadFailEvent {
    * See {@link PaywallInfo}.
    */
   paywallInfo: PaywallInfo
+  /**
+   * Why the products failed to load, if known.
+   * @platform Android — not sent on iOS.
+   */
+  errorMessage?: string
 }
 
 /**
@@ -2008,8 +2403,9 @@ export interface PaywallProductsLoadCompleteEvent {
   /**
    * Information about the paywall for which products completed loading.
    * See {@link PaywallInfo}.
+   * @platform Android — the iOS SDK doesn't include it, so it's `undefined` there.
    */
-  paywallInfo: PaywallInfo
+  paywallInfo?: PaywallInfo
 }
 
 /**
@@ -2133,6 +2529,10 @@ export interface NetworkDecodingFailEvent {
 export interface CustomerInfoDidChangeEvent {
   /** The customer info did change. */
   event: "customerInfoDidChange"
+  /** Android only. The customer info before the change. See {@link CustomerInfo}. */
+  from?: CustomerInfo
+  /** Android only. The customer info after the change. See {@link CustomerInfo}. */
+  to?: CustomerInfo
 }
 
 /**
@@ -2153,6 +2553,70 @@ export interface ReviewRequestedEvent {
   event: "reviewRequested"
   /** The number of times a review has been requested. */
   count: number
+}
+
+/**
+ * The user left a review when asked.
+ * @platform Android
+ */
+export interface ReviewGrantedEvent {
+  /** The user left a review when asked. */
+  event: "reviewGranted"
+  /** The number of times a review has been requested. */
+  count: number
+}
+
+/**
+ * The user didn't leave a review when asked.
+ * @platform Android
+ */
+export interface ReviewDeniedEvent {
+  /** The user didn't leave a review when asked. */
+  event: "reviewDenied"
+  /** The number of times a review has been requested. */
+  count: number
+}
+
+/**
+ * A resource used by a paywall, such as an image, failed to load.
+ * @platform Android
+ */
+export interface PaywallResourceLoadFailEvent {
+  /** A resource used by a paywall failed to load. */
+  event: "paywallResourceLoadFail"
+  /** The URL of the resource. */
+  url: string
+  /** Why the resource failed to load. */
+  error: string
+}
+
+/**
+ * The result of matching the app install to the ad click that led to it.
+ */
+export interface AttributionMatchInfo {
+  /** The attribution provider that produced the result, such as `"mmp"` or `"apple_search_ads"` (iOS). */
+  provider: string
+  /** Whether the install was matched. */
+  matched: boolean
+  /** The acquisition source that was found, such as `"meta"`, if any. */
+  source?: string
+  /** The provider's confidence in the match, if available. */
+  confidence?: "high" | "medium" | "low"
+  /** The provider's numeric match score, if available. Only returned for a match. */
+  matchScore?: number
+  /** Why there was no match, such as `"below_threshold"` or `"request_failed"`, if available. */
+  reason?: string
+}
+
+/**
+ * The install was matched, or failed to match, to the ad click that led to it. The resulting
+ * `acquisition_*` attributes are added to the user attributes.
+ */
+export interface AttributionMatchEvent {
+  /** An install attribution match finished. */
+  event: "attributionMatch"
+  /** The result. See {@link AttributionMatchInfo}. */
+  info: AttributionMatchInfo
 }
 
 /**
@@ -2531,41 +2995,6 @@ export interface CustomerCenterRefundRequestEvent {
 }
 
 /**
- * The result of matching an install to the ad click that led to it.
- *
- * Android only.
- * @since 1.8.0
- */
-export interface AttributionMatchInfo {
-  /** The attribution provider that produced the result. */
-  provider: "mmp"
-  /** Whether the install was matched to an ad click. */
-  matched: boolean
-  /** The source of the match, if any. */
-  source?: string
-  /** The confidence level returned by the attribution provider. */
-  confidence?: "high" | "medium" | "low"
-  /** The match score returned by the attribution provider. */
-  matchScore?: number
-  /** Why the match failed, if it did. */
-  reason?: string
-}
-
-/**
- * Install attribution was resolved or failed to resolve. When matched, the resulting
- * `acquisition_*` attributes are added to the user attributes.
- *
- * Android only.
- * @since 1.8.0
- */
-export interface AttributionMatchEvent {
-  /** Install attribution was resolved or failed to resolve. */
-  event: "attributionMatch"
-  /** The attribution result. See {@link AttributionMatchInfo}. */
-  info: AttributionMatchInfo
-}
-
-/**
  * Page-specific details for a multi-page paywall page view.
  */
 export interface PageViewData {
@@ -2675,6 +3104,10 @@ export type SuperwallEventType =
   | CustomerInfoDidChangeEvent["event"]
   | IntegrationAttributesEvent["event"]
   | ReviewRequestedEvent["event"]
+  | ReviewGrantedEvent["event"]
+  | ReviewDeniedEvent["event"]
+  | PaywallResourceLoadFailEvent["event"]
+  | AttributionMatchEvent["event"]
   | PermissionRequestedEvent["event"]
   | PermissionGrantedEvent["event"]
   | PermissionDeniedEvent["event"]
@@ -2694,7 +3127,6 @@ export type SuperwallEventType =
   | CustomerCenterActionEvent["event"]
   | CustomerCenterSurveyResponseEvent["event"]
   | CustomerCenterRefundRequestEvent["event"]
-  | AttributionMatchEvent["event"]
 
 /**
  * Represents a Superwall event that can be tracked by the SDK.
@@ -2770,6 +3202,10 @@ export type SuperwallEvent =
   | CustomerInfoDidChangeEvent
   | IntegrationAttributesEvent
   | ReviewRequestedEvent
+  | ReviewGrantedEvent
+  | ReviewDeniedEvent
+  | PaywallResourceLoadFailEvent
+  | AttributionMatchEvent
   | PermissionRequestedEvent
   | PermissionGrantedEvent
   | PermissionDeniedEvent
@@ -2789,7 +3225,6 @@ export type SuperwallEvent =
   | CustomerCenterActionEvent
   | CustomerCenterSurveyResponseEvent
   | CustomerCenterRefundRequestEvent
-  | AttributionMatchEvent
 
 /**
  * Contains information about a Superwall event, including the specific {@link SuperwallEvent}
@@ -2847,6 +3282,13 @@ export type LogLevel = "debug" | "info" | "warn" | "error" | "none"
  * - `paywallTransactions`: Logs related to transactions initiated from paywalls.
  * - `paywallViewController`: Logs related to the paywall view controller (native specific).
  * - `cache`: Logs related to caching mechanisms within the SDK.
+ * - `billing`: Logs related to Google Play Billing (Android only). On Android, `storeKitManager` also enables them.
+ * - `analytics`: Logs related to analytics (iOS only).
+ * - `transactions`: Logs related to transactions.
+ * - `webEntitlements`: Logs related to entitlements redeemed through web checkout.
+ * - `grantedEntitlements`: Logs related to entitlements granted outside the store (iOS only).
+ * - `customerCenter`: Logs related to the Customer Center.
+ * - `customerInfo`, `jsEvaluator`, `nativePurchaseController`, `deepLinks`: Android only.
  * - `all`: Enables logging for all scopes.
  */
 export type LogScope =
@@ -2872,6 +3314,15 @@ export type LogScope =
   | "paywallTransactions"
   | "paywallViewController"
   | "cache"
+  | "analytics"
+  | "transactions"
+  | "webEntitlements"
+  | "grantedEntitlements"
+  | "customerCenter"
+  | "customerInfo"
+  | "jsEvaluator"
+  | "nativePurchaseController"
+  | "deepLinks"
   | "all"
 
 export type OnPurchaseParamsIOS = {
@@ -2885,6 +3336,13 @@ export type OnPurchaseParamsIOS = {
    * presented paywall (e.g., during background flows).
    */
   store?: ProductStore
+  /**
+   * The transaction ID Superwall generated for this purchase of a `"CUSTOM"` product, or
+   * `undefined` for other products. Pass it to your checkout, for example as checkout metadata,
+   * and have your server send it back as `custom_transaction_id` when it reports the purchase to
+   * Superwall, so the revenue is attributed to the paywall that sold it.
+   */
+  customTransactionId?: string
 }
 
 /**
@@ -2931,11 +3389,23 @@ export type OnPurchaseParamsAndroid = {
    */
   offerId?: string
   /**
-   * The existing subscription this purchase replaces, if any. Undefined for a normal purchase.
-   * See {@link ProductReplacement}.
-   * @since 1.8.0
+   * The store that backs the product being purchased: `"PLAY_STORE"`, or `"CUSTOM"` for a
+   * custom product, which your purchase handler must purchase itself (e.g., through your
+   * backend). See {@link ProductStore}.
+   */
+  store?: ProductStore
+  /**
+   * The existing subscription this purchase replaces, if any. See {@link ProductReplacement}.
+   * If you ignore it, the purchase is made as a new subscription.
    */
   replacement?: ProductReplacement
+  /**
+   * The transaction ID Superwall generated for this purchase of a `"CUSTOM"` product, or
+   * `undefined` for other products. Pass it to your checkout, for example as checkout metadata,
+   * and have your server send it back as `custom_transaction_id` when it reports the purchase to
+   * Superwall, so the revenue is attributed to the paywall that sold it.
+   */
+  customTransactionId?: string
 }
 
 export type OnPurchaseParams = OnPurchaseParamsIOS | OnPurchaseParamsAndroid
@@ -2988,7 +3458,7 @@ export interface OwnedInAppPurchase {
  * Represents a store product returned by {@link SuperwallExpoModule.products}.
  * Matches the JSON shape produced by the native `StoreProduct.toJson()` on both iOS and Android.
  */
-export interface ProductResponse {
+export interface ProductResponse extends StoreProductPlatformDetails {
   productIdentifier: string
   localizedPrice: string
   localizedSubscriptionPeriod: string
@@ -3065,6 +3535,18 @@ export type SuperwallExpoModuleEvents = {
    */
   onPaywallError: (params: { errorString: string; handlerId: string }) => void
   /**
+   * iOS only. Emitted when a paywall presented by `registerPlacement` is about to be dismissed.
+   * @param params - Event parameters.
+   * @param params.paywallInfoJson - JSON representation of {@link PaywallInfo} for the paywall.
+   * @param params.result - The result of the paywall interaction. See {@link PaywallResult}.
+   * @param params.handlerId - Identifier for the handler associated with this paywall.
+   */
+  onPaywallWillDismiss: (params: {
+    paywallInfoJson: PaywallInfo
+    result: PaywallResult
+    handlerId: string
+  }) => void
+  /**
    * Emitted when a paywall presentation is skipped (e.g., user is in a holdout group, no rule match).
    * @param params - Event parameters.
    * @param params.skippedReason - The reason why the paywall was skipped. See {@link PaywallSkippedReason}.
@@ -3092,6 +3574,12 @@ export type SuperwallExpoModuleEvents = {
    * @param params.to - The new customer info snapshot. See {@link CustomerInfo}.
    */
   customerInfoDidChange: (params: { from: CustomerInfo; to: CustomerInfo }) => void
+  /**
+   * Emitted when the native SDK's configuration status changes, and once with the current
+   * status when `configure` is called.
+   * @param params.status - The new {@link ConfigurationStatus}.
+   */
+  configurationStatusDidChange: (params: { status: ConfigurationStatus }) => void
   /**
    * Emitted for various internal Superwall events, providing a detailed stream of SDK activity.
    * @param params - Event parameters.
@@ -3166,6 +3654,24 @@ export type SuperwallExpoModuleEvents = {
    * @param params - The result of the redemption attempt. See {@link RedemptionResult}.
    */
   didRedeemLink: (params: RedemptionResult) => void
+  /**
+   * Emitted when the user's attributes change, whether you set them or a paywall did.
+   * @param params - Event parameters.
+   * @param params.newAttributes - All of the user's attributes after the change.
+   */
+  userAttributesDidChange: (params: { newAttributes: Record<string, any> }) => void
+  /**
+   * iOS only. Emitted when Superwall handles a deep link, with the link's parts.
+   * @param params - Event parameters.
+   * @param params.fullURL - The full deep link URL.
+   * @param params.pathComponents - The URL's path components.
+   * @param params.queryParameters - The URL's query parameters.
+   */
+  handleSuperwallDeepLink: (params: {
+    fullURL: string
+    pathComponents: string[]
+    queryParameters: Record<string, string>
+  }) => void
 
   // Purchase Events
   /**

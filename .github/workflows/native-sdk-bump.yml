@@ -149,7 +149,7 @@ jobs:
           if [ "$PLATFORM" = android ]; then
             CURRENT="$(sed -nE 's/.*com\.superwall\.sdk:superwall-android:([^"]+)".*/\1/p' android/build.gradle)"
           else
-            CURRENT="$(sed -nE "s/.*s\.dependency \"SuperwallKit\", '([^']+)'.*/\1/p" ios/SuperwallExpo.podspec)"
+            CURRENT="$(sed -nE "s/^superwall_spm_version = '([^']+)'.*/\1/p" ios/SuperwallExpo.podspec)"
           fi
           [ -n "$CURRENT" ] || { echo "::error::Could not read the current $PLATFORM pin"; exit 1; }
           echo "CURRENT=$CURRENT" >> "$GITHUB_ENV"
@@ -182,7 +182,8 @@ jobs:
           if [ "$PLATFORM" = android ]; then
             sed -i -E "s/(com\.superwall\.sdk:superwall-android:)[^\"]+\"/\1$VERSION\"/" android/build.gradle
           else
-            sed -i -E "s/(\"SuperwallKit\", ')[^']+'/\1$VERSION'/" ios/SuperwallExpo.podspec
+            # SuperwallKit comes from Swift Package Manager; this is its only pin.
+            sed -i -E "s/^(superwall_spm_version = ')[^']+'/\1$VERSION'/" ios/SuperwallExpo.podspec
           fi
 
           # changesets turns this into the version bump and CHANGELOG entry on
@@ -216,7 +217,7 @@ jobs:
           # carries both platforms says so.
           pins() {  # prints "<android> <ios>" pinned at git ref $1
             echo "$(git show "$1:android/build.gradle" | sed -nE 's/.*com\.superwall\.sdk:superwall-android:([^"]+)".*/\1/p')" \
-                 "$(git show "$1:ios/SuperwallExpo.podspec" | sed -nE "s/.*s\.dependency \"SuperwallKit\", '([^']+)'.*/\1/p")"
+                 "$(git show "$1:ios/SuperwallExpo.podspec" | sed -nE "s/^superwall_spm_version = '([^']+)'.*/\1/p")"
           }
           read -r BASE_ANDROID BASE_IOS <<< "$(pins "origin/$BASE_BRANCH")"
           read -r HEAD_ANDROID HEAD_IOS <<< "$(pins HEAD)"

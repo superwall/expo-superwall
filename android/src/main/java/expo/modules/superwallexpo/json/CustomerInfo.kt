@@ -10,7 +10,7 @@ import java.util.Date
 
 // Mirrors the @SerialName values on `LatestPeriodType`. Exhaustive `when` so a new
 // SDK case is a compile error rather than a silently-incorrect string.
-private fun LatestPeriodType.toJsonString(): String =
+internal fun LatestPeriodType.toJsonString(): String =
   when (this) {
     LatestPeriodType.TRIAL -> "trial"
     LatestPeriodType.CODE -> "code"
@@ -22,7 +22,7 @@ private fun LatestPeriodType.toJsonString(): String =
 
 private val dateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_INSTANT
 
-private fun Date.toIsoString(): String =
+internal fun Date.toIsoString(): String =
   this.toInstant().atZone(ZoneId.systemDefault()).format(dateFormatter)
 
 fun CustomerInfo.toJson(): Map<String, Any?> {
@@ -31,6 +31,7 @@ fun CustomerInfo.toJson(): Map<String, Any?> {
   map["subscriptions"] = this.subscriptions.map { it.toJson() }
   map["nonSubscriptions"] = this.nonSubscriptions.map { it.toJson() }
   map["entitlements"] = this.entitlements.map { it.toJson() }
+  map["activeSubscriptionProductIds"] = this.activeSubscriptionProductIds.toList()
   return map
 }
 

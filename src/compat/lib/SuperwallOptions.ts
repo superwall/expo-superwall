@@ -1,5 +1,9 @@
 import { customerCenterConfigurationToJson } from "../../internal/customerCenter"
 import type { CustomerCenterConfiguration } from "../../SuperwallExpoModule.types"
+import type { CustomNetworkEnvironment, LocalResource } from "../../SuperwallOptions"
+
+export type { CustomNetworkEnvironment, DeviceTier } from "../../SuperwallOptions"
+
 import { LogLevel } from "./LogLevel"
 import { LogScope } from "./LogScope"
 import { PaywallOptions } from "./PaywallOptions"
@@ -24,6 +28,8 @@ export enum NetworkEnvironment {
   Release = "release",
   ReleaseCandidate = "releaseCandidate",
   Developer = "developer",
+  /** iOS only: a Superwall backend running on `localhost`. Android keeps the release environment. */
+  Local = "local",
 }
 
 /**
@@ -103,7 +109,7 @@ export class LoggingOptions {
  */
 export interface PartialSuperwallOptions {
   paywalls?: Partial<PaywallOptions>
-  networkEnvironment?: NetworkEnvironment
+  networkEnvironment?: NetworkEnvironment | CustomNetworkEnvironment
   /** @deprecated Use {@link eventTrackingBehavior} instead. */
   isExternalDataCollectionEnabled?: boolean
   eventTrackingBehavior?: EventTrackingBehavior
@@ -120,6 +126,8 @@ export interface PartialSuperwallOptions {
   testModeBehavior?: TestModeBehavior
   customerCenter?: CustomerCenterConfiguration
   adConsent?: AdConsent
+  localResources?: Record<string, LocalResource>
+  devServer?: boolean | string
 }
 
 /**
@@ -129,7 +137,12 @@ export interface PartialSuperwallOptions {
  */
 export class SuperwallOptions {
   paywalls: PaywallOptions = new PaywallOptions()
-  networkEnvironment: NetworkEnvironment = NetworkEnvironment.Release
+  /**
+   * The Superwall backend to use: a {@link NetworkEnvironment}, or a
+   * {@link CustomNetworkEnvironment} such as `{ custom: "example.com" }`. Only change this if
+   * the Superwall team tells you to.
+   */
+  networkEnvironment: NetworkEnvironment | CustomNetworkEnvironment = NetworkEnvironment.Release
   /** @deprecated Use {@link eventTrackingBehavior} instead. */
   isExternalDataCollectionEnabled = true
   eventTrackingBehavior?: EventTrackingBehavior
@@ -179,6 +192,25 @@ export class SuperwallOptions {
    * @platform iOS and Android (Android since 1.8.0)
    */
   adConsent?: AdConsent
+  /**
+   * Local files that paywalls can load instead of downloading them, keyed by the resource ID
+   * set in the paywall editor and served to the paywall as `swlocal://<id>`. A value can be a
+   * Metro `require()` result, a `file://` or `content://` URI or absolute path, or an
+   * `{ uri }` object. They're resolved when you call `configure`, and entries that can't be
+   * resolved are left out.
+   * @platform iOS and Android
+   * @since 1.8.0
+   */
+  localResources?: Record<string, LocalResource>
+  /**
+   * Connects the SDK to a running `superwall dev` server, for development builds only, so
+   * paywalls with a local counterpart render from your local paywall code. `true` finds the
+   * server on `localhost`, which works on a simulator; on a device, pass the `Device` URL that
+   * `superwall dev` prints. The app must allow local networking in its `Info.plist`.
+   * @platform iOS only
+   * @since 1.8.0
+   */
+  devServer?: boolean | string
 
   constructor(init?: PartialSuperwallOptions) {
     if (init) {
@@ -209,7 +241,11 @@ export class SuperwallOptions {
     // Filter out undefined values to prevent Android Expo bridge conversion errors
     return filterUndefined({
       paywalls: this.paywalls.toJson(),
-      networkEnvironment: this.networkEnvironment,
+      networkEnvironment:
+        typeof this.networkEnvironment === "object"
+          ? filterUndefined({ ...this.networkEnvironment })
+          : this.networkEnvironment,
+      devServer: this.devServer,
       isExternalDataCollectionEnabled: this.isExternalDataCollectionEnabled,
       eventTrackingBehavior: this.eventTrackingBehavior,
       localeIdentifier: this.localeIdentifier,

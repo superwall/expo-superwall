@@ -1,8 +1,10 @@
 package expo.modules.superwallexpo.json
 
 
+import com.superwall.sdk.analytics.superwall.AttributionMatchInfo
 import com.superwall.sdk.analytics.superwall.SuperwallEvent
 import com.superwall.sdk.store.abstractions.transactions.StoreTransaction
+import com.superwall.sdk.store.transactions.TransactionError
 
 class SuperwallEvent {
   companion object {
@@ -63,6 +65,7 @@ class SuperwallEvent {
         is SuperwallEvent.TransactionFail -> {
           map["event"] = "transactionFail"
           map["error"] = superwallPlacement.error.localizedMessage ?: "Error message unavailable"
+          map["transactionError"] = superwallPlacement.error.toJson()
           map["paywallInfo"] = superwallPlacement.paywallInfo.toJson()
         }
         is SuperwallEvent.TransactionAbandon -> {
@@ -103,6 +106,10 @@ class SuperwallEvent {
           map["event"] = "userAttributes"
           map["attributes"] = superwallPlacement.attributes
         }
+        is SuperwallEvent.AttributionMatch -> {
+          map["event"] = "attributionMatch"
+          map["info"] = superwallPlacement.info.toJson()
+        }
         is SuperwallEvent.IntegrationProps -> {
           map["event"] = "integrationAttributes"
           map["attributes"] = superwallPlacement.audienceFilterParams
@@ -111,10 +118,6 @@ class SuperwallEvent {
           map["event"] = "integrationAttributes"
           map["attributes"] = superwallPlacement.audienceFilterParams
         }
-        is SuperwallEvent.AttributionMatch -> {
-          map["event"] = "attributionMatch"
-          map["info"] = superwallPlacement.info.toJson()
-        }
         is SuperwallEvent.NonRecurringProductPurchase -> {
           map["event"] = "nonRecurringProductPurchase"
           map["product"] = superwallPlacement.product.toJson()
@@ -122,19 +125,19 @@ class SuperwallEvent {
         }
         is SuperwallEvent.PaywallResponseLoadStart -> {
           map["event"] = "paywallResponseLoadStart"
-          map["triggeredPlacementName"] = superwallPlacement.triggeredPlacementName ?: ""
+          putTriggeredPlacementName(map, superwallPlacement.triggeredPlacementName)
         }
         is SuperwallEvent.PaywallResponseLoadNotFound -> {
           map["event"] = "paywallResponseLoadNotFound"
-          map["triggeredPlacementName"] = superwallPlacement.triggeredPlacementName ?: ""
+          putTriggeredPlacementName(map, superwallPlacement.triggeredPlacementName)
         }
         is SuperwallEvent.PaywallResponseLoadFail -> {
           map["event"] = "paywallResponseLoadFail"
-          map["triggeredPlacementName"] = superwallPlacement.triggeredPlacementName ?: ""
+          putTriggeredPlacementName(map, superwallPlacement.triggeredPlacementName)
         }
         is SuperwallEvent.PaywallResponseLoadComplete -> {
           map["event"] = "paywallResponseLoadComplete"
-          map["triggeredPlacementName"] = superwallPlacement.triggeredPlacementName ?: ""
+          putTriggeredPlacementName(map, superwallPlacement.triggeredPlacementName)
           map["paywallInfo"] = superwallPlacement.paywallInfo.toJson()
         }
         is SuperwallEvent.PaywallWebviewLoadStart -> {
@@ -158,12 +161,12 @@ class SuperwallEvent {
         }
         is SuperwallEvent.PaywallProductsLoadStart -> {
           map["event"] = "paywallProductsLoadStart"
-          map["triggeredPlacementName"] = superwallPlacement.triggeredPlacementName ?: ""
+          putTriggeredPlacementName(map, superwallPlacement.triggeredPlacementName)
           map["paywallInfo"] = superwallPlacement.paywallInfo.toJson()
         }
         is SuperwallEvent.PaywallProductsLoadFail -> {
           map["event"] = "paywallProductsLoadFail"
-          map["triggeredPlacementName"] = superwallPlacement.triggeredPlacementName ?: ""
+          putTriggeredPlacementName(map, superwallPlacement.triggeredPlacementName)
           map["paywallInfo"] = superwallPlacement.paywallInfo.toJson()
           superwallPlacement.errorMessage?.let {
             map["errorMessage"] = it
@@ -171,7 +174,8 @@ class SuperwallEvent {
         }
         is SuperwallEvent.PaywallProductsLoadComplete -> {
           map["event"] = "paywallProductsLoadComplete"
-          map["triggeredPlacementName"] = superwallPlacement.triggeredPlacementName ?: ""
+          putTriggeredPlacementName(map, superwallPlacement.triggeredPlacementName)
+          map["paywallInfo"] = superwallPlacement.paywallInfo.toJson()
         }
         is SuperwallEvent.SurveyResponse -> {
           map["event"] = "surveyResponse"
@@ -245,8 +249,18 @@ class SuperwallEvent {
           map["event"] = "reviewRequested"
           map["count"] = superwallPlacement.count
         }
+        is SuperwallEvent.ReviewGranted -> {
+          map["event"] = "reviewGranted"
+          map["count"] = superwallPlacement.count
+        }
+        is SuperwallEvent.ReviewDenied -> {
+          map["event"] = "reviewDenied"
+          map["count"] = superwallPlacement.count
+        }
         is SuperwallEvent.CustomerInfoDidChange -> {
           map["event"] = "customerInfoDidChange"
+          map["from"] = superwallPlacement.from.toJson()
+          map["to"] = superwallPlacement.to.toJson()
         }
         is SuperwallEvent.PermissionRequested -> {
           map["event"] = "permissionRequested"
@@ -303,9 +317,38 @@ class SuperwallEvent {
           map["productId"] = superwallPlacement.productId
           map["status"] = superwallPlacement.status.toJson()
         }
-        else -> {}
+        // Same as iOS, so JS always gets an `event` name for cases added by a native bump.
+        else -> map["event"] = "unknown"
       }
       return map
     }
+
+    // iOS names this key `triggeredEventName`. `triggeredPlacementName` is kept for
+    // anyone who read the old Android-only key.
+    private fun putTriggeredPlacementName(map: MutableMap<String, Any>, name: String?) {
+      map["triggeredEventName"] = name ?: ""
+      map["triggeredPlacementName"] = name ?: ""
+    }
   }
 }
+
+fun AttributionMatchInfo.toJson(): Map<String, Any> {
+  val map = mutableMapOf<String, Any>(
+    "provider" to provider.rawName,
+    "matched" to matched,
+  )
+  source?.let { map["source"] = it }
+  confidence?.let { map["confidence"] = it.rawName }
+  matchScore?.let { map["matchScore"] = it }
+  reason?.let { map["reason"] = it }
+  return map
+}
+
+// Same shape as iOS: whether the transaction is pending or failed, its message and, for a
+// failure, the product.
+private fun TransactionError.toJson(): Map<String, Any?> =
+  when (this) {
+    is TransactionError.Pending -> mapOf("type" to "pending", "message" to message)
+    is TransactionError.Failure ->
+      mapOf("type" to "failure", "message" to message, "product" to product.toJson())
+  }

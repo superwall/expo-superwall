@@ -1,6 +1,9 @@
 package expo.modules.superwallexpo.json
 
 
+import com.superwall.sdk.models.paywall.PaywallPresentationInfo
+import com.superwall.sdk.models.paywall.PaywallPresentationStyle
+import com.superwall.sdk.models.product.ProductItem
 import com.superwall.sdk.paywall.presentation.PaywallInfo
 
 fun PaywallInfo.toJson(): Map<String, Any?> {
@@ -9,17 +12,12 @@ fun PaywallInfo.toJson(): Map<String, Any?> {
   map["identifier"] = this.identifier
   map["name"] = this.name 
   map["url"] = this.url.toString()
+  this.presentationId?.let { map["presentationId"] = it }
   this.experiment?.let {
     map["experiment"] = Experiment.toJson(it)
   }
 
-  val products = this.products.map { product ->
-    mapOf(
-      "type" to product.type.toString(),
-      "id" to product.fullProductId
-    )
-  }
-  map["products"] = products
+  map["products"] = this.products.map { it.toJson() }
 
   map["productIds"] = this.productIds.toList()
 
@@ -52,7 +50,8 @@ fun PaywallInfo.toJson(): Map<String, Any?> {
   val computedPropertyRequests = this.computedPropertyRequests.map { request ->
     mapOf(
       "placementName" to request.eventName,
-      "type" to request.type.toString()
+      // Same camelCase names as iOS, e.g. `minutesSince`.
+      "type" to request.type.prefix.removeSuffix("_")
     )
   }
   map["computedPropertyRequests"] = computedPropertyRequests
@@ -80,13 +79,15 @@ fun PaywallInfo.toJson(): Map<String, Any?> {
   map["surveys"] = surveys
 
   val localNotifications = this.localNotifications.map { notification ->
-    mapOf(
+    val notificationMap = mutableMapOf<String, Any>(
       "id" to notification.id,
       "title" to notification.title,
       "body" to notification.body,
       "type" to notification.type.toJson(),
       "delay" to notification.delay.toDouble()
     )
+    notification.subtitle?.let { notificationMap["subtitle"] = it }
+    notificationMap
   }
   map["localNotifications"] = localNotifications
 
@@ -94,5 +95,67 @@ fun PaywallInfo.toJson(): Map<String, Any?> {
 
   map["customerInfo"] = this.customerInfo.toJson()
 
+  map["cacheKey"] = this.cacheKey
+  map["buildId"] = this.buildId
+  this.shimmerLoadStartTime?.let { map["shimmerLoadStartTime"] = it }
+  this.shimmerLoadCompleteTime?.let { map["shimmerLoadCompleteTime"] = it }
+  map["presentation"] = this.presentation.toJson()
+  map["isScrollEnabled"] = this.isScrollEnabled
+
+  return map
+}
+
+// Same shape as iOS: the dashboard's style name, plus the drawer's or popup's dimensions.
+fun PaywallPresentationInfo.toJson(): Map<String, Any> {
+  val map = mutableMapOf<String, Any>(
+    "style" to style.rawValue,
+    "delay" to delay.toDouble(),
+  )
+  when (val style = style) {
+    is PaywallPresentationStyle.Drawer -> {
+      map["height"] = style.height
+      map["cornerRadius"] = style.cornerRadius
+    }
+    is PaywallPresentationStyle.Popup -> {
+      map["height"] = style.height
+      map["width"] = style.width
+      map["cornerRadius"] = style.cornerRadius
+    }
+    else -> {}
+  }
+  return map
+}
+
+// Same shape as iOS's `Product.toJson()`. `type` is the old Android-only key, kept for anyone
+// reading it.
+fun ProductItem.toJson(): Map<String, Any?> {
+  val map = mutableMapOf<String, Any?>(
+    "id" to fullProductId,
+    "name" to name,
+    "entitlements" to entitlements.toJson(),
+    "type" to type.toString(),
+  )
+  when (val storeType = type) {
+    is ProductItem.StoreProductType.PlayStore -> map["store"] = "PLAY_STORE"
+    is ProductItem.StoreProductType.AppStore -> {
+      map["store"] = "APP_STORE"
+      map["appStoreProduct"] = mapOf("id" to storeType.product.productIdentifier)
+    }
+    is ProductItem.StoreProductType.Stripe -> {
+      map["store"] = "STRIPE"
+      map["stripeProduct"] = mutableMapOf<String, Any>("id" to storeType.product.productIdentifier).apply {
+        storeType.product.trialDays?.let { put("trialDays", it) }
+      }
+    }
+    is ProductItem.StoreProductType.Paddle -> {
+      map["store"] = "PADDLE"
+      map["paddleProduct"] = mapOf("id" to storeType.product.productIdentifier)
+    }
+    is ProductItem.StoreProductType.Custom -> {
+      map["store"] = "CUSTOM"
+      map["customProduct"] = mapOf("id" to storeType.product.productIdentifier)
+    }
+    is ProductItem.StoreProductType.Other -> map["store"] = storeType.product.store.name
+  }
   return map
 }

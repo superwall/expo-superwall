@@ -4,10 +4,12 @@ import type { SuperwallEventCallbacks } from "../SuperwallEventCallbacks"
 type NativeEventName =
   | "onPaywallPresent"
   | "onPaywallDismiss"
+  | "onPaywallWillDismiss"
   | "onPaywallError"
   | "onPaywallSkip"
   | "subscriptionStatusDidChange"
   | "customerInfoDidChange"
+  | "configurationStatusDidChange"
   | "handleSuperwallEvent"
   | "handleCustomPaywallAction"
   | "willDismissPaywall"
@@ -19,6 +21,8 @@ type NativeEventName =
   | "handleLog"
   | "willRedeemLink"
   | "didRedeemLink"
+  | "userAttributesDidChange"
+  | "handleSuperwallDeepLink"
   | "onPurchase"
   | "onPurchaseRestore"
   | "onBackPressed"
@@ -78,6 +82,10 @@ const deliverToSubscriber = (
       if (!isMatchingSubscriber(subscriber, payload, replay)) return false
       callbacks.onPaywallDismiss?.(payload.paywallInfoJson, payload.result)
       return callbacks.onPaywallDismiss != null
+    case "onPaywallWillDismiss":
+      if (!isMatchingSubscriber(subscriber, payload, replay)) return false
+      callbacks.onPaywallWillDismiss?.(payload.paywallInfoJson, payload.result)
+      return callbacks.onPaywallWillDismiss != null
     case "onPaywallError":
       if (!isMatchingSubscriber(subscriber, payload, replay)) return false
       callbacks.onPaywallError?.(payload.errorString)
@@ -92,6 +100,9 @@ const deliverToSubscriber = (
     case "customerInfoDidChange":
       callbacks.onCustomerInfoChange?.(payload.from, payload.to)
       return callbacks.onCustomerInfoChange != null
+    case "configurationStatusDidChange":
+      callbacks.onConfigurationStatusChange?.(payload.status)
+      return callbacks.onConfigurationStatusChange != null
     case "handleSuperwallEvent":
       callbacks.onSuperwallEvent?.(payload.eventInfo)
       return callbacks.onSuperwallEvent != null
@@ -125,6 +136,12 @@ const deliverToSubscriber = (
     case "didRedeemLink":
       callbacks.didRedeemLink?.(payload)
       return callbacks.didRedeemLink != null
+    case "userAttributesDidChange":
+      callbacks.onUserAttributesChange?.(payload.newAttributes)
+      return callbacks.onUserAttributesChange != null
+    case "handleSuperwallDeepLink":
+      callbacks.onSuperwallDeepLink?.(payload)
+      return callbacks.onSuperwallDeepLink != null
     case "onPurchase":
       callbacks.onPurchase?.(payload)
       return callbacks.onPurchase != null
@@ -249,6 +266,9 @@ const installNativeListeners = (): void => {
   SuperwallExpoModule.addListener("onPaywallDismiss", (payload) => {
     handleBufferedNativeEvent("onPaywallDismiss", payload)
   })
+  SuperwallExpoModule.addListener("onPaywallWillDismiss", (payload) => {
+    handleBufferedNativeEvent("onPaywallWillDismiss", payload)
+  })
   SuperwallExpoModule.addListener("onPaywallError", (payload) => {
     handleBufferedNativeEvent("onPaywallError", payload)
   })
@@ -260,6 +280,9 @@ const installNativeListeners = (): void => {
   })
   SuperwallExpoModule.addListener("customerInfoDidChange", (payload) => {
     handleBufferedNativeEvent("customerInfoDidChange", payload)
+  })
+  SuperwallExpoModule.addListener("configurationStatusDidChange", (payload) => {
+    handleBufferedNativeEvent("configurationStatusDidChange", payload)
   })
   SuperwallExpoModule.addListener("handleSuperwallEvent", (payload) => {
     handleBufferedNativeEvent("handleSuperwallEvent", payload)
@@ -293,6 +316,12 @@ const installNativeListeners = (): void => {
   })
   SuperwallExpoModule.addListener("didRedeemLink", (payload) => {
     handleBufferedNativeEvent("didRedeemLink", payload)
+  })
+  SuperwallExpoModule.addListener("userAttributesDidChange", (payload) => {
+    handleBufferedNativeEvent("userAttributesDidChange", payload)
+  })
+  SuperwallExpoModule.addListener("handleSuperwallDeepLink", (payload) => {
+    handleBufferedNativeEvent("handleSuperwallDeepLink", payload)
   })
   SuperwallExpoModule.addListener("onPurchase", (payload) => {
     handleImmediateNativeEvent("onPurchase", payload)

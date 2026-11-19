@@ -115,6 +115,7 @@ describe("SDK behavior regressions", () => {
       isLoading: false,
       listenersInitialized: false,
       configurationError: null,
+      isTornDown: false,
       user: null,
       subscriptionStatus: { status: "UNKNOWN" },
       customerInfo: null,
@@ -290,6 +291,34 @@ describe("SDK behavior regressions", () => {
     expect(onConfigurationError.mock.calls[0][0].message).toBe(
       "No API key provided for platform ios",
     )
+
+    act(() => {
+      renderer!.unmount()
+    })
+  })
+
+  it("doesn't configure again by itself after a teardown, so the app can pick the key", async () => {
+    const configure = jest.fn(async () => {
+      useSuperwallStore.setState({ isConfigured: true, isLoading: false })
+    })
+    useSuperwallStore.setState({ configure })
+
+    let renderer: TestRenderer.ReactTestRenderer
+    await act(async () => {
+      renderer = TestRenderer.create(
+        <SuperwallProvider apiKeys={{ ios: "provider-key" }}>{null}</SuperwallProvider>,
+      )
+      await Promise.resolve()
+    })
+    expect(configure).toHaveBeenCalledTimes(1)
+    expect(configure).toHaveBeenLastCalledWith("provider-key", expect.anything())
+
+    // What `teardown` leaves behind once the native SDK is gone.
+    await act(async () => {
+      useSuperwallStore.setState({ isConfigured: false, isTornDown: true })
+      await Promise.resolve()
+    })
+    expect(configure).toHaveBeenCalledTimes(1)
 
     act(() => {
       renderer!.unmount()
@@ -723,6 +752,44 @@ describe("SDK behavior regressions", () => {
     expect(onPurchase).not.toHaveBeenCalled()
     expect(mockDidHandleBackPressed).toHaveBeenCalledWith(false)
     expect(mockDidHandleCustomCallback).toHaveBeenCalledWith("callback-1", "failure", undefined)
+
+    act(() => {
+      renderer!.unmount()
+    })
+  })
+
+  it("passes a custom product's customTransactionId to onPurchase on both platforms", () => {
+    const onPurchase = jest.fn()
+
+    function Harness() {
+      useSuperwallEvents({ onPurchase })
+      return null
+    }
+
+    let renderer: TestRenderer.ReactTestRenderer
+    act(() => {
+      renderer = TestRenderer.create(<Harness />)
+    })
+
+    const iosPayload = {
+      productId: "web_annual",
+      platform: "ios",
+      store: "CUSTOM",
+      customTransactionId: "ios-txn-id",
+    }
+    const androidPayload = {
+      productId: "web_annual",
+      platform: "android",
+      basePlanId: null,
+      offerId: null,
+      store: "CUSTOM",
+      customTransactionId: "android-txn-id",
+    }
+    emit("onPurchase", iosPayload)
+    emit("onPurchase", androidPayload)
+
+    expect(onPurchase).toHaveBeenNthCalledWith(1, iosPayload)
+    expect(onPurchase).toHaveBeenNthCalledWith(2, androidPayload)
 
     act(() => {
       renderer!.unmount()

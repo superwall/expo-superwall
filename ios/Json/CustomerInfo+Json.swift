@@ -7,6 +7,7 @@ extension CustomerInfo {
       "subscriptions": subscriptions.map { $0.toJson() },
       "nonSubscriptions": nonSubscriptions.map { $0.toJson() },
       "entitlements": entitlements.map { $0.toJson() },
+      "activeSubscriptionProductIds": Array(activeSubscriptionProductIds),
     ]
   }
 }

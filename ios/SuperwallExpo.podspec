@@ -31,6 +31,13 @@ deployment_target = lambda do |platform, floor|
   [floor, found].compact.max_by { |version| Gem::Version.new(version) }
 end
 
+# SuperwallKit is only published as a Swift package, so it comes from Swift Package Manager
+# through React Native's `spm_dependency`, which adds the package product to this pod's target in
+# the Pods project. That is all it takes: Xcode links the product into this pod's static library
+# and copies the package's resource bundle into the app. Don't also link the product into the
+# app target, which fails the app's link with duplicate symbols.
+superwall_spm_version = '4.19.1'
+
 Pod::Spec.new do |s|
   s.name           = 'SuperwallExpo'
   s.version        = package['version']
@@ -48,13 +55,23 @@ Pod::Spec.new do |s|
   s.static_framework = true
 
   s.dependency 'ExpoModulesCore'
-  s.dependency "SuperwallKit", '4.18.3'
-
 
   # Swift/Objective-C compatibility
   s.pod_target_xcconfig = {
     'DEFINES_MODULE' => 'YES',
   }
+
+  # Defined by `react_native_pods.rb`, which every React Native Podfile loads.
+  unless respond_to?(:spm_dependency, true)
+    raise 'SuperwallExpo gets SuperwallKit from Swift Package Manager, which needs a Podfile ' \
+          'that loads React Native 0.75 or later (Expo SDK 53 or later).'
+  end
+  spm_dependency(
+    s,
+    url: 'https://github.com/superwall/Superwall-iOS',
+    requirement: { kind: 'exactVersion', version: superwall_spm_version },
+    products: ['SuperwallKit']
+  )
 
   s.source_files = "**/*.{h,m,mm,swift,hpp,cpp}"
 end

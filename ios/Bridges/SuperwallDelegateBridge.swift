@@ -91,4 +91,21 @@ final class SuperwallDelegateBridge: SuperwallDelegate {
   func didRedeemLink(result: RedemptionResult) {
     sendEvent(withName: "didRedeemLink", body: result.toJson())
   }
+
+  func userAttributesDidChange(newAttributes: [String: Any]) {
+    sendEvent(withName: "userAttributesDidChange", body: ["newAttributes": newAttributes])
+  }
+
+  func handleSuperwallDeepLink(
+    _ fullURL: URL,
+    pathComponents: [String],
+    queryParameters: [String: String]
+  ) {
+    let data: [String: Any] = [
+      "fullURL": fullURL.absoluteString,
+      "pathComponents": pathComponents,
+      "queryParameters": queryParameters,
+    ]
+    sendEvent(withName: "handleSuperwallDeepLink", body: data)
+  }
 }

@@ -86,14 +86,8 @@ extension PaywallInfo {
       map["paywalljsVersion"] = paywalljsVersion
     }
 
-    let computedPropertyRequestsArray: [[String: Any]] = self.computedPropertyRequests.map {
-      request in
-      [
-        "placementName": request.placementName,
-        "type": request.type.rawValue,
-      ]
-    }
-    map["computedPropertyRequests"] = computedPropertyRequestsArray
+    // Sends the type's name (e.g. `minutesSince`), as Android does, rather than its raw value.
+    map["computedPropertyRequests"] = self.computedPropertyRequests.map { $0.toJson() }
 
     let surveysArray: [[String: Any]] = self.surveys.map { survey in
       var surveyMap: [String: Any] = [
@@ -119,18 +113,67 @@ extension PaywallInfo {
     }
     map["surveys"] = surveysArray
 
-    let localNotificationsArray: [[String: Any]] = self.localNotifications.map { notification in
-      [
-        "title": notification.title,
-        "body": notification.body,
-        "type": notification.type.toJson(),
-        "delay": notification.delay,
-      ]
-    }
-    map["localNotifications"] = localNotificationsArray
+    map["localNotifications"] = self.localNotifications.map { $0.toJson() }
 
     map["state"] = self.state
 
+    map["cacheKey"] = self.cacheKey
+    map["buildId"] = self.buildId
+    if let shimmerLoadStartTime = self.shimmerLoadStartTime {
+      map["shimmerLoadStartTime"] = shimmerLoadStartTime
+    }
+    if let shimmerLoadCompleteTime = self.shimmerLoadCompleteTime {
+      map["shimmerLoadCompleteTime"] = shimmerLoadCompleteTime
+    }
+    map["presentation"] = self.presentation.toJson()
+    map["isScrollEnabled"] = self.isScrollEnabled
+    map["isLocal"] = self.isLocal
+    map["introOfferEligibility"] = self.introOfferEligibility.toJson()
+
     return map
+  }
+}
+
+extension PaywallPresentationInfo {
+  // The dashboard's style names, which Android uses too.
+  func toJson() -> [String: Any] {
+    var map: [String: Any] = ["delay": delay]
+    switch style {
+    case .modal:
+      map["style"] = "MODAL"
+    case .fullscreen:
+      map["style"] = "FULLSCREEN"
+    case .fullscreenNoAnimation:
+      map["style"] = "NO_ANIMATION"
+    case .push:
+      map["style"] = "PUSH"
+    case let .popup(height, width, cornerRadius):
+      map["style"] = "POPUP"
+      map["height"] = height
+      map["width"] = width
+      map["cornerRadius"] = cornerRadius
+    case let .drawer(height, cornerRadius):
+      map["style"] = "DRAWER"
+      map["height"] = height
+      map["cornerRadius"] = cornerRadius
+    case .none:
+      map["style"] = "NONE"
+    }
+    return map
+  }
+}
+
+extension IntroOfferEligibility {
+  func toJson() -> String {
+    switch self {
+    case .eligible:
+      return "eligible"
+    case .ineligible:
+      return "ineligible"
+    case .automatic:
+      return "automatic"
+    @unknown default:
+      return "automatic"
+    }
   }
 }

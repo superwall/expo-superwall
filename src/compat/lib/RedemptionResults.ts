@@ -177,6 +177,8 @@ export interface RedemptionInfo {
   paywallInfo?: PaywallInfo
   /** The entitlements granted by the redemption */
   entitlements: Entitlement[]
+  /** iOS only. User attributes set by the web checkout, if any. */
+  userAttributes?: Record<string, any>
 }
 
 /**
@@ -185,7 +187,13 @@ export interface RedemptionInfo {
  * The result of redeeming a code via web checkout
  */
 export type RedemptionResult =
-  | { status: "SUCCESS"; code: string; redemptionInfo: RedemptionInfo }
+  | {
+      status: "SUCCESS"
+      code: string
+      redemptionInfo: RedemptionInfo
+      /** The Stripe subscription IDs of the purchase, when it was made through Stripe. */
+      stripeSubscriptionIds?: string[]
+    }
   | { status: "ERROR"; code: string; error: ErrorInfo }
   | { status: "CODE_EXPIRED"; code: string; expired: ExpiredCodeInfo }
   | { status: "INVALID_CODE"; code: string }
@@ -210,6 +218,9 @@ export class RedemptionResults {
           status,
           code,
           redemptionInfo: RedemptionResults.parseRedemptionInfo(json.redemptionInfo),
+          ...(Array.isArray(json.stripeSubscriptionIds)
+            ? { stripeSubscriptionIds: json.stripeSubscriptionIds }
+            : {}),
         }
 
       case "ERROR":
@@ -256,6 +267,10 @@ export class RedemptionResults {
       entitlements: Array.isArray(json.entitlements)
         ? json.entitlements.map((e: any) => Entitlement.fromJson(e))
         : [],
+    }
+
+    if (json.userAttributes) {
+      result.userAttributes = json.userAttributes
     }
 
     if (json.paywallInfo) {
