@@ -143,6 +143,40 @@ describe("hooks native helpers", () => {
     expect(mockModule.teardown).not.toHaveBeenCalled()
   })
 
+  it("keeps undefined out of the options sent to the native module, however deeply nested", async () => {
+    mockModule.configure = jest.fn().mockResolvedValue(undefined)
+    mockModule.getSubscriptionStatus = jest.fn().mockResolvedValue({ status: "UNKNOWN" })
+    useSuperwallStore.setState({ isConfigured: false })
+
+    await useSuperwallStore.getState().configure("api-key", {
+      logging: { level: undefined, scopes: ["all"] },
+      paywalls: {
+        shouldPreload: undefined,
+        preloadDeviceOverrides: { low: false, mid: undefined },
+        restoreFailed: { title: "Nothing to restore", message: undefined },
+      },
+    } as never)
+
+    const options = mockModule.configure.mock.calls[0][1]
+    const undefinedPaths: string[] = []
+    const walk = (value: unknown, path: string) => {
+      if (value === undefined) undefinedPaths.push(path)
+      else if (value && typeof value === "object") {
+        for (const [key, child] of Object.entries(value)) walk(child, `${path}.${key}`)
+      }
+    }
+    walk(options, "options")
+    expect(undefinedPaths).toEqual([])
+
+    // What was set is kept, and what was left undefined falls back to the default.
+    expect(options.paywalls.preloadDeviceOverrides).toStrictEqual({ low: false })
+    expect(options.paywalls.restoreFailed.title).toBe("Nothing to restore")
+    expect(typeof options.paywalls.restoreFailed.message).toBe("string")
+    expect(options.paywalls.shouldPreload).toBe(true)
+    expect(typeof options.logging.level).toBe("string")
+    expect(options.logging.scopes).toEqual(["all"])
+  })
+
   it("tracks the configuration status in the store and tells subscribers", () => {
     const cleanup = useSuperwallStore.getState()._initListeners()
     const onConfigurationStatusChange = jest.fn()

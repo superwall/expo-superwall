@@ -171,6 +171,27 @@ describe("PaywallView", () => {
     expect(nativeView.props.paywallOverrides).toEqual({ productsByName: { primary: "monthly" } })
   })
 
+  it("strips nested undefined from params and paywall overrides", () => {
+    let renderer: TestRenderer.ReactTestRenderer
+    act(() => {
+      renderer = TestRenderer.create(
+        <PaywallView
+          placement="article"
+          params={{ source: "feed", campaign: undefined, nested: { a: 1, b: undefined } }}
+          paywallOverrides={{
+            presentationStyle: { style: "DRAWER", height: undefined } as never,
+          }}
+        />,
+      )
+    })
+
+    const nativeView = renderer!.root.findByType("NativePaywallView" as never)
+    expect(nativeView.props.paywallOverrides).toStrictEqual({
+      presentationStyle: { style: "DRAWER" },
+    })
+    expect(nativeView.props.params).toStrictEqual({ source: "feed", nested: { a: 1 } })
+  })
+
   it("runs the feature when the result gives access, as the native PaywallView does", () => {
     const gated = { ...paywallInfo, featureGatingBehavior: "gated", closeReason: "manualClose" }
     const nonGated = { ...gated, featureGatingBehavior: "nonGated" } as PaywallInfo

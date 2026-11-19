@@ -11,7 +11,7 @@ import type {
   PaywallResult,
   PaywallSkippedReason,
 } from "../SuperwallExpoModule.types"
-import { filterUndefined } from "../utils/filterUndefined"
+import { filterUndefinedDeep } from "../utils/filterUndefined"
 
 type LoadStartEvent = NativeSyntheticEvent<Record<string, never>>
 type PresentEvent = NativeSyntheticEvent<{ paywallInfo: PaywallInfo }>
@@ -170,9 +170,9 @@ export function PaywallView({
     <View {...viewProps} style={style}>
       <NativePaywallView
         placement={placement}
-        params={params}
-        // The Android bridge can't convert `undefined`, so pass only what's set.
-        paywallOverrides={paywallOverrides ? filterUndefined(paywallOverrides) : undefined}
+        // The Android bridge can't convert `undefined`, at any depth, so pass only what's set.
+        params={params ? filterUndefinedDeep(params) : undefined}
+        paywallOverrides={paywallOverrides ? filterUndefinedDeep(paywallOverrides) : undefined}
         style={StyleSheet.absoluteFill}
         onPaywallCustomCallback={(event) => {
           const { callbackId, name, variables } = event.nativeEvent

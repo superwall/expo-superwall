@@ -36,7 +36,7 @@ import {
   type EventTrackingBehavior,
   type PartialSuperwallOptions,
 } from "./SuperwallOptions"
-import { filterUndefined } from "./utils/filterUndefined"
+import { filterUndefined, filterUndefinedDeep } from "./utils/filterUndefined"
 import { productIdentifierForPurchase } from "./utils/productIdentifier"
 import { purchasingObserverStateToJson } from "./utils/purchasingObserverState"
 
@@ -749,7 +749,9 @@ export const useSuperwallStore = create<SuperwallStore>((set, get) => ({
         customerCenter,
         adConsent,
         ...restOptions
-      } = options || {}
+        // Strip undefined at every depth: the Android bridge can't convert it, and an explicitly
+        // undefined field should fall back to its default rather than replace it.
+      } = filterUndefinedDeep(options || {})
 
       // Support both spellings for backward compatibility
       const isManualPurchaseManagement =
