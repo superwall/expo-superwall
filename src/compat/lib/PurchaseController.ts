@@ -16,9 +16,16 @@ export abstract class PurchaseController {
    * @param store The store that backs the product. When it's `ProductStore.custom`, the
    * product isn't on the App Store and you must purchase it yourself (e.g., through your
    * backend). `undefined` if the product couldn't be matched to the latest paywall.
+   * @param customTransactionId The transaction ID Superwall generated for this purchase of a
+   * custom product, or `undefined` for other products. Pass it to your checkout and have your
+   * server send it back as `custom_transaction_id` when it reports the purchase to Superwall.
    * @returns A promise that resolves with the result of the purchase logic.
    */
-  abstract purchaseFromAppStore(productId: string, store?: ProductStore): Promise<PurchaseResult>
+  abstract purchaseFromAppStore(
+    productId: string,
+    store?: ProductStore,
+    customTransactionId?: string,
+  ): Promise<PurchaseResult>
 
   /**
    * Purchase a product from Google Play.
@@ -28,6 +35,9 @@ export abstract class PurchaseController {
    * @param store The store that backs the product. When it's `ProductStore.custom`, the
    * product isn't on Google Play and you must purchase it yourself (e.g., through your
    * backend).
+   * @param customTransactionId The transaction ID Superwall generated for this purchase of a
+   * custom product, or `undefined` for other products. Pass it to your checkout and have your
+   * server send it back as `custom_transaction_id` when it reports the purchase to Superwall.
    * @returns A promise that resolves with the result of the purchase logic.
    */
   abstract purchaseFromGooglePlay(
@@ -35,6 +45,7 @@ export abstract class PurchaseController {
     basePlanId?: string,
     offerId?: string,
     store?: ProductStore,
+    customTransactionId?: string,
   ): Promise<PurchaseResult>
 
   /**
@@ -52,6 +63,9 @@ export abstract class PurchaseController {
    * @param replacement The subscription being replaced, with the replacement mode and the old
    * product's identifier and purchase token.
    * @param store The store that backs the product.
+   * @param customTransactionId The transaction ID Superwall generated for this purchase of a
+   * custom product, or `undefined` for other products. Pass it to your checkout and have your
+   * server send it back as `custom_transaction_id` when it reports the purchase to Superwall.
    * @returns A promise that resolves with the result of the purchase logic.
    */
   purchaseFromGooglePlayWithReplacement?(
@@ -60,6 +74,7 @@ export abstract class PurchaseController {
     offerId: string | undefined,
     replacement: ProductReplacement,
     store?: ProductStore,
+    customTransactionId?: string,
   ): Promise<PurchaseResult>
 
   /**

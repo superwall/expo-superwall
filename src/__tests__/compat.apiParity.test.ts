@@ -289,6 +289,7 @@ describe("compat API parity", () => {
       "base",
       undefined,
       "PLAY_STORE",
+      undefined,
     )
     expect(mockDidPurchase).toHaveBeenCalledWith({ type: "purchased" })
 
@@ -312,6 +313,7 @@ describe("compat API parity", () => {
       undefined,
       replacement,
       "PLAY_STORE",
+      undefined,
     )
     expect(replacing.purchaseFromGooglePlay).not.toHaveBeenCalled()
 
@@ -336,6 +338,7 @@ describe("compat API parity", () => {
       "base",
       undefined,
       "PLAY_STORE",
+      undefined,
     )
     expect(mockDidPurchase).toHaveBeenCalledWith({ type: "purchased" })
 

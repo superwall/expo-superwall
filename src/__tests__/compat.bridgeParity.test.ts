@@ -214,6 +214,7 @@ describe("compat Superwall methods", () => {
     expect(controller.purchaseFromAppStore).toHaveBeenCalledWith(
       "custom_coins",
       ProductStore.custom,
+      undefined,
     )
 
     await emit("onPurchase", {
@@ -228,6 +229,45 @@ describe("compat Superwall methods", () => {
       null,
       null,
       ProductStore.custom,
+      undefined,
+    )
+  })
+
+  it("passes a custom product's customTransactionId to the purchase controller", async () => {
+    class Controller extends PurchaseController {
+      purchaseFromAppStore = jest.fn(async () => new PurchaseResultPurchased())
+      purchaseFromGooglePlay = jest.fn(async () => new PurchaseResultPurchased())
+      restorePurchases = jest.fn()
+    }
+    const controller = new Controller()
+    await Superwall.configure({ apiKey: "api-key", purchaseController: controller })
+
+    await emit("onPurchase", {
+      platform: "ios",
+      productId: "web_annual",
+      store: "CUSTOM",
+      customTransactionId: "ios-txn-id",
+    })
+    expect(controller.purchaseFromAppStore).toHaveBeenCalledWith(
+      "web_annual",
+      ProductStore.custom,
+      "ios-txn-id",
+    )
+
+    await emit("onPurchase", {
+      platform: "android",
+      productId: "web_annual",
+      basePlanId: null,
+      offerId: null,
+      store: "CUSTOM",
+      customTransactionId: "android-txn-id",
+    })
+    expect(controller.purchaseFromGooglePlay).toHaveBeenCalledWith(
+      "web_annual",
+      null,
+      null,
+      ProductStore.custom,
+      "android-txn-id",
     )
   })
 

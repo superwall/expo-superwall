@@ -29,6 +29,10 @@ final class PurchaseControllerBridge: PurchaseController {
                   "receive `store: \"CUSTOM\"` and may incorrectly fall through to StoreKit.")
         }
 
+        if let customTransactionId = product.customTransactionId {
+            payload["customTransactionId"] = customTransactionId
+        }
+
         SuperwallExpoModule.emitEvent("onPurchase", payload)
         return await withCheckedContinuation { continuation in
             self.purchaseCompletion = { [weak self] result in
