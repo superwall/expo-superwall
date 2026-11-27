@@ -74,4 +74,23 @@ Pod::Spec.new do |s|
   )
 
   s.source_files = "**/*.{h,m,mm,swift,hpp,cpp}"
+
+  # Xcode copies SuperwallKit's libcel.xcframework into this pod's own build folder as well as the
+  # shared one, and writes a libcel signature file next to each copy. An archive collects every
+  # signature into one flat Signatures folder, so the second file fails it with "an item with the
+  # same name already exists". This pod's libtool step needs its copy of libcel.a but not the
+  # signature, so drop that one and let the archive take the shared folder's copy.
+  s.script_phase = {
+    name: '[SuperwallExpo] Remove duplicate libcel signature',
+    script: <<~'SH',
+      for signature in "$BUILT_PRODUCTS_DIR"/libcel.xcframework-*.signature; do
+        shared="$PODS_CONFIGURATION_BUILD_DIR/$(basename "$signature")"
+        if [ "$signature" != "$shared" ] && [ -e "$shared" ]; then
+          rm "$signature"
+        fi
+      done
+    SH
+    execution_position: :after_compile,
+    always_out_of_date: '1',
+  }
 end
